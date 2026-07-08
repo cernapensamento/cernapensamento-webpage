@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>La arquitectura del silencio - El Dialecto</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&amp;family=Source+Sans+3:ital,wght@0,400;0,600;1,400;1,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#e5e2db",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#474746",
+                        "on-tertiary-fixed-variant": "#474742",
+                        "on-secondary-fixed": "#261900",
+                        "secondary-fixed": "#ffdea5",
+                        "surface-container-low": "#f5f3f3",
+                        "on-secondary-fixed-variant": "#5d4201",
+                        "on-error-container": "#93000a",
+                        "outline": "#747878",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#efeded",
+                        "surface-tint": "#5f5e5e",
+                        "secondary": "#775a19",
+                        "on-secondary-container": "#785a1a",
+                        "on-primary-fixed": "#1c1b1b",
+                        "inverse-surface": "#303030",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#fed488",
+                        "surface-bright": "#fbf9f8",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e4e2e2",
+                        "secondary-fixed-dim": "#e9c176",
+                        "on-tertiary-fixed": "#1c1c18",
+                        "on-surface-variant": "#444748",
+                        "on-surface": "#1b1c1c",
+                        "inverse-primary": "#c8c6c5",
+                        "tertiary": "#000000",
+                        "tertiary-container": "#1c1c18",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#c4c7c7",
+                        "on-background": "#1b1c1c",
+                        "background": "#fbf9f8",
+                        "surface": "#fbf9f8",
+                        "primary-fixed": "#e5e2e1",
+                        "on-secondary": "#ffffff",
+                        "primary": "#000000",
+                        "surface-dim": "#dbd9d9",
+                        "on-tertiary-container": "#85847e",
+                        "tertiary-fixed-dim": "#c9c6c0",
+                        "on-primary-container": "#858383",
+                        "surface-variant": "#e4e2e2",
+                        "primary-container": "#1c1b1b",
+                        "primary-fixed-dim": "#c8c6c5",
+                        "surface-container-high": "#eae8e7",
+                        "inverse-on-surface": "#f2f0f0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1120px",
+                        "section-gap": "120px",
+                        "unit": "4px",
+                        "margin-desktop": "64px",
+                        "gutter": "32px",
+                        "margin-mobile": "20px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Libre Caslon Text"],
+                        "body-lg": ["\"Source Sans 3\""],
+                        "display-lg": ["Libre Caslon Text"],
+                        "display-lg-mobile": ["Libre Caslon Text"],
+                        "label-sm": ["\"Source Sans 3\""],
+                        "label-md": ["\"Source Sans 3\""],
+                        "body-md": ["\"Source Sans 3\""],
+                        "headline-md": ["Libre Caslon Text"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "400" }],
+                        "body-lg": ["20px", { "lineHeight": "32px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.01em", "fontWeight": "400" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.01em", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-md": ["17px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-md": ["32px", { "lineHeight": "40px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .first-letter-drop::first-letter {
+            font-family: 'Libre Caslon Text', serif;
+            font-size: 5rem;
+            line-height: 4rem;
+            float: left;
+            margin-right: 0.75rem;
+            margin-top: 0.5rem;
+            color: theme('colors.secondary');
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface font-label-md text-label-md tracking-[0.05em] full-width top-0 border-b border-outline-variant dark:border-outline flat no shadows z-50 sticky">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto h-20">
+<!-- Brand Logo -->
+<a class="font-display-lg text-display-lg text-primary dark:text-on-primary-fixed md:hidden font-display-lg-mobile text-display-lg-mobile" href="#">
+                El Dialecto
+            </a>
+<a class="font-display-lg text-display-lg text-primary dark:text-on-primary-fixed hidden md:block" href="#">
+                El Dialecto
+            </a>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-6">
+<button aria-label="Search" class="text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">search</span>
+</button>
+<a class="hidden sm:inline-flex items-center justify-center px-6 py-2 bg-primary text-on-primary hover:bg-inverse-surface transition-colors duration-300 cursor-pointer" href="#">
+                    Suscribirse
+                </a>
+<button aria-label="Menu" class="md:hidden text-on-surface">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center w-full pb-section-gap">
+<!-- Article Header -->
+<header class="w-full max-w-3xl px-margin-mobile md:px-0 pt-24 pb-12 mx-auto text-center">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest block mb-6">Filosofía y Espacio</span>
+<h1 class="font-display-lg text-display-lg md:font-display-lg md:text-display-lg text-primary mb-6 max-w-4xl mx-auto">
+                La arquitectura del silencio
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-10 max-w-2xl mx-auto italic">
+                Cómo los entornos estructurales modernos eliminan inadvertidamente la profunda necesidad de contemplación tranquila.
+            </p>
+<div class="flex items-center justify-center gap-4 font-label-md text-label-md text-on-surface-variant">
+<span class="text-primary border-b border-outline-variant pb-1">Eleanor Vance</span>
+<span>—</span>
+<time datetime="2024-10-24">24 de octubre de 2024</time>
+</div>
+</header>
+<!-- Hero Image -->
+<div class="w-full max-w-container-max px-margin-mobile md:px-margin-desktop mb-20 mx-auto">
+<img class="w-full h-[512px] md:h-[716px] object-cover grayscale-[20%] sepia-[10%]" data-alt="A striking, expansive photograph of a brutalist architectural interior. Soaring concrete walls create deep shadows and bright, sharp lines of natural light pouring in from an unseen skylight above. The space is entirely empty, conveying a profound sense of stillness and acoustic silence. The overall palette is muted greys, warm ivory light, and stark charcoal shadows, fitting a sophisticated, intellectual design aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB36j7za20DOk9ii6c7WDManBtU4-iMnvKWoR4qdio9P9Cv3BvfMowXdswr46gbZ1-SIbNZ-g8nUXMq4IJdYF_TFdD80pw7ONKYDTfrAtczbNA6nLZ98ci_svbhWkxJiIq3HhV5p-Y24_6_DthorT17_gu9TYuLOkX7BeDdmWBaaobkSw8FQX70yiHkyepSZBkqMWw8ajgq2_o0Hq1rFkN5WsZhSwtqYNvbrZmVviOIcoTXv9oQgBqOyKhM25P8TTgvs-GPSGvmRD8"/>
+<figcaption class="font-label-sm text-label-sm text-outline mt-4 text-right">La estructura del Museo de Arte de Teshima. Fotografía de S. Nakamoto.</figcaption>
+</div>
+<!-- Article Body -->
+<article class="w-full max-w-2xl px-margin-mobile md:px-0 mx-auto font-body-lg text-body-lg text-on-surface leading-relaxed flex flex-col gap-8">
+<p class="first-letter-drop">
+                El silencio ya no es una ausencia; se ha convertido en una mercancía de lujo. En los extensos centros urbanos que definen el siglo XXI, el paisaje acústico está saturado. Existimos dentro de un zumbido persistente y de bajo grado de infraestructura, comercio y notificaciones digitales. Encontrar el silencio requiere una intervención arquitectónica deliberada: espacios diseñados explícitamente para repeler el ruido omnipresente de la modernidad.
+            </p>
+<p>
+                Históricamente, el silencio era el estado predeterminado del entorno humano, puntuado por eventos: el viento, una voz, una herramienta golpeando la piedra. Hoy, ocurre lo inverso. Debemos construir activamente barreras para labrarnos tranquilidad. Este cambio altera fundamentalmente la cognición humana y la capacidad para una interioridad profunda y filosófica.
+            </p>
+<h2 class="font-headline-md text-headline-md text-primary mt-12 mb-4 pb-2 border-b border-outline-variant">La mercantilización de la tranquilidad</h2>
+<p>
+                Considere la evolución de la oficina moderna o del rascacielos residencial de lujo. El aislamiento acústico ahora se comercializa con el mismo fervor que los metros cuadrados o las vistas panorámicas. La capacidad de cerrar una puerta y separarse del colectivo auditivo es un privilegio otorgado principalmente a aquellos con los medios económicos para exigirlo.
+            </p>
+<blockquote class="my-12 px-8 py-6 border-l-[3px] border-secondary bg-surface-container-low text-center">
+<p class="font-headline-sm text-headline-sm text-on-surface italic mb-4">
+                    "Hemos confundido la conectividad con la presencia, y al hacerlo, hemos construido entornos a los que les aterroriza estar vacíos."
+                </p>
+<cite class="font-label-sm text-label-sm text-on-surface-variant not-italic tracking-widest uppercase">— Dr. Elias Thorne, El vacío sonoro</cite>
+</blockquote>
+<p>
+                Esta privatización del silencio plantea profundas cuestiones económicas y éticas. Si la contemplación tranquila es esencial para la resolución de problemas complejos, la restauración psicológica y la formulación de estrategias cívicas a largo plazo, ¿qué significa cuando solo una fracción de la población tiene acceso a ella?
+            </p>
+<figure class="my-10 w-full md:-mx-12 md:w-[calc(100%+6rem)]">
+<img class="w-full aspect-[16/9] object-cover" data-alt="A meticulously composed black and white photograph of a minimalist reading room. The room features a single, elegant wooden chair facing a tall, narrow window looking out onto a misty, unidentifiable landscape. Bookshelves line one wall perfectly. The lighting is soft and diffused, emphasizing the textures of wood and paper. The atmosphere is deeply serene, academic, and isolated." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxofc9I2fidLoWJHCQXogslAv1Z4NuW2jjoiNlMvywfz4_WYjlKrw7EN3B7N-kTSa6rXKBhwYovrq5VdwgD9PDHKjsAc8tc24N9x4k8HHbMIr7KoN9xW7O7KPM0IyXbvOkv1WFg-iacN4aPwmJuFFng33p1p7EANTdmWCzlxd0TaBS7S6ZGfwR51QEnK0AR12rH1SU-kefeSFmXy6_Z1Gg0nzQgt5DyrCcKyfJ05eMzcsKtS77Ze5N3lApywT2CFppGtc0j0zhBTg"/>
+<figcaption class="font-label-sm text-label-sm text-outline mt-3 text-center">La sala de lectura en Villa Cernobbi, diseñada específicamente para el estudio solitario.</figcaption>
+</figure>
+<h2 class="font-headline-md text-headline-md text-primary mt-12 mb-4 pb-2 border-b border-outline-variant">Diseñando para la resonancia</h2>
+<p>
+                La tarea del arquitecto contemporáneo, entonces, no es meramente construir cerramientos, sino curar atmósferas. Requiere un retorno a materiales pesados —tierra apisonada, mampostería gruesa, madera densa— materiales que absorben y conectan a tierra la energía en lugar de reflejarla interminablemente como el cristal y el acero.
+            </p>
+<p>
+                A medida que avanzamos, los espacios públicos más vitales no serán las plazas comerciales ruidosas e hiperconectadas, sino los vacíos intencionales. Bibliotecas, claustros seculares y santuarios acústicos deben integrarse en la planificación urbana no como ideas tardías, sino como necesidades fundamentales para una sociedad funcional y contemplativa.
+            </p>
+<!-- Article Footer / Author Bio -->
+<div class="mt-20 pt-8 border-t border-outline-variant flex items-start gap-6">
+<div class="w-16 h-16 rounded-full bg-surface-variant flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A sophisticated, high-contrast black and white portrait of an intellectual woman in her 40s. She is wearing a dark, textured turtleneck sweater and looking thoughtfully slightly off-camera. The lighting is dramatic, highlighting her sharp features against a pure white background, fitting a prestigious academic journal." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4LGfaCxRN7l6UxcqsadbnkvdToz8unqPjz3i88RnSF9k_pIR50YPliH84VOGh_09zTJe3HX-Z8Q1Tdd3tO5Oa0yFoNHD45J-EMIFMtvGyhgLJZAOssGvU1LYai9E_2M7xXqrEcMDcZFQ_Aaf-h-ZS1QwTcv_3DGEhusAHUURa6zK7LZEETVLVg6OteCnvAw2zMH7liBRmdzG_pjYdm535rGduw4Gp2YJ7qEfK2-S6pFHr9qX3U0vKOVg1-WN9k_xOMUQ9vkUkJE8"/>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-primary uppercase tracking-widest mb-2">Sobre la autora</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Eleanor Vance es investigadora principal en Filosofía Urbana en el Instituto de Ética Espacial. Es autora del próximo libro <em>El sonido del hormigón</em>.</p>
+</div>
+</div>
+</article>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container dark:bg-surface-container full-width border-t border-outline-variant dark:border-outline flat no shadows">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-desktop py-12 max-w-container-max mx-auto gap-8">
+<!-- Brand Logo -->
+<div class="font-headline-sm text-headline-sm text-primary dark:text-on-primary-fixed mb-4 md:mb-0">
+                El Dialecto
+            </div>
+<!-- Links -->
+<nav class="flex flex-wrap justify-center gap-6 font-body-md text-body-md">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed underline transition-all" href="#">Sobre nosotros</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed underline transition-all" href="#">Consejo editorial</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed underline transition-all" href="#">Envíos</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed underline transition-all" href="#">Privacidad</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary dark:hover:text-secondary-fixed underline transition-all" href="#">Términos</a>
+</nav>
+<!-- Copyright -->
+<div class="font-body-md text-body-md text-on-surface dark:text-on-surface text-center md:text-right text-sm">
+                © 2024 El Dialecto. Revista de Filosofía y Economía. Todos los derechos reservados.
+            </div>
+</div>
+</footer>
+</body></html>
