@@ -15,11 +15,19 @@ export default async function EscritorioDelEscritorElDialecto() {
     redirect('/login');
   }
 
+  // Redirigir a los lectores (rol 'usuario') a la pantalla de configuración de perfil
+  if (profile?.rol === 'usuario') {
+    redirect('/escritorio/perfil');
+  }
+
   const { data: articulos } = await supabase
     .from('articulos')
     .select('*')
     .eq('autor_id', user.id)
     .order('creado_en', { ascending: false });
+
+  const publicados = articulos?.filter(a => a.estado === 'publicado' || !a.estado) || [];
+  const borradores = articulos?.filter(a => a.estado === 'borrador') || [];
 
   return (
     <main className="px-5 md:px-16 pb-24">
@@ -58,10 +66,10 @@ export default async function EscritorioDelEscritorElDialecto() {
 <div className="lg:col-span-7">
 <div className="flex items-center justify-between mb-8 pb-4 border-b border-lines">
 <h3 className="font-serif text-2xl">Publicaciones Recientes</h3>
-<a className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href="#">Ver todo</a>
+<Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href="#">Ver todo</Link>
 </div>
 <div className="space-y-12">
-{articulos && articulos.length > 0 ? articulos.map(articulo => (
+{publicados.length > 0 ? publicados.map(articulo => (
 <article className="group" key={articulo.id}>
 <div className="flex gap-8">
 <div className="hidden sm:block w-32 h-32 shrink-0 border border-lines overflow-hidden relative">
@@ -79,12 +87,12 @@ export default async function EscritorioDelEscritorElDialecto() {
 <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>
 <span className="font-sans text-xs text-charcoal/60">{new Date(articulo.creado_en).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
 </div>
-<Link href={`/articulo/${articulo.id}`}>
+<Link href={`/articulo/${articulo.slug || articulo.id}`}>
 <h4 className="font-serif text-2xl mb-3 group-hover:text-gold transition-colors cursor-pointer">{articulo.titulo}</h4>
 </Link>
 <p className="font-sans text-base text-charcoal/60 line-clamp-2">{articulo.contenido.replace(/<[^>]*>?/gm, '').substring(0, 150)}...</p>
 <div className="mt-4 flex items-center gap-6">
-<Link href={`/escritorio/nuevo`} className="flex items-center gap-1 text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
+<Link href={`/escritorio/editar/${articulo.slug || articulo.id}`} className="flex items-center gap-1 text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
 <span className="material-symbols-outlined text-sm" data-icon="edit">edit</span>
 <span className="font-sans text-xs">Editar</span>
 </Link>
@@ -103,8 +111,18 @@ export default async function EscritorioDelEscritorElDialecto() {
 <div className="border border-lines p-8 bg-surface">
 <h3 className="font-sans text-sm uppercase tracking-[0.2em] text-charcoal/60 mb-8 border-b border-lines pb-4">Borradores en curso</h3>
 <div className="space-y-6">
-  <DraftItem title="La Estética del Silencio" editedAgo="2 horas" />
-  <DraftItem title="Fragmentos de una Realidad Aumentada" editedAgo="3 días" />
+  {borradores.length > 0 ? borradores.map(borrador => (
+      <div key={borrador.id} className="group border-b border-lines/50 pb-4 last:border-0 last:pb-0">
+          <Link href={`/escritorio/editar/${borrador.slug || borrador.id}`} className="block group-hover:text-gold transition-colors">
+              <h4 className="font-serif text-lg mb-1">{borrador.titulo}</h4>
+              <span className="font-sans text-[10px] uppercase tracking-widest text-charcoal/40 group-hover:text-charcoal/60 transition-colors">
+                  Actualizado {new Date(borrador.actualizado_en || borrador.creado_en).toLocaleDateString()}
+              </span>
+          </Link>
+      </div>
+  )) : (
+      <p className="font-sans text-sm text-charcoal/60">No hay borradores.</p>
+  )}
 </div>
 <button className="mt-10 w-full border border-charcoal py-3 font-sans text-sm uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all">
                             Ver todos los borradores

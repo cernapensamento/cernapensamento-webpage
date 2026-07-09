@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import SubscribeButton from '@/components/SubscribeButton';
 import { handleSignOut } from '@/app/actions';
+import { SITE_NAME } from '@/lib/constants';
 
 interface PublicNavBarProps {
   showBackLink?: boolean;
@@ -32,7 +33,7 @@ export default async function PublicNavBar({ showBackLink = false }: PublicNavBa
           )}
         </div>
         <Link href="/" className="font-serif text-3xl md:text-4xl text-charcoal tracking-tighter absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          El Dialecto
+          {SITE_NAME}
         </Link>
         <div className="flex items-center gap-4 ml-auto">
           {user ? (

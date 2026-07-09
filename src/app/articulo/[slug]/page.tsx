@@ -5,22 +5,24 @@ import { notFound } from 'next/navigation';
 import sanitizeHtml from 'sanitize-html';
 import PublicNavBar from '@/components/PublicNavBar';
 import SiteFooter from '@/components/SiteFooter';
-import { DEFAULT_AVATAR_URL } from '@/lib/constants';
+import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 
 export const revalidate = 60;
 
 interface Props {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }
 
 export default async function ArticuloPage({ params }: Props) {
-  const { id } = await params;
+  const { slug } = await params;
   const supabase = await createClient();
+
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
   const { data: articulo, error } = await supabase
     .from('articulos')
     .select('*, perfiles(nombre)')
-    .eq('id', id)
+    .eq(isUUID ? 'id' : 'slug', slug)
     .single();
 
   if (error || !articulo) {
@@ -76,7 +78,7 @@ export default async function ArticuloPage({ params }: Props) {
             <div>
               <h3 className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Sobre el autor</h3>
               <p className="font-sans text-lg text-charcoal/80">
-                {articulo.perfiles?.nombre || 'Autor Desconocido'} es un contribuyente de El Dialecto.
+                {articulo.perfiles?.nombre || 'Autor Desconocido'} es un contribuyente de {SITE_NAME}.
               </p>
             </div>
           </div>

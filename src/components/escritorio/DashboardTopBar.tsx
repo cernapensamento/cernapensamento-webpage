@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { SITE_NAME, DEFAULT_AVATAR_URL } from '@/lib/constants';
 
 interface DashboardTopBarProps {
   avatarUrl?: string | null;
@@ -9,7 +10,7 @@ export default function DashboardTopBar({ avatarUrl }: DashboardTopBarProps) {
   return (
     <header className="w-full sticky top-0 bg-surface flex justify-between items-center h-16 z-40 border-b border-lines px-5 md:px-16 shrink-0">
       <div className="flex items-center gap-8">
-        <span className="font-serif text-3xl text-charcoal">El Dialecto</span>
+        <span className="font-serif text-3xl text-charcoal">{SITE_NAME}</span>
         <nav className="hidden md:flex gap-6">
           <Link className="font-sans text-sm tracking-widest text-charcoal/60 hover:text-gold transition-colors" href="/escritorio">Publicaciones</Link>
           <Link className="font-sans text-sm tracking-widest text-charcoal/60 hover:text-gold transition-colors" href="#">Archivo</Link>
@@ -27,7 +28,7 @@ export default function DashboardTopBar({ avatarUrl }: DashboardTopBarProps) {
             <Image 
               className="object-cover" 
               alt="Profile" 
-              src={avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC7MT8I4iJi9oaz-ksmXZBKh9UdGvkYVLwMQvSpWs9EQyAD8rZf5DufwmVGUQ5uCG5uahsc3uQgS1NtkA2gUlzCzM7sV8vRDKudibLkyTvoGh1hXKukQlbHvz8mlI21pcRFpkITr6vDRvATOaMXiOWIjlRId-wF2QY98BuCyIww8u67nQ1epKY5YVHh5lKLG26uRN5MnrdT-bNEmArWHpN5lzEK3JphmVfYgfMY116r44VV8L5wZXCaLFuLjZKXaYL3WSpniDP-8V0"} 
+              src={avatarUrl || DEFAULT_AVATAR_URL} 
               fill 
               sizes="32px" 
             />

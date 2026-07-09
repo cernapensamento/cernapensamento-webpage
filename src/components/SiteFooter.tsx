@@ -1,18 +1,21 @@
 import Link from 'next/link';
 import FooterSubscribeForm from '@/components/FooterSubscribeForm';
+import { SITE_NAME } from '@/lib/constants';
 
 interface SiteFooterProps {
   variant?: 'full' | 'compact' | 'minimal';
 }
 
 export default function SiteFooter({ variant = 'full' }: SiteFooterProps) {
+  const currentYear = new Date().getFullYear();
+
   if (variant === 'minimal') {
     return (
       <footer className="w-full mt-auto py-8 bg-parchment border-t border-lines">
         <div className="max-w-[1120px] mx-auto px-5 md:px-16 flex flex-col md:flex-row justify-between items-center gap-4">
-          <span className="font-serif text-xl text-charcoal">El Dialecto</span>
+          <span className="font-serif text-xl text-charcoal">{SITE_NAME}</span>
           <p className="font-sans text-xs text-charcoal/60">
-            © {new Date().getFullYear()} El Dialecto. Todos los derechos reservados.
+            © {currentYear} {SITE_NAME}. Todos los derechos reservados.
           </p>
           <div className="flex gap-6">
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href="#">Privacidad</Link>
@@ -27,12 +30,12 @@ export default function SiteFooter({ variant = 'full' }: SiteFooterProps) {
     return (
       <footer className="bg-surface border-t border-lines w-full mt-12">
         <div className="w-full py-16 px-5 md:px-16 flex flex-col items-center gap-6 max-w-[1120px] mx-auto">
-          <Link className="font-serif text-3xl text-charcoal" href="/">El Dialecto</Link>
+          <Link className="font-serif text-3xl text-charcoal" href="/">{SITE_NAME}</Link>
           <nav className="flex gap-6">
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href="/">Inicio</Link>
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href="/login">Autores</Link>
           </nav>
-          <p className="text-xs font-semibold text-charcoal/60 mt-4">© {new Date().getFullYear()} El Dialecto. Todos los derechos reservados.</p>
+          <p className="text-xs font-semibold text-charcoal/60 mt-4">© {currentYear} {SITE_NAME}. Todos los derechos reservados.</p>
         </div>
       </footer>
     );
@@ -42,7 +45,7 @@ export default function SiteFooter({ variant = 'full' }: SiteFooterProps) {
     <footer className="bg-surface border-t border-lines w-full mt-auto">
       <div className="w-full py-[120px] px-5 md:px-16 flex flex-col md:flex-row justify-between items-start max-w-[1120px] mx-auto gap-12 md:gap-0">
         <div className="flex flex-col gap-4">
-          <Link className="font-serif text-2xl text-charcoal" href="/">El Dialecto</Link>
+          <Link className="font-serif text-2xl text-charcoal" href="/">{SITE_NAME}</Link>
           <p className="text-sm font-sans text-charcoal/80 max-w-xs">
             Discurso intelectual y filosófico.
           </p>
@@ -61,7 +64,7 @@ export default function SiteFooter({ variant = 'full' }: SiteFooterProps) {
       </div>
       <div className="w-full max-w-[1120px] mx-auto px-5 md:px-16 py-6 border-t border-lines">
         <p className="text-xs font-semibold text-charcoal/60 text-center md:text-left">
-          © {new Date().getFullYear()} El Dialecto. Todos los derechos reservados.
+          © {currentYear} {SITE_NAME}. Todos los derechos reservados.
         </p>
       </div>
     </footer>

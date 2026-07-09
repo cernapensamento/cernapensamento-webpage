@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { SITE_NAME } from '@/lib/constants';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,12 +21,25 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        router.push('/');
+        
+        if (data.user) {
+          const { data: profile } = await supabase
+            .from('perfiles')
+            .select('rol')
+            .eq('id', data.user.id)
+            .single();
+            
+          console.log('Login successful', { user: data.user, profile });
+          
+          window.location.href = '/escritorio';
+        } else {
+          window.location.href = '/';
+        }
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -48,7 +62,7 @@ export default function LoginPage() {
         
         <div className="text-center mb-12">
           <h1 className="text-4xl font-normal text-charcoal tracking-tight mb-2">
-            El Dialecto
+            {SITE_NAME}
           </h1>
           <p className="text-sm text-charcoal/60 uppercase tracking-widest font-semibold">
             {isLogin ? 'Acceso de Autor' : 'Registro de Autor'}

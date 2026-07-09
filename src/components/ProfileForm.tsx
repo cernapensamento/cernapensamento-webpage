@@ -8,6 +8,7 @@ export default function ProfileForm({ profile }: { profile: any }) {
   const [nombre, setNombre] = useState(profile?.nombre || '');
   const [bio, setBio] = useState(profile?.bio || '');
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+  const [recibirNewsletter, setRecibirNewsletter] = useState(profile?.recibir_newsletter ?? true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function ProfileForm({ profile }: { profile: any }) {
     try {
       const { error } = await supabase
         .from('perfiles')
-        .update({ nombre, bio, avatar_url: avatarUrl })
+        .update({ nombre, bio, avatar_url: avatarUrl, recibir_newsletter: recibirNewsletter })
         .eq('id', profile.id);
 
       if (error) throw error;
@@ -64,6 +65,19 @@ export default function ProfileForm({ profile }: { profile: any }) {
           onChange={(e) => setAvatarUrl(e.target.value)}
           className="w-full px-0 py-2 bg-transparent border-b border-lines text-charcoal placeholder-lines focus:outline-none focus:border-charcoal transition-colors rounded-none"
         />
+      </div>
+
+      <div className="flex items-center gap-3 pt-4 border-t border-lines">
+        <input
+          type="checkbox"
+          id="newsletter"
+          checked={recibirNewsletter}
+          onChange={(e) => setRecibirNewsletter(e.target.checked)}
+          className="w-4 h-4 text-gold border-lines rounded focus:ring-gold accent-gold"
+        />
+        <label htmlFor="newsletter" className="font-sans text-sm text-charcoal cursor-pointer">
+          Quiero recibir el boletín semanal con artículos destacados.
+        </label>
       </div>
 
       {message && (

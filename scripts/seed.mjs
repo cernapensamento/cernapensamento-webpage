@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-const autor_id = '529e2b5a-f0e4-4a4d-9b0c-3538d4e7f922'; // Existing user ID
+const autor_id = 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2'; // Escritor user ID
 
 const articulos = [
   {
@@ -44,7 +44,7 @@ const articulos = [
 
 async function seed() {
   const { error: authError } = await supabase.auth.signInWithPassword({
-    email: 'test@gmail.com',
+    email: 'escritor@cerna.com',
     password: '123456'
   });
   

@@ -13,8 +13,10 @@ const sourceSans = Source_Sans_3({
   variable: "--font-source-sans",
 });
 
+import { SITE_NAME } from "@/lib/constants";
+
 export const metadata: Metadata = {
-  title: "The Quadrivium Journal",
+  title: SITE_NAME,
   description: "A weekly literary and philosophical journal.",
 };
 

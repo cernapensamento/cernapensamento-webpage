@@ -3,8 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function SideNavBar() {
+interface SideNavBarProps {
+  role?: string;
+}
+
+export default function SideNavBar({ role }: SideNavBarProps) {
   const pathname = usePathname();
+
+  const isWriter = role === 'escritor' || role === 'admin';
 
   return (
     <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface border-r border-lines z-50">
@@ -25,39 +31,43 @@ export default function SideNavBar() {
             <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${pathname === '/' ? 'text-gold' : 'text-charcoal/50 group-hover:text-gold group-hover:scale-110'}`} data-icon="home" style={{ fontFamily: 'Material Symbols Outlined' }}>home</span>
             <span className={`font-sans text-xs uppercase tracking-[0.15em] transition-transform duration-300 ${pathname === '/' ? 'font-semibold' : 'group-hover:translate-x-1'}`}>Volver al Inicio</span>
           </Link>
-          <Link
-            className={`flex items-center gap-4 py-3.5 px-4 transition-all duration-300 group rounded-none ${
-              pathname === '/escritorio'
-                ? 'text-charcoal bg-parchment border-l-2 border-gold'
-                : 'text-charcoal/50 hover:text-charcoal hover:bg-lines/30 border-l-2 border-transparent'
-            }`}
-            href="/escritorio"
-          >
-            <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${pathname === '/escritorio' ? 'text-gold' : 'text-charcoal/50 group-hover:text-gold group-hover:scale-110'}`} data-icon="description">description</span>
-            <span className={`font-sans text-xs uppercase tracking-[0.15em] transition-transform duration-300 ${pathname === '/escritorio' ? 'font-semibold' : 'group-hover:translate-x-1'}`}>Mis Artículos</span>
-          </Link>
-          <Link
-            className={`flex items-center gap-4 py-3.5 px-4 transition-all duration-300 group rounded-none ${
-              pathname === '/escritorio/nuevo'
-                ? 'text-charcoal bg-parchment border-l-2 border-gold'
-                : 'text-charcoal/50 hover:text-charcoal hover:bg-lines/30 border-l-2 border-transparent'
-            }`}
-            href="/escritorio/nuevo"
-          >
-            <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${pathname === '/escritorio/nuevo' ? 'text-gold' : 'text-charcoal/50 group-hover:text-gold group-hover:scale-110'}`} data-icon="edit_note">edit_note</span>
-            <span className={`font-sans text-xs uppercase tracking-[0.15em] transition-transform duration-300 ${pathname === '/escritorio/nuevo' ? 'font-semibold' : 'group-hover:translate-x-1'}`}>Nuevo Artículo</span>
-          </Link>
-          <Link
-            className={`flex items-center gap-4 py-3.5 px-4 transition-all duration-300 group rounded-none ${
-              pathname === '/escritorio/estadisticas'
-                ? 'text-charcoal bg-parchment border-l-2 border-gold'
-                : 'text-charcoal/50 hover:text-charcoal hover:bg-lines/30 border-l-2 border-transparent'
-            }`}
-            href="#"
-          >
-            <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${pathname === '/escritorio/estadisticas' ? 'text-gold' : 'text-charcoal/50 group-hover:text-gold group-hover:scale-110'}`} data-icon="query_stats">query_stats</span>
-            <span className={`font-sans text-xs uppercase tracking-[0.15em] transition-transform duration-300 ${pathname === '/escritorio/estadisticas' ? 'font-semibold' : 'group-hover:translate-x-1'}`}>Estadísticas</span>
-          </Link>
+          {isWriter && (
+            <>
+              <Link
+                className={`flex items-center gap-4 py-3.5 px-4 transition-all duration-300 group rounded-none ${
+                  pathname === '/escritorio'
+                    ? 'text-charcoal bg-parchment border-l-2 border-gold'
+                    : 'text-charcoal/50 hover:text-charcoal hover:bg-lines/30 border-l-2 border-transparent'
+                }`}
+                href="/escritorio"
+              >
+                <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${pathname === '/escritorio' ? 'text-gold' : 'text-charcoal/50 group-hover:text-gold group-hover:scale-110'}`} data-icon="description">description</span>
+                <span className={`font-sans text-xs uppercase tracking-[0.15em] transition-transform duration-300 ${pathname === '/escritorio' ? 'font-semibold' : 'group-hover:translate-x-1'}`}>Mis Artículos</span>
+              </Link>
+              <Link
+                className={`flex items-center gap-4 py-3.5 px-4 transition-all duration-300 group rounded-none ${
+                  pathname === '/escritorio/nuevo'
+                    ? 'text-charcoal bg-parchment border-l-2 border-gold'
+                    : 'text-charcoal/50 hover:text-charcoal hover:bg-lines/30 border-l-2 border-transparent'
+                }`}
+                href="/escritorio/nuevo"
+              >
+                <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${pathname === '/escritorio/nuevo' ? 'text-gold' : 'text-charcoal/50 group-hover:text-gold group-hover:scale-110'}`} data-icon="edit_note">edit_note</span>
+                <span className={`font-sans text-xs uppercase tracking-[0.15em] transition-transform duration-300 ${pathname === '/escritorio/nuevo' ? 'font-semibold' : 'group-hover:translate-x-1'}`}>Nuevo Artículo</span>
+              </Link>
+              <Link
+                className={`flex items-center gap-4 py-3.5 px-4 transition-all duration-300 group rounded-none ${
+                  pathname === '/escritorio/estadisticas'
+                    ? 'text-charcoal bg-parchment border-l-2 border-gold'
+                    : 'text-charcoal/50 hover:text-charcoal hover:bg-lines/30 border-l-2 border-transparent'
+                }`}
+                href="#"
+              >
+                <span className={`material-symbols-outlined text-[20px] transition-all duration-300 ${pathname === '/escritorio/estadisticas' ? 'text-gold' : 'text-charcoal/50 group-hover:text-gold group-hover:scale-110'}`} data-icon="query_stats">query_stats</span>
+                <span className={`font-sans text-xs uppercase tracking-[0.15em] transition-transform duration-300 ${pathname === '/escritorio/estadisticas' ? 'font-semibold' : 'group-hover:translate-x-1'}`}>Estadísticas</span>
+              </Link>
+            </>
+          )}
           <Link
             className={`flex items-center gap-4 py-3.5 px-4 transition-all duration-300 group rounded-none ${
               pathname === '/escritorio/perfil'
@@ -71,9 +81,11 @@ export default function SideNavBar() {
           </Link>
         </nav>
         <div className="mt-auto pt-8 border-t border-lines">
-          <Link href="/escritorio/nuevo" className="block text-center w-full bg-charcoal text-parchment py-4 px-6 font-sans text-xs uppercase tracking-[0.2em] font-semibold transition-all duration-300 hover:bg-gold hover:tracking-[0.25em] active:scale-[0.98] mb-8 rounded-none cursor-pointer">
-            Publicar ahora
-          </Link>
+          {isWriter && (
+            <Link href="/escritorio/nuevo" className="block text-center w-full bg-charcoal text-parchment py-4 px-6 font-sans text-xs uppercase tracking-[0.2em] font-semibold transition-all duration-300 hover:bg-gold hover:tracking-[0.25em] active:scale-[0.98] mb-8 rounded-none cursor-pointer">
+              Publicar ahora
+            </Link>
+          )}
           <Link className="flex items-center gap-4 py-3 px-4 text-charcoal/50 hover:text-charcoal transition-all duration-300 group rounded-none" href="#">
             <span className="material-symbols-outlined text-[20px] text-charcoal/50 transition-all duration-300 group-hover:text-red-500 group-hover:translate-x-[-2px]" data-icon="logout">logout</span>
             <span className="font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300 group-hover:text-red-500">Cerrar Sesión</span>

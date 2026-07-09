@@ -5,6 +5,7 @@ import PublicNavBar from '@/components/PublicNavBar';
 import SiteFooter from '@/components/SiteFooter';
 import FeaturedArticleHero from '@/components/FeaturedArticleHero';
 import ArticleCard from '@/components/ArticleCard';
+import ColumnistsSection from '@/components/ColumnistsSection';
 
 export const revalidate = 60; // Revalidate every minute
 
@@ -26,6 +27,7 @@ export default async function HomePage() {
   const { data: articulos, error } = await supabase
     .from('articulos')
     .select('*, perfiles(nombre)')
+    .eq('estado', 'publicado')
     .order('creado_en', { ascending: false });
 
   const featuredArticle = articulos && articulos.length > 0 ? articulos[0] : null;
@@ -53,6 +55,8 @@ export default async function HomePage() {
           </div>
         </section>
       </main>
+      
+      <ColumnistsSection />
 
       <SiteFooter variant="full" />
 
