@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
-export default function ProfileForm({ profile }: { profile: any }) {
+export default function ProfileForm({ profile }: { profile: { id: string, nombre?: string, bio?: string, avatar_url?: string, recibir_newsletter?: boolean } | null }) {
   const [nombre, setNombre] = useState(profile?.nombre || '');
   const [bio, setBio] = useState(profile?.bio || '');
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
@@ -23,14 +23,15 @@ export default function ProfileForm({ profile }: { profile: any }) {
       const { error } = await supabase
         .from('perfiles')
         .update({ nombre, bio, avatar_url: avatarUrl, recibir_newsletter: recibirNewsletter })
-        .eq('id', profile.id);
+        .eq('id', profile?.id || '');
 
       if (error) throw error;
       
       setMessage('Perfil actualizado exitosamente.');
       router.refresh();
-    } catch (error: any) {
-      setMessage(`Error al actualizar: ${error.message}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Error desconocido';
+      setMessage(`Error al actualizar: ${msg}`);
     } finally {
       setLoading(false);
     }

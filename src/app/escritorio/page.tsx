@@ -54,9 +54,9 @@ export default async function EscritorioDelEscritorElDialecto() {
 {/*  Stat Card 1  */}
 <StatCard label="Artículos Publicados" value={articulos?.length?.toString() || "0"} barWidth="66%" barColor="gold" />
 {/*  Stat Card 2  */}
-<StatCard label="Tiempo de Lectura Promedio" value="8:42" change="minutos" barWidth="80%" barColor="charcoal" />
+<StatCard label="Tiempo de Lectura Promedio" value="-" barWidth="0%" barColor="charcoal" isUpcoming />
 {/*  Stat Card 3  */}
-<StatCard label="Suscripciones Recientes" value="452" change="+5%" barWidth="50%" barColor="gold" />
+<StatCard label="Suscripciones Recientes" value="-" barWidth="0%" barColor="gold" isUpcoming />
 </div>
 </section>
 {/*  Article Lists Section (Bento Inspired)  */}
