@@ -33,10 +33,12 @@ export default function NuevoArticulo() {
 
             const { error } = await supabase.from('articulos').insert({
                 titulo: finalTitle,
+                subtitulo: data.subtitulo || null,
                 slug: slug,
                 contenido: data.contenido,
                 autor_id: user.id,
                 imagen_url: data.imagen_url || null,
+                tematicas: data.tematicas || [],
                 estado: isDraft ? 'borrador' : 'publicado'
             }).select().single();
 

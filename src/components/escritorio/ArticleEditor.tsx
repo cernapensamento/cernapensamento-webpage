@@ -2,15 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import NextImage from 'next/image';
-import { DEFAULT_COVER_URL } from '@/lib/constants';
+import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL } from '@/lib/constants';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
+import { createClient } from '@/utils/supabase/client';
+import sanitizeHtml from 'sanitize-html';
 
 export interface ArticleData {
     titulo: string;
+    subtitulo: string;
     contenido: string;
     imagen_url: string;
+    tematicas?: string[];
     estado?: string;
 }
 
@@ -24,7 +28,50 @@ interface ArticleEditorProps {
 export default function ArticleEditor({ initialData, onSave, isPublishing, mode }: ArticleEditorProps) {
     const [showPublishModal, setShowPublishModal] = useState(false);
     const [titulo, setTitulo] = useState(initialData?.titulo || '');
+    const [subtitulo, setSubtitulo] = useState(initialData?.subtitulo || '');
     const [coverImageUrl, setCoverImageUrl] = useState(initialData?.imagen_url || '');
+    const [tematicas, setTematicas] = useState<string[]>(initialData?.tematicas || []);
+    const [tematicaInput, setTematicaInput] = useState('');
+    const [showPreview, setShowPreview] = useState(false);
+    const [authorProfile, setAuthorProfile] = useState<{ nombre: string; avatar_url?: string } | null>(null);
+    const TEMATICAS_SUGERIDAS = ['ECONOMÍA', 'POLÍTICA', 'CIENCIA', 'FILOSOFÍA', 'TECNOLOGÍA', 'ARTE'];
+    const supabase = createClient();
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase
+                    .from('perfiles')
+                    .select('nombre, avatar_url')
+                    .eq('id', user.id)
+                    .single();
+                if (data) {
+                    setAuthorProfile(data as any);
+                }
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    const handleAddTematica = (t: string) => {
+        const cleanT = t.trim().toUpperCase();
+        if (cleanT && !tematicas.includes(cleanT)) {
+            setTematicas([...tematicas, cleanT]);
+        }
+        setTematicaInput('');
+    };
+
+    const handleKeyDownTematica = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            handleAddTematica(tematicaInput);
+        }
+    };
+    
+    const handleRemoveTematica = (t: string) => {
+        setTematicas(tematicas.filter(item => item !== t));
+    };
 
     const editor = useEditor({
         extensions: [StarterKit, Image],
@@ -65,8 +112,10 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
     const handleSubmit = async (isDraft: boolean) => {
         await onSave({
             titulo,
+            subtitulo,
             contenido: editor?.getHTML() || '',
-            imagen_url: coverImageUrl
+            imagen_url: coverImageUrl,
+            tematicas: tematicas
         }, isDraft);
         setShowPublishModal(false);
     };
@@ -106,11 +155,23 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                             <button className={`w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('blockquote') ? 'bg-lines/30' : ''}`} title="Cita" onClick={() => editor?.chain().focus().toggleBlockquote().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_quote</span></button>
                             <div className="h-6 w-[1px] bg-lines mx-2"></div>
                             <button className="w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Imagen" onClick={insertImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>image</span></button>
-                            <button className="w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Lista" onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_bulleted</span></button>
+                            <button className={`w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bulletList') ? 'bg-lines/30' : ''}`} title="Lista" onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_bulleted</span></button>
                         </div>
                         <div className="flex items-center gap-4">
                             <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50 italic hidden sm:block"></span>
-                            <button className="px-4 py-2 border border-charcoal text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>Guardar Borrador</button>
+                            <button className="px-4 py-2 border border-charcoal/30 text-charcoal/70 text-xs font-sans uppercase tracking-widest hover:border-charcoal hover:text-charcoal transition-all cursor-pointer flex items-center gap-1.5" onClick={handleChangeCoverImage}>
+                                <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>add_a_photo</span>
+                                Imagen de Portada
+                            </button>
+                            <button className="px-4 py-2 border border-charcoal/30 text-charcoal/70 text-xs font-sans uppercase tracking-widest hover:border-charcoal hover:text-charcoal transition-all cursor-pointer flex items-center gap-1.5" onClick={() => setShowPreview(true)}>
+                                <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>visibility</span>
+                                Vista Previa
+                            </button>
+                            {mode === 'edit' && initialData?.estado === 'publicado' ? (
+                                <button className="px-4 py-2 border border-charcoal text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>Despublicar a Borrador</button>
+                            ) : (
+                                <button className="px-4 py-2 border border-charcoal text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>Guardar Borrador</button>
+                            )}
                             <button className="px-4 py-2 bg-charcoal text-parchment text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => setShowPublishModal(true)}>
                                 {mode === 'create' ? 'Publicar' : 'Publicar Cambios'}
                             </button>
@@ -118,13 +179,39 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                     </div>
 
                     {/* Editor Area */}
-                    <div className="max-w-[800px] mx-auto py-16 px-8 editor-container">
+                    <div className="max-w-[800px] mx-auto py-16 px-8 editor-container [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-6 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2">
                         <div className="space-y-12">
                             {/* Category & Title */}
                             <div className="space-y-6 flex flex-col">
-                                <input className="w-full border-none bg-transparent font-sans text-xs text-gold tracking-[0.2em] uppercase focus:ring-0 placeholder:text-charcoal/30 outline-none" placeholder="CATEGORÍA (E.G. FILOSOFÍA, POLÍTICA)" type="text"/>
+                                <div>
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        {tematicas.map(t => (
+                                            <span key={t} className="flex items-center gap-1 px-3 py-1 bg-lines/30 text-charcoal text-[10px] uppercase tracking-[0.15em] rounded-sm group cursor-pointer hover:bg-red-500/10 hover:text-red-700 transition-colors" onClick={() => handleRemoveTematica(t)} title="Eliminar temática">
+                                                {t}
+                                                <span className="material-symbols-outlined text-[12px] opacity-50 group-hover:opacity-100" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
+                                            </span>
+                                        ))}
+                                        <input 
+                                            className="flex-grow min-w-[200px] border-none bg-transparent font-sans text-xs text-gold tracking-[0.2em] uppercase focus:ring-0 placeholder:text-charcoal/30 outline-none p-1" 
+                                            placeholder={tematicas.length === 0 ? "AÑADE TEMÁTICAS (ENTER PARA GUARDAR)" : "AÑADIR OTRA..."} 
+                                            type="text" 
+                                            value={tematicaInput} 
+                                            onChange={(e) => setTematicaInput(e.target.value)} 
+                                            onKeyDown={handleKeyDownTematica}
+                                            onBlur={() => { if (tematicaInput) handleAddTematica(tematicaInput); }}
+                                        />
+                                    </div>
+                                    <div className="flex flex-wrap gap-3 items-center">
+                                        <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50">Sugerencias:</span>
+                                        {TEMATICAS_SUGERIDAS.filter(t => !tematicas.includes(t)).map(t => (
+                                            <button key={t} onClick={() => handleAddTematica(t)} className="text-[10px] font-sans uppercase tracking-widest text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
+                                                +{t}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                                 <textarea className="w-full border-none bg-transparent font-serif text-4xl text-charcoal focus:ring-0 placeholder:text-charcoal/30 resize-none overflow-hidden outline-none" onInput={(e) => { handleInput(e); setTitulo((e.target as HTMLTextAreaElement).value); }} placeholder="El título de tu investigación..." value={titulo} rows={1}></textarea>
-                                <textarea className="w-full border-none bg-transparent font-serif text-xl text-charcoal/60 italic focus:ring-0 placeholder:text-charcoal/30 resize-none overflow-hidden outline-none" onInput={handleInput} placeholder="Un subtítulo o breve resumen que invite a la reflexión profunda..." rows={1}></textarea>
+                                <textarea className="w-full border-none bg-transparent font-serif text-xl text-charcoal/60 italic focus:ring-0 placeholder:text-charcoal/30 resize-none overflow-hidden outline-none" onInput={(e) => { handleInput(e); setSubtitulo((e.target as HTMLTextAreaElement).value); }} placeholder="Un subtítulo o breve resumen que invite a la reflexión profunda..." value={subtitulo} rows={1}></textarea>
                             </div>
                             <div className="h-[1px] w-12 bg-gold opacity-30"></div>
                             {/* Body Content */}
@@ -135,63 +222,81 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                     </div>
                 </div>
 
-                {/* Right Settings Sidebar */}
-                <aside className="hidden xl:flex flex-col w-80 h-full border-l border-lines bg-surface flex-shrink-0 overflow-y-auto p-8">
-                    <h3 className="font-sans text-xs uppercase tracking-widest text-charcoal mb-8 pb-4 border-b border-lines">
-                        {mode === 'create' ? 'Ajustes de Publicación' : 'Ajustes de Edición'}
-                    </h3>
-                    <div className="space-y-8">
-                        {/* Cover Image */}
-                        <div className="space-y-4">
-                            <label className="font-sans text-[10px] text-charcoal/60 uppercase tracking-wider">Imagen de Portada</label>
-                            <div className="relative aspect-video bg-lines/30 border border-dashed border-lines hover:bg-lines/50 transition-colors cursor-pointer flex flex-col items-center justify-center group overflow-hidden" onClick={handleChangeCoverImage}>
-                                <NextImage className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="Cover" src={coverImageUrl || DEFAULT_COVER_URL} fill/>
-                                <div className="relative z-10 flex flex-col items-center bg-surface/80 p-2 rounded hover:bg-surface transition-colors">
-                                    <span className="material-symbols-outlined text-charcoal mb-2" style={{ fontFamily: 'Material Symbols Outlined' }}>add_a_photo</span>
-                                    <span className="font-sans text-[10px] text-charcoal uppercase tracking-widest">Cambiar imagen</span>
+            </div>
+            
+            {/* Preview Modal */}
+            {showPreview && (
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-parchment">
+                    {/* Preview TopBar */}
+                    <div className="sticky top-0 z-50 border-b border-lines bg-parchment/95 backdrop-blur-sm px-8 py-4 flex items-center justify-between">
+                        <span className="font-sans text-[10px] text-gold uppercase tracking-[0.2em]">Vista Previa de Publicación</span>
+                        <button className="flex items-center gap-2 px-4 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer" onClick={() => setShowPreview(false)}>
+                            <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
+                            Cerrar Vista Previa
+                        </button>
+                    </div>
+
+                    {/* Preview Content Simulating Article View */}
+                    <div className="w-full pb-24">
+                        <header className="w-full max-w-3xl px-5 md:px-0 pt-20 pb-12 mx-auto text-center">
+                            <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">Ensayo</span>
+                            <h1 className="font-serif text-4xl md:text-6xl text-charcoal mb-6 max-w-4xl mx-auto leading-tight">
+                                {titulo || 'Sin Título'}
+                            </h1>
+                            {subtitulo && (
+                                <p className="font-serif text-xl md:text-2xl text-charcoal/60 italic max-w-3xl mx-auto mb-6">
+                                    {subtitulo}
+                                </p>
+                            )}
+                            {tematicas.length > 0 && (
+                                <div className="flex flex-wrap justify-center gap-3 mt-6">
+                                    {tematicas.map((t: string) => (
+                                        <span key={t} className="px-4 py-1.5 border border-lines text-charcoal text-[10px] uppercase tracking-[0.2em]">{t}</span>
+                                    ))}
                                 </div>
+                            )}
+                            <div className="flex items-center justify-center gap-4 text-sm font-semibold text-charcoal/70 mt-10">
+                                <span className="text-charcoal border-b border-lines pb-1 uppercase tracking-widest">
+                                    {authorProfile?.nombre || 'Autor del Artículo'}
+                                </span>
+                                <span className="font-serif text-lines">—</span>
+                                <time className="uppercase tracking-widest">
+                                    {new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                </time>
                             </div>
-                        </div>
-                        {/* Tags (Only in create for now to match original UI, or both) */}
-                        {mode === 'create' && (
-                            <div className="space-y-4">
-                                <label className="font-sans text-[10px] text-charcoal/60 uppercase tracking-wider">Etiquetas</label>
-                                <div className="flex flex-wrap gap-2">
-                                    <span className="px-3 py-1 bg-parchment border border-lines text-[10px] font-sans uppercase tracking-widest flex items-center gap-2 text-charcoal">
-                                        Metafísica <button className="material-symbols-outlined text-[14px] cursor-pointer" style={{ fontFamily: 'Material Symbols Outlined' }}>close</button>
-                                    </span>
-                                    <span className="px-3 py-1 bg-parchment border border-lines text-[10px] font-sans uppercase tracking-widest flex items-center gap-2 text-charcoal">
-                                        Ética <button className="material-symbols-outlined text-[14px] cursor-pointer" style={{ fontFamily: 'Material Symbols Outlined' }}>close</button>
-                                    </span>
-                                    <button className="px-3 py-1 border border-dashed border-lines text-[10px] font-sans uppercase tracking-widest hover:bg-parchment transition-colors text-charcoal cursor-pointer">+ Añadir</button>
-                                </div>
+                        </header>
+
+                        {coverImageUrl && (
+                            <div className="w-full h-[50vh] min-h-[350px] mb-16 border-y border-lines bg-lines/30 relative">
+                                <NextImage className="object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Vista Previa Portada" src={coverImageUrl || DEFAULT_COVER_URL} fill priority />
                             </div>
                         )}
-                        {/* Visiblity */}
-                        <div className="space-y-4">
-                            <label className="font-sans text-[10px] text-charcoal/60 uppercase tracking-wider">
-                                {mode === 'create' ? 'Visibilidad' : 'Estado de Publicación'}
-                            </label>
-                            {mode === 'create' ? (
-                                <select className="w-full bg-transparent border-b border-lines focus:border-charcoal focus:ring-0 font-sans text-sm py-2 px-0 text-charcoal outline-none">
-                                    <option>Público</option>
-                                    <option>Sólo usuarios registrados</option>
-                                    <option>Borrador privado</option>
-                                </select>
-                            ) : (
-                                <select 
-                                    className="w-full bg-transparent border-b border-lines focus:border-charcoal focus:ring-0 font-sans text-sm py-2 px-0 text-charcoal outline-none"
-                                    value={initialData?.estado || 'publicado'}
-                                    disabled
-                                >
-                                    <option value="publicado">Público (Publicado)</option>
-                                    <option value="borrador">Borrador privado</option>
-                                </select>
-                            )}
-                        </div>
+
+                        <article className="w-full max-w-2xl px-5 md:px-0 mx-auto font-sans text-xl text-charcoal leading-relaxed flex flex-col gap-8 whitespace-pre-wrap">
+                            <div 
+                                className="flex flex-col gap-8 [&>p:first-of-type]:first-letter-drop [&_img]:w-full [&_img]:my-8 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-8"
+                                dangerouslySetInnerHTML={{ 
+                                    __html: sanitizeHtml(editor?.getHTML() || '', { 
+                                        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2']) 
+                                    }) 
+                                }}
+                            />
+
+                            <div className="mt-20 pt-8 border-t border-lines flex items-start gap-6">
+                                <div className="w-12 h-12 rounded-full overflow-hidden border border-lines relative shrink-0">
+                                    <NextImage className="object-cover" alt="Avatar del Autor" src={authorProfile?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="48px"/>
+                                </div>
+                                <div>
+                                    <h3 className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Sobre el autor</h3>
+                                    <p className="font-sans text-lg text-charcoal/80">
+                                        {authorProfile?.nombre || 'Autor del Artículo'} es un columnista y colaborador activo.
+                                    </p>
+                                </div>
+                            </div>
+                        </article>
                     </div>
-                </aside>
-            </div>
+                </div>
+            )}
         </>
     );
 }

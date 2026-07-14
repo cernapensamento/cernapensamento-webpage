@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import SubscribeButton from '@/components/SubscribeButton';
 import { handleSignOut } from '@/app/actions';
-import { SITE_NAME } from '@/lib/constants';
+import { SITE_NAME, DEFAULT_AVATAR_URL } from '@/lib/constants';
+import Image from 'next/image';
 
 interface PublicNavBarProps {
   showBackLink?: boolean;
@@ -16,7 +17,7 @@ export default async function PublicNavBar({ showBackLink = false }: PublicNavBa
   if (user) {
     const { data: profile } = await supabase
       .from('perfiles')
-      .select('rol')
+      .select('rol, avatar_url')
       .eq('id', user.id)
       .single();
     userProfile = profile;
@@ -25,12 +26,21 @@ export default async function PublicNavBar({ showBackLink = false }: PublicNavBa
   return (
     <nav className="bg-parchment border-b border-lines w-full px-5 md:px-16 py-4 sticky top-0 z-50">
       <div className="flex justify-between items-center w-full max-w-[1120px] mx-auto relative h-[42px]">
-        <div className="hidden md:flex gap-6 items-center w-24">
+        <div className="flex gap-4 items-center w-24">
           {showBackLink && (
             <Link href="/" className="text-charcoal/50 hover:text-charcoal transition-colors font-serif text-2xl">
               ←
             </Link>
           )}
+          <Link href={user ? "/escritorio/perfil" : "/login"} className="w-10 h-10 rounded-full border border-lines overflow-hidden relative block shrink-0" title={user ? "Ver Perfil" : "Iniciar Sesión"}>
+            <Image 
+              className="object-cover grayscale" 
+              alt="User Avatar" 
+              src={userProfile?.avatar_url || DEFAULT_AVATAR_URL} 
+              fill 
+              sizes="40px" 
+            />
+          </Link>
         </div>
         <Link href="/" className="font-serif text-3xl md:text-4xl text-charcoal tracking-tighter absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {SITE_NAME}
@@ -47,9 +57,9 @@ export default async function PublicNavBar({ showBackLink = false }: PublicNavBa
                 </Link>
               )}
               {userProfile?.rol === 'usuario' && (
-                <span className="font-sans text-xs font-semibold text-charcoal/85 uppercase tracking-wider hidden md:inline">
+                <Link href="/escritorio/perfil" className="font-sans text-xs font-semibold text-charcoal/85 hover:text-gold transition-colors uppercase tracking-wider hidden md:inline-flex items-center">
                   Lector
-                </span>
+                </Link>
               )}
               <form action={handleSignOut}>
                 <button

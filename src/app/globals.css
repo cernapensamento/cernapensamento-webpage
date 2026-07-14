@@ -60,6 +60,14 @@ button {
   background: var(--color-gold); 
 }
 
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .first-letter-drop::first-letter {
   font-family: var(--font-serif);
   color: var(--color-gold);

@@ -5,31 +5,35 @@ import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 const columnists = [
   {
     name: 'Diego Araujo',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-    email: 'diego@eldialecto.com',
+    description: 'Cursa Economía en la Universidade de Santiago de Compostela. Escribe sobre las contradicciones del capitalismo tardío, la relación entre mercados y poder, y las formas de organización económica alternativas al modelo dominante. Le interesa particularmente la economía ecológica y cree que la economía no puede entenderse sin la historia.',
+    email: 'diegoaraujo@cerna.com',
     twitter: '@diego_araujo',
-    instagram: '@diego.araujo'
+    instagram: '@diego.araujo',
+    image: '/images/columnistas/diego.jpeg'
   },
   {
     name: 'Hector Gonzalez',
-    description: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.',
-    email: 'hector@eldialecto.com',
+    description: 'Estudia Física en la Universidade de Santiago de Compostela. Escribe sobre los límites del conocimiento científico, la naturaleza del tiempo y aquello que la física aún no puede explicar: la conciencia, el libre albedrío, el origen de las leyes naturales. Le apasiona la divulgación científica como puente entre la academia y la calle.',
+    email: 'hectorgonzalez@cerna.com',
     twitter: '@hector_gonz',
-    instagram: '@hector.g'
+    instagram: '@hector.g',
+    image: '/images/columnistas/hector.jpeg'
   },
   {
     name: 'Denis Fernandez',
-    description: 'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.',
-    email: 'denis@eldialecto.com',
+    description: 'Estudia Derecho en la Universidad Rey Juan Carlos de Madrid. Sus ensayos giran en torno a la tensión entre la ley escrita y la justicia material, los derechos humanos como conquista siempre reversible, y el papel del Estado frente a la desigualdad. Defiende que el derecho debe estar al servicio de los más débiles.',
+    email: 'denisfernandez@cerna.com',
     twitter: '@denis_fern',
-    instagram: '@denis.f'
+    instagram: '@denis.f',
+    image: '/images/columnistas/denis.jpeg'
   },
   {
     name: 'Anxo Perez',
-    description: 'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.',
-    email: 'anxo@eldialecto.com',
+    description: 'Estudia Humanidades en la Universidad de Navarra. Sus ensayos transitan entre la crítica literaria, la memoria histórica y la pregunta por el sentido en un mundo secularizado. Escribe sobre el silencio como forma de resistencia, la literatura del desarraigo y la poesía de la guerra civil española. Devoto lector de César Vallejo.',
+    email: 'anxoperez@cerna.com',
     twitter: '@anxo_perez',
-    instagram: '@anxo.p'
+    instagram: '@anxo.p',
+    image: '/images/columnistas/anxo.jpeg'
   }
 ];
 
@@ -47,7 +51,7 @@ export default function ColumnistsSection() {
             <div key={index} className="flex flex-col items-center group">
               <div className="relative w-40 h-40 mb-8 rounded-full overflow-hidden border border-lines grayscale group-hover:grayscale-0 transition-all duration-700 cursor-default">
                 <Image
-                  src={DEFAULT_AVATAR_URL}
+                  src={columnist.image}
                   alt={`Retrato de ${columnist.name}`}
                   fill
                   className="object-cover"

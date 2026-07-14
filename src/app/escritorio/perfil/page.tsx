@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/utils/auth';
 import ProfileForm from '@/components/ProfileForm';
+import PasswordForm from '@/components/PasswordForm';
 import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 
 export default async function PerfilPage() {
@@ -12,10 +13,10 @@ export default async function PerfilPage() {
   if (!user) redirect('/login');
 
   return (
-    <main className="px-5 md:px-16 pb-24 pt-16">
+    <main className="px-5 md:px-16 pb-24 pt-4">
 
           {/* Profile Section */}
-          <section className="py-24 px-5 md:px-16 w-full max-w-[1120px] mx-auto">
+          <section className="py-8 px-5 md:px-16 w-full max-w-[1120px] mx-auto">
             <h2 className="font-serif text-4xl text-charcoal mb-12">Perfil del Autor</h2>
             
             <div className="bg-surface border border-lines p-10 md:p-16 flex flex-col md:flex-row gap-12">
@@ -29,7 +30,9 @@ export default async function PerfilPage() {
                   {profile?.rol === 'admin' ? 'Administrador / Editor en Jefe' : profile?.rol === 'escritor' ? 'Escritor' : 'Lector'}
                 </p>
 
-                <div className="space-y-6">
+                <ProfileForm profile={profile} />
+
+                <div className="space-y-6 pt-8 border-t border-lines mt-8">
                   <div>
                     <span className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Correo Electrónico</span>
                     <span className="font-sans text-lg text-charcoal">{user.email}</span>
@@ -43,8 +46,11 @@ export default async function PerfilPage() {
                     <span className="font-sans text-base text-charcoal/80">{new Date(user.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                   </div>
                 </div>
-                
-                <ProfileForm profile={profile} />
+
+                <div className="pt-8 border-t border-lines mt-8">
+                  <h4 className="font-serif text-2xl text-charcoal mb-4">Seguridad</h4>
+                  <PasswordForm />
+                </div>
               </div>
             </div>
           </section>

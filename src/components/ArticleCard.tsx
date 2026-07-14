@@ -9,12 +9,14 @@ export default function ArticleCard({ articulo }: ArticleCardProps) {
   
   return (
     <Link href={`/articulo/${articulo.slug || articulo.id}`} className="flex flex-col group cursor-pointer h-full">
-      <span className="text-sm font-semibold text-gold uppercase tracking-widest mb-3">Ensayo Comunitario</span>
+      <span className="text-sm font-semibold text-gold uppercase tracking-widest mb-3">
+        {articulo.tematicas && articulo.tematicas.length > 0 ? articulo.tematicas.join(' · ') : 'Ensayo Comunitario'}
+      </span>
       <h3 className="font-serif text-2xl text-charcoal mb-3 group-hover:text-gold transition-colors duration-300 line-clamp-3">
         {articulo.titulo}
       </h3>
       <p className="font-sans text-lg text-charcoal/80 mb-4 line-clamp-3">
-        {articulo.contenido.replace(/<[^>]*>/g, '')}
+        {articulo.subtitulo || (articulo.contenido.replace(/<[^>]*>/g, '').substring(0, 150) + '...')}
       </p>
       <div className="mt-auto border-t border-lines pt-3 w-1/3">
         <span className="text-xs font-semibold text-charcoal uppercase tracking-widest">

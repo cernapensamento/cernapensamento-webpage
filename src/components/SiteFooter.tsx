@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import FooterSubscribeForm from '@/components/FooterSubscribeForm';
 import { SITE_NAME } from '@/lib/constants';
 
 interface SiteFooterProps {
@@ -49,18 +48,9 @@ export default function SiteFooter({ variant = 'full' }: SiteFooterProps) {
           <p className="text-sm font-sans text-charcoal/80 max-w-xs">
             Discurso intelectual y filosófico.
           </p>
+          <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2" href="/bases-editoriales">Bases Editoriales</Link>
         </div>
-        <div className="flex flex-col gap-4">
-          <h4 className="text-xs font-semibold text-charcoal uppercase tracking-widest">Navegación</h4>
-          <nav className="flex flex-col gap-2">
-            <Link className="font-sans text-base text-charcoal/80 hover:text-gold transition-colors duration-200" href="/login">Autores</Link>
-          </nav>
-        </div>
-        <div className="flex flex-col gap-4 max-w-xs">
-          <h4 className="text-xs font-semibold text-charcoal uppercase tracking-widest">Suscripción</h4>
-          <p className="font-sans text-base text-charcoal/80">Recibe ensayos semanales en tu correo.</p>
-          <FooterSubscribeForm />
-        </div>
+
       </div>
       <div className="w-full max-w-[1120px] mx-auto px-5 md:px-16 py-6 border-t border-lines">
         <p className="text-xs font-semibold text-charcoal/60 text-center md:text-left">

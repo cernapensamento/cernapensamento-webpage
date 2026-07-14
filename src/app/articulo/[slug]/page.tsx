@@ -46,6 +46,18 @@ export default async function ArticuloPage({ params }: Props) {
           <h1 className="font-serif text-4xl md:text-6xl text-charcoal mb-6 max-w-4xl mx-auto leading-tight">
             {articulo.titulo}
           </h1>
+          {articulo.subtitulo && (
+              <p className="font-serif text-xl md:text-2xl text-charcoal/60 italic max-w-3xl mx-auto mb-6">
+                {articulo.subtitulo}
+              </p>
+          )}
+          {articulo.tematicas && articulo.tematicas.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-3 mt-6">
+              {articulo.tematicas.map((t: string) => (
+                <span key={t} className="px-4 py-1.5 border border-lines text-charcoal text-[10px] uppercase tracking-[0.2em]">{t}</span>
+              ))}
+            </div>
+          )}
           <div className="flex items-center justify-center gap-4 text-sm font-semibold text-charcoal/70 mt-10">
             <span className="text-charcoal border-b border-lines pb-1 uppercase tracking-widest">
               {articulo.perfiles?.nombre || 'Autor Desconocido'}
@@ -63,7 +75,7 @@ export default async function ArticuloPage({ params }: Props) {
 
         <article className="w-full max-w-2xl px-5 md:px-0 mx-auto font-sans text-xl text-charcoal leading-relaxed flex flex-col gap-8 whitespace-pre-wrap">
           <div 
-            className="flex flex-col gap-8 [&>p:first-of-type]:first-letter-drop [&_img]:w-full [&_img]:my-8 [&_ul]:list-disc [&_ul]:ml-8"
+            className="flex flex-col gap-8 [&>p:first-of-type]:first-letter-drop [&_img]:w-full [&_img]:my-8 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-8"
             dangerouslySetInnerHTML={{ 
               __html: sanitizeHtml(articulo.contenido, { 
                 allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2']) 

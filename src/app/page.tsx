@@ -31,7 +31,7 @@ export default async function HomePage() {
     .order('creado_en', { ascending: false });
 
   const featuredArticle = articulos && articulos.length > 0 ? articulos[0] : null;
-  const otherArticles = articulos && articulos.length > 1 ? articulos.slice(1) : [];
+  const otherArticles = articulos && articulos.length > 1 ? articulos.slice(1, 7) : [];
 
   return (
     <>
@@ -60,23 +60,7 @@ export default async function HomePage() {
 
       <SiteFooter variant="full" />
 
-      {/* Floating Action Button for Writers */}
-      {(userProfile?.rol === 'escritor' || userProfile?.rol === 'admin') && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <Link
-            href="/escritorio"
-            className="flex items-center gap-2 bg-charcoal text-parchment hover:bg-gold hover:text-parchment px-4 py-3 shadow-lg transition-all duration-300 group border border-charcoal/10"
-            title="Ir a tu Escritorio"
-          >
-            <span className="font-serif text-lg leading-none group-hover:scale-110 transition-transform">
-              §
-            </span>
-            <span className="font-sans text-xs font-semibold uppercase tracking-widest hidden md:inline">
-              Escritorio
-            </span>
-          </Link>
-        </div>
-      )}
+
     </>
   );
 }

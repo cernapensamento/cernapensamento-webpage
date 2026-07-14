@@ -24,7 +24,7 @@ export default async function EscritorioLayout({
       {/* Main Content Area */}
       <div className="flex-grow overflow-y-auto bg-parchment md:ml-64 flex flex-col relative h-screen">
         {/* TopNavBar Shell */}
-        <DashboardTopBar avatarUrl={profile?.avatar_url} />
+        <DashboardTopBar avatarUrl={profile?.avatar_url} role={profile?.rol} />
 
         {/* Child Pages (Dashboard, Editor, Profile) */}
         {children}

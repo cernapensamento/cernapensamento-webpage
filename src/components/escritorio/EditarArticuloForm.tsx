@@ -16,8 +16,10 @@ export default function EditarArticuloForm({ articulo }: Props) {
 
     const initialData: ArticleData = {
         titulo: articulo.titulo || '',
+        subtitulo: articulo.subtitulo || '',
         contenido: articulo.contenido || '',
         imagen_url: articulo.imagen_url || '',
+        tematicas: articulo.tematicas || [],
         estado: articulo.estado || 'publicado'
     };
 
@@ -36,8 +38,10 @@ export default function EditarArticuloForm({ articulo }: Props) {
                 .from('articulos')
                 .update({
                     titulo: finalTitle,
+                    subtitulo: data.subtitulo || null,
                     contenido: data.contenido,
                     imagen_url: data.imagen_url || null,
+                    tematicas: data.tematicas || [],
                     estado: isDraft ? 'borrador' : 'publicado',
                     actualizado_en: new Date().toISOString()
                 })
