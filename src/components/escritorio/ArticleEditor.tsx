@@ -6,6 +6,7 @@ import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL } from '@/lib/constants';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
+import Youtube from '@tiptap/extension-youtube';
 import { createClient } from '@/utils/supabase/client';
 import sanitizeHtml from 'sanitize-html';
 
@@ -74,7 +75,11 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
     };
 
     const editor = useEditor({
-        extensions: [StarterKit, Image],
+        extensions: [
+            StarterKit, 
+            Image, 
+            Youtube.configure({ inline: false, width: 840, height: 472.5 })
+        ],
         content: initialData?.contenido || (mode === 'create' ? '<p>La naturaleza del pensamiento contemporáneo exige una pausa deliberada...</p>' : ''),
         editorProps: {
             attributes: {
@@ -106,6 +111,15 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
         const url = window.prompt('URL de la imagen:');
         if (url && editor) {
             editor.chain().focus().setImage({ src: url }).run();
+        }
+    };
+
+    const insertYoutube = () => {
+        const url = window.prompt('URL del vídeo de YouTube:');
+        if (url && editor) {
+            editor.commands.setYoutubeVideo({
+                src: url,
+            });
         }
     };
 
@@ -155,6 +169,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                             <button className={`w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('blockquote') ? 'bg-lines/30' : ''}`} title="Cita" onClick={() => editor?.chain().focus().toggleBlockquote().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_quote</span></button>
                             <div className="h-6 w-[1px] bg-lines mx-2"></div>
                             <button className="w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Imagen" onClick={insertImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>image</span></button>
+                            <button className="w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Vídeo de YouTube" onClick={insertYoutube}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>smart_display</span></button>
                             <button className={`w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bulletList') ? 'bg-lines/30' : ''}`} title="Lista" onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_bulleted</span></button>
                         </div>
                         <div className="flex items-center gap-4">
@@ -179,7 +194,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                     </div>
 
                     {/* Editor Area */}
-                    <div className="max-w-[800px] mx-auto py-16 px-8 editor-container [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-6 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2">
+                    <div className="max-w-[800px] mx-auto py-16 px-8 editor-container [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-6 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:my-8 [&_div[data-youtube-video]]:w-full [&_div[data-youtube-video]]:flex [&_div[data-youtube-video]]:justify-center">
                         <div className="space-y-12">
                             {/* Category & Title */}
                             <div className="space-y-6 flex flex-col">
@@ -274,10 +289,16 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
 
                         <article className="w-full max-w-2xl px-5 md:px-0 mx-auto font-sans text-xl text-charcoal leading-relaxed flex flex-col gap-8 whitespace-pre-wrap">
                             <div 
-                                className="flex flex-col gap-8 [&>p:first-of-type]:first-letter-drop [&_img]:w-full [&_img]:my-8 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-8"
+                                className="flex flex-col gap-8 [&>p:first-of-type]:first-letter-drop [&_img]:w-full [&_img]:my-8 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-8 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:my-8 [&_div[data-youtube-video]]:w-full"
                                 dangerouslySetInnerHTML={{ 
                                     __html: sanitizeHtml(editor?.getHTML() || '', { 
-                                        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2']) 
+                                        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'iframe', 'div']),
+                                        allowedAttributes: {
+                                            ...sanitizeHtml.defaults.allowedAttributes,
+                                            iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'title'],
+                                            div: ['data-youtube-video']
+                                        },
+                                        allowedIframeHostnames: ['www.youtube.com', 'www.youtube-nocookie.com', 'youtu.be']
                                     }) 
                                 }}
                             />

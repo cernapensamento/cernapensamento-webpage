@@ -32,17 +32,6 @@ export default function MobileBottomNav() {
       </Link>
       <Link
         className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-300 ${
-          pathname === '/escritorio/estadisticas'
-            ? 'text-gold border-t-2 border-gold bg-parchment/30'
-            : 'text-charcoal/50 hover:text-charcoal hover:bg-lines/10 border-t-2 border-transparent'
-        }`}
-        href="#"
-      >
-        <span className="material-symbols-outlined text-[20px]" data-icon="query_stats" style={{ fontFamily: 'Material Symbols Outlined' }}>query_stats</span>
-        <span className={`text-[9px] uppercase tracking-wider ${pathname === '/escritorio/estadisticas' ? 'font-semibold' : ''}`}>Stats</span>
-      </Link>
-      <Link
-        className={`flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-300 ${
           pathname === '/escritorio/perfil'
             ? 'text-gold border-t-2 border-gold bg-parchment/30'
             : 'text-charcoal/50 hover:text-charcoal hover:bg-lines/10 border-t-2 border-transparent'

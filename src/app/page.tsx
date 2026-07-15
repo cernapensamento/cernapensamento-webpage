@@ -6,7 +6,8 @@ import SiteFooter from '@/components/SiteFooter';
 import FeaturedArticleHero from '@/components/FeaturedArticleHero';
 import ArticleCard from '@/components/ArticleCard';
 import ColumnistsSection from '@/components/ColumnistsSection';
-
+import AboutUsSection from '@/components/AboutUsSection';
+import ThemesSection from '@/components/ThemesSection';
 export const revalidate = 60; // Revalidate every minute
 
 export default async function HomePage() {
@@ -56,6 +57,8 @@ export default async function HomePage() {
         </section>
       </main>
       
+      <AboutUsSection />
+      <ThemesSection />
       <ColumnistsSection />
 
       <SiteFooter variant="full" />

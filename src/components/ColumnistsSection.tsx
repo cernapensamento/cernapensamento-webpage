@@ -1,9 +1,11 @@
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 
 const columnists = [
   {
+    id: 'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
     name: 'Diego Araujo',
     description: 'Cursa Economía en la Universidade de Santiago de Compostela. Escribe sobre las contradicciones del capitalismo tardío, la relación entre mercados y poder, y las formas de organización económica alternativas al modelo dominante. Le interesa particularmente la economía ecológica y cree que la economía no puede entenderse sin la historia.',
     email: 'diegoaraujo@cerna.com',
@@ -12,6 +14,7 @@ const columnists = [
     image: '/images/columnistas/diego.jpeg'
   },
   {
+    id: 'd2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2',
     name: 'Hector Gonzalez',
     description: 'Estudia Física en la Universidade de Santiago de Compostela. Escribe sobre los límites del conocimiento científico, la naturaleza del tiempo y aquello que la física aún no puede explicar: la conciencia, el libre albedrío, el origen de las leyes naturales. Le apasiona la divulgación científica como puente entre la academia y la calle.',
     email: 'hectorgonzalez@cerna.com',
@@ -20,6 +23,7 @@ const columnists = [
     image: '/images/columnistas/hector.jpeg'
   },
   {
+    id: 'd3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3',
     name: 'Denis Fernandez',
     description: 'Estudia Derecho en la Universidad Rey Juan Carlos de Madrid. Sus ensayos giran en torno a la tensión entre la ley escrita y la justicia material, los derechos humanos como conquista siempre reversible, y el papel del Estado frente a la desigualdad. Defiende que el derecho debe estar al servicio de los más débiles.',
     email: 'denisfernandez@cerna.com',
@@ -28,6 +32,7 @@ const columnists = [
     image: '/images/columnistas/denis.jpeg'
   },
   {
+    id: 'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4',
     name: 'Anxo Perez',
     description: 'Estudia Humanidades en la Universidad de Navarra. Sus ensayos transitan entre la crítica literaria, la memoria histórica y la pregunta por el sentido en un mundo secularizado. Escribe sobre el silencio como forma de resistencia, la literatura del desarraigo y la poesía de la guerra civil española. Devoto lector de César Vallejo.',
     email: 'anxoperez@cerna.com',
@@ -49,7 +54,7 @@ export default function ColumnistsSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
           {columnists.map((columnist, index) => (
             <div key={index} className="flex flex-col items-center group">
-              <div className="relative w-40 h-40 mb-8 rounded-full overflow-hidden border border-lines grayscale group-hover:grayscale-0 transition-all duration-700 cursor-default">
+              <Link href={`/autor/${columnist.id}`} className="relative w-40 h-40 mb-8 rounded-full overflow-hidden border border-lines grayscale group-hover:grayscale-0 transition-all duration-700 cursor-pointer block">
                 <Image
                   src={columnist.image}
                   alt={`Retrato de ${columnist.name}`}
@@ -57,7 +62,7 @@ export default function ColumnistsSection() {
                   className="object-cover"
                   sizes="160px"
                 />
-              </div>
+              </Link>
               
               <h3 className="font-serif text-2xl text-charcoal mb-4">{columnist.name}</h3>
               <div className="w-8 h-[1px] bg-gold mb-6 transition-all duration-500 group-hover:w-16"></div>
@@ -77,10 +82,12 @@ export default function ColumnistsSection() {
                 </a>
               </div>
 
-              {/* Description visible directly below social links */}
               <p className="font-sans text-sm text-charcoal/70 text-center leading-relaxed mt-6 max-w-[240px]">
                 {columnist.description}
               </p>
+              <Link href={`/autor/${columnist.id}`} className="mt-6 px-4 py-2 border border-charcoal/30 text-charcoal/60 hover:text-parchment hover:bg-charcoal hover:border-charcoal text-[10px] font-sans uppercase tracking-widest transition-all duration-300 cursor-pointer block text-center">
+                Artículos publicados
+              </Link>
             </div>
           ))}
         </div>

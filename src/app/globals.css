@@ -41,9 +41,18 @@ input, textarea {
   font-family: var(--font-sans);
 }
 
-button {
+button, 
+[role="button"], 
+input[type="submit"], 
+input[type="button"] {
   font-family: var(--font-sans);
   border-radius: 0 !important;
+  cursor: pointer !important;
+}
+
+button:disabled,
+input[type="submit"]:disabled {
+  cursor: not-allowed !important;
 }
 
 /* Para ocultar barras de desplazamiento indeseadas si hace falta */

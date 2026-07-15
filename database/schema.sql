@@ -5,9 +5,10 @@
 -- 1. Limpieza inicial (DROP)
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
-DROP TABLE IF EXISTS public.articulos;
-DROP TABLE IF EXISTS public.perfiles;
-DROP TABLE IF EXISTS public.suscriptores; -- Borrar si existe
+DROP TABLE IF EXISTS public.comentarios CASCADE;
+DROP TABLE IF EXISTS public.articulos CASCADE;
+DROP TABLE IF EXISTS public.perfiles CASCADE;
+DROP TABLE IF EXISTS public.suscriptores CASCADE;
 
 -- 2. Crear tabla de perfiles ligada a auth.users
 CREATE TABLE public.perfiles (
@@ -24,12 +25,24 @@ CREATE TABLE public.articulos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   slug TEXT UNIQUE,
   titulo TEXT NOT NULL,
+  subtitulo TEXT,
   contenido TEXT NOT NULL,
+  tematicas TEXT[] DEFAULT '{}',
   imagen_url TEXT,
   estado TEXT DEFAULT 'publicado' CHECK (estado IN ('borrador', 'publicado')),
   creado_en TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   autor_id UUID REFERENCES public.perfiles(id) ON DELETE CASCADE NOT NULL
+);
+
+-- 3.5 Crear tabla de comentarios
+CREATE TABLE public.comentarios (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  articulo_id UUID REFERENCES public.articulos(id) ON DELETE CASCADE NOT NULL,
+  autor_id UUID REFERENCES public.perfiles(id) ON DELETE CASCADE NOT NULL,
+  contenido TEXT NOT NULL,
+  creado_en TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- 4. Función automática para actualizar 'actualizado_en' en articulos
@@ -43,6 +56,11 @@ $$ language 'plpgsql';
 
 CREATE TRIGGER update_articulos_updated_at
 BEFORE UPDATE ON public.articulos
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_comentarios_updated_at
+BEFORE UPDATE ON public.comentarios
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
@@ -72,6 +90,7 @@ CREATE TRIGGER on_auth_user_created
 
 ALTER TABLE public.perfiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.articulos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.comentarios ENABLE ROW LEVEL SECURITY;
 
 -- PERFILES
 CREATE POLICY "Perfiles publicos para leer"
@@ -102,6 +121,24 @@ CREATE POLICY "Usuarios pueden actualizar sus propios artículos"
 CREATE POLICY "Usuarios pueden borrar sus propios artículos"
   ON public.articulos FOR DELETE
   USING (auth.uid() = autor_id AND (SELECT rol FROM public.perfiles WHERE id = auth.uid()) IN ('escritor', 'admin'));
+
+-- COMENTARIOS
+CREATE POLICY "Comentarios públicos para leer"
+  ON public.comentarios FOR SELECT
+  USING (true);
+
+CREATE POLICY "Usuarios autenticados pueden crear comentarios"
+  ON public.comentarios FOR INSERT
+  WITH CHECK (auth.uid() = autor_id);
+
+CREATE POLICY "Usuarios pueden actualizar sus propios comentarios"
+  ON public.comentarios FOR UPDATE
+  USING (auth.uid() = autor_id)
+  WITH CHECK (auth.uid() = autor_id);
+
+CREATE POLICY "Usuarios pueden borrar sus propios comentarios"
+  ON public.comentarios FOR DELETE
+  USING (auth.uid() = autor_id);
 
 -- ==========================================
 -- BUCKETS Y STORAGE

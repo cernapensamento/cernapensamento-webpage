@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { handleSignOut } from '@/app/actions';
 
 interface SideNavBarProps {
   role?: string;
@@ -71,10 +72,12 @@ export default function SideNavBar({ role }: SideNavBarProps) {
         </nav>
         <div className="mt-auto pt-8 border-t border-lines">
           {/* Removed Publicar ahora block */}
-          <Link className="flex items-center gap-4 py-3 px-4 text-charcoal/50 hover:text-charcoal transition-all duration-300 group rounded-none" href="#">
-            <span className="material-symbols-outlined text-[20px] text-charcoal/50 transition-all duration-300 group-hover:text-red-500 group-hover:translate-x-[-2px]" data-icon="logout">logout</span>
-            <span className="font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300 group-hover:text-red-500">Cerrar Sesión</span>
-          </Link>
+          <form action={handleSignOut}>
+            <button type="submit" className="flex items-center gap-4 py-3 px-4 text-charcoal/50 hover:text-charcoal transition-all duration-300 group rounded-none w-full cursor-pointer">
+              <span className="material-symbols-outlined text-[20px] text-charcoal/50 transition-all duration-300 group-hover:text-red-500 group-hover:translate-x-[-2px]" data-icon="logout">logout</span>
+              <span className="font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300 group-hover:text-red-500">Cerrar Sesión</span>
+            </button>
+          </form>
         </div>
       </div>
     </aside>

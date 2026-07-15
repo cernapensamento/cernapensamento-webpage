@@ -6,6 +6,7 @@ import sanitizeHtml from 'sanitize-html';
 import PublicNavBar from '@/components/PublicNavBar';
 import SiteFooter from '@/components/SiteFooter';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
+import CommentsSection from '@/components/CommentsSection';
 
 export const revalidate = 60;
 
@@ -21,7 +22,7 @@ export default async function ArticuloPage({ params }: Props) {
 
   const { data: articulo, error } = await supabase
     .from('articulos')
-    .select('*, perfiles(nombre)')
+    .select('*, perfiles(nombre, avatar_url)')
     .eq(isUUID ? 'id' : 'slug', slug)
     .single();
 
@@ -75,25 +76,35 @@ export default async function ArticuloPage({ params }: Props) {
 
         <article className="w-full max-w-2xl px-5 md:px-0 mx-auto font-sans text-xl text-charcoal leading-relaxed flex flex-col gap-8 whitespace-pre-wrap">
           <div 
-            className="flex flex-col gap-8 [&>p:first-of-type]:first-letter-drop [&_img]:w-full [&_img]:my-8 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-8"
+            className="flex flex-col gap-8 [&>p:first-of-type]:first-letter-drop [&_img]:w-full [&_img]:my-8 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-8 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:my-8 [&_div[data-youtube-video]]:w-full"
             dangerouslySetInnerHTML={{ 
               __html: sanitizeHtml(articulo.contenido, { 
-                allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2']) 
+                allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'iframe', 'div']),
+                allowedAttributes: {
+                    ...sanitizeHtml.defaults.allowedAttributes,
+                    iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'title'],
+                    div: ['data-youtube-video']
+                },
+                allowedIframeHostnames: ['www.youtube.com', 'www.youtube-nocookie.com', 'youtu.be']
               }) 
             }}
           />
 
           <div className="mt-20 pt-8 border-t border-lines flex items-start gap-6">
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-lines relative">
-              <Image className="object-cover" alt={articulo.perfiles?.nombre || 'Autor'} src={DEFAULT_AVATAR_URL} fill sizes="32px"/>
-            </div>
+            <Link href={`/autor/${articulo.autor_id}`} className="w-8 h-8 rounded-full overflow-hidden border border-lines relative block cursor-pointer shrink-0">
+              <Image className="object-cover hover:opacity-80 transition-opacity" alt={articulo.perfiles?.nombre || 'Autor'} src={articulo.perfiles?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="32px"/>
+            </Link>
             <div>
               <h3 className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Sobre el autor</h3>
               <p className="font-sans text-lg text-charcoal/80">
-                {articulo.perfiles?.nombre || 'Autor Desconocido'} es un contribuyente de {SITE_NAME}.
+                <Link href={`/autor/${articulo.autor_id}`} className="hover:text-gold transition-colors font-serif font-bold text-charcoal cursor-pointer">
+                  {articulo.perfiles?.nombre || 'Autor Desconocido'}
+                </Link> es un contribuyente de {SITE_NAME}.
               </p>
             </div>
           </div>
+
+          <CommentsSection articuloId={articulo.id} />
         </article>
       </main>
 
