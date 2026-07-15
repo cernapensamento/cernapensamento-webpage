@@ -162,33 +162,39 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
             <div className="flex flex-grow overflow-hidden relative">
                 <div className="flex-grow overflow-y-auto">
                     {/* Floating Toolbar */}
-                    <div className="sticky top-0 z-30 border-b border-lines bg-parchment/80 backdrop-blur-sm px-8 py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-charcoal/80">
-                            <button className={`w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bold') ? 'bg-lines/30' : ''}`} title="Negrita" onClick={() => editor?.chain().focus().toggleBold().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_bold</span></button>
-                            <button className={`w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('italic') ? 'bg-lines/30' : ''}`} title="Cursiva" onClick={() => editor?.chain().focus().toggleItalic().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_italic</span></button>
-                            <button className={`w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('blockquote') ? 'bg-lines/30' : ''}`} title="Cita" onClick={() => editor?.chain().focus().toggleBlockquote().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_quote</span></button>
-                            <div className="h-6 w-[1px] bg-lines mx-2"></div>
-                            <button className="w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Imagen" onClick={insertImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>image</span></button>
-                            <button className="w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Vídeo de YouTube" onClick={insertYoutube}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>smart_display</span></button>
-                            <button className={`w-10 h-10 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bulletList') ? 'bg-lines/30' : ''}`} title="Lista" onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_bulleted</span></button>
+                    <div className="sticky top-0 z-30 border-b border-lines bg-parchment/80 backdrop-blur-sm px-4 md:px-8 py-3 flex flex-col xl:flex-row items-center justify-between gap-3 xl:gap-0">
+                        <div className="flex items-center gap-1 text-charcoal/80 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
+                            <button aria-label="Negrita" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bold') ? 'bg-lines/30' : ''}`} title="Negrita" onClick={() => editor?.chain().focus().toggleBold().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_bold</span></button>
+                            <button aria-label="Cursiva" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('italic') ? 'bg-lines/30' : ''}`} title="Cursiva" onClick={() => editor?.chain().focus().toggleItalic().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_italic</span></button>
+                            <button aria-label="Cita" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('blockquote') ? 'bg-lines/30' : ''}`} title="Cita" onClick={() => editor?.chain().focus().toggleBlockquote().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_quote</span></button>
+                            <div className="h-6 w-[1px] shrink-0 bg-lines mx-2"></div>
+                            <button aria-label="Insertar Imagen" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Imagen" onClick={insertImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>image</span></button>
+                            <button aria-label="Insertar Vídeo" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Vídeo de YouTube" onClick={insertYoutube}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>smart_display</span></button>
+                            <button aria-label="Lista con viñetas" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bulletList') ? 'bg-lines/30' : ''}`} title="Lista" onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_bulleted</span></button>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50 italic hidden sm:block"></span>
-                            <button className="px-4 py-2 border border-charcoal/30 text-charcoal/70 text-xs font-sans uppercase tracking-widest hover:border-charcoal hover:text-charcoal transition-all cursor-pointer flex items-center gap-1.5" onClick={handleChangeCoverImage}>
+                        <div className="flex items-center gap-2 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
+                            <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50 italic hidden xl:block shrink-0"></span>
+                            <button aria-label="Cambiar Imagen de Portada" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal/30 text-charcoal/70 text-[10px] md:text-xs font-sans uppercase tracking-widest hover:border-charcoal hover:text-charcoal transition-all cursor-pointer flex items-center gap-1.5" onClick={handleChangeCoverImage}>
                                 <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>add_a_photo</span>
-                                Imagen de Portada
+                                <span className="hidden sm:inline">Portada</span>
                             </button>
-                            <button className="px-4 py-2 border border-charcoal/30 text-charcoal/70 text-xs font-sans uppercase tracking-widest hover:border-charcoal hover:text-charcoal transition-all cursor-pointer flex items-center gap-1.5" onClick={() => setShowPreview(true)}>
+                            <button aria-label="Vista Previa" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal/30 text-charcoal/70 text-[10px] md:text-xs font-sans uppercase tracking-widest hover:border-charcoal hover:text-charcoal transition-all cursor-pointer flex items-center gap-1.5" onClick={() => setShowPreview(true)}>
                                 <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>visibility</span>
-                                Vista Previa
+                                <span className="hidden sm:inline">Previa</span>
                             </button>
                             {mode === 'edit' && initialData?.estado === 'publicado' ? (
-                                <button className="px-4 py-2 border border-charcoal text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>Despublicar a Borrador</button>
+                                <button className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>
+                                    <span className="hidden sm:inline">Despublicar</span>
+                                    <span className="sm:hidden">Despublicar</span>
+                                </button>
                             ) : (
-                                <button className="px-4 py-2 border border-charcoal text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>Guardar Borrador</button>
+                                <button className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>
+                                    <span className="hidden sm:inline">Guardar Borrador</span>
+                                    <span className="sm:hidden">Borrador</span>
+                                </button>
                             )}
-                            <button className="px-4 py-2 bg-charcoal text-parchment text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => setShowPublishModal(true)}>
-                                {mode === 'create' ? 'Publicar' : 'Publicar Cambios'}
+                            <button className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => setShowPublishModal(true)}>
+                                {mode === 'create' ? 'Publicar' : 'Publicar'}
                             </button>
                         </div>
                     </div>
@@ -283,7 +289,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
 
                         {coverImageUrl && (
                             <div className="w-full h-[50vh] min-h-[350px] mb-16 border-y border-lines bg-lines/30 relative">
-                                <NextImage className="object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Vista Previa Portada" src={coverImageUrl || DEFAULT_COVER_URL} fill priority />
+                                <NextImage className="object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Vista Previa Portada" src={coverImageUrl || DEFAULT_COVER_URL} fill priority sizes="100vw" />
                             </div>
                         )}
 

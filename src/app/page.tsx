@@ -8,26 +8,16 @@ import ArticleCard from '@/components/ArticleCard';
 import ColumnistsSection from '@/components/ColumnistsSection';
 import AboutUsSection from '@/components/AboutUsSection';
 import ThemesSection from '@/components/ThemesSection';
-export const revalidate = 60; // Revalidate every minute
+import ContactSection from '@/components/ContactSection';
+
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  let userProfile = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from('perfiles')
-      .select('rol, nombre')
-      .eq('id', user.id)
-      .single();
-    userProfile = profile;
-  }
 
   // Obtener artículos con el nombre del autor
   const { data: articulos, error } = await supabase
     .from('articulos')
-    .select('*, perfiles(nombre)')
+    .select('id, titulo, subtitulo, slug, imagen_url, contenido, estado, creado_en, perfiles(nombre)')
     .eq('estado', 'publicado')
     .order('creado_en', { ascending: false });
 
@@ -60,6 +50,7 @@ export default async function HomePage() {
       <AboutUsSection />
       <ThemesSection />
       <ColumnistsSection />
+      <ContactSection />
 
       <SiteFooter variant="full" />
 

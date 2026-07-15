@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import CommentForm from './CommentForm';
+import Image from 'next/image';
 
 export default async function CommentsSection({ articuloId }: { articuloId: string }) {
   const supabase = await createClient();
@@ -19,9 +20,20 @@ export default async function CommentsSection({ articuloId }: { articuloId: stri
         {comentarios?.map((comentario) => (
           <div key={comentario.id} className="flex gap-4">
             <div className="w-10 h-10 rounded-full bg-lines flex-shrink-0 border border-charcoal/10 overflow-hidden relative">
-               <div className="w-full h-full flex items-center justify-center font-sans text-xs uppercase tracking-widest text-charcoal/60 bg-surface">
+              {comentario.perfiles?.avatar_url ? (
+                <Image 
+                  src={comentario.perfiles.avatar_url} 
+                  alt={comentario.perfiles?.nombre || 'Usuario'} 
+                  fill
+                  sizes="40px"
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center font-sans text-xs uppercase tracking-widest text-charcoal/60 bg-surface">
                   {comentario.perfiles?.nombre?.substring(0, 2) || 'US'}
-               </div>
+                </div>
+              )}
             </div>
             <div className="flex flex-col flex-grow">
               <div className="flex items-baseline gap-3 mb-2">

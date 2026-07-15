@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
@@ -16,6 +16,15 @@ export default function LoginPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('error') === 'invalid_token') {
+        setError('El enlace de confirmación es inválido o ha expirado. Si ya te registraste, intenta iniciar sesión de nuevo para recibir otro enlace.');
+      }
+    }
+  }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,11 +74,14 @@ export default function LoginPage() {
         });
         if (error) throw error;
         setError(null);
-        setSuccessMessage('Registro exitoso. Inicia sesión para continuar.');
+        setSuccessMessage('Registro exitoso. Por favor, revisa tu correo electrónico para confirmar tu cuenta.');
         setIsLogin(true);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Ha ocurrido un error durante la autenticación.';
+      let message = err instanceof Error ? err.message : 'Ha ocurrido un error durante la autenticación.';
+      if (message.toLowerCase().includes('email not confirmed')) {
+        message = 'Debes confirmar tu correo electrónico antes de poder iniciar sesión. Revisa tu bandeja de entrada.';
+      }
       setError(message);
     } finally {
       setLoading(false);

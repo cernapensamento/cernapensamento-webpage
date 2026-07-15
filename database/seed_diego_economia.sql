@@ -29,7 +29,7 @@ VALUES (
 
 -- 2
 INSERT INTO public.articulos (titulo, subtitulo, slug, contenido, imagen_url, tematicas, estado, autor_id)
-VALUES (
+VALUES
   'La Mano Invisible Tiene Artritis',
   'Una revisión crítica del dogma del mercado autorregulado desde Adam Smith hasta nuestros días',
   'la-mano-invisible-artritis',

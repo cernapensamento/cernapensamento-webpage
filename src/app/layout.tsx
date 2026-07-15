@@ -50,9 +50,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col font-sans bg-parchment text-charcoal">
         {children}
-        <div className="fixed bottom-6 right-6 z-50">
-          <ThemeToggle />
-        </div>
       </body>
     </html>
   );

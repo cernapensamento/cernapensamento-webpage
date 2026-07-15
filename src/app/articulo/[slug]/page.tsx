@@ -8,7 +8,7 @@ import SiteFooter from '@/components/SiteFooter';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 import CommentsSection from '@/components/CommentsSection';
 
-export const revalidate = 60;
+
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -70,7 +70,7 @@ export default async function ArticuloPage({ params }: Props) {
 
         {articulo.imagen_url && (
           <div className="w-full h-[60vh] min-h-[400px] mb-16 border-y border-lines bg-lines/30 relative">
-            <Image className="object-cover grayscale hover:grayscale-0 transition-all duration-700" alt={articulo.titulo} src={articulo.imagen_url} fill priority />
+            <Image className="object-cover" alt={articulo.titulo} src={articulo.imagen_url} fill priority sizes="100vw" />
           </div>
         )}
 

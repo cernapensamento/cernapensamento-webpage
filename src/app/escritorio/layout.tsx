@@ -31,7 +31,7 @@ export default async function EscritorioLayout({
       </div>
 
       {/* Mobile Navigation (Bottom Bar) */}
-      <MobileBottomNav />
+      <MobileBottomNav role={profile?.rol} />
     </div>
   );
 }

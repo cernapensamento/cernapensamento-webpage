@@ -17,6 +17,7 @@ export default function FeaturedArticleHero({ articulo }: FeaturedArticleHeroPro
             className="object-cover grayscale hover:grayscale-0 transition-all duration-700 ease-in-out"
             src={articulo.imagen_url}
             fill
+            sizes="(max-width: 768px) 100vw, 60vw"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

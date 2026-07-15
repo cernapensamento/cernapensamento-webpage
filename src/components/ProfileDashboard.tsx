@@ -57,7 +57,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
           onClick={handleChangeAvatar}
           title="Cambiar imagen de perfil"
         >
-          <Image className="object-cover grayscale transition-all group-hover:opacity-30" alt="Writer Portrait" src={avatarUrl || DEFAULT_AVATAR_URL} fill sizes="(max-width: 640px) 96px, 128px"/>
+          <Image className="object-cover transition-all group-hover:opacity-30" alt="Writer Portrait" src={avatarUrl || DEFAULT_AVATAR_URL} fill sizes="(max-width: 640px) 96px, 128px"/>
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-charcoal/10">
             <span className="bg-charcoal text-parchment text-[10px] uppercase tracking-widest px-2 py-1 text-center font-sans">
               Cambiar
@@ -145,9 +145,12 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
               type="submit"
               form="profile-form"
               disabled={loading}
-              className="w-full md:w-auto px-8 py-4 bg-charcoal text-parchment hover:bg-gold transition-colors font-semibold text-xs uppercase tracking-widest disabled:opacity-50"
+              className="group relative w-full md:w-auto px-10 py-4 bg-charcoal text-parchment hover:bg-gold hover:text-charcoal transition-all duration-500 ease-out font-bold text-xs uppercase tracking-[0.2em] disabled:opacity-50 border border-charcoal hover:border-gold overflow-hidden"
             >
-              {loading ? 'Guardando...' : 'Guardar Cambios'}
+              <span className="relative z-10 flex items-center justify-center gap-3">
+                {loading ? 'Guardando...' : 'Guardar Cambios'}
+                {!loading && <span className="material-symbols-outlined text-[16px] transition-transform duration-500 group-hover:translate-x-1">arrow_forward</span>}
+              </span>
             </button>
           </div>
         </div>

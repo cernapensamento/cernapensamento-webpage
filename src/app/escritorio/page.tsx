@@ -62,13 +62,13 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
         </section>
 
         <section className="max-w-4xl mx-auto flex flex-col">
-          <div className="flex items-center justify-between mb-8 pb-4 border-b border-lines shrink-0">
-            <div className="flex items-center gap-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-4 border-b border-lines shrink-0 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
               <h3 className="font-serif text-2xl">Artículos</h3>
-              <div className="flex items-center gap-2 font-sans text-xs uppercase tracking-widest">
-                <Link className={`px-3 py-1.5 transition-colors ${filtro === 'todos' ? 'bg-charcoal text-parchment' : 'text-charcoal/60 hover:text-charcoal'}`} href="?filtro=todos">Todos</Link>
-                <Link className={`px-3 py-1.5 transition-colors ${filtro === 'publicados' ? 'bg-charcoal text-parchment' : 'text-charcoal/60 hover:text-charcoal'}`} href="?filtro=publicados">Publicados</Link>
-                <Link className={`px-3 py-1.5 transition-colors ${filtro === 'borradores' ? 'bg-charcoal text-parchment' : 'text-charcoal/60 hover:text-charcoal'}`} href="?filtro=borradores">Borradores</Link>
+              <div className="flex flex-wrap items-center gap-2 font-sans text-xs uppercase tracking-widest">
+                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'todos' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=todos">Todos</Link>
+                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'publicados' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=publicados">Publicados</Link>
+                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'borradores' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=borradores">Borradores</Link>
               </div>
             </div>
             {!verTodo && articulosFiltrados.length > 3 ? (
