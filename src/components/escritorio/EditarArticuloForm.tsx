@@ -20,7 +20,8 @@ export default function EditarArticuloForm({ articulo }: Props) {
         contenido: articulo.contenido || '',
         imagen_url: articulo.imagen_url || '',
         tematicas: articulo.tematicas || [],
-        estado: articulo.estado || 'publicado'
+        estado: articulo.estado || 'publicado',
+        tipo: articulo.tipo || 'artigo'
     };
 
     const handleSave = async (data: ArticleData, isDraft: boolean) => {
@@ -43,7 +44,8 @@ export default function EditarArticuloForm({ articulo }: Props) {
                     imagen_url: data.imagen_url || null,
                     tematicas: data.tematicas || [],
                     estado: isDraft ? 'borrador' : 'publicado',
-                    actualizado_en: new Date().toISOString()
+                    actualizado_en: new Date().toISOString(),
+                    tipo: data.tipo || 'artigo'
                 })
                 .eq('id', articulo.id);
 

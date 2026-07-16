@@ -6,7 +6,7 @@ test('trace login console', async ({ page }) => {
   
   await page.goto('http://localhost:3000/login');
   
-  await page.fill('input[type="email"]', 'escritor@cerna.com');
+  await page.fill('input[type="email"]', 'escritor@cernapensamento.org');
   await page.fill('input[type="password"]', '123456');
   
   const responsePromise = page.waitForResponse(response => response.url().includes('supabase'));

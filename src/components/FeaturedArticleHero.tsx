@@ -26,7 +26,7 @@ export default function FeaturedArticleHero({ articulo }: FeaturedArticleHeroPro
         )}
       </Link>
       <div className="md:col-span-5 flex flex-col gap-6 pt-6 md:pt-0">
-        <span className="text-sm font-semibold text-gold uppercase tracking-widest">Destacado</span>
+        <span className="text-sm font-semibold text-gold uppercase tracking-widest">{articulo.tipo || 'Artigo'}</span>
         <Link href={`/articulo/${articulo.slug || articulo.id}`}>
           <h1 className="font-serif text-4xl md:text-5xl text-charcoal cursor-pointer hover:text-gold transition-colors duration-300 leading-tight">
             {articulo.titulo}
@@ -37,7 +37,7 @@ export default function FeaturedArticleHero({ articulo }: FeaturedArticleHeroPro
         </p>
         <div className="pt-4 border-t border-lines w-1/4 mt-2">
           <span className="text-sm font-semibold text-charcoal uppercase tracking-widest">
-            Por {articulo.perfiles?.nombre || 'Autor Desconocido'}
+            Por {articulo.perfiles?.nombre || 'Autor Descoñecido'}
           </span>
         </div>
       </div>

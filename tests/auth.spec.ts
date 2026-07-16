@@ -31,7 +31,7 @@ test.describe('Protección de rutas por Rol', () => {
   test('Un escritor (rol escritor) puede acceder al escritorio y ver el editor', async ({ page }) => {
     // 1. Iniciar sesión con el escritor de prueba (ya creado en la BD por seed_roles.sql)
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'escritor@cerna.com');
+    await page.fill('input[type="email"]', 'escritor@cernapensamento.org');
     await page.fill('input[type="password"]', '123456');
     await page.getByRole('button', { name: 'Ingresar' }).click();
 

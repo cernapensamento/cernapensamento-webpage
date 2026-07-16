@@ -1,16 +1,31 @@
-import { createClient } from '@/utils/supabase/server';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
 import CommentForm from './CommentForm';
 import Image from 'next/image';
+import { useAuth } from '@/hooks/useAuth';
 
-export default async function CommentsSection({ articuloId }: { articuloId: string }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export default function CommentsSection({ articuloId }: { articuloId: string }) {
+  const { user } = useAuth();
+  const [comentarios, setComentarios] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
-  const { data: comentarios } = await supabase
-    .from('comentarios')
-    .select('id, contenido, creado_en, perfiles(nombre, avatar_url)')
-    .eq('articulo_id', articuloId)
-    .order('creado_en', { ascending: true });
+  const fetchComments = async () => {
+    const { data } = await supabase
+      .from('comentarios')
+      .select('id, contenido, creado_en, perfiles(nombre, avatar_url)')
+      .eq('articulo_id', articuloId)
+      .order('creado_en', { ascending: true });
+    
+    if (data) setComentarios(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchComments();
+  }, [articuloId]);
 
   return (
     <section className="w-full border-t border-lines pt-16 mt-16">
@@ -54,7 +69,7 @@ export default async function CommentsSection({ articuloId }: { articuloId: stri
       </div>
 
       {user ? (
-        <CommentForm articuloId={articuloId} />
+        <CommentForm articuloId={articuloId} onCommentAdded={fetchComments} />
       ) : (
         <div className="bg-surface border border-lines p-8 text-center">
           <p className="font-sans text-sm text-charcoal/70 mb-4">Debes iniciar sesión para unirte a la conversación.</p>

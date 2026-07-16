@@ -13,10 +13,10 @@ DECLARE
     'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4'
   ];
   emails TEXT[] := ARRAY[
-    'diegoaraujo@cerna.com',
-    'hectorgonzalez@cerna.com',
-    'denisfernandez@cerna.com',
-    'anxoperez@cerna.com'
+    'diegoaraujo@cernapensamento.org',
+    'hectorgonzalez@cernapensamento.org',
+    'denisfernandez@cernapensamento.org',
+    'anxoperez@cernapensamento.org'
   ];
   nombres TEXT[] := ARRAY[
     'Diego Araujo',
@@ -31,10 +31,10 @@ DECLARE
     'e4e4e4e4-e4e4-e4e4-e4e4-e4e4e4e4e4e4'
   ];
   lectorEmails TEXT[] := ARRAY[
-    'lector1@cerna.com',
-    'lector2@cerna.com',
-    'lector3@cerna.com',
-    'lector4@cerna.com'
+    'lector1@cernapensamento.org',
+    'lector2@cernapensamento.org',
+    'lector3@cernapensamento.org',
+    'lector4@cernapensamento.org'
   ];
   lectorNombres TEXT[] := ARRAY[
     'Lucía Méndez',

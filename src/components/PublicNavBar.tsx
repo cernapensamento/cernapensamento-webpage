@@ -1,33 +1,24 @@
+'use client';
+
 import Link from 'next/link';
-import { createClient } from '@/utils/supabase/server';
 import { handleSignOut } from '@/app/actions';
 import { SITE_NAME, DEFAULT_AVATAR_URL } from '@/lib/constants';
 import Image from 'next/image';
 import BackButton from '@/components/BackButton';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useAuth } from '@/hooks/useAuth';
 
-export default async function PublicNavBar() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  let userProfile = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from('perfiles')
-      .select('rol, avatar_url')
-      .eq('id', user.id)
-      .single();
-    userProfile = profile;
-  }
+export default function PublicNavBar({ showBackLink = false }: { showBackLink?: boolean }) {
+  const { user, profile: userProfile, loading } = useAuth();
 
   return (
     <nav className="bg-parchment border-b border-lines w-full px-5 md:px-16 py-4 sticky top-0 z-50">
       <div className="flex justify-between items-center w-full max-w-[1120px] mx-auto relative h-[42px]">
         <div className="flex gap-4 items-center">
           <BackButton />
-          <Link href={user ? "/escritorio/perfil" : "/login"} className="w-10 h-10 rounded-full border border-lines overflow-hidden relative block shrink-0" title={user ? "Ver Perfil" : "Iniciar Sesión"}>
+          <Link href={user ? "/escritorio/perfil" : "/login"} className="group w-10 h-10 rounded-full border border-lines overflow-hidden relative block shrink-0" title={user ? "Ver Perfil" : "Iniciar Sesión"}>
             <Image 
-              className="object-cover" 
+              className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700" 
               alt="User Avatar" 
               src={userProfile?.avatar_url || DEFAULT_AVATAR_URL} 
               fill 
@@ -50,8 +41,7 @@ export default async function PublicNavBar() {
                   className="group font-sans text-[11px] md:text-xs font-bold bg-charcoal text-parchment hover:bg-gold hover:text-charcoal px-6 md:px-5 py-3.5 md:py-2.5 transition-all duration-500 ease-out uppercase tracking-[0.2em] border border-charcoal hover:border-gold fixed bottom-6 right-5 md:static shadow-[0_10px_40px_rgba(0,0,0,0.2)] hover:shadow-[0_10px_40px_rgba(197,160,89,0.4)] md:shadow-none md:hover:shadow-none rounded-full md:rounded-none z-50 flex items-center gap-2 hover:-translate-y-1 md:hover:-translate-y-0 active:scale-95 md:active:scale-100"
                 >
                   <span className="material-symbols-outlined text-[18px] md:hidden transition-transform duration-500 group-hover:rotate-12">edit</span>
-                  <span className="hidden md:inline">Ir al Escritorio</span>
-                  <span className="inline md:hidden">Escritorio</span>
+                  <span>ESCRITORIO</span>
                 </Link>
               )}
               {userProfile?.rol === 'usuario' && (
@@ -64,7 +54,7 @@ export default async function PublicNavBar() {
                   type="submit"
                   className="font-sans text-xs font-semibold text-charcoal/60 hover:text-red-700 transition-colors duration-300 uppercase tracking-wider cursor-pointer"
                 >
-                  Salir
+                  Saír
                 </button>
               </form>
             </>

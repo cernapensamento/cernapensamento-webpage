@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     // 5. Enviar el correo masivo con Resend
     // Usamos Batch Emails para mayor eficiencia y no exceder límites de la API de Resend
     const emailsToSend = suscriptores.map((sub: { email: string, nombre: string }) => ({
-      from: 'Cerna <boletin@cerna.com>', // REEMPLAZAR POR TU DOMINIO VERIFICADO EN RESEND
+      from: 'Cerna <boletin@cernapensamento.org>', // REEMPLAZAR POR TU DOMINIO VERIFICADO EN RESEND
       to: [sub.email],
       subject: `Nuevo artículo: ${articulo.titulo}`,
       html: `
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
           <p>Hola ${sub.nombre},</p>
           <p>Se acaba de publicar una nueva reflexión en Cerna que podría interesarte.</p>
           <div style="margin: 32px 0;">
-            <a href="https://tudominio.com/articulo/${articulo.slug}" style="background-color: #1a1a1a; color: #fbf9f8; padding: 12px 24px; text-decoration: none; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
+            <a href="https://cernapensamento.org/articulo/${articulo.slug}" style="background-color: #1a1a1a; color: #fbf9f8; padding: 12px 24px; text-decoration: none; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
               Leer el artículo completo
             </a>
           </div>

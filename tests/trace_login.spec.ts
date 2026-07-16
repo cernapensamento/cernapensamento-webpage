@@ -4,7 +4,7 @@ test('trace login', async ({ page }) => {
   await page.goto('http://localhost:3000/login');
   
   // Usar el correo correcto .com
-  await page.fill('input[type="email"]', 'escritor@cerna.com');
+  await page.fill('input[type="email"]', 'escritor@cernapensamento.org');
   await page.fill('input[type="password"]', '123456');
   
   await page.screenshot({ path: 'scripts/login-before.png' });

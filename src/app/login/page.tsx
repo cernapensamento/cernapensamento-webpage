@@ -105,7 +105,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-8">
+        <form onSubmit={handleAuth} className="space-y-6">
           {!isLogin && (
             <div>
               <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="nombre">
@@ -117,7 +117,7 @@ export default function LoginPage() {
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 required
-                className="w-full px-0 py-2 bg-transparent border-b border-lines text-charcoal placeholder-lines focus:outline-none focus:border-charcoal transition-colors rounded-none"
+                className="w-full px-4 py-3 bg-surface border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
                 placeholder="Tu nombre"
               />
             </div>
@@ -133,7 +133,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-0 py-2 bg-transparent border-b border-lines text-charcoal placeholder-lines focus:outline-none focus:border-charcoal transition-colors rounded-none"
+              className="w-full px-4 py-3 bg-surface border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
               placeholder="tu@correo.com"
             />
           </div>
@@ -149,7 +149,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-0 py-2 bg-transparent border-b border-lines text-charcoal placeholder-lines focus:outline-none focus:border-charcoal transition-colors rounded-none"
+              className="w-full px-4 py-3 bg-surface border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
               placeholder="••••••••"
             />
           </div>

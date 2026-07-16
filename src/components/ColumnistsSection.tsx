@@ -6,38 +6,34 @@ import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 const columnists = [
   {
     id: 'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
-    name: 'Diego Araujo',
-    description: 'Cursa Economía en la Universidade de Santiago de Compostela. Escribe sobre las contradicciones del capitalismo tardío, la relación entre mercados y poder, y las formas de organización económica alternativas al modelo dominante. Le interesa particularmente la economía ecológica y cree que la economía no puede entenderse sin la historia.',
-    email: 'diegoaraujo@cerna.com',
-    twitter: '@diego_araujo',
-    instagram: '@diego.araujo',
+    name: 'Diego Araújo',
+    description: 'Estudante de Economía na USC, Premio Extraordinario de Bacharelato 2025 e gañador do Parlamento Xove 2026 (categoría universidade) xunto a Héctor González Prego, recoñecido ademais como Mellor Orador da edición. As súas columnas nacen dunha inquietude por entender o mundo dende a filosofía política, a economía, as ciencias políticas e o dereito, cun interese especial no estudo da liberdade, ademais de artigos máis técnicos centrados na análise político-filosófica, a economía austríaca e os fundamentos macro e microeconómicos.',
+    email: 'diegoaraujo@cernapensamento.org',
+    instagram: '@diegoaraujorodriguez_',
     image: '/images/columnistas/diego.jpeg'
   },
   {
     id: 'd2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2',
-    name: 'Hector Gonzalez',
+    name: 'Héctor González',
     description: 'Estudia Física en la Universidade de Santiago de Compostela. Escribe sobre los límites del conocimiento científico, la naturaleza del tiempo y aquello que la física aún no puede explicar: la conciencia, el libre albedrío, el origen de las leyes naturales. Le apasiona la divulgación científica como puente entre la academia y la calle.',
-    email: 'hectorgonzalez@cerna.com',
-    twitter: '@hector_gonz',
+    email: 'hectorgonzalez@cernapensamento.org',
     instagram: '@hector.g',
     image: '/images/columnistas/hector.jpeg'
   },
   {
     id: 'd3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3',
-    name: 'Denis Fernandez',
+    name: 'Denís Fernández',
     description: 'Estudia Derecho en la Universidad Rey Juan Carlos de Madrid. Sus ensayos giran en torno a la tensión entre la ley escrita y la justicia material, los derechos humanos como conquista siempre reversible, y el papel del Estado frente a la desigualdad. Defiende que el derecho debe estar al servicio de los más débiles.',
-    email: 'denisfernandez@cerna.com',
-    twitter: '@denis_fern',
+    email: 'denisfernandez@cernapensamento.org',
     instagram: '@denis.f',
     image: '/images/columnistas/denis.jpeg'
   },
   {
     id: 'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4',
-    name: 'Anxo Perez',
-    description: 'Estudia Humanidades en la Universidad de Navarra. Sus ensayos transitan entre la crítica literaria, la memoria histórica y la pregunta por el sentido en un mundo secularizado. Escribe sobre el silencio como forma de resistencia, la literatura del desarraigo y la poesía de la guerra civil española. Devoto lector de César Vallejo.',
-    email: 'anxoperez@cerna.com',
-    twitter: '@anxo_perez',
-    instagram: '@anxo.p',
+    name: 'Anxo Pérez',
+    description: 'Estudante de Lingua e Literatura Españolas na Universidade de Navarra. A súa obra foi recoñecida en certames literarios galegos, como o Premio de Poesía «Cambados Mar de Letras» e o «Certame Literario de Ames», e en 2025 foi distinguido como mellor orador da categoría de Bacharelato na fase final de Parlamento Xove. A súa escrita céntrase no problema da identidade, con especial atención á tradición como forma de resistencia. Aborda o proceso de secularización de Europa e dialoga coa tradición galeguista e co pensamento europeo.',
+    email: 'anxoperez@cernapensamento.org',
+    instagram: '@anxoperezprego',
     image: '/images/columnistas/anxo.jpeg'
   }
 ];
@@ -47,7 +43,7 @@ export default function ColumnistsSection() {
     <section className="w-full border-t border-lines py-24 bg-surface">
       <div className="max-w-[1120px] mx-auto px-5 md:px-16">
         <div className="text-center mb-20">
-          <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-4">Nuestro Equipo</span>
+          <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-4">O Noso Equipo</span>
           <h2 className="font-serif text-4xl md:text-5xl text-charcoal">Columnistas de {SITE_NAME}</h2>
         </div>
         
@@ -59,7 +55,7 @@ export default function ColumnistsSection() {
                   src={columnist.image}
                   alt={`Retrato de ${columnist.name}`}
                   fill
-                  className="object-cover"
+                  className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
                   sizes="(max-width: 768px) 224px, 160px"
                   unoptimized
                 />
@@ -69,14 +65,11 @@ export default function ColumnistsSection() {
               <div className="w-8 h-[1px] bg-gold mb-6 transition-all duration-500 group-hover:w-16"></div>
               
               <div className="flex flex-col gap-4 md:gap-3 w-full items-center">
-                <a href={`mailto:${columnist.email}`} className="text-charcoal/60 hover:text-gold transition-colors flex items-center gap-3 font-sans text-sm md:text-xs lowercase w-full justify-center max-w-[280px] md:max-w-[240px]" aria-label={`Enviar correo a ${columnist.name}`}>
+                <a href={`mailto:${columnist.email}`} className="text-charcoal/60 hover:text-gold transition-colors flex items-center gap-3 font-sans text-sm md:text-xs uppercase tracking-widest w-full justify-center max-w-[280px] md:max-w-[240px]" aria-label={`Enviar correo a ${columnist.name}`}>
                   <span className="material-symbols-outlined text-[20px] md:text-[18px]" data-icon="mail">mail</span>
-                  <span className="truncate">{columnist.email}</span>
+                  <span className="truncate">CORREO</span>
                 </a>
-                <a href={`https://twitter.com/${columnist.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-charcoal/60 hover:text-gold transition-colors flex items-center gap-3 font-sans text-sm md:text-xs uppercase tracking-widest w-full justify-center max-w-[280px] md:max-w-[240px]" aria-label={`Perfil de Twitter de ${columnist.name}`}>
-                  <span className="material-symbols-outlined text-[20px] md:text-[18px]">alternate_email</span>
-                  <span>Twitter</span>
-                </a>
+
                 <a href={`https://instagram.com/${columnist.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-charcoal/60 hover:text-gold transition-colors flex items-center gap-3 font-sans text-sm md:text-xs uppercase tracking-widest w-full justify-center max-w-[280px] md:max-w-[240px]" aria-label={`Perfil de Instagram de ${columnist.name}`}>
                   <span className="material-symbols-outlined text-[20px] md:text-[18px]">photo_camera</span>
                   <span>Instagram</span>
@@ -87,7 +80,7 @@ export default function ColumnistsSection() {
                 {columnist.description}
               </p>
               <Link href={`/autor/${columnist.id}`} className="mt-8 md:mt-6 px-6 md:px-4 py-3 md:py-2 border border-charcoal/30 text-charcoal/60 hover:text-parchment hover:bg-charcoal hover:border-charcoal text-xs md:text-[10px] font-sans uppercase tracking-widest transition-all duration-300 cursor-pointer block text-center">
-                Artículos publicados
+                Artigos publicados
               </Link>
             </div>
           ))}

@@ -39,7 +39,8 @@ export default function NuevoArticulo() {
                 autor_id: user.id,
                 imagen_url: data.imagen_url || null,
                 tematicas: data.tematicas || [],
-                estado: isDraft ? 'borrador' : 'publicado'
+                estado: isDraft ? 'borrador' : 'publicado',
+                tipo: data.tipo || 'artigo'
             }).select().single();
 
             if (error) {

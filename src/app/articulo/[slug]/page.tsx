@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -14,9 +14,32 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+export async function generateStaticParams() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  
+  const { data: articulos } = await supabase
+    .from('articulos')
+    .select('slug, id')
+    .eq('estado', 'publicado');
+
+  if (!articulos) return [];
+
+  return articulos.map((articulo) => ({
+    slug: articulo.slug || articulo.id,
+  }));
+}
+
+export const revalidate = 60;
+
 export default async function ArticuloPage({ params }: Props) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
@@ -43,7 +66,7 @@ export default async function ArticuloPage({ params }: Props) {
 
       <main className="flex-grow flex flex-col items-center w-full pb-[120px]">
         <header className="w-full max-w-3xl px-5 md:px-0 pt-24 pb-12 mx-auto text-center">
-          <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">Ensayo</span>
+          <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">{articulo.tipo || 'Artigo'}</span>
           <h1 className="font-serif text-4xl md:text-6xl text-charcoal mb-6 max-w-4xl mx-auto leading-tight">
             {articulo.titulo}
           </h1>
@@ -92,7 +115,7 @@ export default async function ArticuloPage({ params }: Props) {
 
           <div className="mt-20 pt-8 border-t border-lines flex items-start gap-6">
             <Link href={`/autor/${articulo.autor_id}`} className="w-8 h-8 rounded-full overflow-hidden border border-lines relative block cursor-pointer shrink-0">
-              <Image className="object-cover hover:opacity-80 transition-opacity" alt={articulo.perfiles?.nombre || 'Autor'} src={articulo.perfiles?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="32px"/>
+              <Image className="object-cover grayscale group-hover:grayscale-0 hover:grayscale-0 transition-all duration-700" alt={articulo.perfiles?.nombre || 'Autor'} src={articulo.perfiles?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="32px"/>
             </Link>
             <div>
               <h3 className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Sobre el autor</h3>

@@ -10,7 +10,7 @@ export default function ArticleCard({ articulo }: ArticleCardProps) {
   return (
     <Link href={`/articulo/${articulo.slug || articulo.id}`} className="flex flex-col group cursor-pointer h-full">
       <span className="text-sm font-semibold text-gold uppercase tracking-widest mb-3">
-        {articulo.tematicas && articulo.tematicas.length > 0 ? articulo.tematicas.join(' · ') : 'Ensayo Comunitario'}
+        {articulo.tipo || 'Artigo'}
       </span>
       <h3 className="font-serif text-2xl text-charcoal mb-3 group-hover:text-gold transition-colors duration-300 line-clamp-3">
         {articulo.titulo}

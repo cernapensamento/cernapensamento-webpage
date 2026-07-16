@@ -17,6 +17,8 @@ export interface ArticleData {
     imagen_url: string;
     tematicas?: string[];
     estado?: string;
+    tipo?: string;
+    fijado?: boolean;
 }
 
 interface ArticleEditorProps {
@@ -30,6 +32,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
     const [showPublishModal, setShowPublishModal] = useState(false);
     const [titulo, setTitulo] = useState(initialData?.titulo || '');
     const [subtitulo, setSubtitulo] = useState(initialData?.subtitulo || '');
+    const [tipo, setTipo] = useState(initialData?.tipo || 'artigo');
     const [coverImageUrl, setCoverImageUrl] = useState(initialData?.imagen_url || '');
     const [tematicas, setTematicas] = useState<string[]>(initialData?.tematicas || []);
     const [tematicaInput, setTematicaInput] = useState('');
@@ -129,7 +132,8 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
             subtitulo,
             contenido: editor?.getHTML() || '',
             imagen_url: coverImageUrl,
-            tematicas: tematicas
+            tematicas: tematicas,
+            tipo: tipo
         }, isDraft);
         setShowPublishModal(false);
     };
@@ -230,6 +234,20 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+                                <div className="mb-4">
+                                    <select 
+                                        className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
+                                        value={tipo}
+                                        onChange={(e) => setTipo(e.target.value)}
+                                    >
+                                        <option value="artigo">Artigo</option>
+                                        <option value="ensaio">Ensaio</option>
+                                        <option value="reportaxe">Reportaxe</option>
+                                        <option value="columna">Columna</option>
+                                        <option value="entrevista">Entrevista</option>
+                                        <option value="poesía">Poesía</option>
+                                    </select>
                                 </div>
                                 <textarea className="w-full border-none bg-transparent font-serif text-4xl text-charcoal focus:ring-0 placeholder:text-charcoal/30 resize-none overflow-hidden outline-none" onInput={(e) => { handleInput(e); setTitulo((e.target as HTMLTextAreaElement).value); }} placeholder="El título de tu investigación..." value={titulo} rows={1}></textarea>
                                 <textarea className="w-full border-none bg-transparent font-serif text-xl text-charcoal/60 italic focus:ring-0 placeholder:text-charcoal/30 resize-none overflow-hidden outline-none" onInput={(e) => { handleInput(e); setSubtitulo((e.target as HTMLTextAreaElement).value); }} placeholder="Un subtítulo o breve resumen que invite a la reflexión profunda..." value={subtitulo} rows={1}></textarea>

@@ -7,6 +7,7 @@ import { getAuthenticatedUser } from '@/utils/auth';
 
 import SiteFooter from '@/components/SiteFooter';
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
+import PinArticleButton from '@/components/escritorio/PinArticleButton';
 
 interface PageProps {
   searchParams: Promise<{ ver?: string; filtro?: string }>;
@@ -93,7 +94,7 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
                       </div>
                       <div className="flex-grow">
                         <div className="flex items-center gap-4 mb-2">
-                          <span className="font-sans text-xs text-gold uppercase tracking-widest">Artículo</span>
+                          <span className="font-sans text-xs text-gold uppercase tracking-widest">{articulo.tipo || 'Artigo'}</span>
                           <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>
                           <span className="font-sans text-xs text-charcoal/60">{new Date(articulo.creado_en).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                           {articulo.estado === 'borrador' && (
@@ -114,6 +115,9 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
                             <span className="material-symbols-outlined text-sm" data-icon="edit">edit</span>
                             <span className="font-sans text-xs">Editar</span>
                           </Link>
+                          {articulo.estado === 'publicado' && (
+                            <PinArticleButton id={articulo.id} fijado={articulo.fijado || false} />
+                          )}
                           <DeleteArticleButton id={articulo.id} titulo={articulo.titulo} />
                         </div>
                       </div>

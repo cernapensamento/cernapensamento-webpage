@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Limpiar usuarios anteriores de prueba si existen en auth.users
 -- Esto también limpiará sus perfiles correspondientes por ON DELETE CASCADE
-DELETE FROM auth.users WHERE email IN ('lector@cerna.com', 'escritor@cerna.com', 'admin@cerna.com');
+DELETE FROM auth.users WHERE email IN ('lector@cernapensamento.org', 'escritor@cernapensamento.org', 'admin@cernapensamento.org');
 
 -- 1. Crear Usuario Lector (Rol: usuario por defecto)
 INSERT INTO auth.users (
@@ -32,7 +32,7 @@ INSERT INTO auth.users (
   'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1',
   'authenticated',
   'authenticated',
-  'lector@cerna.com',
+  'lector@cernapensamento.org',
   crypt('123456', gen_salt('bf')),
   now(),
   '{"provider": "email", "providers": ["email"]}',
@@ -67,7 +67,7 @@ INSERT INTO auth.users (
   'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2',
   'authenticated',
   'authenticated',
-  'escritor@cerna.com',
+  'escritor@cernapensamento.org',
   crypt('123456', gen_salt('bf')),
   now(),
   '{"provider": "email", "providers": ["email"]}',
@@ -107,7 +107,7 @@ INSERT INTO auth.users (
   'c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3',
   'authenticated',
   'authenticated',
-  'admin@cerna.com',
+  'admin@cernapensamento.org',
   crypt('123456', gen_salt('bf')),
   now(),
   '{"provider": "email", "providers": ["email"]}',

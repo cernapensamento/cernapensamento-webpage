@@ -2,12 +2,9 @@
 
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
-
-export default function CommentForm({ articuloId }: { articuloId: string }) {
+export default function CommentForm({ articuloId, onCommentAdded }: { articuloId: string, onCommentAdded: () => void }) {
   const [contenido, setContenido] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
   const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,7 +29,7 @@ export default function CommentForm({ articuloId }: { articuloId: string }) {
 
     if (!error) {
       setContenido('');
-      router.refresh(); // Refresh the page to load new comments
+      onCommentAdded(); // Refresh comments without reloading the page
     }
 
     setIsSubmitting(false);

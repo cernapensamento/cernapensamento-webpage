@@ -1,9 +1,10 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Image from 'next/image';
 import PublicNavBar from '@/components/PublicNavBar';
 import SiteFooter from '@/components/SiteFooter';
 import FeaturedArticleHero from '@/components/FeaturedArticleHero';
+import PinnedArticlesPanel from '@/components/PinnedArticlesPanel';
 import ArticleCard from '@/components/ArticleCard';
 import ColumnistsSection from '@/components/ColumnistsSection';
 import AboutUsSection from '@/components/AboutUsSection';
@@ -11,18 +12,27 @@ import ThemesSection from '@/components/ThemesSection';
 import ContactSection from '@/components/ContactSection';
 
 
+export const revalidate = 60;
+
 export default async function HomePage() {
-  const supabase = await createClient();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   // Obtener artículos con el nombre del autor
   const { data: articulos, error } = await supabase
     .from('articulos')
-    .select('id, titulo, subtitulo, slug, imagen_url, contenido, estado, creado_en, perfiles(nombre)')
+    .select('id, titulo, subtitulo, slug, imagen_url, contenido, estado, creado_en, fijado, tipo, perfiles(nombre)')
     .eq('estado', 'publicado')
     .order('creado_en', { ascending: false });
 
-  const featuredArticle = articulos && articulos.length > 0 ? articulos[0] : null;
-  const otherArticles = articulos && articulos.length > 1 ? articulos.slice(1, 7) : [];
+  const allArticles = articulos || [];
+  const pinnedArticles = allArticles.filter(a => a.fijado).slice(0, 8);
+  const regularArticles = allArticles.filter(a => !a.fijado);
+
+  const featuredArticle = regularArticles.length > 0 ? regularArticles[0] : null;
+  const otherArticles = regularArticles.length > 1 ? regularArticles.slice(1, 7) : [];
 
   return (
     <>
@@ -41,10 +51,12 @@ export default async function HomePage() {
             {otherArticles && otherArticles.length > 0 ? otherArticles.map((articulo) => (
               <ArticleCard key={articulo.id} articulo={articulo} />
             )) : (
-              <p className="font-sans text-charcoal/60">No hay artículos adicionales publicados.</p>
+              <p className="font-sans text-charcoal/60">Non hai artigos adicionais publicados.</p>
             )}
           </div>
         </section>
+
+        <PinnedArticlesPanel articulos={pinnedArticles} />
       </main>
       
       <AboutUsSection />
