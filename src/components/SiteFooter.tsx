@@ -26,6 +26,7 @@ export default function SiteFooter({ variant = 'full' }: SiteFooterProps) {
             </div>
           </div>
           <div className="flex gap-6">
+            <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href="/estatutos">Estatutos</Link>
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href="#">Privacidade</Link>
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href="#">Contacto</Link>
           </div>
@@ -42,6 +43,7 @@ export default function SiteFooter({ variant = 'full' }: SiteFooterProps) {
           <nav className="flex gap-6">
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href="/">Inicio</Link>
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href="/login">Autores</Link>
+            <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href="/estatutos">Estatutos</Link>
           </nav>
           <div className="flex flex-col items-center text-center mt-4">
             <p className="text-xs font-semibold text-charcoal/60">© {currentYear} {SITE_NAME}. Todos os dereitos reservados.</p>
@@ -67,6 +69,7 @@ export default function SiteFooter({ variant = 'full' }: SiteFooterProps) {
             Discurso intelectual e filosófico.
           </p>
           <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2" href="/bases-editoriales">Bases Editoriais</Link>
+          <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2 mt-1" href="/estatutos">Estatutos</Link>
         </div>
 
       </div>

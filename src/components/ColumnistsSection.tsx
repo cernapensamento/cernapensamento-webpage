@@ -15,9 +15,9 @@ const columnists = [
   {
     id: 'd2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2',
     name: 'Héctor González',
-    description: 'Estudia Física en la Universidade de Santiago de Compostela. Escribe sobre los límites del conocimiento científico, la naturaleza del tiempo y aquello que la física aún no puede explicar: la conciencia, el libre albedrío, el origen de las leyes naturales. Le apasiona la divulgación científica como puente entre la academia y la calle.',
+    description: 'Estudante de Física na Universidade de Santiago de Compostela e de Matemáticas na UNED, gañador do Parlamento Xove 2026 na categoría universitaria xunto a Diego Araújo Rodríguez. Os seus artigos nacen da curiosidade científica e do interese por comprender o mundo a través de modelos científicos, especialmente matemáticos, así como por transmitir estas ideas dun xeito claro, rigoroso e accesible. Busca achegar conceptos útiles e aplicables, sen renunciar á reflexión, con interese tamén por ámbitos como a psicoloxía e a comunicación.',
     email: 'hectorgonzalez@cernapensamento.org',
-    instagram: '@hector.g',
+    instagram: '@hector.gonzalezzz_',
     image: '/images/columnistas/hector.jpeg'
   },
   {
@@ -55,13 +55,13 @@ export default function ColumnistsSection() {
                   src={columnist.image}
                   alt={`Retrato de ${columnist.name}`}
                   fill
-                  className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                  className="object-cover transition-all duration-700"
                   sizes="(max-width: 768px) 224px, 160px"
                   unoptimized
                 />
               </Link>
               
-              <h3 className="font-serif text-3xl md:text-2xl text-charcoal mb-4 text-center px-4">{columnist.name}</h3>
+              <Link href={`/autor/${columnist.id}`}><h3 className="font-serif text-3xl md:text-2xl text-charcoal hover:text-gold transition-colors duration-300 mb-4 text-center px-4">{columnist.name}</h3></Link>
               <div className="w-8 h-[1px] bg-gold mb-6 transition-all duration-500 group-hover:w-16"></div>
               
               <div className="flex flex-col gap-4 md:gap-3 w-full items-center">

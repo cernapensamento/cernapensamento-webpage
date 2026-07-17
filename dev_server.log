@@ -1,0 +1,22 @@
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.142:3000
+- Environments: .env.local
+✓ Ready in 178ms
+
+ GET /escritorio/nuevo 200 in 773ms (next.js: 76ms, proxy.ts: 303ms, application-code: 393ms)
+ GET /login 200 in 52ms (next.js: 10ms, proxy.ts: 2ms, application-code: 40ms)
+ GET /escritorio 200 in 336ms (next.js: 11ms, proxy.ts: 76ms, application-code: 249ms)
+ GET /escritorio 200 in 483ms (next.js: 1737µs, proxy.ts: 201ms, application-code: 281ms)
+ GET /login 200 in 26ms (next.js: 1942µs, proxy.ts: 3ms, application-code: 20ms)
+ GET /escritorio 200 in 364ms (next.js: 1638µs, proxy.ts: 84ms, application-code: 279ms)
+ GET /escritorio 200 in 332ms (next.js: 1797µs, proxy.ts: 86ms, application-code: 245ms)
+ GET /escritorio/nuevo 200 in 278ms (next.js: 2ms, proxy.ts: 82ms, application-code: 195ms)
+✓ Compiled in 39ms
+ GET / 200 in 535ms (next.js: 21ms, proxy.ts: 180ms, application-code: 334ms)
+ GET / 200 in 111ms (next.js: 1506µs, proxy.ts: 1912µs, application-code: 107ms)
+ POST / 303 in 289ms (next.js: 1987µs, proxy.ts: 76ms, application-code: 211ms)
+  └─ ƒ handleSignOut() in 91ms src/app/actions.ts
+ GET /login 200 in 16ms (next.js: 3ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /escritorio 200 in 349ms (next.js: 1739µs, proxy.ts: 83ms, application-code: 264ms)
+ GET /escritorio 200 in 358ms (next.js: 1497µs, proxy.ts: 87ms, application-code: 269ms)

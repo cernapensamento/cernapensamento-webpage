@@ -15,32 +15,47 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
     let isMounted = true;
-    
-    async function fetchUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!isMounted) return;
-      if (user) {
-        setUser(user);
-        const { data } = await supabase.from('perfiles').select('rol, avatar_url').eq('id', user.id).single();
-        if (isMounted) setProfile(data);
-      }
-      if (isMounted) setLoading(false);
-    }
-    
-    fetchUser();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        if (isMounted) setUser(session.user);
-        const { data } = await supabase.from('perfiles').select('rol, avatar_url').eq('id', session.user.id).single();
-        if (isMounted) setProfile(data);
-      } else {
-        if (isMounted) {
-          setUser(null);
-          setProfile(null);
+    const supabase = createClient();
+
+    async function loadSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+        
+        if (session?.user) {
+          setUser(session.user);
+          // Don't await here to avoid deadlock
+          supabase.from('perfiles').select('rol, avatar_url').eq('id', session.user.id).single()
+            .then(({ data }) => {
+              if (isMounted) setProfile(data);
+            });
         }
+      } catch (error) {
+        console.error('Error loading session:', error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+      if (event === 'INITIAL_SESSION') return;
+      
+      if (session?.user) {
+        setUser(session.user);
+        // Defer the fetch to avoid lock deadlocks
+        setTimeout(() => {
+          supabase.from('perfiles').select('rol, avatar_url').eq('id', session.user.id).single()
+            .then(({ data }) => {
+              if (isMounted) setProfile(data);
+            });
+        }, 0);
+      } else {
+        setUser(null);
+        setProfile(null);
       }
       if (isMounted) setLoading(false);
     });

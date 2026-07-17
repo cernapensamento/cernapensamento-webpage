@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import NextImage from 'next/image';
 import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL } from '@/lib/constants';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -37,6 +37,11 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
     const [tematicas, setTematicas] = useState<string[]>(initialData?.tematicas || []);
     const [tematicaInput, setTematicaInput] = useState('');
     const [showPreview, setShowPreview] = useState(false);
+    const [isUploadingCover, setIsUploadingCover] = useState(false);
+    const [isUploadingInline, setIsUploadingInline] = useState(false);
+    const [uploadedInlineImages, setUploadedInlineImages] = useState<string[]>([]);
+    const coverInputRef = useRef<HTMLInputElement>(null);
+    const inlineImageRef = useRef<HTMLInputElement>(null);
     const [authorProfile, setAuthorProfile] = useState<{ nombre: string; avatar_url?: string } | null>(null);
     const TEMATICAS_SUGERIDAS = ['ECONOMÍA', 'POLÍTICA', 'CIENCIA', 'FILOSOFÍA', 'TECNOLOGÍA', 'ARTE'];
     const supabase = createClient();
@@ -84,6 +89,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
             Youtube.configure({ inline: false, width: 840, height: 472.5 })
         ],
         content: initialData?.contenido || (mode === 'create' ? '<p>La naturaleza del pensamiento contemporáneo exige una pausa deliberada...</p>' : ''),
+        immediatelyRender: false,
         editorProps: {
             attributes: {
                 class: 'w-full border-none bg-transparent font-sans text-lg text-charcoal focus:outline-none min-h-[400px] outline-none prose prose-p:my-4 prose-img:my-8',
@@ -98,10 +104,54 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
     }, [editor, initialData?.contenido]);
 
     const handleChangeCoverImage = () => {
-        const url = window.prompt('URL de la imagen de portada:', coverImageUrl);
-        if (url !== null) {
-            setCoverImageUrl(url);
+        coverInputRef.current?.click();
+    };
+
+    const handleCoverFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            alert('Solo se permiten imágenes JPG, PNG o WebP');
+            return;
         }
+        if (file.size > 2 * 1024 * 1024) {
+            alert('La imagen no puede superar los 2 MB');
+            return;
+        }
+
+        setIsUploadingCover(true);
+        const localPreview = URL.createObjectURL(file);
+        setCoverImageUrl(localPreview);
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setIsUploadingCover(false); return; }
+
+        const ext = file.name.split('.').pop();
+        const path = `portadas/${user.id}/${Date.now()}.${ext}`;
+
+        const { error } = await supabase.storage
+            .from('imagenes-articulos')
+            .upload(path, file, { upsert: true });
+
+        if (error) {
+            alert('Error al subir la imagen: ' + error.message);
+            setCoverImageUrl('');
+        } else {
+            if (coverImageUrl && coverImageUrl.includes('supabase.co/storage/v1/object/public/imagenes-articulos/')) {
+                const oldPath = coverImageUrl.split('imagenes-articulos/')[1];
+                if (oldPath) supabase.storage.from('imagenes-articulos').remove([oldPath]).catch(console.error);
+            }
+
+            const { data: urlData } = supabase.storage
+                .from('imagenes-articulos')
+                .getPublicUrl(path);
+            setCoverImageUrl(urlData.publicUrl);
+        }
+
+        URL.revokeObjectURL(localPreview);
+        setIsUploadingCover(false);
+        if (coverInputRef.current) coverInputRef.current.value = '';
     };
 
     const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -111,10 +161,50 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
     };
 
     const insertImage = () => {
-        const url = window.prompt('URL de la imagen:');
-        if (url && editor) {
-            editor.chain().focus().setImage({ src: url }).run();
+        inlineImageRef.current?.click();
+    };
+
+    const handleInlineImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !editor) return;
+
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            alert('Solo se permiten imágenes JPG, PNG o WebP');
+            return;
         }
+        if (file.size > 2 * 1024 * 1024) {
+            alert('La imagen no puede superar los 2 MB');
+            return;
+        }
+
+        setIsUploadingInline(true);
+        const localUrl = URL.createObjectURL(file);
+        editor.chain().focus().setImage({ src: localUrl }).run();
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setIsUploadingInline(false); return; }
+
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `contenido/${user.id}/${Date.now()}-${safeName}`;
+
+        const { error } = await supabase.storage
+            .from('imagenes-articulos')
+            .upload(path, file, { upsert: true });
+
+        if (error) {
+            alert('Error al subir la imagen: ' + error.message);
+        } else {
+            const { data: urlData } = supabase.storage
+                .from('imagenes-articulos')
+                .getPublicUrl(path);
+            setUploadedInlineImages(prev => [...prev, urlData.publicUrl]);
+            const html = editor.getHTML().replace(localUrl, urlData.publicUrl);
+            editor.commands.setContent(html);
+        }
+
+        URL.revokeObjectURL(localUrl);
+        setIsUploadingInline(false);
+        if (inlineImageRef.current) inlineImageRef.current.value = '';
     };
 
     const insertYoutube = () => {
@@ -127,10 +217,35 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
     };
 
     const handleSubmit = async (isDraft: boolean) => {
+        const currentHtml = editor?.getHTML() || '';
+        
+        // --- LIMPIEZA DE IMÁGENES INLINE (GARBAGE COLLECTION) ---
+        const supabaseRegex = /https:\/\/[a-zA-Z0-9.-]+\.supabase\.co\/storage\/v1\/object\/public\/imagenes-articulos\/contenido\/[a-zA-Z0-9-]+\/[^"'\s]+/g;
+        
+        const oldUrls: string[] = initialData?.contenido?.match(supabaseRegex) || [];
+        const newUrls: string[] = currentHtml.match(supabaseRegex) || [];
+        
+        const urlsToDelete = oldUrls.filter(url => !newUrls.includes(url));
+        const uploadedButDeleted = uploadedInlineImages.filter(url => !newUrls.includes(url));
+        
+        const allUrlsToDelete = Array.from(new Set([...urlsToDelete, ...uploadedButDeleted]));
+        
+        if (allUrlsToDelete.length > 0) {
+            const pathsToDelete = allUrlsToDelete.map(url => {
+                const parts = url.split('imagenes-articulos/');
+                return parts[1];
+            }).filter(Boolean) as string[];
+            
+            if (pathsToDelete.length > 0) {
+                supabase.storage.from('imagenes-articulos').remove(pathsToDelete).catch(console.error);
+            }
+        }
+        // ---------------------------------------------------------
+
         await onSave({
             titulo,
             subtitulo,
-            contenido: editor?.getHTML() || '',
+            contenido: currentHtml,
             imagen_url: coverImageUrl,
             tematicas: tematicas,
             tipo: tipo
@@ -240,13 +355,14 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                         className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
                                         value={tipo}
                                         onChange={(e) => setTipo(e.target.value)}
+                                        style={{ colorScheme: 'light dark' }}
                                     >
-                                        <option value="artigo">Artigo</option>
-                                        <option value="ensaio">Ensaio</option>
-                                        <option value="reportaxe">Reportaxe</option>
-                                        <option value="columna">Columna</option>
-                                        <option value="entrevista">Entrevista</option>
-                                        <option value="poesía">Poesía</option>
+                                        <option value="artigo" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Artigo</option>
+                                        <option value="ensaio" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Ensaio</option>
+                                        <option value="reportaxe" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Reportaxe</option>
+                                        <option value="columna" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Columna</option>
+                                        <option value="entrevista" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Entrevista</option>
+                                        <option value="poesía" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Poesía</option>
                                     </select>
                                 </div>
                                 <textarea className="w-full border-none bg-transparent font-serif text-4xl text-charcoal focus:ring-0 placeholder:text-charcoal/30 resize-none overflow-hidden outline-none" onInput={(e) => { handleInput(e); setTitulo((e.target as HTMLTextAreaElement).value); }} placeholder="El título de tu investigación..." value={titulo} rows={1}></textarea>

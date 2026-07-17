@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  allowedDevOrigins: ['cyan-swans-wear.loca.lt', 'loca.lt', '*.loca.lt', '*.trycloudflare.com', 'trycloudflare.com'],
 };
 
 export default nextConfig;

@@ -115,7 +115,7 @@ export default async function ArticuloPage({ params }: Props) {
 
           <div className="mt-20 pt-8 border-t border-lines flex items-start gap-6">
             <Link href={`/autor/${articulo.autor_id}`} className="w-8 h-8 rounded-full overflow-hidden border border-lines relative block cursor-pointer shrink-0">
-              <Image className="object-cover grayscale group-hover:grayscale-0 hover:grayscale-0 transition-all duration-700" alt={articulo.perfiles?.nombre || 'Autor'} src={articulo.perfiles?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="32px"/>
+              <Image className="object-cover transition-all duration-700" alt={articulo.perfiles?.nombre || 'Autor'} src={articulo.perfiles?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="32px"/>
             </Link>
             <div>
               <h3 className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Sobre el autor</h3>

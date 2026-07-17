@@ -18,23 +18,23 @@ export default function PublicNavBar({ showBackLink = false }: { showBackLink?: 
           <BackButton />
           <Link href={user ? "/escritorio/perfil" : "/login"} className="group w-10 h-10 rounded-full border border-lines overflow-hidden relative block shrink-0" title={user ? "Ver Perfil" : "Iniciar Sesión"}>
             <Image 
-              className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700" 
+              className="object-cover transition-all duration-700" 
               alt="User Avatar" 
               src={userProfile?.avatar_url || DEFAULT_AVATAR_URL} 
               fill 
               sizes="40px" 
             />
           </Link>
-          <div className="hidden sm:block">
-            <ThemeToggle />
-          </div>
         </div>
         <Link href="/" className="font-serif text-3xl md:text-4xl text-charcoal tracking-tighter absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {SITE_NAME}
         </Link>
         <div className="flex items-center gap-4 ml-auto">
-          {user ? (
+          {loading ? (
+            <ThemeToggle />
+          ) : user ? (
             <>
+              <ThemeToggle />
               {(userProfile?.rol === 'escritor' || userProfile?.rol === 'admin') && (
                 <Link
                   href="/escritorio"
@@ -44,11 +44,7 @@ export default function PublicNavBar({ showBackLink = false }: { showBackLink?: 
                   <span>ESCRITORIO</span>
                 </Link>
               )}
-              {userProfile?.rol === 'usuario' && (
-                <Link href="/escritorio/perfil" className="font-sans text-xs font-semibold text-charcoal/85 hover:text-gold transition-colors uppercase tracking-wider hidden md:inline-flex items-center">
-                  Lector
-                </Link>
-              )}
+
               <form action={handleSignOut}>
                 <button
                   type="submit"

@@ -85,7 +85,7 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
                     <div className="flex gap-8">
                       <div className="hidden sm:block w-32 h-32 shrink-0 border border-lines overflow-hidden relative">
                         {articulo.imagen_url ? (
-                          <Image className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700" src={articulo.imagen_url} alt={articulo.titulo} fill sizes="128px" />
+                          <Image className="object-cover transition-all duration-700" src={articulo.imagen_url} alt={articulo.titulo} fill sizes="128px" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-lines text-charcoal/20">
                             <span className="font-serif text-3xl">§</span>

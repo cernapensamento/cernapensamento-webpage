@@ -12,13 +12,13 @@ export default function AboutUsSection() {
         
         <div className="space-y-6 font-sans text-base text-charcoal/80 leading-relaxed mb-12 text-left">
           <p className="first-letter:float-left first-letter:font-serif first-letter:text-7xl first-letter:text-gold first-letter:mr-3 first-letter:mt-1 first-letter:leading-[0.8]">
-            CERNA nace coa convicción de que o pensamento crítico e a análise pausada son ferramentas imprescindibles para comprender a nosa realidade. A nosa publicación aspira a contribuír á formación dun espazo estable de reflexión, fuxindo da inmediatez que caracteriza gran parte dos debates contemporáneos.
+            CERNA nace da convicción de que as mellores ideas xorden lonxe do ruído e da urxencia que caracterizan boa parte do debate público actual. Deste xeito, aspiramos a crear un espazo de diálogo e reflexión afastado da demagogia e a polarización.
           </p>
           <p>
-            Reunimos a un grupo de autores comprometidos co rigor intelectual e o coidado da expresión, convencidos de que as mellores ideas son aquelas que invitan ao diálogo e abren novas vías de pensamento en lugar de pechar discusións.
+            Formamos un grupo de autores que se resisten a encaixar a realidade nunha soa disciplina. Filosofía, economía, dereito, ciencia, literatura e cultura conviven nas nosas páxinas coa mesma naturalidade con que se cruzan na vida cotiá, porque estamos convencidos de que comprender o mundo esixe mirar máis alá dos límites estreitos dunha especialización illada.
           </p>
           <p>
-            A excelencia editorial, a independencia de criterio e a defensa da lingua e a cultura galega constitúen os nosos piares. Máis alá do volume ou a frecuencia de publicación, a nosa principal aspiración é forxar unha comunidade de lectores esixentes que compartan o noso gusto polas ideas ben argumentadas.
+            Escribimos dende a liberdade individual e a responsabilidade que a acompaña, coa honestidade intelectual e o rigor como únicas fronteiras. Máis que unha asociación, CERNA quere ser un espazo de encontro: unha comunidade de pensamento irrestricto, coa única limitación do respecto polo pensamento alleo.
           </p>
         </div>
 

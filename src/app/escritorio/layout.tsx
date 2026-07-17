@@ -19,7 +19,7 @@ export default async function EscritorioLayout({
   return (
     <div className="flex h-screen overflow-hidden bg-parchment text-charcoal font-sans">
       {/* SideNavBar Shell */}
-      <SideNavBar role={profile?.rol} />
+      <SideNavBar role={profile?.rol} avatarUrl={profile?.avatar_url} />
 
       {/* Main Content Area */}
       <div className="flex-grow overflow-y-auto bg-parchment md:ml-64 flex flex-col relative h-screen">

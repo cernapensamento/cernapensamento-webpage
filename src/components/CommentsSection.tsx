@@ -15,12 +15,31 @@ export default function CommentsSection({ articuloId }: { articuloId: string }) 
   const fetchComments = async () => {
     const { data } = await supabase
       .from('comentarios')
-      .select('id, contenido, creado_en, perfiles(nombre, avatar_url)')
+      .select('id, contenido, creado_en, autor_id, perfiles(nombre, avatar_url)')
       .eq('articulo_id', articuloId)
       .order('creado_en', { ascending: true });
     
     if (data) setComentarios(data);
     setLoading(false);
+  };
+
+  const handleDelete = async (comentarioId: string) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este comentario?')) return;
+
+    // Actualización optimista
+    setComentarios(prev => prev.filter(c => c.id !== comentarioId));
+
+    const { data, error } = await supabase
+      .from('comentarios')
+      .delete()
+      .eq('id', comentarioId)
+      .select();
+
+    if (error || !data || data.length === 0) {
+      console.error("Delete failed:", error || "No rows deleted (RLS blocked)");
+      alert('Error de permisos o sesión caducada al intentar borrar. Recarga la página.');
+      fetchComments(); // Revertir en caso de error
+    }
   };
 
   useEffect(() => {
@@ -51,11 +70,22 @@ export default function CommentsSection({ articuloId }: { articuloId: string }) 
               )}
             </div>
             <div className="flex flex-col flex-grow">
-              <div className="flex items-baseline gap-3 mb-2">
-                <span className="font-sans text-sm font-semibold text-charcoal">{comentario.perfiles?.nombre || 'Usuario'}</span>
-                <time className="font-sans text-[10px] uppercase tracking-widest text-charcoal/50">
-                  {new Date(comentario.creado_en).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </time>
+              <div className="flex items-baseline justify-between mb-2">
+                <div className="flex items-baseline gap-3">
+                  <span className="font-sans text-sm font-semibold text-charcoal">{comentario.perfiles?.nombre || 'Usuario'}</span>
+                  <time className="font-sans text-[10px] uppercase tracking-widest text-charcoal/50">
+                    {new Date(comentario.creado_en).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </time>
+                </div>
+                {user && user.id === comentario.autor_id && (
+                  <button 
+                    onClick={() => handleDelete(comentario.id)}
+                    className="text-[10px] uppercase tracking-widest text-red-600/70 hover:text-red-600 transition-colors cursor-pointer"
+                    title="Eliminar comentario"
+                  >
+                    Eliminar
+                  </button>
+                )}
               </div>
               <p className="font-sans text-sm text-charcoal/80 leading-relaxed whitespace-pre-wrap">
                 {comentario.contenido}

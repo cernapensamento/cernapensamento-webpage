@@ -18,7 +18,7 @@ import { SITE_NAME } from "@/lib/constants";
 export const metadata: Metadata = {
   title: SITE_NAME,
   description: "A weekly literary and philosophical journal.",
-  icons: [{ rel: "icon", url: "/feather.png" }],
+  icons: [{ rel: "icon", url: "/images/feather.png" }],
 };
 
 export default function RootLayout({

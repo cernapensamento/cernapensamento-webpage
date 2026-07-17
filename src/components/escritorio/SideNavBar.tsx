@@ -3,12 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { handleSignOut } from '@/app/actions';
+import Image from 'next/image';
+import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 
 interface SideNavBarProps {
   role?: string;
+  avatarUrl?: string | null;
 }
 
-export default function SideNavBar({ role }: SideNavBarProps) {
+export default function SideNavBar({ role, avatarUrl }: SideNavBarProps) {
   const pathname = usePathname();
 
   const isWriter = role === 'escritor' || role === 'admin';
@@ -17,8 +20,21 @@ export default function SideNavBar({ role }: SideNavBarProps) {
     <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface border-r border-lines z-50">
       <div className="px-8 py-10 flex flex-col h-full">
         <div className="mb-12">
-          <h1 className="font-serif text-2xl text-charcoal">Escritorio</h1>
-          <p className="font-sans text-xs text-charcoal/60 uppercase tracking-widest mt-1">Panel de Control</p>
+          <Link href="/escritorio/perfil" className="flex items-center gap-4 mb-6 group">
+            <div className="w-12 h-12 bg-lines border border-lines overflow-hidden relative rounded-full shrink-0">
+              <Image
+                className="object-cover transition-all duration-700 group-hover:opacity-80"
+                alt="Profile"
+                src={avatarUrl || DEFAULT_AVATAR_URL}
+                fill
+                sizes="48px"
+              />
+            </div>
+            <div>
+              <h1 className="font-serif text-xl text-charcoal group-hover:text-gold transition-colors">Escritorio</h1>
+              <p className="font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mt-0.5">Panel de Control</p>
+            </div>
+          </Link>
         </div>
         <nav className="flex-grow space-y-1">
           <Link
