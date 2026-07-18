@@ -48,16 +48,13 @@ export async function POST(request: NextRequest) {
     const emailsToSend = suscriptores.map((sub: { email: string, nombre: string }) => ({
       from: 'Cerna <boletin@cernapensamento.org>', // REEMPLAZAR POR TU DOMINIO VERIFICADO EN RESEND
       to: [sub.email],
-      subject: `Nuevo artículo: ${articulo.titulo}`,
+      subject: `Nuevo artículo: ${articulo.titulo_es || articulo.titulo_gl}`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1a1a1a;">
-          <h1 style="font-size: 24px; font-weight: normal; margin-bottom: 8px;">${articulo.titulo}</h1>
-          ${articulo.subtitulo ? `<h2 style="font-size: 18px; font-weight: normal; color: #666; margin-top: 0;">${articulo.subtitulo}</h2>` : ''}
-          <hr style="border: none; border-top: 1px solid #eaeaea; margin: 24px 0;" />
-          <p>Hola ${sub.nombre},</p>
-          <p>Se acaba de publicar una nueva reflexión en Cerna que podría interesarte.</p>
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1c1c1c;">
+          <h1 style="font-size: 24px; font-weight: normal; margin-bottom: 8px;">${articulo.titulo_es || articulo.titulo_gl}</h1>
+          <p style="font-size: 16px; color: #666; margin-bottom: 24px;">${articulo.subtitulo_es || articulo.subtitulo_gl || ''}</p>
           <div style="margin: 32px 0;">
-            <a href="https://cernapensamento.org/articulo/${articulo.slug}" style="background-color: #1a1a1a; color: #fbf9f8; padding: 12px 24px; text-decoration: none; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/articulo/${articulo.slug || articulo.id}" style="background-color: #1a1a1a; color: #fbf9f8; padding: 12px 24px; text-decoration: none; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
               Leer el artículo completo
             </a>
           </div>

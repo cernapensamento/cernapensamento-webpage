@@ -47,7 +47,7 @@ export default function CommentsSection({ articuloId }: { articuloId: string }) 
   }, [articuloId]);
 
   return (
-    <section className="w-full border-t border-lines pt-16 mt-16">
+    <section className="w-full border-t border-lines pt-12 mt-8">
       <h3 className="font-serif text-2xl text-charcoal mb-8">Comentarios ({comentarios?.length || 0})</h3>
       
       <div className="flex flex-col gap-8 mb-12">

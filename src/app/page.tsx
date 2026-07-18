@@ -23,7 +23,7 @@ export default async function HomePage() {
   // Obtener artículos con el nombre del autor
   const { data: articulos, error } = await supabase
     .from('articulos')
-    .select('id, titulo, subtitulo, slug, imagen_url, contenido, estado, creado_en, fijado, tipo, perfiles(nombre)')
+    .select('id, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, slug, imagen_url, contenido_gl, contenido_es, estado, creado_en, fijado, tipo, perfiles(nombre)')
     .eq('estado', 'publicado')
     .order('creado_en', { ascending: false });
 

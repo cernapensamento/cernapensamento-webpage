@@ -15,9 +15,13 @@ export default function EditarArticuloForm({ articulo }: Props) {
     const supabase = createClient();
 
     const initialData: ArticleData = {
-        titulo: articulo.titulo || '',
-        subtitulo: articulo.subtitulo || '',
-        contenido: articulo.contenido || '',
+        id: articulo.id,
+        titulo_gl: articulo.titulo_gl || '',
+        titulo_es: articulo.titulo_es || '',
+        subtitulo_gl: articulo.subtitulo_gl || '',
+        subtitulo_es: articulo.subtitulo_es || '',
+        contenido_gl: articulo.contenido_gl || '',
+        contenido_es: articulo.contenido_es || '',
         imagen_url: articulo.imagen_url || '',
         tematicas: articulo.tematicas || [],
         estado: articulo.estado || 'publicado',
@@ -33,14 +37,15 @@ export default function EditarArticuloForm({ articulo }: Props) {
                 return;
             }
 
-            const finalTitle = data.titulo || 'Sin Título';
-
             const { error } = await supabase
                 .from('articulos')
                 .update({
-                    titulo: finalTitle,
-                    subtitulo: data.subtitulo || null,
-                    contenido: data.contenido,
+                    titulo_gl: data.titulo_gl || 'Sen Título',
+                    titulo_es: data.titulo_es || 'Sin Título',
+                    subtitulo_gl: data.subtitulo_gl || null,
+                    subtitulo_es: data.subtitulo_es || null,
+                    contenido_gl: data.contenido_gl || '',
+                    contenido_es: data.contenido_es || '',
                     imagen_url: data.imagen_url || null,
                     tematicas: data.tematicas || [],
                     estado: isDraft ? 'borrador' : 'publicado',

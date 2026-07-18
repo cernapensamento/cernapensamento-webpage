@@ -28,14 +28,16 @@ export default function NuevoArticulo() {
                 return;
             }
 
-            const finalTitle = data.titulo || 'Sin Título';
-            const slug = generateSlug(finalTitle);
+            const slug = generateSlug(data.titulo_gl || data.titulo_es || 'novo-artigo');
 
             const { error } = await supabase.from('articulos').insert({
-                titulo: finalTitle,
-                subtitulo: data.subtitulo || null,
+                titulo_gl: data.titulo_gl || 'Sen Título',
+                titulo_es: data.titulo_es || 'Sin Título',
+                subtitulo_gl: data.subtitulo_gl || null,
+                subtitulo_es: data.subtitulo_es || null,
                 slug: slug,
-                contenido: data.contenido,
+                contenido_gl: data.contenido_gl || '',
+                contenido_es: data.contenido_es || '',
                 autor_id: user.id,
                 imagen_url: data.imagen_url || null,
                 tematicas: data.tematicas || [],

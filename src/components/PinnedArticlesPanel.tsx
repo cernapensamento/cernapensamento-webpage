@@ -21,7 +21,7 @@ export default function PinnedArticlesPanel({ articulos }: PinnedArticlesPanelPr
               {articulo.imagen_url ? (
                 <Image 
                   src={articulo.imagen_url} 
-                  alt={articulo.titulo} 
+                  alt={articulo.titulo_gl || articulo.titulo_es || 'Artículo'} 
                   fill 
                   className="object-cover group-hover:scale-105 transition-all duration-700" 
                   sizes="(max-width: 768px) 100vw, 25vw"
@@ -36,10 +36,10 @@ export default function PinnedArticlesPanel({ articulos }: PinnedArticlesPanelPr
               {articulo.tipo || 'Artigo'}
             </span>
             <h3 className="font-serif text-xl md:text-2xl mb-3 group-hover:text-gold transition-colors duration-300 line-clamp-3">
-              {articulo.titulo}
+              {articulo.titulo_gl || articulo.titulo_es}
             </h3>
-            <p className="font-sans text-sm text-charcoal/60 mb-4 line-clamp-3">
-              {articulo.subtitulo || (articulo.contenido.replace(/<[^>]*>/g, '').substring(0, 100) + '...')}
+            <p className="font-sans text-sm text-charcoal/60 line-clamp-3">
+              {articulo.subtitulo_gl || articulo.subtitulo_es || String(articulo.contenido_gl || articulo.contenido_es || '').replace(/<[^>]*>?/g, '').substring(0, 100) + '...'}
             </p>
             <div className="mt-auto border-t border-lines pt-3 w-1/3">
               <span className="text-[10px] font-semibold text-charcoal/80 uppercase tracking-widest">

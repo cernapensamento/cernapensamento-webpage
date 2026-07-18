@@ -6,6 +6,7 @@ import { SITE_NAME, DEFAULT_AVATAR_URL } from '@/lib/constants';
 import Image from 'next/image';
 import BackButton from '@/components/BackButton';
 import ThemeToggle from '@/components/ThemeToggle';
+import LanguageToggle from '@/components/LanguageToggle';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function PublicNavBar({ showBackLink = false }: { showBackLink?: boolean }) {
@@ -25,6 +26,7 @@ export default function PublicNavBar({ showBackLink = false }: { showBackLink?: 
               sizes="40px" 
             />
           </Link>
+          <LanguageToggle />
         </div>
         <Link href="/" className="font-serif text-3xl md:text-4xl text-charcoal tracking-tighter absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {SITE_NAME}

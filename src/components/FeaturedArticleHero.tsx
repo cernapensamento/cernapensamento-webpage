@@ -1,19 +1,27 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { cookies } from 'next/headers';
 
 interface FeaturedArticleHeroProps {
   articulo: any;
 }
 
-export default function FeaturedArticleHero({ articulo }: FeaturedArticleHeroProps) {
+export default async function FeaturedArticleHero({ articulo }: FeaturedArticleHeroProps) {
   if (!articulo) return null;
+
+  const cookieStore = await cookies();
+  const locale = cookieStore.get('locale')?.value || 'gl';
+  
+  const titulo = locale === 'es' ? articulo.titulo_es : articulo.titulo_gl;
+  const subtitulo = locale === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl;
+  const contenido = locale === 'es' ? articulo.contenido_es : articulo.contenido_gl;
 
   return (
     <section className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
       <Link href={`/articulo/${articulo.slug || articulo.id}`} className="md:col-span-7 h-[400px] md:h-[600px] relative w-full overflow-hidden bg-lines block">
         {articulo.imagen_url ? (
           <Image
-            alt={articulo.titulo || "Featured article cover"}
+            alt={titulo || "Featured article cover"}
             className="object-cover transition-all duration-700 ease-in-out"
             src={articulo.imagen_url}
             fill
@@ -30,11 +38,11 @@ export default function FeaturedArticleHero({ articulo }: FeaturedArticleHeroPro
         <span className="text-sm font-semibold text-gold uppercase tracking-widest">{articulo.tipo || 'Artigo'}</span>
         <Link href={`/articulo/${articulo.slug || articulo.id}`}>
           <h1 className="font-serif text-4xl md:text-5xl text-charcoal cursor-pointer hover:text-gold transition-colors duration-300 leading-tight">
-            {articulo.titulo}
+            {titulo}
           </h1>
         </Link>
         <p className="font-sans text-lg text-charcoal/80 line-clamp-4">
-          {articulo.subtitulo || (articulo.contenido.replace(/<[^>]*>/g, '').substring(0, 150) + '...')}
+          {subtitulo || (contenido?.replace(/<[^>]*>/g, '').substring(0, 150) + '...')}
         </p>
         <div className="pt-4 border-t border-lines w-1/4 mt-2">
           <span className="text-sm font-semibold text-charcoal uppercase tracking-widest">

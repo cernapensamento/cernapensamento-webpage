@@ -85,7 +85,7 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
                     <div className="flex gap-8">
                       <div className="hidden sm:block w-32 h-32 shrink-0 border border-lines overflow-hidden relative">
                         {articulo.imagen_url ? (
-                          <Image className="object-cover transition-all duration-700" src={articulo.imagen_url} alt={articulo.titulo} fill sizes="128px" />
+                          <Image className="object-cover transition-all duration-700" src={articulo.imagen_url} alt={articulo.titulo_gl || articulo.titulo_es || 'Artículo'} fill sizes="128px" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-lines text-charcoal/20">
                             <span className="font-serif text-3xl">§</span>
@@ -105,10 +105,10 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
                           )}
                         </div>
                         <Link href={`/articulo/${articulo.slug || articulo.id}`}>
-                          <h4 className="font-serif text-2xl mb-3 group-hover:text-gold transition-colors cursor-pointer">{articulo.titulo}</h4>
+                          <h4 className="font-serif text-2xl mb-3 group-hover:text-gold transition-colors cursor-pointer">{articulo.titulo_gl || articulo.titulo_es}</h4>
                         </Link>
                         <p className="font-sans text-base text-charcoal/60 line-clamp-2">
-                          {articulo.subtitulo || articulo.contenido.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...'}
+                          {articulo.subtitulo_gl || articulo.subtitulo_es || String(articulo.contenido_gl || articulo.contenido_es || '').replace(/<[^>]*>?/gm, '').substring(0, 150) + '...'}
                         </p>
                         <div className="mt-4 flex items-center gap-6">
                           <Link href={`/escritorio/editar/${articulo.slug || articulo.id}`} className="flex items-center gap-1 text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
@@ -118,7 +118,7 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
                           {articulo.estado === 'publicado' && (
                             <PinArticleButton id={articulo.id} fijado={articulo.fijado || false} />
                           )}
-                          <DeleteArticleButton id={articulo.id} titulo={articulo.titulo} />
+                          <DeleteArticleButton id={articulo.id} titulo={articulo.titulo_gl || articulo.titulo_es} />
                         </div>
                       </div>
                     </div>

@@ -7,19 +7,25 @@ import ArticleCard from '@/components/ArticleCard';
 export const revalidate = 60;
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }
 
 export default async function AutorPage({ params }: PageProps) {
   const supabase = await createClient();
-  const { id } = await params;
+  const { slug } = await params;
+
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
   // Fetch author profile
-  const { data: autor, error: perfilError } = await supabase
-    .from('perfiles')
-    .select('*')
-    .eq('id', id)
-    .single();
+  let profileQuery = supabase.from('perfiles').select('*');
+  
+  if (isUUID) {
+    profileQuery = profileQuery.eq('id', slug);
+  } else {
+    profileQuery = profileQuery.eq('slug', slug);
+  }
+
+  const { data: autor, error: perfilError } = await profileQuery.single();
 
   if (perfilError || !autor) {
     notFound();
@@ -28,8 +34,8 @@ export default async function AutorPage({ params }: PageProps) {
   // Fetch articles
   const { data: articulos, error: articulosError } = await supabase
     .from('articulos')
-    .select('*, perfiles(nombre)')
-    .eq('autor_id', id)
+    .select('*, perfiles(nombre, slug)')
+    .eq('autor_id', autor.id)
     .eq('estado', 'publicado')
     .order('creado_en', { ascending: false });
 
