@@ -6,7 +6,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
-  const next = searchParams.get('next') ?? '/escritorio/perfil'
 
   if (token_hash && type) {
     const supabase = await createClient()
@@ -18,10 +17,10 @@ export async function GET(request: NextRequest) {
     
     if (!error) {
       // Redirigir al usuario a la página deseada después de confirmar
-      return NextResponse.redirect(new URL(next, request.url))
+      return NextResponse.redirect(new URL('/escritorio/perfil', request.url))
     }
   }
 
-  // Si hay error (token expirado o inválido), redirigir al login con parámetro de error
-  return NextResponse.redirect(new URL('/login?error=invalid_token', request.url))
+  // devolver al usuario a una página de error con instrucciones
+  return NextResponse.redirect(new URL('/auth/auth-error', request.url))
 }

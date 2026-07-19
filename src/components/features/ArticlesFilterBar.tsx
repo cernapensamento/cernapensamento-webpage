@@ -9,9 +9,11 @@ export default function ArticlesFilterBar({ availableTags }: { availableTags: st
   const searchParams = useSearchParams();
   
   const currentQuery = searchParams.get('q') || '';
-  const currentTag = searchParams.get('tema') || '';
+  const currentTags = searchParams.getAll('tema');
+  const currentTagsSet = new Set(currentTags);
 
   const [query, setQuery] = useState(currentQuery);
+  const createQueryStringRef = useRef<any>(null);
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -27,17 +29,28 @@ export default function ArticlesFilterBar({ availableTags }: { availableTags: st
   );
 
   useEffect(() => {
+    createQueryStringRef.current = createQueryString;
+  }, [createQueryString]);
+
+  useEffect(() => {
     const handler = setTimeout(() => {
-      if (query !== currentQuery) {
-        router.push(pathname + '?' + createQueryString('q', query), { scroll: false });
+      if (query !== currentQuery && createQueryStringRef.current) {
+        router.push(pathname + '?' + createQueryStringRef.current('q', query), { scroll: false });
       }
     }, 500);
     return () => clearTimeout(handler);
-  }, [query, currentQuery, pathname, router, createQueryString]);
+  }, [query, currentQuery, pathname, router]);
 
   const toggleTag = (tag: string) => {
-    const newTag = currentTag === tag ? '' : tag;
-    router.push(pathname + '?' + createQueryString('tema', newTag), { scroll: false });
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('tema');
+    
+    if (tag !== '') {
+      let newTags = currentTags.includes(tag) ? currentTags.filter(t => t !== tag) : [...currentTags, tag];
+      newTags.forEach(t => params.append('tema', t));
+    }
+    
+    router.push(pathname + '?' + params.toString(), { scroll: false });
   };
 
   return (
@@ -54,17 +67,15 @@ export default function ArticlesFilterBar({ availableTags }: { availableTags: st
       </div>
 
       <div className="flex flex-wrap justify-center gap-3">
-        <button
-          onClick={() => toggleTag('')}
-          className={`px-5 py-2 border font-sans text-xs uppercase tracking-[0.15em] transition-all duration-300 ${!currentTag ? 'bg-charcoal text-parchment border-charcoal' : 'border-lines text-charcoal/70 hover:border-charcoal hover:text-charcoal'}`}
+        <button type="button"           onClick={() => toggleTag('')}
+          className={`px-5 py-2 border font-sans text-xs uppercase tracking-[0.15em] transition-all duration-300 ${currentTags.length === 0 ? 'bg-charcoal text-parchment border-charcoal' : 'border-lines text-charcoal/70 hover:border-charcoal hover:text-charcoal'}`}
         >
           Todos
         </button>
         {availableTags.map((tag) => (
-          <button
-            key={tag}
+          <button type="button"             key={tag}
             onClick={() => toggleTag(tag)}
-            className={`px-5 py-2 border font-sans text-xs uppercase tracking-[0.15em] transition-all duration-300 ${currentTag === tag ? 'bg-charcoal text-parchment border-charcoal' : 'border-lines text-charcoal/70 hover:border-charcoal hover:text-charcoal'}`}
+            className={`px-5 py-2 border font-sans text-xs uppercase tracking-[0.15em] transition-all duration-300 ${currentTagsSet.has(tag) ? 'bg-charcoal text-parchment border-charcoal' : 'border-lines text-charcoal/70 hover:border-charcoal hover:text-charcoal'}`}
           >
             {tag}
           </button>

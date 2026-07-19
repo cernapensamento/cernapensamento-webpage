@@ -3,6 +3,14 @@ import { GoogleGenAI } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+const extractSection = (text: string, sectionMarker: string, nextMarker?: string) => {
+  const startIndex = text.indexOf(sectionMarker);
+  if (startIndex === -1) return '';
+  const start = startIndex + sectionMarker.length;
+  const end = nextMarker ? text.indexOf(nextMarker, start) : text.length;
+  return text.substring(start, end !== -1 ? end : text.length).trim();
+};
+
 export async function POST(req: Request) {
   try {
     const { title, subtitle, htmlContent, targetLanguage } = await req.json();
@@ -40,14 +48,6 @@ export async function POST(req: Request) {
     
     try {
       // Parse the separator-based format
-      const extractSection = (text: string, sectionMarker: string, nextMarker?: string) => {
-        const startIndex = text.indexOf(sectionMarker);
-        if (startIndex === -1) return '';
-        const start = startIndex + sectionMarker.length;
-        const end = nextMarker ? text.indexOf(nextMarker, start) : text.length;
-        return text.substring(start, end !== -1 ? end : text.length).trim();
-      };
-
       return NextResponse.json({ 
         title: extractSection(translatedText, '---TITLE---', '---SUBTITLE---'), 
         subtitle: extractSection(translatedText, '---SUBTITLE---', '---HTMLCONTENT---'), 

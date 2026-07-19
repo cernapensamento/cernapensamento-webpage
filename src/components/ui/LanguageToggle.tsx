@@ -2,7 +2,6 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { setLocale } from '@/app/actions/locale';
 
 export default function LanguageToggle() {
   const router = useRouter();
@@ -19,8 +18,8 @@ export default function LanguageToggle() {
     if (newLocale === currentLocale) return;
     
     setCurrentLocale(newLocale);
-    startTransition(async () => {
-      await setLocale(newLocale);
+    document.cookie = `locale=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}`;
+    startTransition(() => {
       router.refresh();
     });
   };
@@ -33,8 +32,7 @@ export default function LanguageToggle() {
       role="group"
       aria-label="Selector de idioma"
     >
-      <button
-        onClick={() => switchLocale('gl')}
+      <button type="button"         onClick={() => switchLocale('gl')}
         disabled={isPending}
         aria-pressed={currentLocale === 'gl'}
         aria-label="Cambiar a Galego"
@@ -45,8 +43,7 @@ export default function LanguageToggle() {
         GL
       </button>
       <div className="w-[1px] h-full bg-lines" aria-hidden="true" />
-      <button
-        onClick={() => switchLocale('es')}
+      <button type="button"         onClick={() => switchLocale('es')}
         disabled={isPending}
         aria-pressed={currentLocale === 'es'}
         aria-label="Cambiar a Castellano"

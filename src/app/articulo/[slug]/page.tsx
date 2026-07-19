@@ -4,18 +4,17 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
 import sanitizeHtml from 'sanitize-html';
-import PublicNavBar from '@/components/PublicNavBar';
-import SiteFooter from '@/components/SiteFooter';
+import PublicNavBar from '@/components/layout/PublicNavBar';
+import SiteFooter from '@/components/layout/SiteFooter';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
-import CommentsSection from '@/components/CommentsSection';
+import CommentsSection from '@/components/features/CommentsSection';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: Props) {
-  const { slug } = await params;
-  const supabase = await createClient();
+  const [{ slug }, supabase] = await Promise.all([params, createClient()]);
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
   const { data: articulo } = await supabase
@@ -42,9 +41,11 @@ export async function generateMetadata({ params }: Props) {
 export const revalidate = 60;
 
 export default async function ArticuloPage({ params }: Props) {
-  const { slug } = await params;
-  const supabase = await createClient();
-  const cookieStore = await cookies();
+  const [{ slug }, supabase, cookieStore] = await Promise.all([
+    params,
+    createClient(),
+    cookies()
+  ]);
   const locale = cookieStore.get('locale')?.value || 'gl';
 
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);

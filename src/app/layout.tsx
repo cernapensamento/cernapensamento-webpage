@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Libre_Caslon_Text, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
-import ThemeToggle from '@/components/ThemeToggle';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 const libreCaslon = Libre_Caslon_Text({
   weight: ["400", "700"],
   subsets: ["latin"],
@@ -33,7 +33,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

@@ -2,15 +2,17 @@ import React from 'react';
 import { getAuthenticatedUser } from '@/utils/auth';
 import { createClient } from '@/utils/supabase/server';
 import { redirect, notFound } from 'next/navigation';
-import EditarArticuloForm from '@/components/escritorio/EditarArticuloForm';
+import EditarArticuloForm from '@/components/forms/EditarArticuloForm';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
 export default async function EditarArticuloPage({ params }: Props) {
-  const { slug } = await params;
-  const { user, profile } = await getAuthenticatedUser();
+  const [{ slug }, { user, profile }] = await Promise.all([
+    params,
+    getAuthenticatedUser()
+  ]);
 
   if (!user || !profile) {
     redirect('/login');

@@ -26,9 +26,9 @@ const columnists = [
     id: 'd3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3',
     slug: 'denis-fernandez',
     name: 'Denís Fernández',
-    description: 'Estudia Derecho en la Universidad Rey Juan Carlos de Madrid. Sus ensayos giran en torno a la tensión entre la ley escrita y la justicia material, los derechos humanos como conquista siempre reversible, y el papel del Estado frente a la desigualdad. Defiende que el derecho debe estar al servicio de los más débiles.',
+    description: 'Estuda o dobre grao bilingüe en Dereito e Administración e Dirección de Empresas (ADE) na Universidade Carlos III de Madrid. No ámbito do debate, foi distinguido na categoría de Bacharelato como mellor orador na fase previa do Parlamento Xove na edición de 2025. Os seus artigos nacen do interese por analizar a realidade socioeconómica e xurídica actual, cunha mirada especialmente centrada nos retos, perspectivas e problemáticas que afronta a mocidade de hoxe en día.',
     email: 'denisfernandez@cernapensamento.org',
-    instagram: '@denis.f',
+    instagram: '@denisfdeez',
     image: '/images/columnistas/denis.jpeg'
   },
   {
@@ -52,8 +52,8 @@ export default function ColumnistsSection() {
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
-          {columnists.map((columnist, index) => (
-            <div key={index} className="flex flex-col items-center group">
+          {columnists.map((columnist) => (
+            <div key={columnist.id} className="flex flex-col items-center group">
               <Link href={`/autor/${columnist.slug || columnist.id}`} className="relative w-56 h-56 md:w-40 md:h-40 mb-8 rounded-full overflow-hidden border border-lines transition-all duration-700 cursor-pointer block">
                 <Image
                   src={columnist.image}

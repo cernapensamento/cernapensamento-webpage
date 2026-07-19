@@ -1,9 +1,10 @@
 import { Suspense } from 'react';
 import { createClient } from '@/utils/supabase/server';
-import ArticleCard from '@/components/ArticleCard';
-import ArticlesFilterBar from '@/components/ArticlesFilterBar';
-import PublicNavBar from '@/components/PublicNavBar';
-import SiteFooter from '@/components/SiteFooter';
+import ArticleCard from '@/components/features/ArticleCard';
+import ArticlesFilterBar from '@/components/features/ArticlesFilterBar';
+import PublicNavBar from '@/components/layout/PublicNavBar';
+import SiteFooter from '@/components/layout/SiteFooter';
+import Link from 'next/link';
 
 export const revalidate = 0;
 
@@ -16,7 +17,8 @@ export default async function ArticulosPage({
   const resolvedParams = await searchParams;
   
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : '';
-  const tema = typeof resolvedParams.tema === 'string' ? resolvedParams.tema : '';
+  const temaRaw = resolvedParams.tema;
+  const temasArray = Array.isArray(temaRaw) ? temaRaw : (typeof temaRaw === 'string' && temaRaw ? [temaRaw] : []);
 
   // 1. Obtener todas las etiquetas únicas directamente de los artículos publicados
   const { data: allArticles } = await supabase
@@ -42,8 +44,8 @@ export default async function ArticulosPage({
   if (q) {
     query = query.or(`titulo.ilike.%${q}%,contenido.ilike.%${q}%`);
   }
-  if (tema) {
-    query = query.contains('tematicas', [tema]);
+  if (temasArray.length > 0) {
+    query = query.contains('tematicas', temasArray);
   }
 
   const { data: articulos, error } = await query;
@@ -71,7 +73,7 @@ export default async function ArticulosPage({
           {!error && articulos && articulos.length === 0 && (
             <div className="text-center py-32 border-t border-lines">
               <p className="font-serif text-2xl text-charcoal/50 mb-6">No se encontraron artículos con esos filtros.</p>
-              <a href="/articulos" className="px-6 py-3 border border-charcoal text-xs font-sans uppercase tracking-[0.2em] text-charcoal hover:bg-charcoal hover:text-parchment transition-colors">Limpiar filtros</a>
+              <Link href="/articulos" className="px-6 py-3 border border-charcoal text-xs font-sans uppercase tracking-[0.2em] text-charcoal hover:bg-charcoal hover:text-parchment transition-colors">Limpiar filtros</Link>
             </div>
           )}
 

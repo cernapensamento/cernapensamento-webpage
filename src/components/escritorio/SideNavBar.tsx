@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { handleSignOut } from '@/app/actions';
+import { handleSignOut } from '@/actions/auth';
 import Image from 'next/image';
 import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 
@@ -14,7 +14,7 @@ interface SideNavBarProps {
 export default function SideNavBar({ role, avatarUrl }: SideNavBarProps) {
   const pathname = usePathname();
 
-  const isWriter = role === 'escritor' || role === 'admin';
+  const isWriter = role === 'escritor' || role === 'admin' || role === 'invitado';
 
   return (
     <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface border-r border-lines z-50">

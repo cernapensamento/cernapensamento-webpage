@@ -1,7 +1,7 @@
 import React from 'react';
-import PublicNavBar from '@/components/PublicNavBar';
-import SiteFooter from '@/components/SiteFooter';
-import EstatutosContent from './EstatutosContent';
+import PublicNavBar from '@/components/layout/PublicNavBar';
+import SiteFooter from '@/components/layout/SiteFooter';
+import EstatutosContent from '@/components/estatutos/EstatutosContent';
 
 // Metadatos para SEO
 export const metadata = {

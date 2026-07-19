@@ -18,7 +18,7 @@ CREATE TABLE public.perfiles (
   bio TEXT,
   avatar_url TEXT,
   recibir_newsletter BOOLEAN DEFAULT TRUE,
-  rol TEXT DEFAULT 'usuario' CHECK (rol IN ('usuario', 'escritor', 'admin'))
+  rol TEXT DEFAULT 'usuario' CHECK (rol IN ('usuario', 'escritor', 'admin', 'invitado'))
 );
 
 -- 3. Crear tabla de artículos
@@ -115,17 +115,17 @@ CREATE POLICY "Usuarios pueden crear sus propios artículos"
   ON public.articulos FOR INSERT
   WITH CHECK (
     auth.uid() = autor_id 
-    AND (SELECT rol FROM public.perfiles WHERE id = auth.uid()) IN ('escritor', 'admin')
+    AND (SELECT rol FROM public.perfiles WHERE id = auth.uid()) IN ('escritor', 'admin', 'invitado')
   );
 
 CREATE POLICY "Usuarios pueden actualizar sus propios artículos"
   ON public.articulos FOR UPDATE
-  USING (auth.uid() = autor_id AND (SELECT rol FROM public.perfiles WHERE id = auth.uid()) IN ('escritor', 'admin'))
+  USING (auth.uid() = autor_id AND (SELECT rol FROM public.perfiles WHERE id = auth.uid()) IN ('escritor', 'admin', 'invitado'))
   WITH CHECK (auth.uid() = autor_id);
 
 CREATE POLICY "Usuarios pueden borrar sus propios artículos"
   ON public.articulos FOR DELETE
-  USING (auth.uid() = autor_id AND (SELECT rol FROM public.perfiles WHERE id = auth.uid()) IN ('escritor', 'admin'));
+  USING (auth.uid() = autor_id AND (SELECT rol FROM public.perfiles WHERE id = auth.uid()) IN ('escritor', 'admin', 'invitado'));
 
 -- COMENTARIOS
 CREATE POLICY "Comentarios públicos para leer"
@@ -181,3 +181,44 @@ CREATE POLICY "Usuarios pueden borrar sus propias imágenes"
     bucket_id = 'imagenes-articulos' 
     AND auth.uid() = owner
   );
+
+-- ==========================================
+-- TRIGGERS DE NEGOCIO (QUOTAS)
+-- ==========================================
+
+CREATE OR REPLACE FUNCTION check_article_quotas()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_rol TEXT;
+  v_total_count INT;
+  v_year_count INT;
+BEGIN
+  -- Obtener el rol del usuario que inserta
+  SELECT rol INTO v_rol FROM public.perfiles WHERE id = NEW.autor_id;
+  
+  IF v_rol = 'invitado' THEN
+    -- Contar total
+    SELECT count(*) INTO v_total_count FROM public.articulos WHERE autor_id = NEW.autor_id;
+    IF v_total_count >= 4 THEN
+      RAISE EXCEPTION 'Límite total alcanzado: Un autor invitado no puede crear más de 4 artículos en total.';
+    END IF;
+    
+    -- Contar año actual
+    SELECT count(*) INTO v_year_count FROM public.articulos 
+    WHERE autor_id = NEW.autor_id 
+      AND extract(year from creado_en) = extract(year from now());
+    IF v_year_count >= 2 THEN
+      RAISE EXCEPTION 'Límite anual alcanzado: Un autor invitado no puede crear más de 2 artículos este año.';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS before_insert_articulo_quota ON public.articulos;
+CREATE TRIGGER before_insert_articulo_quota
+BEFORE INSERT ON public.articulos
+FOR EACH ROW
+EXECUTE FUNCTION check_article_quotas();
+

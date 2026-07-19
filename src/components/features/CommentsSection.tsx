@@ -1,27 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import CommentForm from './CommentForm';
+import CommentForm from '@/components/forms/CommentForm';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function CommentsSection({ articuloId }: { articuloId: string }) {
   const { user } = useAuth();
   const [comentarios, setComentarios] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const loading = useRef(true);
   const supabase = createClient();
 
-  const fetchComments = async () => {
-    const { data } = await supabase
+  const fetchComments = useCallback(async () => {
+    const { data, error } = await supabase
       .from('comentarios')
-      .select('id, contenido, creado_en, autor_id, perfiles(nombre, avatar_url)')
+      .select('*, perfiles(nombre, avatar_url)')
       .eq('articulo_id', articuloId)
-      .order('creado_en', { ascending: true });
-    
-    if (data) setComentarios(data);
-    setLoading(false);
-  };
+      .order('creado_en', { ascending: false });
+
+    if (!error && data) {
+      setComentarios(data);
+    }
+    loading.current = false;
+  }, [articuloId, supabase]);
 
   const handleDelete = async (comentarioId: string) => {
     if (!window.confirm('¿Estás seguro de que quieres eliminar este comentario?')) return;
@@ -44,7 +47,7 @@ export default function CommentsSection({ articuloId }: { articuloId: string }) 
 
   useEffect(() => {
     fetchComments();
-  }, [articuloId]);
+  }, [articuloId, fetchComments]);
 
   return (
     <section className="w-full border-t border-lines pt-12 mt-8">
@@ -74,11 +77,11 @@ export default function CommentsSection({ articuloId }: { articuloId: string }) 
                 <div className="flex items-baseline gap-3">
                   <span className="font-sans text-sm font-semibold text-charcoal">{comentario.perfiles?.nombre || 'Usuario'}</span>
                   <time className="font-sans text-[10px] uppercase tracking-widest text-charcoal/50">
-                    {new Date(comentario.creado_en).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {new Date(comentario.creado_en).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}
                   </time>
                 </div>
                 {user && user.id === comentario.autor_id && (
-                  <button 
+                  <button type="button" 
                     onClick={() => handleDelete(comentario.id)}
                     className="text-[10px] uppercase tracking-widest text-red-600/70 hover:text-red-600 transition-colors cursor-pointer"
                     title="Eliminar comentario"
@@ -103,9 +106,9 @@ export default function CommentsSection({ articuloId }: { articuloId: string }) 
       ) : (
         <div className="bg-surface border border-lines p-8 text-center">
           <p className="font-sans text-sm text-charcoal/70 mb-4">Debes iniciar sesión para unirte a la conversación.</p>
-          <a href="/login" className="inline-block px-6 py-3 border border-charcoal text-charcoal hover:bg-charcoal hover:text-parchment font-sans text-[10px] uppercase tracking-[0.2em] transition-colors duration-300">
+          <Link href="/login" className="inline-block px-6 py-3 border border-charcoal text-charcoal hover:bg-charcoal hover:text-parchment font-sans text-[10px] uppercase tracking-[0.2em] transition-colors duration-300">
             Iniciar sesión
-          </a>
+          </Link>
         </div>
       )}
     </section>

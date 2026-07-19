@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showResend, setShowResend] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -50,6 +51,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
+    setShowResend(false);
 
     if (password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres.");
@@ -88,7 +90,8 @@ export default function LoginPage() {
           email,
           password,
           options: {
-            data: { nombre }
+            data: { nombre },
+            emailRedirectTo: `${window.location.origin}/auth/callback`
           }
         });
         if (error) throw error;
@@ -100,8 +103,32 @@ export default function LoginPage() {
       let message = err instanceof Error ? err.message : 'Ha ocurrido un error durante la autenticación.';
       if (message.toLowerCase().includes('email not confirmed')) {
         message = 'Debes confirmar tu correo electrónico antes de poder iniciar sesión. Revisa tu bandeja de entrada.';
+        setShowResend(true);
       }
       setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) return;
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+      if (resendError) throw resendError;
+      setSuccessMessage('El correo de confirmación ha sido reenviado. Por favor, revisa tu bandeja de entrada.');
+      setShowResend(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Ha ocurrido un error al reenviar el correo.');
     } finally {
       setLoading(false);
     }
@@ -177,16 +204,28 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div role="alert" aria-live="polite" className="p-4 border border-red-900/20 bg-red-50/50 flex items-start gap-3 text-sm animate-in fade-in duration-300">
-              <span className="material-symbols-outlined text-red-800 shrink-0 text-lg" data-icon="error">error</span>
-              <p className="text-red-900 font-sans mt-0.5">{error}</p>
+            <div role="alert" aria-live="polite" className="p-4 rounded border border-red-200 bg-red-50 flex flex-col gap-3 text-sm animate-in fade-in duration-300 shadow-sm">
+              <div className="flex items-start gap-3">
+                <span className="material-symbols-outlined text-red-500 shrink-0 text-lg" data-icon="error">error</span>
+                <p className="text-red-800 font-sans mt-0.5">{error}</p>
+              </div>
+              {showResend && (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={loading}
+                  className="self-end text-xs font-semibold text-red-700 underline hover:text-red-900 disabled:opacity-50 cursor-pointer"
+                >
+                  Reenviar correo
+                </button>
+              )}
             </div>
           )}
 
           {successMessage && (
-            <div role="alert" aria-live="polite" className="p-4 border border-green-900/20 bg-green-50/50 flex items-start gap-3 text-sm animate-in fade-in duration-300">
-              <span className="material-symbols-outlined text-green-800 shrink-0 text-lg" data-icon="check_circle">check_circle</span>
-              <p className="text-green-900 font-sans mt-0.5">{successMessage}</p>
+            <div role="alert" aria-live="polite" className="p-4 rounded border border-green-200 bg-green-50 flex items-start gap-3 text-sm animate-in fade-in duration-300 shadow-sm">
+              <span className="material-symbols-outlined text-green-500 shrink-0 text-lg" data-icon="check_circle">check_circle</span>
+              <p className="text-green-800 font-sans mt-0.5">{successMessage}</p>
             </div>
           )}
 
@@ -231,12 +270,13 @@ export default function LoginPage() {
             onClick={() => {
               setIsLogin(!isLogin);
               setError(null);
+              setShowResend(false);
             }}
             className="text-xs text-gold hover:text-charcoal transition-colors uppercase tracking-widest font-semibold"
           >
             {isLogin
               ? '¿No tienes cuenta? Solicita acceso'
-              : '¿Ya eres autor? Inicia sesión'}
+              : '¿Ya tienes cuenta? Inicia sesión'}
           </button>
         </div>
       </div>

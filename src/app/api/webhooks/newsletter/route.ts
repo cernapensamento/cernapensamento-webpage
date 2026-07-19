@@ -3,13 +3,32 @@ import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || 'CERNA_WEBHOOK_SECRET_98765';
-
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+if (!WEBHOOK_SECRET) {
+  throw new Error('WEBHOOK_SECRET is not set in environment variables');
+}
 export async function POST(request: NextRequest) {
   try {
-    // 1. Verificar el secreto del webhook
+    // 1. Verificar el secreto del webhook de forma segura
     const authHeader = request.headers.get('Authorization');
-    if (authHeader !== `Bearer ${WEBHOOK_SECRET}`) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+    const token = authHeader.split(' ')[1];
+    
+    let isValid = false;
+    try {
+        const { timingSafeEqual } = await import('crypto');
+        const secretBuf = Buffer.from(WEBHOOK_SECRET);
+        const tokenBuf = Buffer.from(token);
+        if (secretBuf.length === tokenBuf.length) {
+            isValid = timingSafeEqual(secretBuf, tokenBuf);
+        }
+    } catch (e) {
+        isValid = false;
+    }
+    
+    if (!isValid) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 

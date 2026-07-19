@@ -36,7 +36,7 @@ export default function DeleteArticleButton({ id, titulo }: Props) {
     };
 
     return (
-        <button 
+        <button type="button" 
             onClick={handleDelete}
             disabled={isDeleting}
             className="flex items-center gap-1 text-charcoal/60 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"

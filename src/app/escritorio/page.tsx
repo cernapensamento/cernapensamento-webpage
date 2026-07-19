@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/utils/auth';
 
-import SiteFooter from '@/components/SiteFooter';
+import SiteFooter from '@/components/layout/SiteFooter';
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
 import PinArticleButton from '@/components/escritorio/PinArticleButton';
 
@@ -14,12 +14,13 @@ interface PageProps {
 }
 
 export default async function EscritorioDelEscritorElDialecto({ searchParams }: PageProps) {
-  const params = await searchParams;
+  const [params, supabase, { user, profile }] = await Promise.all([
+    searchParams,
+    createClient(),
+    getAuthenticatedUser()
+  ]);
   const verTodo = params.ver === 'todo';
   const filtro = params.filtro || 'todos';
-
-  const supabase = await createClient();
-  const { user, profile } = await getAuthenticatedUser();
   if (!user) {
     redirect('/login');
   }
@@ -42,6 +43,14 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
     : todosLosArticulos;
   const displayedArticles = verTodo ? articulosFiltrados : articulosFiltrados.slice(0, 3);
 
+  const isInvitado = profile?.rol === 'invitado';
+  const currentYear = new Date().getFullYear();
+  const articulosEsteAno = todosLosArticulos.filter(a => new Date(a.creado_en).getFullYear() === currentYear).length;
+  const totalArticulos = todosLosArticulos.length;
+  const limiteTotal = 4;
+  const limiteAnual = 2;
+  const canCreate = !isInvitado || (totalArticulos < limiteTotal && articulosEsteAno < limiteAnual);
+
   return (
     <main className="px-5 md:px-16 pb-24 flex flex-col flex-1">
       <div className="flex-1">
@@ -50,14 +59,28 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div>
                 <h2 className="font-serif text-4xl mb-4">Bienvenido, {profile?.nombre || 'Editor'}.</h2>
+                {isInvitado && (
+                  <div className="flex flex-col text-sm font-sans text-charcoal/80 bg-gold/10 p-4 border border-gold/20 rounded-sm mb-4 md:mb-0">
+                    <p className="mb-1"><strong className="text-gold">Autor Invitado</strong></p>
+                    <p>Límite anual: {articulosEsteAno} / {limiteAnual}</p>
+                    <p>Límite total: {totalArticulos} / {limiteTotal}</p>
+                  </div>
+                )}
               </div>
-              <Link
-                href="/escritorio/nuevo"
-                className="flex items-center gap-3 bg-charcoal text-parchment px-8 py-5 font-sans text-sm uppercase tracking-widest hover:bg-gold transition-all duration-300 hover:shadow-lg hover:-translate-y-1 shrink-0 group"
-              >
-                <span className="material-symbols-outlined transition-transform duration-500 group-hover:rotate-90" data-icon="add">add</span>
-                Crear nueva publicación
-              </Link>
+              {canCreate ? (
+                <Link
+                  href="/escritorio/nuevo"
+                  className="flex items-center gap-3 bg-charcoal text-parchment px-8 py-5 font-sans text-sm uppercase tracking-widest hover:bg-gold transition-all duration-300 hover:shadow-lg hover:-translate-y-1 shrink-0 group"
+                >
+                  <span className="material-symbols-outlined transition-transform duration-500 group-hover:rotate-90" data-icon="add">add</span>
+                  Crear nueva publicación
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3 bg-lines text-charcoal/40 px-8 py-5 font-sans text-sm uppercase tracking-widest cursor-not-allowed shrink-0">
+                  <span className="material-symbols-outlined" data-icon="lock">lock</span>
+                  Límite alcanzado
+                </div>
+              )}
             </div>
           </div>
         </section>

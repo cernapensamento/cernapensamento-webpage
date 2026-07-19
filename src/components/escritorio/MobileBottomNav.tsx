@@ -9,7 +9,7 @@ interface MobileBottomNavProps {
 
 export default function MobileBottomNav({ role }: MobileBottomNavProps) {
   const pathname = usePathname();
-  const isWriter = role === 'escritor' || role === 'admin';
+  const isWriter = role === 'escritor' || role === 'admin' || role === 'invitado';
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface flex items-center justify-around z-50 border-t border-lines">

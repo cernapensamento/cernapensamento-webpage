@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { SITE_NAME, DEFAULT_AVATAR_URL } from '@/lib/constants';
-import ThemeToggle from '@/components/ThemeToggle';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 interface DashboardTopBarProps {
   avatarUrl?: string | null;
@@ -9,7 +9,7 @@ interface DashboardTopBarProps {
 }
 
 export default function DashboardTopBar({ avatarUrl, role }: DashboardTopBarProps) {
-  const rolTexto = role === 'admin' ? 'ADMIN' : role === 'escritor' ? 'ESCRITOR' : 'LECTOR';
+  const rolTexto = role === 'admin' ? 'ADMIN' : role === 'escritor' ? 'ESCRITOR' : role === 'invitado' ? 'INVITADO' : 'LECTOR';
 
   return (
     <header className="w-full sticky top-0 bg-surface flex justify-between items-center h-16 z-40 border-b border-lines px-5 md:px-16 shrink-0">

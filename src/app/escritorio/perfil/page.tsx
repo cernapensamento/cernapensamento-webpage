@@ -2,13 +2,13 @@ import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/utils/auth';
-import ProfileDashboard from '@/components/ProfileDashboard';
+import ProfileDashboard from '@/components/features/ProfileDashboard';
 
 export default async function PerfilPage() {
   const { user, profile } = await getAuthenticatedUser();
   if (!user) redirect('/login');
 
-  const isWriter = profile?.rol === 'escritor' || profile?.rol === 'admin';
+  const isWriter = profile?.rol === 'escritor' || profile?.rol === 'admin' || profile?.rol === 'invitado';
 
   return (
     <main className="px-5 md:px-16 pb-24 pt-4">

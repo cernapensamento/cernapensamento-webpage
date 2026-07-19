@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import PasswordForm from '@/components/PasswordForm';
+import PasswordForm from '@/components/forms/PasswordForm';
 import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 
 export default function ProfileDashboard({ profile, user }: { profile: any, user: any }) {
@@ -123,6 +123,9 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
           <div 
             className={`w-20 h-20 sm:w-24 sm:h-24 shrink-0 relative group overflow-hidden rounded-full border border-lines ${isUploading ? 'cursor-wait opacity-50 animate-pulse' : 'cursor-pointer'}`} 
             onClick={!isUploading ? handleChangeAvatar : undefined}
+            onKeyDown={!isUploading ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleChangeAvatar(); } } : undefined}
+            role="button"
+            tabIndex={0}
             title="Cambiar imagen de perfil"
           >
             <Image className="object-cover transition-all group-hover:opacity-30" alt="Writer Portrait" src={avatarUrl || DEFAULT_AVATAR_URL} fill sizes="(max-width: 640px) 80px, 96px"/>
@@ -143,7 +146,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
           <div>
             <h3 className="font-serif text-2xl sm:text-3xl text-charcoal mb-1">{nombre || 'Nombre no disponible'}</h3>
             <p className="font-sans text-[10px] sm:text-xs text-gold uppercase tracking-[0.2em] font-bold">
-              {profile?.rol === 'admin' ? 'Administrador / Editor en Jefe' : profile?.rol === 'escritor' ? 'Escritor' : 'Lector'}
+              {profile?.rol === 'admin' ? 'Administrador / Editor en Jefe' : profile?.rol === 'escritor' ? 'Escritor' : profile?.rol === 'invitado' ? 'Autor Invitado' : 'Lector'}
             </p>
           </div>
         </div>
@@ -175,7 +178,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
             <div>
               <span className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Fecha de Ingreso</span>
               <span className="font-sans text-sm sm:text-base text-charcoal/80">
-                {user?.created_at ? new Date(user.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Desconocida'}
+                {user?.created_at ? new Date(user.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : 'Desconocida'}
               </span>
             </div>
           </div>
@@ -183,8 +186,9 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
           {/* Profile Form */}
           <form id="profile-form" onSubmit={handleUpdate} className="space-y-4">
             <div>
-              <label className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Nombre</label>
+              <label htmlFor="nombre" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Nombre</label>
               <input
+                id="nombre"
                 type="text"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
@@ -193,8 +197,9 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
               />
             </div>
             <div>
-              <label className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Biografía</label>
+              <label htmlFor="bio" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Biografía</label>
               <textarea
+                id="bio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 rows={1}

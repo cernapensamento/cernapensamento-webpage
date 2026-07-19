@@ -1,15 +1,17 @@
 import React from 'react';
 import Link from 'next/link';
 
+const tematicas = [
+  'Economía',
+  'Filosofía',
+  'Literatura',
+  'Dereito e Xustiza',
+  'Ciencia e Divulgación',
+  'Historia',
+  'Crítica Social'
+];
+
 export default function ThemesSection() {
-  const tematicas = [
-    'Economía e Capitalismo',
-    'Historia e Memoria',
-    'Física e Cosmoloxía',
-    'Dereito e Xustiza',
-    'Literatura Contemporánea',
-    'Crítica Social'
-  ];
 
   return (
     <section className="w-full py-24 bg-parchment text-charcoal border-t border-lines">

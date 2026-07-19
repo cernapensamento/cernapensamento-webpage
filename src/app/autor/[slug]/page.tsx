@@ -1,8 +1,8 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import PublicNavBar from '@/components/PublicNavBar';
-import SiteFooter from '@/components/SiteFooter';
-import ArticleCard from '@/components/ArticleCard';
+import PublicNavBar from '@/components/layout/PublicNavBar';
+import SiteFooter from '@/components/layout/SiteFooter';
+import ArticleCard from '@/components/features/ArticleCard';
 
 export const revalidate = 60;
 

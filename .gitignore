@@ -42,3 +42,4 @@ next-env.d.ts
 
 # agy configuration
 .agent/
+tsconfig.tsbuildinfo

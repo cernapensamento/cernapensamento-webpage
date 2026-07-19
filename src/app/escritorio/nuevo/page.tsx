@@ -5,19 +5,19 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import ArticleEditor, { ArticleData } from '@/components/escritorio/ArticleEditor';
 
+const generateSlug = (title: string) => {
+    return title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '') + '-' + Math.random().toString(36).substring(2, 8);
+};
+
 export default function NuevoArticulo() {
     const [isPublishing, setIsPublishing] = useState(false);
     const router = useRouter();
     const supabase = createClient();
-
-    const generateSlug = (title: string) => {
-        return title
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/[\s_-]+/g, '-')
-            .replace(/^-+|-+$/g, '') + '-' + Math.random().toString(36).substring(2, 8);
-    };
 
     const handleSave = async (data: ArticleData, isDraft: boolean) => {
         setIsPublishing(true);

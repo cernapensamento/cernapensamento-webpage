@@ -33,8 +33,7 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button
-      onClick={toggleTheme}
+    <button type="button"       onClick={toggleTheme}
       className="p-2 border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300 flex items-center justify-center w-10 h-10 shadow-lg"
       aria-label="Alternar tema"
       title="Alternar tema"

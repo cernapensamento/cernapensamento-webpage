@@ -5,10 +5,18 @@ import NextImage from 'next/image';
 import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL } from '@/lib/constants';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Figure } from './FigureExtension';
+import { Figure } from '@/lib/editor/FigureExtension';
 import Youtube from '@tiptap/extension-youtube';
 import { createClient } from '@/utils/supabase/client';
 import sanitizeHtml from 'sanitize-html';
+
+const TEMATICAS_SUGERIDAS = ['ECONOMÍA', 'POLÍTICA', 'CIENCIA', 'FILOSOFÍA', 'TECNOLOGÍA', 'ARTE'];
+
+const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const target = e.target as HTMLTextAreaElement;
+    target.style.height = 'auto';
+    target.style.height = target.scrollHeight + 'px';
+};
 
 export interface ArticleData {
     id?: string;
@@ -56,13 +64,13 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
     const [tematicas, setTematicas] = useState<string[]>(initialData?.tematicas || []);
     const [tematicaInput, setTematicaInput] = useState('');
     const [showPreview, setShowPreview] = useState(false);
-    const [isUploadingCover, setIsUploadingCover] = useState(false);
-    const [isUploadingInline, setIsUploadingInline] = useState(false);
-    const [uploadedInlineImages, setUploadedInlineImages] = useState<string[]>([]);
+    const isUploadingCover = useRef(false);
+    const isUploadingInline = useRef(false);
+    const uploadedInlineImages = useRef<string[]>([]);
     const coverInputRef = useRef<HTMLInputElement>(null);
     const inlineImageRef = useRef<HTMLInputElement>(null);
     const [authorProfile, setAuthorProfile] = useState<{ nombre: string; avatar_url?: string; bio?: string } | null>(null);
-    const TEMATICAS_SUGERIDAS = ['ECONOMÍA', 'POLÍTICA', 'CIENCIA', 'FILOSOFÍA', 'TECNOLOGÍA', 'ARTE'];
+    
     const supabase = createClient();
 
     // Auto-save logic
@@ -190,7 +198,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
             setHasUnsavedChanges(true);
         }, 1500);
         return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
-    }, [tituloGl, tituloEs, subtituloGl, subtituloEs, contenidoGl, contenidoEs, coverImageUrl, tematicas, tipo]);
+    }, [tituloGl, tituloEs, subtituloGl, subtituloEs, contenidoGl, contenidoEs, coverImageUrl, tematicas, tipo, draftKey, editor]);
 
     useEffect(() => {
         if (editor && !isInitialized.current) {
@@ -224,11 +232,11 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                 }
             }
             
-            if (initialData?.contenido_gl) {
-                editor.commands.setContent(initialData.contenido_gl);
+            if (initialDataRef.current?.contenido_gl) {
+                editor.commands.setContent(initialDataRef.current.contenido_gl);
             }
         }
-    }, [editor, draftKey, initialData]);
+    }, [editor, draftKey]);
 
     const handleChangeCoverImage = () => {
         coverInputRef.current?.click();
@@ -247,12 +255,12 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
             return;
         }
 
-        setIsUploadingCover(true);
+        isUploadingCover.current = true;
         const localPreview = URL.createObjectURL(file);
         setCoverImageUrl(localPreview);
 
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { setIsUploadingCover(false); return; }
+        if (!user) { isUploadingCover.current = false; return; }
 
         const ext = file.name.split('.').pop();
         const path = `portadas/${user.id}/${Date.now()}.${ext}`;
@@ -277,14 +285,8 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
         }
 
         URL.revokeObjectURL(localPreview);
-        setIsUploadingCover(false);
+        isUploadingCover.current = false;
         if (coverInputRef.current) coverInputRef.current.value = '';
-    };
-
-    const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-        const target = e.target as HTMLTextAreaElement;
-        target.style.height = 'auto';
-        target.style.height = target.scrollHeight + 'px';
     };
 
     const insertImage = () => {
@@ -304,7 +306,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
             return;
         }
 
-        setIsUploadingInline(true);
+        isUploadingInline.current = true;
         const localUrl = URL.createObjectURL(file);
         
         const caption = window.prompt('Opcional: Añade una leyenda o pie de foto para esta imagen:');
@@ -317,7 +319,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
         }).run();
 
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { setIsUploadingInline(false); return; }
+        if (!user) { isUploadingInline.current = false; return; }
 
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const path = `contenido/${user.id}/${Date.now()}-${safeName}`;
@@ -332,13 +334,13 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
             const { data: urlData } = supabase.storage
                 .from('imagenes-articulos')
                 .getPublicUrl(path);
-            setUploadedInlineImages(prev => [...prev, urlData.publicUrl]);
+            uploadedInlineImages.current.push(urlData.publicUrl);
             const html = editor.getHTML().replace(localUrl, urlData.publicUrl);
             editor.commands.setContent(html);
         }
 
         URL.revokeObjectURL(localUrl);
-        setIsUploadingInline(false);
+        isUploadingInline.current = false;
         if (inlineImageRef.current) inlineImageRef.current.value = '';
     };
 
@@ -432,16 +434,17 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
             ...(contenidoEs.match(supabaseRegex) || [])
         ];
         
-        const urlsToDelete = oldUrls.filter(url => !newUrls.includes(url));
-        const uploadedButDeleted = uploadedInlineImages.filter(url => !newUrls.includes(url));
+        const newUrlsSet = new Set(newUrls);
+        const urlsToDelete = oldUrls.filter(url => !newUrlsSet.has(url));
+        const uploadedButDeleted = uploadedInlineImages.current.filter(url => !newUrlsSet.has(url));
         
         const allUrlsToDelete = Array.from(new Set([...urlsToDelete, ...uploadedButDeleted]));
         
         if (allUrlsToDelete.length > 0) {
-            const pathsToDelete = allUrlsToDelete.map(url => {
+            const pathsToDelete = allUrlsToDelete.flatMap(url => {
                 const parts = url.split('imagenes-articulos/');
-                return parts[1];
-            }).filter(Boolean) as string[];
+                return parts[1] ? [parts[1]] : [];
+            });
             
             if (pathsToDelete.length > 0) {
                 supabase.storage.from('imagenes-articulos').remove(pathsToDelete).catch(console.error);
@@ -465,6 +468,8 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
         setHasUnsavedChanges(false);
         setShowPublishModal(false);
     };
+
+    const tematicasSet = new Set(tematicas);
 
     return (
         <>
@@ -494,10 +499,10 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                 : '¿Estás seguro de que quieres guardar y publicar los cambios de este artículo?'}
                         </p>
                         <div className="flex justify-end gap-4">
-                            <button className="px-6 py-2 font-sans text-xs uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors cursor-pointer" onClick={() => setShowPublishModal(false)}>
+                            <button type="button" className="px-6 py-2 font-sans text-xs uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors cursor-pointer" onClick={() => setShowPublishModal(false)}>
                                 Cancelar
                             </button>
-                            <button className="px-6 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(false)}>
+                            <button type="button" className="px-6 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(false)}>
                                 {isPublishing ? (mode === 'create' ? 'Publicando...' : 'Guardando...') : 'Publicar'}
                             </button>
                         </div>
@@ -510,36 +515,36 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                     {/* Floating Toolbar */}
                     <div className="sticky top-0 z-30 border-b border-lines bg-parchment/80 backdrop-blur-sm px-4 md:px-8 py-3 flex flex-col xl:flex-row items-center justify-between gap-3 xl:gap-0">
                         <div className="flex items-center gap-1 text-charcoal/80 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
-                            <button aria-label="Negrita" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bold') ? 'bg-lines/30' : ''}`} title="Negrita" onClick={() => editor?.chain().focus().toggleBold().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_bold</span></button>
-                            <button aria-label="Cursiva" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('italic') ? 'bg-lines/30' : ''}`} title="Cursiva" onClick={() => editor?.chain().focus().toggleItalic().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_italic</span></button>
+                            <button type="button" aria-label="Negrita" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bold') ? 'bg-lines/30' : ''}`} title="Negrita" onClick={() => editor?.chain().focus().toggleBold().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_bold</span></button>
+                            <button type="button" aria-label="Cursiva" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('italic') ? 'bg-lines/30' : ''}`} title="Cursiva" onClick={() => editor?.chain().focus().toggleItalic().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_italic</span></button>
                             <div className="h-6 w-[1px] shrink-0 bg-lines mx-2"></div>
-                            <button aria-label="Título 1" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer font-serif font-bold ${editor?.isActive('heading', { level: 1 }) ? 'bg-lines/30' : ''}`} title="Título 1" onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}>H1</button>
-                            <button aria-label="Título 2" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer font-serif font-bold ${editor?.isActive('heading', { level: 2 }) ? 'bg-lines/30' : ''}`} title="Título 2" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>H2</button>
-                            <button aria-label="Título 3" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer font-serif font-bold ${editor?.isActive('heading', { level: 3 }) ? 'bg-lines/30' : ''}`} title="Título 3" onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>H3</button>
+                            <button type="button" aria-label="Título 1" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer font-serif font-bold ${editor?.isActive('heading', { level: 1 }) ? 'bg-lines/30' : ''}`} title="Título 1" onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}>H1</button>
+                            <button type="button" aria-label="Título 2" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer font-serif font-bold ${editor?.isActive('heading', { level: 2 }) ? 'bg-lines/30' : ''}`} title="Título 2" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>H2</button>
+                            <button type="button" aria-label="Título 3" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer font-serif font-bold ${editor?.isActive('heading', { level: 3 }) ? 'bg-lines/30' : ''}`} title="Título 3" onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>H3</button>
                             <div className="h-6 w-[1px] shrink-0 bg-lines mx-2"></div>
-                            <button aria-label="Cita" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('blockquote') ? 'bg-lines/30' : ''}`} title="Cita" onClick={() => editor?.chain().focus().toggleBlockquote().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_quote</span></button>
-                            <button aria-label="Insertar Imagen" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Imagen" onClick={insertImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>image</span></button>
-                            <button aria-label="Insertar Vídeo" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Vídeo de YouTube" onClick={insertYoutube}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>smart_display</span></button>
-                            <button aria-label="Lista con viñetas" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bulletList') ? 'bg-lines/30' : ''}`} title="Lista" onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_bulleted</span></button>
+                            <button type="button" aria-label="Cita" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('blockquote') ? 'bg-lines/30' : ''}`} title="Cita" onClick={() => editor?.chain().focus().toggleBlockquote().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_quote</span></button>
+                            <button type="button" aria-label="Insertar Imagen" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Imagen" onClick={insertImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>image</span></button>
+                            <button type="button" aria-label="Insertar Vídeo" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Vídeo de YouTube" onClick={insertYoutube}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>smart_display</span></button>
+                            <button type="button" aria-label="Lista con viñetas" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bulletList') ? 'bg-lines/30' : ''}`} title="Lista" onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_bulleted</span></button>
                             <div className="h-6 w-[1px] shrink-0 bg-lines mx-2"></div>
-                            <button aria-label="Limpiar todo" className="w-10 h-10 shrink-0 flex items-center justify-center text-error hover:bg-error/10 transition-colors cursor-pointer" title="Limpiar Todo" onClick={handleClearAll}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>delete_sweep</span></button>
-                            <button aria-label="Cambiar Imagen de Portada" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Portada" onClick={handleChangeCoverImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>add_a_photo</span></button>
-                            <button aria-label="Vista Previa" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Vista Previa" onClick={() => setShowPreview(true)}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>visibility</span></button>
+                            <button type="button" aria-label="Limpiar todo" className="w-10 h-10 shrink-0 flex items-center justify-center text-error hover:bg-error/10 transition-colors cursor-pointer" title="Limpiar Todo" onClick={handleClearAll}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>delete_sweep</span></button>
+                            <button type="button" aria-label="Cambiar Imagen de Portada" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Portada" onClick={handleChangeCoverImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>add_a_photo</span></button>
+                            <button type="button" aria-label="Vista Previa" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Vista Previa" onClick={() => setShowPreview(true)}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>visibility</span></button>
                         </div>
                         <div className="flex items-center gap-2 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
                             <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50 italic hidden xl:block shrink-0"></span>
                             {mode === 'edit' && initialData?.estado === 'publicado' ? (
-                                <button className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>
+                                <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>
                                     <span className="hidden sm:inline">Despublicar</span>
                                     <span className="sm:hidden">Despublicar</span>
                                 </button>
                             ) : (
-                                <button className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>
+                                <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>
                                     <span className="hidden sm:inline">Guardar Borrador</span>
                                     <span className="sm:hidden">Borrador</span>
                                 </button>
                             )}
-                            <button className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => setShowPublishModal(true)}>
+                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => setShowPublishModal(true)}>
                                 {mode === 'create' ? 'Publicar' : 'Publicar'}
                             </button>
                         </div>
@@ -549,8 +554,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                     <div className="max-w-[800px] mx-auto py-8 px-8 editor-container [&_h1+p]:mt-2 [&_h2+p]:mt-2 [&_h3+p]:mt-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-6 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:my-8 [&_div[data-youtube-video]]:w-full [&_div[data-youtube-video]]:flex [&_div[data-youtube-video]]:justify-center [&_h1]:font-serif [&_h1]:font-bold [&_h1]:text-4xl [&_h1]:md:text-5xl [&_h1]:text-charcoal [&_h1]:mt-12 [&_h1]:mb-0 [&_h1]:tracking-tight [&_h2]:font-serif [&_h2]:font-bold [&_h2]:text-3xl [&_h2]:md:text-4xl [&_h2]:text-charcoal/90 [&_h2]:mt-10 [&_h2]:mb-0 [&_h2]:tracking-tight [&_h3]:font-serif [&_h3]:font-bold [&_h3]:text-2xl [&_h3]:md:text-3xl [&_h3]:text-charcoal/80 [&_h3]:mt-8 [&_h3]:mb-0 [&_h3]:tracking-tight">
                         <div className="flex flex-wrap items-center justify-between mb-8 pb-4 border-b border-lines">
                             <div className="flex gap-4">
-                                <button
-                                    onClick={() => { 
+                                <button type="button"                                     onClick={() => { 
                                         setActiveLang('gl'); 
                                         setTimeout(() => editor?.commands.setContent(contenidoGl), 0);
                                     }}
@@ -558,8 +562,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                 >
                                     Galego
                                 </button>
-                                <button
-                                    onClick={() => { 
+                                <button type="button"                                     onClick={() => { 
                                         setActiveLang('es'); 
                                         setTimeout(() => editor?.commands.setContent(contenidoEs), 0);
                                     }}
@@ -568,8 +571,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                     Castellano
                                 </button>
                             </div>
-                            <button
-                                onClick={handleTranslate}
+                            <button type="button"                                 onClick={handleTranslate}
                                 disabled={isTranslating}
                                 className="flex items-center gap-2 px-3 py-1.5 border border-gold/50 text-gold hover:bg-gold hover:text-parchment text-[10px] font-sans uppercase tracking-widest transition-colors disabled:opacity-50"
                             >
@@ -584,10 +586,10 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                 <div>
                                     <div className="flex flex-wrap gap-2 mb-3">
                                         {tematicas.map(t => (
-                                            <span key={t} className="flex items-center gap-1 px-3 py-1 bg-lines/30 text-charcoal text-[10px] uppercase tracking-[0.15em] rounded-sm group cursor-pointer hover:bg-red-500/10 hover:text-red-700 transition-colors" onClick={() => handleRemoveTematica(t)} title="Eliminar temática">
+                                            <button type="button" key={t} className="flex items-center gap-1 px-3 py-1 bg-lines/30 text-charcoal text-[10px] uppercase tracking-[0.15em] rounded-sm group cursor-pointer hover:bg-red-500/10 hover:text-red-700 transition-colors" onClick={() => handleRemoveTematica(t)} title="Eliminar temática">
                                                 {t}
                                                 <span className="material-symbols-outlined text-[12px] opacity-50 group-hover:opacity-100" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
-                                            </span>
+                                            </button>
                                         ))}
                                         <input 
                                             className="flex-grow min-w-[200px] border-none bg-transparent font-sans text-xs text-gold tracking-[0.2em] uppercase focus:ring-0 placeholder:text-charcoal/30 outline-none p-1" 
@@ -601,8 +603,8 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                     </div>
                                     <div className="flex flex-wrap gap-3 items-center">
                                         <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50">Sugerencias:</span>
-                                        {TEMATICAS_SUGERIDAS.filter(t => !tematicas.includes(t)).map(t => (
-                                            <button key={t} onClick={() => handleAddTematica(t)} className="text-[10px] font-sans uppercase tracking-widest text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
+                                        {TEMATICAS_SUGERIDAS.filter(t => !tematicasSet.has(t)).map(t => (
+                                            <button type="button" key={t} onClick={() => handleAddTematica(t)} className="text-[10px] font-sans uppercase tracking-widest text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
                                                 +{t}
                                             </button>
                                         ))}
@@ -610,6 +612,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                 </div>
                                 <div className="mb-4">
                                     <select 
+                                        aria-label="Tipo de artículo"
                                         className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
                                         value={tipo}
                                         onChange={(e) => setTipo(e.target.value)}
@@ -663,7 +666,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                     {/* Preview TopBar */}
                     <div className="sticky top-0 z-50 border-b border-lines bg-parchment/95 backdrop-blur-sm px-8 py-4 flex items-center justify-between">
                         <span className="font-sans text-[10px] text-gold uppercase tracking-[0.2em]">Vista Previa de Publicación</span>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer" onClick={() => setShowPreview(false)}>
+                        <button type="button" className="flex items-center gap-2 px-4 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer" onClick={() => setShowPreview(false)}>
                             <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
                             Cerrar Vista Previa
                         </button>

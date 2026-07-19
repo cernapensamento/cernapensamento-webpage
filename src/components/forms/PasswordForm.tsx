@@ -66,7 +66,7 @@ export default function PasswordForm() {
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/80 backdrop-blur-sm">
           <div className="bg-parchment p-8 w-full max-w-md relative border border-lines shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <button 
+            <button type="button" 
               onClick={handleClose}
               className="absolute top-4 right-4 text-charcoal/40 hover:text-charcoal transition-colors material-symbols-outlined"
               aria-label="Cerrar"
@@ -78,8 +78,9 @@ export default function PasswordForm() {
             
             <form onSubmit={handleUpdatePassword} className="space-y-6">
               <div>
-                <label className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Nueva Contraseña</label>
+                <label htmlFor="new_password" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Nueva Contraseña</label>
                 <input
+                  id="new_password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -88,8 +89,9 @@ export default function PasswordForm() {
                 />
               </div>
               <div>
-                <label className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Confirmar Nueva Contraseña</label>
+                <label htmlFor="confirm_password" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Confirmar Nueva Contraseña</label>
                 <input
+                  id="confirm_password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

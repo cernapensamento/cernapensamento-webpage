@@ -1,15 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Image from 'next/image';
-import PublicNavBar from '@/components/PublicNavBar';
-import SiteFooter from '@/components/SiteFooter';
-import FeaturedArticleHero from '@/components/FeaturedArticleHero';
-import PinnedArticlesPanel from '@/components/PinnedArticlesPanel';
-import ArticleCard from '@/components/ArticleCard';
-import ColumnistsSection from '@/components/ColumnistsSection';
-import AboutUsSection from '@/components/AboutUsSection';
-import ThemesSection from '@/components/ThemesSection';
-import ContactSection from '@/components/ContactSection';
+import PublicNavBar from '@/components/layout/PublicNavBar';
+import SiteFooter from '@/components/layout/SiteFooter';
+import FeaturedArticleHero from '@/components/sections/FeaturedArticleHero';
+import PinnedArticlesPanel from '@/components/sections/PinnedArticlesPanel';
+import ArticleCard from '@/components/features/ArticleCard';
+import ColumnistsSection from '@/components/sections/ColumnistsSection';
+import AboutUsSection from '@/components/sections/AboutUsSection';
+import ThemesSection from '@/components/sections/ThemesSection';
+import ContactSection from '@/components/sections/ContactSection';
 
 
 export const revalidate = 60;

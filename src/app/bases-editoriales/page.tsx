@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import PublicNavBar from '@/components/PublicNavBar';
-import SiteFooter from '@/components/SiteFooter';
+import PublicNavBar from '@/components/layout/PublicNavBar';
+import SiteFooter from '@/components/layout/SiteFooter';
 
 export const metadata = {
   title: 'Proxecto Editorial | Cerna',

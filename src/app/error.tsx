@@ -26,8 +26,7 @@ export default function GlobalError({
           Un percance imprevisto ha interrumpido la carga de este documento. Por favor, intenta restaurar la página.
         </p>
         <div className="flex flex-col gap-4">
-          <button
-            onClick={() => reset()}
+          <button type="button"             onClick={() => reset()}
             className="px-6 py-3 bg-charcoal text-white text-sm font-semibold uppercase tracking-widest hover:bg-black transition-colors"
           >
             Reintentar

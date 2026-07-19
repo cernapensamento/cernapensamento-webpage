@@ -47,7 +47,7 @@ export default function PinArticleButton({ id, fijado }: Props) {
     };
 
     return (
-        <button 
+        <button type="button" 
             onClick={handleToggle}
             disabled={isToggling}
             className={`flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50 ${fijado ? 'text-gold hover:text-charcoal/60' : 'text-charcoal/60 hover:text-gold'}`}
