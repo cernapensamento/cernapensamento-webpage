@@ -1,0 +1,91 @@
+{
+  "nav": {
+    "revista": "Revista",
+    "estatutos": "Estatutos",
+    "bases": "Bases Editoriales",
+    "escritorio": "Escritorio",
+    "login": "Acceder",
+    "logout": "Cerrar Sesión"
+  },
+  "footer": {
+    "rights": "Todos los derechos reservados.",
+    "links": {
+      "estatutos": "Estatutos",
+      "bases": "Bases Editoriales",
+      "privacidad": "Política de Privacidad",
+      "contacto": "Contacto"
+    }
+  },
+  "common": {
+    "readMore": "Leer más",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar"
+  },
+  "about": {
+    "title": "Quiénes Somos",
+    "subtitle": "Un espacio de reflexión crítica y pensamiento libre",
+    "paragraph1": "CERNA nace de la convicción de que las mejores ideas surgen lejos del ruido y la urgencia que caracterizan buena parte del debate público actual. De este modo, aspiramos a crear un espacio de diálogo y reflexión alejado de la demagogia y la polarización.",
+    "paragraph2": "Formamos un grupo de autores que se resisten a encajar la realidad en una sola disciplina. Filosofía, economía, derecho, ciencia, literatura y cultura conviven en nuestras páginas con la misma naturalidad con que se cruzan en la vida cotidiana, porque estamos convencidos de que comprender el mundo exige mirar más allá de los límites estrechos de una especialización aislada.",
+    "paragraph3": "Escribimos desde la libertad individual y la responsabilidad que la acompaña, con la honestidad intelectual y el rigor como únicas fronteras. Más que una asociación, CERNA quiere ser un espacio de encuentro: una comunidad de pensamiento irrestricto, con la única limitación del respeto por el pensamiento ajeno.",
+    "button": "Nuestro Proyecto Editorial"
+  },
+  "documentTypes": {
+    "artigo": "Artículo",
+    "ensaio": "Ensayo",
+    "reportaxe": "Reportaje",
+    "columna": "Columna",
+    "entrevista": "Entrevista",
+    "poesía": "Poesía"
+  },
+  "themes": {
+    "tag": "Variedad Temática",
+    "title": "Un abanico de perspectivas para un mundo complejo",
+    "description": "Creemos firmemente que la realidad no puede entenderse desde una única disciplina. Nuestros autores cruzan las fronteras del conocimiento empírico y humanístico para ofrecer reflexiones pausadas y transversales.",
+    "list": [
+      "Economía",
+      "Filosofía",
+      "Literatura",
+      "Derecho y Justicia",
+      "Ciencia y Divulgación",
+      "Historia",
+      "Crítica Social"
+    ],
+    "exploreButton": "Explorar el archivo de artículos"
+  },
+  "articles": {
+    "tag": "Archivo Histórico",
+    "title": "Todas las Publicaciones",
+    "searchPlaceholder": "Buscar por título o contenido...",
+    "all": "Todos",
+    "errorLoading": "Error cargando artículos:",
+    "noResults": "No se encontraron artículos con esos filtros.",
+    "clearFilters": "Limpiar filtros"
+  },
+  "article": {
+    "aboutAuthor": "Sobre el autor",
+    "contributorOf": "es un contribuyente de",
+    "unknownAuthor": "Autor Desconocido"
+  },
+  "columnists": {
+    "tag": "Nuestro Equipo",
+    "title": "Columnistas de",
+    "publishedArticles": "Artículos publicados"
+  },
+  "contact": {
+    "tag": "Contacto",
+    "title": "Hablemos",
+    "description": "¿Tienes alguna propuesta, duda o deseas colaborar con {site_name}? Nos encantaría escuchar tus ideas. Escríbenos directamente a nuestro correo y nos pondremos en contacto contigo.",
+    "button": "CORREO"
+  },
+  "authorPage": {
+    "articlesBy": "Artículos de",
+    "noArticles": "No hay artículos publicados de este autor."
+  },
+  "authors": {
+    "anxo-perez": "Estudiante de Lengua y Literatura Españolas en la Universidad de Navarra. Su obra ha sido reconocida en certámenes literarios gallegos, como el Premio de Poesía «Cambados Mar de Letras» y el «Certamen Literario de Ames», y en 2025 fue distinguido como mejor orador de la categoría de Bachillerato en la fase final de Parlamento Xove. Su escritura se centra en el problema de la identidad, con especial atención a la tradición como forma de resistencia. Aborda el proceso de secularización de Europa y dialoga con la tradición galleguista y con el pensamiento europeo.",
+    "diego-araujo": "Estudiante de Economía en la USC, Premio Extraordinario de Bachillerato 2025 y ganador del Parlamento Xove 2026 (categoría universidad) junto a Héctor González Prego, reconocido además como Mejor Orador de la edición. Sus columnas nacen de una inquietud por entender el mundo desde la filosofía política, la economía, las ciencias políticas y el derecho, con un interés especial en el estudio de la libertad, además de artículos más técnicos centrados en el análisis político-filosófico, la economía austríaca y los fundamentos macro y microeconómicos.",
+    "hector-gonzalez": "Estudiante de Física en la Universidad de Santiago de Compostela y de Matemáticas en la UNED, ganador del Parlamento Xove 2026 en la categoría universitaria junto a Diego Araújo Rodríguez. Sus artículos nacen de la curiosidad científica y del interés por comprender el mundo a través de modelos científicos, especialmente matemáticos, así como por transmitir estas ideas de un modo claro, riguroso y accesible. Busca acercar conceptos útiles y aplicables, sin renunciar a la reflexión, con interés también por ámbitos como la psicología y la comunicación.",
+    "denis-fernandez": "Estudia el doble grado bilingüe en Derecho y Administración y Dirección de Empresas (ADE) en la Universidad Carlos III de Madrid. En el ámbito del debate, fue distinguido en la categoría de Bachillerato como mejor orador en la fase previa del Parlamento Xove en la edición de 2025. Sus artículos nacen del interés por analizar la realidad socioeconómica y jurídica actual, con una mirada especialmente centrada en los retos, perspectivas y problemáticas que afronta la juventud de hoy en día."
+  }
+}

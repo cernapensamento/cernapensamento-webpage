@@ -1,24 +1,21 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
-
 interface ArticleCardProps {
   articulo: any;
+  lang: string;
+  dict?: any;
 }
 
-export default async function ArticleCard({ articulo }: ArticleCardProps) {
+export default function ArticleCard({ articulo, lang, dict }: ArticleCardProps) {
   if (!articulo) return null;
   
-  const cookieStore = await cookies();
-  const locale = cookieStore.get('locale')?.value || 'gl';
-  
-  const titulo = locale === 'es' ? articulo.titulo_es : articulo.titulo_gl;
-  const subtitulo = locale === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl;
-  const contenido = locale === 'es' ? articulo.contenido_es : articulo.contenido_gl;
+  const titulo = lang === 'es' ? articulo.titulo_es : articulo.titulo_gl;
+  const subtitulo = lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl;
+  const contenido = lang === 'es' ? articulo.contenido_es : articulo.contenido_gl;
   
   return (
-    <Link href={`/articulo/${articulo.slug || articulo.id}`} className="flex flex-col group cursor-pointer h-full">
+    <Link href={`/${lang}/articulo/${articulo.slug || articulo.id}`} className="flex flex-col group cursor-pointer h-full">
       <span className="text-sm font-semibold text-gold uppercase tracking-widest mb-3">
-        {articulo.tipo || 'Artigo'}
+        {dict?.documentTypes?.[articulo.tipo?.toLowerCase()] || articulo.tipo || 'Artigo'}
       </span>
       <h3 className="font-serif text-2xl text-charcoal mb-3 group-hover:text-gold transition-colors duration-300 line-clamp-3">
         {titulo}

@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 
-export default function ArticlesFilterBar({ availableTags }: { availableTags: string[] }) {
+export default function ArticlesFilterBar({ availableTags, dict }: { availableTags: string[], dict: any }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -60,7 +60,7 @@ export default function ArticlesFilterBar({ availableTags }: { availableTags: st
           type="text" 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por título o contenido..." 
+          placeholder={dict.searchPlaceholder} 
           className="w-full bg-transparent border-b border-charcoal/30 py-4 px-4 text-xl font-sans text-charcoal focus:outline-none focus:border-gold transition-colors placeholder:text-charcoal/40"
         />
         <span className="material-symbols-outlined absolute right-2 top-4 text-charcoal/50 text-2xl">search</span>
@@ -70,7 +70,7 @@ export default function ArticlesFilterBar({ availableTags }: { availableTags: st
         <button type="button"           onClick={() => toggleTag('')}
           className={`px-5 py-2 border font-sans text-xs uppercase tracking-[0.15em] transition-all duration-300 ${currentTags.length === 0 ? 'bg-charcoal text-parchment border-charcoal' : 'border-lines text-charcoal/70 hover:border-charcoal hover:text-charcoal'}`}
         >
-          Todos
+          {dict.all}
         </button>
         {availableTags.map((tag) => (
           <button type="button"             key={tag}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import CommentForm from '@/components/forms/CommentForm';
 import Image from 'next/image';
@@ -102,7 +102,13 @@ export default function CommentsSection({ articuloId }: { articuloId: string }) 
       </div>
 
       {user ? (
-        <CommentForm articuloId={articuloId} onCommentAdded={fetchComments} />
+        comentarios?.some(c => c.autor_id === user.id) ? (
+          <div className="bg-surface border border-lines p-8 text-center mt-8">
+            <p className="font-sans text-sm text-charcoal/70">Ya has compartido tu reflexión en este artículo.</p>
+          </div>
+        ) : (
+          <CommentForm articuloId={articuloId} onCommentAdded={fetchComments} />
+        )
       ) : (
         <div className="bg-surface border border-lines p-8 text-center">
           <p className="font-sans text-sm text-charcoal/70 mb-4">Debes iniciar sesión para unirte a la conversación.</p>

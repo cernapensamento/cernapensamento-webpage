@@ -1,0 +1,92 @@
+{
+  "nav": {
+    "revista": "Revista",
+    "estatutos": "Estatutos",
+    "bases": "Bases Editoriais",
+    "escritorio": "Escritorio",
+    "login": "Acceder",
+    "logout": "Pechar Sesión"
+  },
+  "footer": {
+    "rights": "Todos os dereitos reservados.",
+    "links": {
+      "estatutos": "Estatutos",
+      "bases": "Bases Editoriais",
+      "privacidad": "Política de Privacidade",
+      "contacto": "Contacto",
+      "manifestoButton": "Ler o noso Manifesto"
+    }
+  },
+  "themes": {
+    "tag": "Variedade Temática",
+    "title": "Un abano de perspectivas para un mundo complexo",
+    "description": "Cremos firmemente que a realidade non pode entenderse desde unha única disciplina. Os nosos autores cruzan as fronteiras do coñecemento empírico e humanístico para ofrecer reflexións pausadas e transversais.",
+    "list": [
+      "Economía",
+      "Filosofía",
+      "Literatura",
+      "Dereito e Xustiza",
+      "Ciencia e Divulgación",
+      "Historia",
+      "Crítica Social"
+    ],
+    "exploreButton": "Explorar o arquivo de artigos"
+  },
+  "articles": {
+    "tag": "Arquivo Histórico",
+    "title": "Todas as Publicacións",
+    "searchPlaceholder": "Buscar por título ou contido...",
+    "all": "Todos",
+    "errorLoading": "Erro cargando artigos:",
+    "noResults": "Non se atoparon artigos con eses filtros.",
+    "clearFilters": "Limpar filtros"
+  },
+  "article": {
+    "aboutAuthor": "Sobre o autor",
+    "contributorOf": "é un contribuínte de",
+    "unknownAuthor": "Autor Descoñecido"
+  },
+  "columnists": {
+    "tag": "O Noso Equipo",
+    "title": "Columnistas de",
+    "publishedArticles": "Artigos publicados"
+  },
+  "contact": {
+    "tag": "Contacto",
+    "title": "Falemos",
+    "description": "Tes algunha proposta, dúbida ou desexas colaborar con {site_name}? Encantaríanos escoitar as túas ideas. Escríbenos directamente á nosa caixa de correo e poñerémonos en contacto contigo.",
+    "button": "CORREO"
+  },
+  "authorPage": {
+    "articlesBy": "Artigos de",
+    "noArticles": "Non hai artigos publicados por este autor."
+  },
+  "authors": {
+    "anxo-perez": "Estudante de Lingua e Literatura Españolas na Universidade de Navarra. A súa obra foi recoñecida en certames literarios galegos, como o Premio de Poesía «Cambados Mar de Letras» e o «Certame Literario de Ames», e en 2025 foi distinguido como mellor orador da categoría de Bacharelato na fase final de Parlamento Xove. A súa escrita céntrase no problema da identidade, con especial atención á tradición como forma de resistencia. Aborda o proceso de secularización de Europa e dialoga coa tradición galeguista e co pensamento europeo.",
+    "diego-araujo": "Estudante de Economía na USC, Premio Extraordinario de Bacharelato 2025 e gañador do Parlamento Xove 2026 (categoría universidade) xunto a Héctor González Prego, recoñecido ademais como Mellor Orador da edición. As súas columnas nacen dunha inquietude por entender o mundo dende a filosofía política, a economía, as ciencias políticas e o dereito, cun interese especial no estudo da liberdade, ademais de artigos máis técnicos centrados na análise político-filosófica, a economía austríaca e os fundamentos macro e microeconómicos.",
+    "hector-gonzalez": "Estudante de Física na Universidade de Santiago de Compostela e de Matemáticas na UNED, gañador do Parlamento Xove 2026 na categoría universitaria xunto a Diego Araújo Rodríguez. Os seus artigos nacen da curiosidade científica e do interese por comprender o mundo a través de modelos científicos, especialmente matemáticos, así como por transmitir estas ideas dun xeito claro, rigoroso e accesible. Busca achegar conceptos útiles e aplicables, sen renunciar á reflexión, con interese tamén por ámbitos como a psicoloxía e a comunicación.",
+    "denis-fernandez": "Estuda o dobre grao bilingüe en Dereito e Administración e Dirección de Empresas (ADE) na Universidade Carlos III de Madrid. No ámbito do debate, foi distinguido na categoría de Bacharelato como mellor orador na fase previa do Parlamento Xove na edición de 2025. Os seus artigos nacen do interese por analizar a realidade socioeconómica e xurídica actual, cunha mirada especialmente centrada nos retos, perspectivas e problemáticas que afronta a mocidade de hoxe en día."
+  },
+  "common": {
+    "readMore": "Ler máis",
+    "save": "Gardar",
+    "cancel": "Cancelar",
+    "edit": "Editar"
+  },
+  "about": {
+    "title": "Quen Somos",
+    "subtitle": "Un espazo de reflexión crítica e pensamento libre",
+    "paragraph1": "CERNA nace da convicción de que as mellores ideas xorden lonxe do ruído e da urxencia que caracterizan boa parte do debate público actual. Deste xeito, aspiramos a crear un espazo de diálogo e reflexión afastado da demagogia e a polarización.",
+    "paragraph2": "Formamos un grupo de autores que se resisten a encaixar a realidade nunha soa disciplina. Filosofía, economía, dereito, ciencia, literatura e cultura conviven nas nosas páxinas coa mesma naturalidade con que se cruzan na vida cotiá, porque estamos convencidos de que comprender o mundo esixe mirar máis alá dos límites estreitos dunha especialización illada.",
+    "paragraph3": "Escribimos dende a liberdade individual e a responsabilidade que a acompaña, coa honestidade intelectual e o rigor como únicas fronteiras. Máis que unha asociación, CERNA quere ser un espazo de encontro: unha comunidade de pensamento irrestricto, coa única limitación do respecto polo pensamento alleo.",
+    "button": "O Noso Proxecto Editorial"
+  },
+  "documentTypes": {
+    "artigo": "Artigo",
+    "ensaio": "Ensaio",
+    "reportaxe": "Reportaxe",
+    "columna": "Columna",
+    "entrevista": "Entrevista",
+    "poesía": "Poesía"
+  }
+}

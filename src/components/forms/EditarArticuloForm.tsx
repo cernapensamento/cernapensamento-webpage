@@ -58,6 +58,18 @@ export default function EditarArticuloForm({ articulo }: Props) {
                 console.error(error);
                 alert('Error al guardar cambios: ' + error.message);
             } else {
+                // Sync article_tags
+                if (data.tematicas) {
+                    await supabase.from('article_tags').delete().eq('article_id', articulo.id);
+                    if (data.tematicas.length > 0) {
+                        const { data: tagIds } = await supabase.from('tags').select('id, slug').in('slug', data.tematicas);
+                        if (tagIds && tagIds.length > 0) {
+                            await supabase.from('article_tags').insert(
+                                tagIds.map(t => ({ article_id: articulo.id, tag_id: t.id }))
+                            );
+                        }
+                    }
+                }
                 alert(isDraft ? '¡Borrador actualizado!' : '¡Artículo guardado y publicado!');
                 router.push('/escritorio');
             }

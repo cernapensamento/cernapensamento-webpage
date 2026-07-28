@@ -12,9 +12,15 @@ import ThemesSection from '@/components/sections/ThemesSection';
 import ContactSection from '@/components/sections/ContactSection';
 
 
+import { getDictionary } from '@/dictionaries';
+import type { Locale } from '@/i18n-config';
+
 export const revalidate = 60;
 
-export default async function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  const dict = await getDictionary(lang as Locale);
+  
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -41,7 +47,7 @@ export default async function HomePage() {
       <main className="flex-grow w-full max-w-[1120px] mx-auto px-5 md:px-16 pt-12 pb-[120px] flex flex-col gap-[120px]">
         
         {featuredArticle && (
-          <FeaturedArticleHero articulo={featuredArticle} />
+          <FeaturedArticleHero articulo={featuredArticle} lang={lang} dict={dict} />
         )}
 
         <section className="border-t border-lines pt-12">
@@ -49,20 +55,22 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-16">
             
             {otherArticles && otherArticles.length > 0 ? otherArticles.map((articulo) => (
-              <ArticleCard key={articulo.id} articulo={articulo} />
+              <ArticleCard key={articulo.id} articulo={articulo} lang={lang} dict={dict} />
             )) : (
-              <p className="font-sans text-charcoal/60">Non hai artigos adicionais publicados.</p>
+              <p className="font-sans text-charcoal/60">
+                {lang === 'es' ? 'No hay artículos adicionales publicados.' : 'Non hai artigos adicionais publicados.'}
+              </p>
             )}
           </div>
         </section>
 
-        <PinnedArticlesPanel articulos={pinnedArticles} />
+        <PinnedArticlesPanel articulos={pinnedArticles} lang={lang} dict={dict} />
       </main>
       
-      <AboutUsSection />
-      <ThemesSection />
-      <ColumnistsSection />
-      <ContactSection />
+      <AboutUsSection lang={lang} dict={dict.about} />
+      <ThemesSection lang={lang} dict={dict.themes} />
+      <ColumnistsSection lang={lang} dict={{ columnists: dict.columnists, authors: dict.authors }} />
+      <ContactSection dict={dict.contact} />
 
       <SiteFooter variant="full" />
 

@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { handleSignOut } from '@/actions/auth';
 import Image from 'next/image';
 import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 
@@ -86,15 +85,6 @@ export default function SideNavBar({ role, avatarUrl }: SideNavBarProps) {
             <span className={`font-sans text-xs uppercase tracking-[0.15em] transition-transform duration-300 ${pathname === '/escritorio/perfil' ? 'font-semibold' : 'group-hover:translate-x-1'}`}>Perfil</span>
           </Link>
         </nav>
-        <div className="mt-auto pt-8 border-t border-lines">
-          {/* Removed Publicar ahora block */}
-          <form action={handleSignOut}>
-            <button type="submit" className="flex items-center gap-4 py-3 px-4 text-charcoal/50 hover:text-charcoal transition-all duration-300 group rounded-none w-full cursor-pointer">
-              <span className="material-symbols-outlined text-[20px] text-charcoal/50 transition-all duration-300 group-hover:text-red-500 group-hover:translate-x-[-2px]" data-icon="logout">logout</span>
-              <span className="font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300 group-hover:text-red-500">Cerrar Sesión</span>
-            </button>
-          </form>
-        </div>
       </div>
     </aside>
   );

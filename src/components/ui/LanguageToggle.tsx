@@ -1,58 +1,49 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useLocale } from '@/hooks/useLocale';
+import { i18n } from '@/i18n-config';
 
 export default function LanguageToggle() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-  const [currentLocale, setCurrentLocale] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Read the locale from document.cookie on the client side
-    const match = document.cookie.match(/(?:^|; )locale=([^;]*)/);
-    setCurrentLocale(match ? match[1] : 'gl');
-  }, []);
+  const currentLocale = useLocale();
 
   const switchLocale = (newLocale: string) => {
     if (newLocale === currentLocale) return;
     
-    setCurrentLocale(newLocale);
-    document.cookie = `locale=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}`;
+    // Set cookie for middleware
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}`;
+    
+    // Replace URL
+    if (!pathname) return;
+    
+    // Create new pathname by replacing the current locale
+    const segments = pathname.split('/');
+    segments[1] = newLocale; // Assumes /[lang]/...
+    const newPathname = segments.join('/');
+
     startTransition(() => {
-      router.refresh();
+      router.push(newPathname);
     });
   };
 
-  if (!currentLocale) return <div className="w-16 h-6" />; // Skeleton
+  if (!currentLocale) return <div className="w-10 h-10 border border-lines bg-parchment" />; // Skeleton
+
+  const nextLocale = currentLocale === 'gl' ? 'es' : 'gl';
 
   return (
-    <div 
-      className="flex items-center border border-lines rounded-full overflow-hidden text-[10px] font-sans font-bold uppercase tracking-widest h-6"
-      role="group"
-      aria-label="Selector de idioma"
+    <button 
+      type="button"
+      onClick={() => switchLocale(nextLocale)}
+      disabled={isPending}
+      className="border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300 flex items-center justify-center w-10 h-10 shadow-lg text-xs font-serif font-bold tracking-widest focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+      aria-label={`Cambiar a ${nextLocale === 'gl' ? 'Galego' : 'Castellano'}`}
+      title={`Cambiar a ${nextLocale === 'gl' ? 'Galego' : 'Castellano'}`}
     >
-      <button type="button"         onClick={() => switchLocale('gl')}
-        disabled={isPending}
-        aria-pressed={currentLocale === 'gl'}
-        aria-label="Cambiar a Galego"
-        className={`px-2 h-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
-          currentLocale === 'gl' ? 'bg-charcoal text-parchment' : 'text-charcoal/60 hover:bg-charcoal/5'
-        }`}
-      >
-        GL
-      </button>
-      <div className="w-[1px] h-full bg-lines" aria-hidden="true" />
-      <button type="button"         onClick={() => switchLocale('es')}
-        disabled={isPending}
-        aria-pressed={currentLocale === 'es'}
-        aria-label="Cambiar a Castellano"
-        className={`px-2 h-full flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
-          currentLocale === 'es' ? 'bg-charcoal text-parchment' : 'text-charcoal/60 hover:bg-charcoal/5'
-        }`}
-      >
-        ES
-      </button>
-    </div>
+      {currentLocale.toUpperCase()}
+    </button>
   );
 }

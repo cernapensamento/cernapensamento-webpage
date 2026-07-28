@@ -60,9 +60,23 @@ export function useAuth() {
       if (isMounted) setLoading(false);
     });
 
+    const handleProfileUpdated = () => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          supabase.from('perfiles').select('rol, avatar_url').eq('id', session.user.id).single()
+            .then(({ data }) => {
+              if (isMounted) setProfile(data);
+            });
+        }
+      });
+    };
+
+    window.addEventListener('profile_updated', handleProfileUpdated);
+
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      window.removeEventListener('profile_updated', handleProfileUpdated);
     };
   }, []);
 

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function EstatutosContent() {
+export default function EstatutosContentGL() {
   return (
     <article className="text-charcoal/85 font-serif text-[1.0625rem] leading-[1.95] max-w-full">
       <h1 className="sr-only">ESTATUTOS DA ASOCIACIÓN CERNA PENSAMENTO</h1>

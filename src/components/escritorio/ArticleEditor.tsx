@@ -8,7 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { Figure } from '@/lib/editor/FigureExtension';
 import Youtube from '@tiptap/extension-youtube';
 import { createClient } from '@/utils/supabase/client';
-import sanitizeHtml from 'sanitize-html';
+import TagManager from '@/components/escritorio/TagManager';
 
 const TEMATICAS_SUGERIDAS = ['ECONOMÍA', 'POLÍTICA', 'CIENCIA', 'FILOSOFÍA', 'TECNOLOGÍA', 'ARTE'];
 
@@ -232,8 +232,8 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                 }
             }
             
-            if (initialDataRef.current?.contenido_gl) {
-                editor.commands.setContent(initialDataRef.current.contenido_gl);
+            if (initialData?.contenido_gl) {
+                editor.commands.setContent(initialData.contenido_gl);
             }
         }
     }, [editor, draftKey]);
@@ -584,31 +584,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                             {/* Category & Title */}
                             <div className="space-y-6 flex flex-col">
                                 <div>
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {tematicas.map(t => (
-                                            <button type="button" key={t} className="flex items-center gap-1 px-3 py-1 bg-lines/30 text-charcoal text-[10px] uppercase tracking-[0.15em] rounded-sm group cursor-pointer hover:bg-red-500/10 hover:text-red-700 transition-colors" onClick={() => handleRemoveTematica(t)} title="Eliminar temática">
-                                                {t}
-                                                <span className="material-symbols-outlined text-[12px] opacity-50 group-hover:opacity-100" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
-                                            </button>
-                                        ))}
-                                        <input 
-                                            className="flex-grow min-w-[200px] border-none bg-transparent font-sans text-xs text-gold tracking-[0.2em] uppercase focus:ring-0 placeholder:text-charcoal/30 outline-none p-1" 
-                                            placeholder={tematicas.length === 0 ? "AÑADE TEMÁTICAS (ENTER PARA GUARDAR)" : "AÑADIR OTRA..."} 
-                                            type="text" 
-                                            value={tematicaInput} 
-                                            onChange={(e) => setTematicaInput(e.target.value)} 
-                                            onKeyDown={handleKeyDownTematica}
-                                            onBlur={() => { if (tematicaInput) handleAddTematica(tematicaInput); }}
-                                        />
-                                    </div>
-                                    <div className="flex flex-wrap gap-3 items-center">
-                                        <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50">Sugerencias:</span>
-                                        {TEMATICAS_SUGERIDAS.filter(t => !tematicasSet.has(t)).map(t => (
-                                            <button type="button" key={t} onClick={() => handleAddTematica(t)} className="text-[10px] font-sans uppercase tracking-widest text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
-                                                +{t}
-                                            </button>
-                                        ))}
-                                    </div>
+                                    <TagManager selectedTags={tematicas} onChange={setTematicas} />
                                 </div>
                                 <div className="mb-4">
                                     <select 
@@ -721,15 +697,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                         [&>figure]:my-10 [&>figure]:mx-0 [&>figure]:w-full [&>figure>img]:w-full [&>figure>img]:h-auto [&>figure>img]:border [&>figure>img]:border-lines
                         [&_figure_figcaption]:mt-4 [&_figure_figcaption]:text-base [&_figure_figcaption]:text-charcoal/60 [&_figure_figcaption]:italic [&_figure_figcaption]:text-center
                         [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-gold/80"
-                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeLang === 'gl' ? contenidoGl : contenidoEs, {
-                                    allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'h3', 'iframe', 'div', 'figure', 'figcaption']),
-                                    allowedAttributes: {
-                                        ...sanitizeHtml.defaults.allowedAttributes,
-                                        iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'title'],
-                                        div: ['data-youtube-video']
-                                    },
-                                    allowedIframeHostnames: ['www.youtube.com', 'www.youtube-nocookie.com', 'youtu.be']
-                                }) }}
+                                dangerouslySetInnerHTML={{ __html: activeLang === 'gl' ? contenidoGl : contenidoEs }}
                             />
                         </article>
 

@@ -30,7 +30,7 @@ export default function NuevoArticulo() {
 
             const slug = generateSlug(data.titulo_gl || data.titulo_es || 'novo-artigo');
 
-            const { error } = await supabase.from('articulos').insert({
+            const { data: insertedArticle, error } = await supabase.from('articulos').insert({
                 titulo_gl: data.titulo_gl || 'Sen Título',
                 titulo_es: data.titulo_es || 'Sin Título',
                 subtitulo_gl: data.subtitulo_gl || null,
@@ -45,10 +45,19 @@ export default function NuevoArticulo() {
                 tipo: data.tipo || 'artigo'
             }).select().single();
 
-            if (error) {
+            if (error || !insertedArticle) {
                 console.error(error);
-                alert('Error al publicar: ' + error.message);
+                alert('Error al publicar: ' + error?.message);
             } else {
+                // Sync article_tags
+                if (data.tematicas && data.tematicas.length > 0) {
+                    const { data: tagIds } = await supabase.from('tags').select('id, slug').in('slug', data.tematicas);
+                    if (tagIds && tagIds.length > 0) {
+                        await supabase.from('article_tags').insert(
+                            tagIds.map(t => ({ article_id: insertedArticle.id, tag_id: t.id }))
+                        );
+                    }
+                }
                 alert(isDraft ? '¡Borrador guardado con éxito!' : '¡Artículo publicado con éxito!');
                 router.push('/escritorio');
             }

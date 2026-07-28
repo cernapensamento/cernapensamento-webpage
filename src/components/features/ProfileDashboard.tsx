@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import PasswordForm from '@/components/forms/PasswordForm';
 import { DEFAULT_AVATAR_URL } from '@/lib/constants';
+import { handleSignOut } from '@/actions/auth';
 
 export default function ProfileDashboard({ profile, user }: { profile: any, user: any }) {
   const [nombre, setNombre] = useState(profile?.nombre || '');
@@ -31,11 +32,11 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
       const { error } = await supabase
         .from('perfiles')
         .update({ nombre, bio, avatar_url: avatarUrl, recibir_newsletter: recibirNewsletter })
-        .eq('id', profile?.id || '');
+        .eq('id', profile?.id || user?.id);
 
       if (error) throw error;
-      
       setMessage('Perfil actualizado exitosamente.');
+      window.dispatchEvent(new Event('profile_updated'));
       router.refresh();
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Error desconocido';
@@ -95,10 +96,11 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
       const { error: updateError } = await supabase
         .from('perfiles')
         .update({ avatar_url: urlData.publicUrl })
-        .eq('id', profile?.id || '');
+        .eq('id', profile?.id || user?.id);
       if (updateError) {
         console.error('Error al guardar avatar en DB:', updateError.message);
       } else {
+        window.dispatchEvent(new Event('profile_updated'));
         router.refresh();
       }
     }
@@ -111,7 +113,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
   return (
     <div className="bg-surface border border-lines p-6 sm:p-10 md:p-16">
       {/* Header Section (Avatar + Name) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-lines mb-6">
         <div className="flex items-center gap-6 sm:gap-8">
           <input 
             type="file" 
@@ -150,21 +152,6 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
             </p>
           </div>
         </div>
-
-        {/* Save Button at the Top */}
-        <div className="shrink-0 self-start sm:self-auto">
-          <button
-            type="submit"
-            form="profile-form"
-            disabled={loading || isUploading}
-            className="group relative px-6 py-3 bg-charcoal text-parchment hover:bg-gold hover:text-charcoal transition-all duration-500 ease-out font-bold text-[10px] sm:text-xs uppercase tracking-[0.2em] disabled:opacity-50 border border-charcoal hover:border-gold overflow-hidden"
-          >
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              {loading ? 'Guardando...' : 'Guardar Cambios'}
-              {!loading && <span className="material-symbols-outlined text-[14px] transition-transform duration-500 group-hover:translate-x-1">arrow_forward</span>}
-            </span>
-          </button>
-        </div>
       </div>
       
       {/* Content Section */}
@@ -201,9 +188,14 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
               <textarea
                 id="bio"
                 value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                rows={1}
-                className="w-full px-0 py-2 bg-transparent border-b border-lines text-charcoal placeholder-lines focus:outline-none focus:border-charcoal transition-colors rounded-none resize-y min-h-[40px]"
+                onChange={(e) => {
+                  setBio(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = e.target.scrollHeight + 'px';
+                }}
+                rows={3}
+                placeholder="Escribe algo sobre ti..."
+                className="w-full px-0 py-2 bg-transparent border-b border-lines text-charcoal placeholder-charcoal/30 focus:outline-none focus:border-charcoal transition-colors rounded-none resize-none overflow-hidden min-h-[80px]"
               />
             </div>
 
@@ -216,7 +208,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
                 className="w-4 h-4 text-gold border-lines rounded focus:ring-gold accent-gold"
               />
               <label htmlFor="newsletter" className="font-sans text-sm text-charcoal cursor-pointer">
-                Quiero recibir el boletín semanal con artículos destacados.
+                Recibir notificaciones por correo de nuevas publicaciones
               </label>
             </div>
           </form>
@@ -235,6 +227,27 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
               {message}
             </div>
           )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-8 mt-8 border-t border-lines">
+            <button
+              type="submit"
+              form="profile-form"
+              disabled={loading || isUploading}
+              className="group relative px-6 py-3 bg-charcoal text-parchment hover:bg-gold hover:text-charcoal transition-all duration-500 ease-out font-bold text-[10px] sm:text-xs uppercase tracking-[0.2em] disabled:opacity-50 border border-charcoal hover:border-gold overflow-hidden shrink-0 w-full sm:w-auto"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {loading ? 'Guardando...' : 'Guardar Cambios'}
+                {!loading && <span className="material-symbols-outlined text-[14px] transition-transform duration-500 group-hover:translate-x-1">arrow_forward</span>}
+              </span>
+            </button>
+            <form action={handleSignOut} className="w-full sm:w-auto">
+              <button type="submit" className="flex items-center justify-center gap-3 py-3 px-4 bg-transparent border border-lines/50 text-charcoal/50 hover:bg-red-50/50 hover:text-red-500 hover:border-red-500/20 transition-all duration-300 group w-full cursor-pointer shrink-0 rounded-sm">
+                <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:-translate-x-1" data-icon="logout">logout</span>
+                <span className="font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300">Cerrar Sesión</span>
+              </button>
+            </form>
+          </div>
         </div>
     </div>
   );

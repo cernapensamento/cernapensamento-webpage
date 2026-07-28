@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     let isValid = false;
     try {
         const { timingSafeEqual } = await import('crypto');
-        const secretBuf = Buffer.from(WEBHOOK_SECRET);
+        const secretBuf = Buffer.from(WEBHOOK_SECRET || '');
         const tokenBuf = Buffer.from(token);
         if (secretBuf.length === tokenBuf.length) {
             isValid = timingSafeEqual(secretBuf, tokenBuf);

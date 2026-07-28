@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/utils/supabase/client';
 import { SITE_NAME } from '@/lib/constants';
 
@@ -16,6 +17,8 @@ export default function LoginPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showResend, setShowResend] = useState(false);
   const router = useRouter();
+  const params = useParams();
+  const lang = params.lang || 'es';
   const supabase = createClient();
 
   React.useEffect(() => {
@@ -138,14 +141,29 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-parchment">
       <div className="w-full max-w-sm relative">
         
-        <Link href="/" className="absolute -top-6 left-0 text-charcoal/40 hover:text-charcoal transition-colors font-serif text-4xl" aria-label="Volver al inicio">
+        <Link href={`/${lang}`} className="absolute -top-6 left-0 text-charcoal/40 hover:text-charcoal transition-colors font-serif text-4xl" aria-label="Volver al inicio">
           ←
         </Link>
 
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-normal text-charcoal tracking-tight mb-2">
-            {SITE_NAME}
-          </h1>
+        <div className="text-center mb-12 flex flex-col items-center">
+          <div className="relative mb-6">
+            <Image 
+              src="/images/logo/cernawhite.png" 
+              alt="Cerna Pensamento" 
+              width={400} 
+              height={100} 
+              className="h-16 md:h-20 w-auto object-contain block dark:hidden"
+              priority
+            />
+            <Image 
+              src="/images/logo/cernablack.png" 
+              alt="Cerna Pensamento" 
+              width={400} 
+              height={100} 
+              className="h-16 md:h-20 w-auto object-contain hidden dark:block"
+              priority
+            />
+          </div>
           <p className="text-sm text-charcoal/60 uppercase tracking-widest font-semibold">
             {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
           </p>

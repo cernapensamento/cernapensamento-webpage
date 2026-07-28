@@ -1,7 +1,8 @@
 import React from 'react';
 import PublicNavBar from '@/components/layout/PublicNavBar';
 import SiteFooter from '@/components/layout/SiteFooter';
-import EstatutosContent from '@/components/estatutos/EstatutosContent';
+import EstatutosContentGL from '@/components/estatutos/EstatutosContentGL';
+import EstatutosContentES from '@/components/estatutos/EstatutosContentES';
 
 // Metadatos para SEO
 export const metadata = {
@@ -9,10 +10,19 @@ export const metadata = {
   description: 'Estatutos oficiales de la Asociación Cerna Pensamento.',
 };
 
-export default function EstatutosPage() {
+export default async function EstatutosPage({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  
+  const contentMap: Record<string, React.ReactNode> = {
+    gl: <EstatutosContentGL />,
+    es: <EstatutosContentES />,
+  };
+  
+  const Content = contentMap[lang] || <EstatutosContentGL />;
+
   return (
     <div className="flex flex-col min-h-screen bg-parchment">
-      <PublicNavBar showBackLink={true} />
+      <PublicNavBar />
       
       <main className="px-4 md:px-12 pb-40 pt-16 flex flex-col flex-1">
         {/* Page header */}
@@ -29,7 +39,7 @@ export default function EstatutosPage() {
         {/* Document card */}
         <div className="max-w-[1100px] mx-auto w-full">
           <div className="bg-surface border border-lines shadow-[0_4px_40px_rgba(0,0,0,0.07)] px-8 py-16 md:px-24 md:py-20">
-            <EstatutosContent />
+            {Content}
           </div>
           {/* Bottom meta */}
           <p className="text-center text-xs text-charcoal/40 font-sans mt-8 tracking-wide">

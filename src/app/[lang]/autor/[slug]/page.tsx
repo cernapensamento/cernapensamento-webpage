@@ -3,16 +3,19 @@ import { notFound } from 'next/navigation';
 import PublicNavBar from '@/components/layout/PublicNavBar';
 import SiteFooter from '@/components/layout/SiteFooter';
 import ArticleCard from '@/components/features/ArticleCard';
+import { getDictionary } from '@/dictionaries';
+import type { Locale } from '@/i18n-config';
 
 export const revalidate = 60;
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; lang: string }>;
 }
 
 export default async function AutorPage({ params }: PageProps) {
   const supabase = await createClient();
-  const { slug } = await params;
+  const { slug, lang } = await params;
+  const dict = await getDictionary(lang as Locale);
 
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
@@ -49,11 +52,11 @@ export default async function AutorPage({ params }: PageProps) {
           {/* Header Author */}
           <header className="mb-20 text-center border-b border-lines pb-12">
             <h1 className="font-serif text-4xl md:text-5xl text-charcoal mb-6">
-              Artículos de {autor.nombre}
+              {dict.authorPage.articlesBy} {autor.nombre}
             </h1>
-            {autor.bio && (
+            {((autor.slug && dict.authors && (dict.authors as any)[autor.slug]) || autor.bio) && (
               <p className="font-sans text-base text-charcoal/70 max-w-2xl mx-auto leading-relaxed">
-                {autor.bio}
+                {(autor.slug && dict.authors && (dict.authors as any)[autor.slug]) || autor.bio}
               </p>
             )}
           </header>
@@ -62,12 +65,12 @@ export default async function AutorPage({ params }: PageProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-16">
             {articulos && articulos.length > 0 ? (
               articulos.map((articulo) => (
-                <ArticleCard key={articulo.id} articulo={articulo} />
+                <ArticleCard key={articulo.id} articulo={articulo} lang={lang} dict={dict} />
               ))
             ) : (
-              <p className="font-sans text-charcoal/60 col-span-full text-center py-10">
-                Este autor no tiene artículos publicados todavía.
-              </p>
+              <div className="col-span-full text-center py-20 border-t border-lines">
+                <p className="font-serif text-2xl text-charcoal/50">{dict.authorPage.noArticles}</p>
+              </div>
             )}
           </div>
         </div>

@@ -8,13 +8,16 @@ import PublicNavBar from '@/components/layout/PublicNavBar';
 import SiteFooter from '@/components/layout/SiteFooter';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 import CommentsSection from '@/components/features/CommentsSection';
+import { getDictionary } from '@/dictionaries';
+import type { Locale } from '@/i18n-config';
+import LanguageToggle from '@/components/ui/LanguageToggle';
 
 interface Props {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; lang: string }>;
 }
 
 export async function generateMetadata({ params }: Props) {
-  const [{ slug }, supabase] = await Promise.all([params, createClient()]);
+  const [{ slug, lang }, supabase] = await Promise.all([params, createClient()]);
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
   const { data: articulo } = await supabase
@@ -27,10 +30,8 @@ export async function generateMetadata({ params }: Props) {
     return { title: 'Artículo no encontrado' };
   }
 
-  const cookieStore = await cookies();
-  const locale = cookieStore.get('locale')?.value || 'gl';
-  const titulo = locale === 'es' ? articulo.titulo_es : articulo.titulo_gl;
-  const subtitulo = locale === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl;
+  const titulo = lang === 'es' ? articulo.titulo_es : articulo.titulo_gl;
+  const subtitulo = lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl;
 
   return {
     title: titulo,
@@ -40,13 +41,15 @@ export async function generateMetadata({ params }: Props) {
 
 export const revalidate = 60;
 
-export default async function ArticuloPage({ params }: Props) {
-  const [{ slug }, supabase, cookieStore] = await Promise.all([
-    params,
-    createClient(),
-    cookies()
-  ]);
-  const locale = cookieStore.get('locale')?.value || 'gl';
+export default async function ArticuloPage({
+  params,
+}: {
+  params: Promise<{ lang: string; slug: string }>;
+}) {
+  const { lang, slug } = await params;
+  const dict = await getDictionary(lang as Locale);
+  
+  const supabase = await createClient();
 
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
@@ -60,23 +63,41 @@ export default async function ArticuloPage({ params }: Props) {
     notFound();
   }
 
-  const titulo = locale === 'es' ? articulo.titulo_es : articulo.titulo_gl;
-  const subtitulo = locale === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl;
-  const contenido = locale === 'es' ? articulo.contenido_es : articulo.contenido_gl;
+  const titulo = lang === 'es' ? articulo.titulo_es : articulo.titulo_gl;
+  const subtitulo = lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl;
+  const contenido = lang === 'es' ? articulo.contenido_es : articulo.contenido_gl;
 
-  const fecha = new Date(articulo.creado_en).toLocaleDateString(locale === 'es' ? 'es-ES' : 'gl-ES', {
+  const fecha = new Date(articulo.creado_en).toLocaleDateString(lang === 'es' ? 'es-ES' : 'gl-ES', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
 
+  let translatedTags: Record<string, string> = {};
+  if (articulo.tematicas && articulo.tematicas.length > 0) {
+    const { data: tagTrans } = await supabase
+      .from('tags')
+      .select('slug, tag_translations(lang, name)')
+      .in('slug', articulo.tematicas);
+    if (tagTrans) {
+      tagTrans.forEach(t => {
+        const trans = t.tag_translations?.find((tr: any) => tr.lang === lang);
+        if (trans) {
+          translatedTags[t.slug] = trans.name;
+        }
+      });
+    }
+  }
+
   return (
     <>
-      <PublicNavBar showBackLink={true} />
+      <PublicNavBar />
 
       <main className="flex-grow flex flex-col items-center w-full pb-[120px]">
         <header className="w-full max-w-3xl px-5 md:px-0 pt-24 pb-12 mx-auto text-center relative">
-          <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">{articulo.tipo || 'Artigo'}</span>
+          <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">
+            {(dict as any).documentTypes?.[articulo.tipo?.toLowerCase()] || articulo.tipo || 'Artigo'}
+          </span>
           <h1 className="font-serif text-4xl md:text-6xl text-charcoal mb-6 max-w-4xl mx-auto leading-tight">
             {titulo}
           </h1>
@@ -88,7 +109,7 @@ export default async function ArticuloPage({ params }: Props) {
           {articulo.tematicas && articulo.tematicas.length > 0 && (
             <div className="flex flex-wrap justify-center gap-3 mt-6">
               {articulo.tematicas.map((t: string) => (
-                <span key={t} className="px-4 py-1.5 border border-lines text-charcoal text-[10px] uppercase tracking-[0.2em]">{t}</span>
+                <span key={t} className="px-4 py-1.5 border border-lines text-charcoal text-[10px] uppercase tracking-[0.2em]">{translatedTags[t] || t}</span>
               ))}
             </div>
           )}
@@ -143,19 +164,19 @@ export default async function ArticuloPage({ params }: Props) {
               <Image className="object-cover transition-all duration-700" alt="" src={articulo.perfiles?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="64px"/>
             </Link>
             <div>
-              <h3 id="author-heading" className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Sobre el autor</h3>
+              <h3 id="author-heading" className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">{dict.article.aboutAuthor}</h3>
               <p className="font-sans text-lg text-charcoal/80">
                 <Link 
-                  href={`/autor/${articulo.perfiles?.slug || articulo.autor_id}`} 
+                  href={`/${lang}/autor/${articulo.perfiles?.slug || articulo.autor_id}`} 
                   className="hover:text-gold transition-colors font-serif font-bold text-charcoal"
                   aria-describedby="author-heading"
                 >
-                  {articulo.perfiles?.nombre || 'Autor Desconocido'}
-                </Link> es un contribuyente de {SITE_NAME}.
+                  {articulo.perfiles?.nombre || dict.article.unknownAuthor}
+                </Link> {dict.article.contributorOf} {SITE_NAME}.
               </p>
-              {articulo.perfiles?.bio && (
+              {((articulo.perfiles?.slug && dict.authors && (dict.authors as any)[articulo.perfiles.slug]) || articulo.perfiles?.bio) && (
                 <p className="font-sans text-base text-charcoal/70 mt-3 leading-relaxed max-w-2xl">
-                  {articulo.perfiles.bio}
+                  {(articulo.perfiles?.slug && dict.authors && (dict.authors as any)[articulo.perfiles.slug]) || articulo.perfiles?.bio}
                 </p>
               )}
             </div>
