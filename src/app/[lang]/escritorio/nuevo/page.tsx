@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import ArticleEditor, { ArticleData } from '@/components/escritorio/ArticleEditor';
 
 const generateSlug = (title: string) => {
@@ -17,6 +17,8 @@ const generateSlug = (title: string) => {
 export default function NuevoArticulo() {
     const [isPublishing, setIsPublishing] = useState(false);
     const router = useRouter();
+    const params = useParams();
+    const lang = (params?.lang as string) || 'es';
     const supabase = createClient();
 
     const handleSave = async (data: ArticleData, isDraft: boolean) => {
@@ -59,7 +61,7 @@ export default function NuevoArticulo() {
                     }
                 }
                 alert(isDraft ? '¡Borrador guardado con éxito!' : '¡Artículo publicado con éxito!');
-                router.push('/escritorio');
+                router.push(`/${lang}/escritorio`);
             }
         } catch (error) {
             console.error(error);

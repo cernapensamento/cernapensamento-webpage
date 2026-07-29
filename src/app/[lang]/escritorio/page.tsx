@@ -10,23 +10,26 @@ import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
 import PinArticleButton from '@/components/escritorio/PinArticleButton';
 
 interface PageProps {
+  params: Promise<{ lang: string }>;
   searchParams: Promise<{ ver?: string; filtro?: string }>;
 }
 
-export default async function EscritorioDelEscritorElDialecto({ searchParams }: PageProps) {
-  const [params, supabase, { user, profile }] = await Promise.all([
+export default async function EscritorioDelEscritorElDialecto({ params: routeParams, searchParams }: PageProps) {
+  const [params, routeParamsResolved, supabase, { user, profile }] = await Promise.all([
     searchParams,
+    routeParams,
     createClient(),
     getAuthenticatedUser()
   ]);
+  const lang = routeParamsResolved.lang || 'es';
   const verTodo = params.ver === 'todo';
   const filtro = params.filtro || 'todos';
   if (!user) {
-    redirect('/login');
+    redirect(`/${lang}/login`);
   }
 
   if (profile?.rol === 'usuario') {
-    redirect('/escritorio/perfil');
+    redirect(`/${lang}/escritorio/perfil`);
   }
 
   const { data: articulos } = await supabase
@@ -69,7 +72,7 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
               </div>
               {canCreate ? (
                 <Link
-                  href="/escritorio/nuevo"
+                  href={`/${lang}/escritorio/nuevo`}
                   className="flex items-center gap-3 bg-charcoal text-parchment px-8 py-5 font-sans text-sm uppercase tracking-widest hover:bg-gold transition-all duration-300 hover:shadow-lg hover:-translate-y-1 shrink-0 group"
                 >
                   <span className="material-symbols-outlined transition-transform duration-500 group-hover:rotate-90" data-icon="add">add</span>
@@ -127,14 +130,14 @@ export default async function EscritorioDelEscritorElDialecto({ searchParams }: 
                             </>
                           )}
                         </div>
-                        <Link href={`/articulo/${articulo.slug || articulo.id}`}>
+                        <Link href={`/${lang}/articulo/${articulo.slug || articulo.id}`}>
                           <h4 className="font-serif text-2xl mb-3 group-hover:text-gold transition-colors cursor-pointer">{articulo.titulo_gl || articulo.titulo_es}</h4>
                         </Link>
                         <p className="font-sans text-base text-charcoal/60 line-clamp-2">
                           {articulo.subtitulo_gl || articulo.subtitulo_es || String(articulo.contenido_gl || articulo.contenido_es || '').replace(/<[^>]*>?/gm, '').substring(0, 150) + '...'}
                         </p>
                         <div className="mt-4 flex items-center gap-6">
-                          <Link href={`/escritorio/editar/${articulo.slug || articulo.id}`} className="flex items-center gap-1 text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
+                          <Link href={`/${lang}/escritorio/editar/${articulo.slug || articulo.id}`} className="flex items-center gap-1 text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
                             <span className="material-symbols-outlined text-sm" data-icon="edit">edit</span>
                             <span className="font-sans text-xs">Editar</span>
                           </Link>

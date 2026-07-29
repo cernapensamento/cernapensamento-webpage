@@ -5,17 +5,23 @@ import { createClient } from '@/utils/supabase/server';
 
 export default async function NuevoArticuloLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ lang: string }>;
 }) {
-  const { user, profile } = await getAuthenticatedUser();
+  const [resolvedParams, { user, profile }] = await Promise.all([
+    params,
+    getAuthenticatedUser()
+  ]);
+  const lang = resolvedParams.lang || 'es';
 
   if (!user) {
-    redirect('/login');
+    redirect(`/${lang}/login`);
   }
 
   if (!['escritor', 'admin', 'invitado'].includes(profile?.rol)) {
-    redirect('/escritorio/perfil');
+    redirect(`/${lang}/escritorio/perfil`);
   }
 
   if (profile?.rol === 'invitado') {
@@ -30,7 +36,7 @@ export default async function NuevoArticuloLayout({
     const articulosEsteAno = todosLosArticulos.filter(a => new Date(a.creado_en).getFullYear() === currentYear).length;
     
     if (todosLosArticulos.length >= 4 || articulosEsteAno >= 2) {
-      redirect('/escritorio?error=limite_alcanzado');
+      redirect(`/${lang}/escritorio?error=limite_alcanzado`);
     }
   }
 

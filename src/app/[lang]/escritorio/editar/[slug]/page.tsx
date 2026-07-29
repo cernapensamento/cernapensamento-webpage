@@ -5,22 +5,23 @@ import { redirect, notFound } from 'next/navigation';
 import EditarArticuloForm from '@/components/forms/EditarArticuloForm';
 
 interface Props {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string, lang: string }>;
 }
 
 export default async function EditarArticuloPage({ params }: Props) {
-  const [{ slug }, { user, profile }] = await Promise.all([
+  const [resolvedParams, { user, profile }] = await Promise.all([
     params,
     getAuthenticatedUser()
   ]);
+  const { slug, lang = 'es' } = resolvedParams;
 
   if (!user || !profile) {
-    redirect('/login');
+    redirect(`/${lang}/login`);
   }
 
   // Verificar rol de escritor/admin globalmente
   if (profile.rol === 'usuario') {
-    redirect('/escritorio/perfil');
+    redirect(`/${lang}/escritorio/perfil`);
   }
 
   const supabase = await createClient();
@@ -42,7 +43,7 @@ export default async function EditarArticuloPage({ params }: Props) {
 
   // Verificar que el usuario sea el autor del artículo o un admin
   if (articulo.autor_id !== user.id && profile.rol !== 'admin') {
-    redirect('/escritorio');
+    redirect(`/${lang}/escritorio`);
   }
 
   return <EditarArticuloForm articulo={articulo} />;

@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/utils/supabase/client';
 import { SITE_NAME } from '@/lib/constants';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,14 +22,16 @@ export default function LoginPage() {
   const params = useParams();
   const lang = params.lang || 'es';
   const supabase = createClient();
+  const dict = lang === 'es' ? esDict : glDict;
+  const loginDict = dict.loginPage;
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('error') === 'invalid_token') {
-        setError('El enlace de confirmación es inválido o ha expirado. Si ya te registraste, intenta iniciar sesión de nuevo para recibir otro enlace.');
+        setError(loginDict.invalidToken);
       } else if (params.get('error') === 'auth_failed') {
-        setError('Ha ocurrido un error durante la autenticación con Google.');
+        setError(loginDict.googleAuthError);
       }
     }
   }, []);
@@ -44,7 +48,7 @@ export default function LoginPage() {
       });
       if (error) throw error;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Ha ocurrido un error con Google.');
+      setError(err instanceof Error ? err.message : loginDict.googleAuthError);
       setLoading(false);
     }
   };
@@ -57,7 +61,7 @@ export default function LoginPage() {
     setShowResend(false);
 
     if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
+      setError(loginDict.passError);
       setLoading(false);
       return;
     }
@@ -79,9 +83,9 @@ export default function LoginPage() {
             
           const rol = profile?.rol;
           if (rol === 'escritor' || rol === 'admin') {
-            router.push('/escritorio');
+            router.push(`/${lang}/escritorio`);
           } else {
-            router.push('/escritorio/perfil');
+            router.push(`/${lang}/escritorio/perfil`);
           }
           router.refresh();
         } else {
@@ -99,13 +103,13 @@ export default function LoginPage() {
         });
         if (error) throw error;
         setError(null);
-        setSuccessMessage('Registro exitoso. Por favor, revisa tu correo electrónico para confirmar tu cuenta.');
+        setSuccessMessage(loginDict.signupSuccess);
         setIsLogin(true);
       }
     } catch (err: unknown) {
-      let message = err instanceof Error ? err.message : 'Ha ocurrido un error durante la autenticación.';
+      let message = err instanceof Error ? err.message : loginDict.genericAuthError;
       if (message.toLowerCase().includes('email not confirmed')) {
-        message = 'Debes confirmar tu correo electrónico antes de poder iniciar sesión. Revisa tu bandeja de entrada.';
+        message = loginDict.unconfirmedEmail;
         setShowResend(true);
       }
       setError(message);
@@ -128,10 +132,10 @@ export default function LoginPage() {
         }
       });
       if (resendError) throw resendError;
-      setSuccessMessage('El correo de confirmación ha sido reenviado. Por favor, revisa tu bandeja de entrada.');
+      setSuccessMessage(loginDict.resendSuccess);
       setShowResend(false);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Ha ocurrido un error al reenviar el correo.');
+      setError(err instanceof Error ? err.message : 'Error');
     } finally {
       setLoading(false);
     }
@@ -141,7 +145,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-parchment">
       <div className="w-full max-w-sm relative">
         
-        <Link href={`/${lang}`} className="absolute -top-6 left-0 text-charcoal/40 hover:text-charcoal transition-colors font-serif text-4xl" aria-label="Volver al inicio">
+        <Link href={`/${lang}`} className="absolute -top-6 left-0 text-charcoal/40 hover:text-charcoal transition-colors font-serif text-4xl" aria-label={loginDict.backToHome}>
           ←
         </Link>
 
@@ -165,7 +169,7 @@ export default function LoginPage() {
             />
           </div>
           <p className="text-sm text-charcoal/60 uppercase tracking-widest font-semibold">
-            {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
+            {isLogin ? loginDict.loginTitle : loginDict.signupTitle}
           </p>
         </div>
 
@@ -173,7 +177,7 @@ export default function LoginPage() {
           {!isLogin && (
             <div>
               <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="nombre">
-                Nombre completo
+                {loginDict.fullName}
               </label>
               <input
                 id="nombre"
@@ -183,14 +187,14 @@ export default function LoginPage() {
                 onChange={(e) => setNombre(e.target.value)}
                 required
                 className="w-full px-4 py-3 bg-surface border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
-                placeholder="Tu nombre"
+                placeholder={loginDict.namePlaceholder}
               />
             </div>
           )}
 
           <div>
             <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="email">
-              Correo electrónico
+              {loginDict.email}
             </label>
             <input
               id="email"
@@ -206,7 +210,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="password">
-              Contraseña
+              {loginDict.password}
             </label>
             <input
               id="password"
@@ -234,7 +238,7 @@ export default function LoginPage() {
                   disabled={loading}
                   className="self-end text-xs font-semibold text-red-700 underline hover:text-red-900 disabled:opacity-50 cursor-pointer"
                 >
-                  Reenviar correo
+                  {loginDict.resendBtn}
                 </button>
               )}
             </div>
@@ -253,16 +257,27 @@ export default function LoginPage() {
             className="w-full py-4 px-6 bg-charcoal text-parchment hover:bg-gold hover:text-parchment hover:border-gold transition-all duration-300 disabled:opacity-50 flex justify-center items-center font-semibold text-sm uppercase tracking-widest border border-charcoal cursor-pointer active:scale-99"
           >
             {loading ? (
-              <span className="animate-pulse">Procesando...</span>
+              <span className="animate-pulse">{loginDict.processing}</span>
             ) : isLogin ? (
-              'Ingresar'
+              loginDict.loginBtn
             ) : (
-              'Registrarse'
+              loginDict.signupBtn
             )}
           </button>
 
+          {isLogin && (
+            <div className="text-center mt-4">
+              <Link
+                href={`/${lang}/recuperar-password`}
+                className="text-xs text-charcoal/60 hover:text-charcoal transition-colors underline font-sans"
+              >
+                {loginDict.forgotPassword}
+              </Link>
+            </div>
+          )}
+
           <div className="relative flex items-center justify-center mt-6 mb-6">
-            <span className="absolute bg-parchment px-4 text-xs font-semibold uppercase tracking-widest text-charcoal/50">o</span>
+            <span className="absolute bg-parchment px-4 text-xs font-semibold uppercase tracking-widest text-charcoal/50">{loginDict.or}</span>
             <div className="w-full h-px bg-lines"></div>
           </div>
 
@@ -278,7 +293,7 @@ export default function LoginPage() {
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
             </svg>
-            Continuar con Google
+            {loginDict.continueWithGoogle}
           </button>
         </form>
 
@@ -293,8 +308,8 @@ export default function LoginPage() {
             className="text-xs text-gold hover:text-charcoal transition-colors uppercase tracking-widest font-semibold"
           >
             {isLogin
-              ? '¿No tienes cuenta? Solicita acceso'
-              : '¿Ya tienes cuenta? Inicia sesión'}
+              ? loginDict.noAccount
+              : loginDict.alreadyAccount}
           </button>
         </div>
       </div>

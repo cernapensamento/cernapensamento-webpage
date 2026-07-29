@@ -3,6 +3,32 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { i18n } from './i18n-config';
 import { match as matchLocale } from '@formatjs/intl-localematcher';
 import Negotiator from 'negotiator';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+// Inicializar Redis solo si las variables de entorno están presentes
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  : null;
+
+// Rate limiter para API y Webhooks
+const apiLimiter = redis ? new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, '1 m'),
+  analytics: true,
+  prefix: '@upstash/ratelimit/api',
+}) : null;
+
+// Rate limiter global para POST/PUT/DELETE
+const globalMutationLimiter = redis ? new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(30, '1 m'),
+  analytics: true,
+  prefix: '@upstash/ratelimit/global',
+}) : null;
 
 function getLocale(request: NextRequest): string {
   const negotiatorHeaders: Record<string, string> = {};
@@ -41,6 +67,51 @@ export async function proxy(request: NextRequest) {
   } else if (!isExcluded) {
       currentLocale = getLocale(request) as any;
   }
+
+  // --- Rate Limiting Logic ---
+  if (redis) {
+    const ip = request.headers.get('x-forwarded-for') ?? request.ip ?? '127.0.0.1';
+    
+    try {
+      if (pathname.startsWith('/api/')) {
+        const { success, limit, reset, remaining } = await apiLimiter!.limit(ip);
+        if (!success) {
+          return new NextResponse(
+            JSON.stringify({ error: 'Too Many Requests' }),
+            {
+              status: 429,
+              headers: {
+                'Content-Type': 'application/json',
+                'X-RateLimit-Limit': limit.toString(),
+                'X-RateLimit-Remaining': remaining.toString(),
+                'X-RateLimit-Reset': reset.toString(),
+              },
+            }
+          );
+        }
+      } else if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
+        const { success, limit, reset, remaining } = await globalMutationLimiter!.limit(ip);
+        if (!success) {
+          return new NextResponse(
+            JSON.stringify({ error: 'Demasiadas peticiones. Por favor, espera un minuto.' }),
+            {
+              status: 429,
+              headers: {
+                'Content-Type': 'application/json',
+                'X-RateLimit-Limit': limit.toString(),
+                'X-RateLimit-Remaining': remaining.toString(),
+                'X-RateLimit-Reset': reset.toString(),
+              },
+            }
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Rate limiting error:', error);
+      // Fail open if Redis is down
+    }
+  }
+  // -------------------------
 
   // 1. Prepare Request Headers (x-locale)
   const requestHeaders = new Headers(request.headers);

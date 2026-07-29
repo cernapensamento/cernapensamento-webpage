@@ -5,6 +5,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
 
+  const next = searchParams.get('next')
+
   // Obtener el host real cuando estamos detrás de un proxy (Cloudflare Tunnel)
   const forwardedHost = request.headers.get('x-forwarded-host')
   const forwardedProto = request.headers.get('x-forwarded-proto') || 'https'
@@ -15,6 +17,10 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error && data.user) {
+      if (next && next.startsWith('/') && !next.startsWith('//')) {
+        return NextResponse.redirect(`${origin}${next}`)
+      }
+
       // Get user profile to determine role
       const { data: profile } = await supabase
         .from('perfiles')

@@ -3,10 +3,12 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import PasswordForm from '@/components/forms/PasswordForm';
 import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 import { handleSignOut } from '@/actions/auth';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 
 export default function ProfileDashboard({ profile, user }: { profile: any, user: any }) {
   const [nombre, setNombre] = useState(profile?.nombre || '');
@@ -21,6 +23,10 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
   const isEmailAuth = user?.app_metadata?.providers?.includes('email');
   
   const router = useRouter();
+  const params = useParams();
+  const lang = (params?.lang as string) || 'es';
+  const dict = lang === 'es' ? esDict : glDict;
+  const dashDict = dict.dashboard;
   const supabase = createClient();
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -35,7 +41,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
         .eq('id', profile?.id || user?.id);
 
       if (error) throw error;
-      setMessage('Perfil actualizado exitosamente.');
+      setMessage(dashDict.profileSaved);
       window.dispatchEvent(new Event('profile_updated'));
       router.refresh();
     } catch (error: unknown) {
@@ -146,9 +152,9 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
           </div>
           
           <div>
-            <h3 className="font-serif text-2xl sm:text-3xl text-charcoal mb-1">{nombre || 'Nombre no disponible'}</h3>
+            <h3 className="font-serif text-2xl sm:text-3xl text-charcoal mb-1">{nombre || dashDict.personalData}</h3>
             <p className="font-sans text-[10px] sm:text-xs text-gold uppercase tracking-[0.2em] font-bold">
-              {profile?.rol === 'admin' ? 'Administrador / Editor en Jefe' : profile?.rol === 'escritor' ? 'Escritor' : profile?.rol === 'invitado' ? 'Autor Invitado' : 'Lector'}
+              {profile?.rol === 'admin' ? dashDict.admin : profile?.rol === 'escritor' ? dashDict.writer : profile?.rol === 'invitado' ? dashDict.guest : dashDict.reader}
             </p>
           </div>
         </div>
@@ -173,7 +179,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
           {/* Profile Form */}
           <form id="profile-form" onSubmit={handleUpdate} className="space-y-4">
             <div>
-              <label htmlFor="nombre" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Nombre</label>
+              <label htmlFor="nombre" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">{dashDict.fullName}</label>
               <input
                 id="nombre"
                 type="text"
@@ -184,7 +190,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
               />
             </div>
             <div>
-              <label htmlFor="bio" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Biografía</label>
+              <label htmlFor="bio" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">{dashDict.bio}</label>
               <textarea
                 id="bio"
                 value={bio}
@@ -194,7 +200,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
                   e.target.style.height = e.target.scrollHeight + 'px';
                 }}
                 rows={3}
-                placeholder="Escribe algo sobre ti..."
+                placeholder={dashDict.bioPlaceholder}
                 className="w-full px-0 py-2 bg-transparent border-b border-lines text-charcoal placeholder-charcoal/30 focus:outline-none focus:border-charcoal transition-colors rounded-none resize-none overflow-hidden min-h-[80px]"
               />
             </div>
@@ -208,7 +214,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
                 className="w-4 h-4 text-gold border-lines rounded focus:ring-gold accent-gold"
               />
               <label htmlFor="newsletter" className="font-sans text-sm text-charcoal cursor-pointer">
-                Recibir notificaciones por correo de nuevas publicaciones
+                {dashDict.newsletterText}
               </label>
             </div>
           </form>
@@ -237,14 +243,14 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
               className="group relative px-6 py-3 bg-charcoal text-parchment hover:bg-gold hover:text-charcoal transition-all duration-500 ease-out font-bold text-[10px] sm:text-xs uppercase tracking-[0.2em] disabled:opacity-50 border border-charcoal hover:border-gold overflow-hidden shrink-0 w-full sm:w-auto"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                {loading ? 'Guardando...' : 'Guardar Cambios'}
+                {loading ? dashDict.saving : dashDict.saveChanges}
                 {!loading && <span className="material-symbols-outlined text-[14px] transition-transform duration-500 group-hover:translate-x-1">arrow_forward</span>}
               </span>
             </button>
             <form action={handleSignOut} className="w-full sm:w-auto">
               <button type="submit" className="flex items-center justify-center gap-3 py-3 px-4 bg-transparent border border-lines/50 text-charcoal/50 hover:bg-red-50/50 hover:text-red-500 hover:border-red-500/20 transition-all duration-300 group w-full cursor-pointer shrink-0 rounded-sm">
                 <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:-translate-x-1" data-icon="logout">logout</span>
-                <span className="font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300">Cerrar Sesión</span>
+                <span className="font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300">{lang === 'es' ? 'Cerrar Sesión' : 'Pechar Sesión'}</span>
               </button>
             </form>
           </div>

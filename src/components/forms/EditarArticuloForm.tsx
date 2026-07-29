@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import ArticleEditor, { ArticleData } from '@/components/escritorio/ArticleEditor';
 
 interface Props {
@@ -12,6 +12,8 @@ interface Props {
 export default function EditarArticuloForm({ articulo }: Props) {
     const [isPublishing, setIsPublishing] = useState(false);
     const router = useRouter();
+    const params = useParams();
+    const lang = (params?.lang as string) || 'es';
     const supabase = createClient();
 
     const initialData: ArticleData = {
@@ -71,7 +73,7 @@ export default function EditarArticuloForm({ articulo }: Props) {
                     }
                 }
                 alert(isDraft ? '¡Borrador actualizado!' : '¡Artículo guardado y publicado!');
-                router.push('/escritorio');
+                router.push(`/${lang}/escritorio`);
             }
         } catch (error) {
             console.error(error);

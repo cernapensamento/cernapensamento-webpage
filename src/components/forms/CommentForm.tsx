@@ -27,7 +27,13 @@ export default function CommentForm({ articuloId, onCommentAdded }: { articuloId
         contenido: contenido.trim()
       });
 
-    if (!error) {
+    if (error) {
+      if (error.code === '23505') { // Postgres unique violation error code
+        alert('Ya has comentado en este artículo.');
+      } else {
+        alert('Error al publicar el comentario.');
+      }
+    } else {
       setContenido('');
       onCommentAdded(); // Refresh comments without reloading the page
     }
