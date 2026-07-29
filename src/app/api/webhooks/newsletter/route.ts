@@ -3,12 +3,13 @@ import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
-if (!WEBHOOK_SECRET) {
-  throw new Error('WEBHOOK_SECRET is not set in environment variables');
-}
+
 export async function POST(request: NextRequest) {
   try {
+    const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+    if (!WEBHOOK_SECRET) {
+      throw new Error('WEBHOOK_SECRET is not set in environment variables');
+    }
     // 1. Verificar el secreto del webhook de forma segura
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

@@ -70,7 +70,7 @@ export async function proxy(request: NextRequest) {
 
   // --- Rate Limiting Logic ---
   if (redis) {
-    const ip = request.headers.get('x-forwarded-for') ?? request.ip ?? '127.0.0.1';
+    const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? '127.0.0.1';
     
     try {
       if (pathname.startsWith('/api/')) {
