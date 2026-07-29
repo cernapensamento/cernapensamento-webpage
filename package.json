@@ -12,6 +12,7 @@
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.8.13",
     "@google/genai": "^2.12.0",
+    "@sentry/nextjs": "^10.69.0",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
     "@tiptap/extension-youtube": "^3.27.3",

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
 
 export default function GlobalError({
   error,
@@ -12,6 +13,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     // Aquí podríamos mandar el error a un servicio de telemetría
+    Sentry.captureException(error);
     console.error(error);
   }, [error]);
 
