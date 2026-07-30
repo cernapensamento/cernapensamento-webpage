@@ -1,6 +1,4 @@
-> en el estado actual de la aplicacion podriamos deployar la web en vercel y conseguir una url privada para ir provando qu# Cerna Pensamento
-
-**Revista semanal de pensamiento, literatura y filosofía.**
+**Cerna Pensamento: Revista semanal de pensamiento, literatura y filosofía.**
 
 Cerna es una plataforma digital bilingüe (gallego/castellano) construida como una revista literaria y filosófica moderna. Permite a sus escritores publicar artículos, ensayos, columnas, entrevistas, reportajes y poesía, y a sus lectores consumir, comentar y recibir notificaciones por correo electrónico cuando se publica contenido nuevo.
 
