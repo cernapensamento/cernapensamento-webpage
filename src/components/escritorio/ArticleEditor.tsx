@@ -7,6 +7,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Figure } from '@/lib/editor/FigureExtension';
 import Youtube from '@tiptap/extension-youtube';
+import TextAlign from '@tiptap/extension-text-align';
 import { createClient } from '@/utils/supabase/client';
 import TagManager from '@/components/escritorio/TagManager';
 
@@ -135,6 +136,10 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
         extensions: [
             StarterKit.configure({
                 heading: { levels: [1, 2, 3] },
+            }),
+            TextAlign.configure({
+                types: ['heading', 'paragraph'],
+                alignments: ['left', 'center', 'right', 'justify'],
             }),
             Figure,
             Youtube.configure({
@@ -526,6 +531,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                             <button type="button" aria-label="Insertar Imagen" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Imagen" onClick={insertImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>image</span></button>
                             <button type="button" aria-label="Insertar Vídeo" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Vídeo de YouTube" onClick={insertYoutube}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>smart_display</span></button>
                             <button type="button" aria-label="Lista con viñetas" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bulletList') ? 'bg-lines/30' : ''}`} title="Lista" onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_bulleted</span></button>
+                            <button type="button" aria-label="Justificar Texto" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive({ textAlign: 'justify' }) ? 'bg-lines/30' : ''}`} title="Justificar" onClick={() => { if (editor?.isActive({ textAlign: 'justify' })) { editor?.chain().focus().unsetTextAlign().run(); } else { editor?.chain().focus().setTextAlign('justify').run(); } }}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_align_justify</span></button>
                             <div className="h-6 w-[1px] shrink-0 bg-lines mx-2"></div>
                             <button type="button" aria-label="Limpiar todo" className="w-10 h-10 shrink-0 flex items-center justify-center text-error hover:bg-error/10 transition-colors cursor-pointer" title="Limpiar Todo" onClick={handleClearAll}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>delete_sweep</span></button>
                             <button type="button" aria-label="Cambiar Imagen de Portada" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Portada" onClick={handleChangeCoverImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>add_a_photo</span></button>
