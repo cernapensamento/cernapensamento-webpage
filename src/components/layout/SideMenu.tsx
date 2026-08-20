@@ -98,15 +98,18 @@ export default function SideMenu() {
 
             {/* Accordion for Autores */}
             <div className="flex flex-col">
-              <button 
+              <div 
+                role="button"
+                tabIndex={0}
                 onClick={() => setAuthorsOpen(!authorsOpen)}
-                className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight hover:text-gold transition-colors duration-300 text-left flex items-center gap-4 group"
+                onKeyDown={(e) => { if(e.key === 'Enter' || e.key === ' ') setAuthorsOpen(!authorsOpen); }}
+                className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight hover:text-gold transition-colors duration-300 text-left inline-flex items-center gap-4 group w-full cursor-pointer outline-none"
               >
-                {dict.nav.autores}
+                <span className="font-serif">{dict.nav.autores}</span>
                 <span className={`material-symbols-outlined text-3xl sm:text-4xl transition-transform duration-300 ${authorsOpen ? 'rotate-180 text-gold' : 'group-hover:text-gold'}`}>
                   expand_more
                 </span>
-              </button>
+              </div>
               
               <div className={`overflow-hidden transition-all duration-500 ease-in-out ${authorsOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
                 <ul className="flex flex-col gap-3 pl-4 border-l-2 border-lines ml-2">
@@ -114,7 +117,7 @@ export default function SideMenu() {
                     <li key={author.slug}>
                       <Link 
                         href={`/${lang}/autor/${author.slug}`}
-                        className="font-sans text-xl sm:text-2xl text-charcoal/80 hover:text-gold transition-colors duration-300"
+                        className="font-serif text-2xl sm:text-3xl tracking-tight text-charcoal/80 hover:text-gold transition-colors duration-300"
                       >
                         {author.name}
                       </Link>
