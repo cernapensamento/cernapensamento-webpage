@@ -127,9 +127,44 @@ export default function SideMenu() {
           </nav>
         </div>
 
-        {/* Footer of the Sidebar (Language Toggle) */}
-        <div className="p-8 sm:p-12 border-t border-lines mt-auto">
-          <LanguageToggle />
+        {/* Footer of the Sidebar (Contact + Language Toggle) */}
+        <div className="p-8 sm:p-12 border-t border-lines mt-auto flex flex-col">
+          
+          {/* Contact Section */}
+          <div className="mb-8">
+            <h3 className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans">{dict.nav.contactar}</h3>
+            <div className="flex items-center gap-4 pl-4 border-l-2 border-lines ml-2">
+              <a 
+                href="mailto:contacto@cernapensamento.org" 
+                className="w-12 h-12 flex items-center justify-center border border-lines rounded-full text-charcoal hover:text-gold hover:border-gold transition-colors duration-300 bg-parchment"
+                aria-label="Contacto por Correo"
+              >
+                <span className="material-symbols-outlined text-[22px]">mail</span>
+              </a>
+              <a 
+                href="https://www.instagram.com/cernapensamento" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-12 h-12 flex items-center justify-center border border-lines rounded-full text-charcoal hover:text-gold hover:border-gold transition-colors duration-300 bg-parchment"
+                aria-label="Instagram"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          {/* Language Section */}
+          <div className="pt-8 border-t border-lines">
+            <h3 className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans">{dict.nav.idiomas}</h3>
+            <div className="pl-4 border-l-2 border-lines ml-2">
+              <LanguageToggle />
+            </div>
+          </div>
+          
         </div>
 
       </div>
