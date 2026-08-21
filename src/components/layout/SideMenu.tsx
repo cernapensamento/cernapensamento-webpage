@@ -143,10 +143,10 @@ export default function SideMenu() {
         </div>
 
         {/* Footer of the Sidebar (Contact + Language Toggle) */}
-        <div className="p-8 sm:p-12 border-t border-lines mt-auto flex flex-col">
+        <div className="p-8 sm:p-12 border-t border-lines mt-auto flex flex-row justify-between items-start">
           
           {/* Contact Section */}
-          <div className="mb-8">
+          <div>
             <h3 className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans">{dict.nav.contactar}</h3>
             <div className="flex items-center gap-4 pl-4 border-l-2 border-lines ml-2">
               <a 
@@ -173,9 +173,9 @@ export default function SideMenu() {
           </div>
 
           {/* Language Section */}
-          <div className="pt-8 border-t border-lines">
+          <div>
             <h3 className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans">{dict.nav.idiomas}</h3>
-            <div className="pl-4 border-l-2 border-lines ml-2">
+            <div className="flex items-center pl-4 border-l-2 border-lines ml-2 h-12">
               <LanguageToggle />
             </div>
           </div>
