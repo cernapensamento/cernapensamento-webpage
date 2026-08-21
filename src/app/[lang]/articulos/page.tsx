@@ -38,7 +38,30 @@ export default async function ArticulosPage({
       if (a.tematicas) a.tematicas.forEach((t: string) => extractedTags.add(t));
     });
   }
-  const dynamicTags = Array.from(extractedTags).sort();
+  const dynamicTagSlugs = Array.from(extractedTags);
+  
+  let translatedTags: {slug: string, name: string}[] = [];
+  if (dynamicTagSlugs.length > 0) {
+    const { data: tagTrans } = await supabase
+      .from('tags')
+      .select('slug, tag_translations(lang, name)')
+      .in('slug', dynamicTagSlugs);
+      
+    if (tagTrans) {
+      translatedTags = dynamicTagSlugs.map(slug => {
+        const t = tagTrans.find(tt => tt.slug === slug);
+        let name = slug;
+        if (t && t.tag_translations) {
+          const trans = t.tag_translations.find((tr: any) => tr.lang === lang);
+          if (trans) name = trans.name;
+          else if (t.tag_translations.length > 0) name = t.tag_translations[0].name;
+        }
+        return { slug, name };
+      }).sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+        translatedTags = dynamicTagSlugs.map(slug => ({ slug, name: slug })).sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }
 
   // 2. Obtener los artículos aplicando los filtros
   let query = supabase
@@ -67,7 +90,7 @@ export default async function ArticulosPage({
           </div>
 
           <Suspense fallback={<div className="h-32 flex items-center justify-center"><div className="animate-pulse w-full max-w-2xl h-12 bg-lines/50 rounded"></div></div>}>
-            <ArticlesFilterBar availableTags={dynamicTags} dict={dict.articles} />
+            <ArticlesFilterBar availableTags={translatedTags} dict={dict.articles} />
           </Suspense>
 
           {error && (
