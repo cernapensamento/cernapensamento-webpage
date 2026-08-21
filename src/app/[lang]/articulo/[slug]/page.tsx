@@ -123,7 +123,7 @@ export default async function ArticuloPage({
         </header>
 
         {articulo.imagen_url && (
-          <div className="w-full max-w-4xl px-5 mx-auto mb-16">
+          <div className="w-full max-w-6xl px-5 mx-auto mb-16">
             <Image 
               className="w-full h-auto" 
               alt={titulo} 
