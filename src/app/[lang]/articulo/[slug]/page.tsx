@@ -113,13 +113,25 @@ export default async function ArticuloPage({
               ))}
             </div>
           )}
-          <div className="flex items-center justify-center gap-4 text-sm font-semibold text-charcoal/70 mt-10">
-            <span className="text-charcoal border-b border-lines pb-1 uppercase tracking-widest">
-              {articulo.perfiles?.nombre || 'Autor Desconocido'}
-            </span>
-            <span className="font-serif text-lines">—</span>
-            <time className="uppercase tracking-widest">{fecha}</time>
+          
+          <div className="flex flex-col items-center justify-center gap-3 mt-10">
+            <div className="flex items-center justify-center gap-4 text-sm font-semibold text-charcoal/70">
+              <span className="text-charcoal border-b border-lines pb-1 uppercase tracking-widest">
+                {articulo.perfiles?.nombre || 'Autor Desconocido'}
+              </span>
+              <span className="font-serif text-lines">—</span>
+              <time className="uppercase tracking-widest">{fecha}</time>
+            </div>
+            {articulo.idioma_original && articulo.idioma_original !== lang && (
+              <div className="text-[10px] text-charcoal/60 uppercase tracking-[0.15em]">
+                {lang === 'es' ? 'Idioma original:' : 'Idioma orixinal:'}{' '}
+                <Link href={`/${articulo.idioma_original}/articulo/${articulo.slug || slug}`} className="text-gold font-bold hover:underline transition-all">
+                  {articulo.idioma_original.toUpperCase()}
+                </Link>
+              </div>
+            )}
           </div>
+
         </header>
 
         {articulo.imagen_url && (

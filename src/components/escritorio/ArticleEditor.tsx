@@ -8,6 +8,9 @@ import StarterKit from '@tiptap/starter-kit';
 import { Figure } from '@/lib/editor/FigureExtension';
 import Youtube from '@tiptap/extension-youtube';
 import TextAlign from '@tiptap/extension-text-align';
+import { useParams } from 'next/navigation';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 import { createClient } from '@/utils/supabase/client';
 import TagManager from '@/components/escritorio/TagManager';
 
@@ -32,6 +35,7 @@ export interface ArticleData {
     estado?: string;
     tipo?: string;
     fijado?: boolean;
+    idioma_original?: string;
 }
 
 interface ArticleEditorProps {
@@ -41,7 +45,11 @@ interface ArticleEditorProps {
     mode: 'create' | 'edit';
 }
 
-export default function ArticleEditor({ initialData, onSave, isPublishing, mode }: ArticleEditorProps) {
+export default function ArticleEditor({ mode = 'create', initialData, onSave, isPublishing }: ArticleEditorProps) {
+    const params = useParams();
+    const routeLang = (params?.lang as string) || 'es';
+    const dict = routeLang === 'gl' ? glDict.articleEditor : esDict.articleEditor;
+
     const [showPublishModal, setShowPublishModal] = useState(false);
     
     // Bilingual state
@@ -53,6 +61,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
     const [contenidoGl, setContenidoGl] = useState(initialData?.contenido_gl || '');
     const [contenidoEs, setContenidoEs] = useState(initialData?.contenido_es || '');
     const [isTranslating, setIsTranslating] = useState(false);
+    const [idiomaOriginal, setIdiomaOriginal] = useState(initialData?.idioma_original || "gl");
     
     // Fix stale closure for onUpdate
     const activeLangRef = useRef(activeLang);
@@ -467,6 +476,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
             imagen_url: coverImageUrl,
             tematicas: tematicas,
             tipo: tipo,
+            idioma_original: idiomaOriginal,
         }, isDraft);
 
         localStorage.removeItem(draftKey);
@@ -496,19 +506,17 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-charcoal/50 backdrop-blur-sm">
                     <div className="bg-surface p-8 max-w-md w-full border border-lines shadow-2xl">
                         <h2 className="font-serif text-2xl text-charcoal mb-4">
-                            {mode === 'create' ? '¿Publicar artículo?' : '¿Publicar cambios?'}
+                            {mode === 'create' ? dict.publishModalTitleCreate : dict.publishModalTitleEdit}
                         </h2>
                         <p className="font-sans text-sm text-charcoal/70 mb-8">
-                            {mode === 'create' 
-                                ? '¿Estás seguro de que quieres publicar este artículo ahora? Será visible para tu audiencia seleccionada.'
-                                : '¿Estás seguro de que quieres guardar y publicar los cambios de este artículo?'}
+                            {mode === 'create' ? dict.publishModalDescCreate : dict.publishModalDescEdit}
                         </p>
                         <div className="flex justify-end gap-4">
                             <button type="button" className="px-6 py-2 font-sans text-xs uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors cursor-pointer" onClick={() => setShowPublishModal(false)}>
                                 Cancelar
                             </button>
                             <button type="button" className="px-6 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(false)}>
-                                {isPublishing ? (mode === 'create' ? 'Publicando...' : 'Guardando...') : 'Publicar'}
+                                {isPublishing ? (mode === 'create' ? dict.publishing : dict.saving) : dict.publish}
                             </button>
                         </div>
                     </div>
@@ -546,7 +554,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                 </button>
                             ) : (
                                 <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>
-                                    <span className="hidden sm:inline">Guardar Borrador</span>
+                                    <span className="hidden sm:inline">{dict.saveDraft}</span>
                                     <span className="sm:hidden">Borrador</span>
                                 </button>
                             )}
@@ -582,7 +590,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                 className="flex items-center gap-2 px-3 py-1.5 border border-gold/50 text-gold hover:bg-gold hover:text-parchment text-[10px] font-sans uppercase tracking-widest transition-colors disabled:opacity-50"
                             >
                                 <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>translate</span>
-                                {isTranslating ? 'Traduciendo...' : `Traducir a ${activeLang === 'gl' ? 'Castellano' : 'Galego'}`}
+                                {isTranslating ? dict.translating : `${dict.translateTo}${activeLang === 'gl' ? dict.spanish : dict.galician}`}
                             </button>
                         </div>
                         
@@ -592,9 +600,9 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                 <div>
                                     <TagManager selectedTags={tematicas} onChange={setTematicas} />
                                 </div>
-                                <div className="mb-4">
+                                <div className="mb-4 flex flex-wrap gap-4">
                                     <select 
-                                        aria-label="Tipo de artículo"
+                                        aria-label={dict.articleType}
                                         className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
                                         value={tipo}
                                         onChange={(e) => setTipo(e.target.value)}
@@ -607,6 +615,17 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                         <option value="entrevista" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Entrevista</option>
                                         <option value="poesía" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Poesía</option>
                                     </select>
+
+                                    <select 
+                                        aria-label={dict.originalLang}
+                                        className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
+                                        value={idiomaOriginal}
+                                        onChange={(e) => setIdiomaOriginal(e.target.value)}
+                                        style={{ colorScheme: 'light dark' }}
+                                    >
+                                        <option value="gl" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>{dict.originalGl}</option>
+                                        <option value="es" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>{dict.originalEs}</option>
+                                    </select>
                                 </div>
                                 <textarea 
                                     className="w-full border-none bg-transparent font-serif text-4xl text-charcoal focus:ring-0 placeholder:text-charcoal/30 resize-none overflow-hidden outline-none" 
@@ -615,7 +634,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                         if (activeLang === 'gl') setTituloGl((e.target as HTMLTextAreaElement).value);
                                         else setTituloEs((e.target as HTMLTextAreaElement).value);
                                     }} 
-                                    placeholder={activeLang === 'gl' ? "O título da túa investigación..." : "El título de tu investigación..."} 
+                                    placeholder={activeLang === 'gl' ? dict.titlePlaceholderGl : dict.titlePlaceholderEs} 
                                     value={activeLang === 'gl' ? tituloGl : tituloEs} 
                                     rows={1}
                                 />
@@ -626,7 +645,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                         if (activeLang === 'gl') setSubtituloGl((e.target as HTMLTextAreaElement).value);
                                         else setSubtituloEs((e.target as HTMLTextAreaElement).value);
                                     }} 
-                                    placeholder={activeLang === 'gl' ? "Un subtítulo ou breve resumo..." : "Un subtítulo o breve resumen..."} 
+                                    placeholder={activeLang === 'gl' ? dict.subtitlePlaceholderGl : dict.subtitlePlaceholderEs} 
                                     value={activeLang === 'gl' ? subtituloGl : subtituloEs} 
                                     rows={1}
                                 />
@@ -647,7 +666,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                 <div className="fixed inset-0 z-50 overflow-y-auto bg-parchment">
                     {/* Preview TopBar */}
                     <div className="sticky top-0 z-50 border-b border-lines bg-parchment/95 backdrop-blur-sm px-8 py-4 flex items-center justify-between">
-                        <span className="font-sans text-[10px] text-gold uppercase tracking-[0.2em]">Vista Previa de Publicación</span>
+                        <span className="font-sans text-[10px] text-gold uppercase tracking-[0.2em]">{dict.previewHeader}</span>
                         <button type="button" className="flex items-center gap-2 px-4 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer" onClick={() => setShowPreview(false)}>
                             <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
                             Cerrar Vista Previa
