@@ -27,7 +27,8 @@ export default function EditarArticuloForm({ articulo }: Props) {
         imagen_url: articulo.imagen_url || '',
         tematicas: articulo.tematicas || [],
         estado: articulo.estado || 'publicado',
-        tipo: articulo.tipo || 'artigo'
+        tipo: articulo.tipo || 'artigo',
+        idioma_original: articulo.idioma_original || 'gl'
     };
 
     const handleSave = async (data: ArticleData, isDraft: boolean) => {
@@ -52,7 +53,8 @@ export default function EditarArticuloForm({ articulo }: Props) {
                     tematicas: data.tematicas || [],
                     estado: isDraft ? 'borrador' : 'publicado',
                     actualizado_en: new Date().toISOString(),
-                    tipo: data.tipo || 'artigo'
+                    tipo: data.tipo || 'artigo',
+                    idioma_original: data.idioma_original || 'gl'
                 })
                 .eq('id', articulo.id);
 

@@ -32,6 +32,7 @@ export interface ArticleData {
     estado?: string;
     tipo?: string;
     fijado?: boolean;
+    idioma_original?: string;
 }
 
 interface ArticleEditorProps {
@@ -53,6 +54,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
     const [contenidoGl, setContenidoGl] = useState(initialData?.contenido_gl || '');
     const [contenidoEs, setContenidoEs] = useState(initialData?.contenido_es || '');
     const [isTranslating, setIsTranslating] = useState(false);
+    const [idiomaOriginal, setIdiomaOriginal] = useState(initialData?.idioma_original || 'gl');
     
     // Fix stale closure for onUpdate
     const activeLangRef = useRef(activeLang);
@@ -467,6 +469,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
             imagen_url: coverImageUrl,
             tematicas: tematicas,
             tipo: tipo,
+            idioma_original: idiomaOriginal,
         }, isDraft);
 
         localStorage.removeItem(draftKey);
@@ -592,7 +595,7 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                 <div>
                                     <TagManager selectedTags={tematicas} onChange={setTematicas} />
                                 </div>
-                                <div className="mb-4">
+                                <div className="mb-4 flex flex-wrap gap-4">
                                     <select 
                                         aria-label="Tipo de artículo"
                                         className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
@@ -606,6 +609,17 @@ export default function ArticleEditor({ initialData, onSave, isPublishing, mode 
                                         <option value="columna" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Columna</option>
                                         <option value="entrevista" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Entrevista</option>
                                         <option value="poesía" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Poesía</option>
+                                    </select>
+
+                                    <select 
+                                        aria-label="Idioma Original"
+                                        className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
+                                        value={idiomaOriginal}
+                                        onChange={(e) => setIdiomaOriginal(e.target.value)}
+                                        style={{ colorScheme: 'light dark' }}
+                                    >
+                                        <option value="gl" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Original Galego</option>
+                                        <option value="es" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Original Castellano</option>
                                     </select>
                                 </div>
                                 <textarea 

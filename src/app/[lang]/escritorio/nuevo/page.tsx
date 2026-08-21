@@ -46,7 +46,8 @@ export default function NuevoArticulo() {
                 imagen_url: data.imagen_url || null,
                 tematicas: data.tematicas || [],
                 estado: isDraft ? 'borrador' : 'publicado',
-                tipo: data.tipo || 'artigo'
+                tipo: data.tipo || 'artigo',
+                idioma_original: data.idioma_original || 'gl'
             }).select().single();
 
             if (error || !insertedArticle) {
