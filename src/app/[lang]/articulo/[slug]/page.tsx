@@ -113,7 +113,6 @@ export default async function ArticuloPage({
               ))}
             </div>
           )}
-          
           <div className="flex flex-col items-center justify-center gap-3 mt-10">
             <div className="flex items-center justify-center gap-4 text-sm font-semibold text-charcoal/70">
               <span className="text-charcoal border-b border-lines pb-1 uppercase tracking-widest">

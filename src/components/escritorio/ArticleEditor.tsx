@@ -61,7 +61,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const [contenidoGl, setContenidoGl] = useState(initialData?.contenido_gl || '');
     const [contenidoEs, setContenidoEs] = useState(initialData?.contenido_es || '');
     const [isTranslating, setIsTranslating] = useState(false);
-    const [idiomaOriginal, setIdiomaOriginal] = useState(initialData?.idioma_original || "gl");
+    const [idiomaOriginal, setIdiomaOriginal] = useState(initialData?.idioma_original || 'gl');
     
     // Fix stale closure for onUpdate
     const activeLangRef = useRef(activeLang);
