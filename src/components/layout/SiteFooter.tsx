@@ -28,13 +28,13 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
               <span>•</span>
               <a href="https://github.com/Pabl0125" target="_blank" rel="noopener noreferrer" className="hover:text-charcoal transition-colors">GitHub</a>
               <span>•</span>
-              <a href="mailto:tucorreo@ejemplo.com" className="hover:text-charcoal transition-colors">Contacto</a>
+              <a href="mailto:contacto@cernapensamento.org" className="hover:text-charcoal transition-colors">Contacto</a>
             </div>
           </div>
           <div className="flex gap-6">
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href={`/${lang}/estatutos`}>{dict.footer.links.estatutos}</Link>
+            <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href="#">{dict.footer.links.privacidad}</Link>
-            <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href="#">{dict.footer.links.contacto}</Link>
           </div>
         </div>
       </footer>
@@ -49,6 +49,7 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
           <nav className="flex gap-6">
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}`}>Inicio</Link>
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/login`}>{dict.nav.login}</Link>
+            <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/estatutos`}>{dict.footer.links.estatutos}</Link>
           </nav>
           <div className="flex flex-col items-center text-center mt-4">
@@ -58,7 +59,7 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
               <span>•</span>
               <a href="https://github.com/Pabl0125" target="_blank" rel="noopener noreferrer" className="hover:text-charcoal transition-colors">GitHub</a>
               <span>•</span>
-              <a href="mailto:tucorreo@ejemplo.com" className="hover:text-charcoal transition-colors">Contacto</a>
+              <a href="mailto:contacto@cernapensamento.org" className="hover:text-charcoal transition-colors">Contacto</a>
             </div>
           </div>
         </div>
@@ -75,7 +76,34 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
             Discurso intelectual e filosófico.
           </p>
           <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2" href={`/${lang}/bases-editoriales`}>{dict.footer.links.bases}</Link>
+          <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2 mt-1" href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
           <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2 mt-1" href={`/${lang}/estatutos`}>{dict.footer.links.estatutos}</Link>
+        </div>
+
+        <div className="flex flex-col gap-4 md:items-end">
+          <h3 className="font-sans text-sm uppercase tracking-widest text-charcoal/50 mb-2">{dict.nav?.contactar || 'Contact'}</h3>
+          <div className="flex items-center gap-4">
+            <a 
+              href="mailto:contacto@cernapensamento.org" 
+              className="w-12 h-12 flex items-center justify-center border border-lines rounded-full text-charcoal hover:text-gold hover:border-gold transition-colors duration-300 bg-surface"
+              aria-label="Contacto por Correo"
+            >
+              <span className="material-symbols-outlined text-[22px]">mail</span>
+            </a>
+            <a 
+              href="https://www.instagram.com/cernapensamento" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-12 h-12 flex items-center justify-center border border-lines rounded-full text-charcoal hover:text-gold hover:border-gold transition-colors duration-300 bg-surface"
+              aria-label="Instagram"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+            </a>
+          </div>
         </div>
 
       </div>
@@ -89,7 +117,7 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
             <span>•</span>
             <a href="https://github.com/Pabl0125" target="_blank" rel="noopener noreferrer" className="hover:text-charcoal transition-colors">GitHub</a>
             <span>•</span>
-            <a href="mailto:tucorreo@ejemplo.com" className="hover:text-charcoal transition-colors">Contacto</a>
+            <a href="mailto:contacto@cernapensamento.org" className="hover:text-charcoal transition-colors">Contacto</a>
           </div>
         </div>
       </div>

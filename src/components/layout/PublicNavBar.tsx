@@ -5,17 +5,15 @@ import { SITE_NAME, DEFAULT_AVATAR_URL } from '@/lib/constants';
 import Image from 'next/image';
 import BackButton from '@/components/ui/BackButton';
 import ThemeToggle from '@/components/ui/ThemeToggle';
-import LanguageToggle from '@/components/ui/LanguageToggle';
+import SideMenu from '@/components/layout/SideMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocale } from '@/hooks/useLocale';
 import { getDictionaryClient } from '@/dictionaries/client';
 
 export default function PublicNavBar({ 
-  showBackLink = false, 
-  hideLanguageToggle = false 
+  showBackLink = false 
 }: { 
   showBackLink?: boolean;
-  hideLanguageToggle?: boolean;
 }) {
   const { user, profile: userProfile, loading } = useAuth();
   const lang = useLocale();
@@ -25,13 +23,13 @@ export default function PublicNavBar({
     <nav className="bg-parchment border-b border-lines w-full px-5 md:px-16 py-4 sticky top-0 z-50">
       <div className="flex justify-between items-center w-full max-w-[1120px] mx-auto relative min-h-[56px]">
         
-        {/* Left Section: Back, Theme, Language */}
+        {/* Left Section: Menu, Theme, Back */}
         <div className="flex gap-3 items-center flex-1">
-          {showBackLink && <BackButton />}
+          <SideMenu />
           <div className="fixed bottom-6 right-6 z-50 md:static md:bottom-auto md:right-auto md:z-auto shadow-2xl md:shadow-none rounded-none">
             <ThemeToggle />
           </div>
-          {!hideLanguageToggle && <LanguageToggle />}
+          {showBackLink && <BackButton />}
         </div>
 
         {/* Center Section: Logo */}
@@ -55,7 +53,7 @@ export default function PublicNavBar({
         </Link>
         
         {/* Right Section: Login / Avatar */}
-        <div className="flex items-center justify-end gap-4 flex-1">
+        <div className="flex items-center justify-end gap-3 md:gap-4 flex-1">
           {!loading && user ? (
             <Link 
               href={`/${lang}/escritorio`}
