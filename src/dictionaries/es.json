@@ -215,5 +215,38 @@
     },
     "originalGl": "Original Galego",
     "originalEs": "Original Castellano"
+  },
+  "articleSubmission": {
+    "fullName": "Nombre Completo",
+    "email": "Email",
+    "abstract": "Resumen",
+    "abstractDesc": "Un resumen de su ensayo (máx. 300 palabras).",
+    "fileUpload": "Subir Archivo (PDF)",
+    "uploadDesc": "PDF hasta 3.5MB",
+    "submit": "Enviar Manuscrito",
+    "submitting": "Enviando...",
+    "success": "Manuscrito enviado con éxito.",
+    "errorSize": "El archivo excede los 3.5MB permitidos.",
+    "errorType": "Solo se permiten archivos PDF.",
+    "guidelines": "Líneas Editoriales",
+    "agreement": "He leído las directrices editoriales y confirmo que este trabajo es original e inédito.",
+    "selectFile": "Seleccionar Archivo"
+  },
+  "contactForm": {
+    "fullName": "Nombre Completo",
+    "email": "Email",
+    "subject": "Asunto",
+    "message": "Mensaje",
+    "submit": "Enviar Mensaje",
+    "submitting": "Enviando...",
+    "success": "Mensaje enviado con éxito."
+  },
+  "colaboraPage": {
+    "title": "Colabora con nosotros",
+    "description": "Invitamos a pensadores, académicos y escritores a contribuir al discurso intelectual. Buscamos ensayos rigurosos que exploren las intersecciones de la filosofía, la economía y la sociedad con profundidad y claridad."
+  },
+  "contactoPage": {
+    "title": "Contacto",
+    "description": "¿Tienes alguna duda, sugerencia o quieres ponerte en contacto con el equipo editorial? Escríbenos y te responderemos lo antes posible."
   }
 }
