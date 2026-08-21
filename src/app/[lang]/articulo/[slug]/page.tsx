@@ -93,7 +93,7 @@ export default async function ArticuloPage({
     <>
       <PublicNavBar />
 
-      <main className="flex-grow flex flex-col items-center w-full pb-[120px]">
+      <main className="grow flex flex-col items-center w-full pb-30">
         <header className="w-full max-w-3xl px-5 md:px-0 pt-24 pb-12 mx-auto text-center relative">
           <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">
             {(dict as any).documentTypes?.[articulo.tipo?.toLowerCase()] || articulo.tipo || 'Artigo'}
@@ -123,8 +123,16 @@ export default async function ArticuloPage({
         </header>
 
         {articulo.imagen_url && (
-          <div className="w-full h-[60vh] min-h-[400px] mb-16 border-y border-lines bg-lines/30 relative">
-            <Image className="object-cover" alt={titulo} src={articulo.imagen_url} fill priority sizes="100vw" />
+          <div className="w-full max-w-4xl px-5 mx-auto mb-16">
+            <Image 
+              className="w-full h-auto" 
+              alt={titulo} 
+              src={articulo.imagen_url} 
+              width={1200} 
+              height={800} 
+              priority 
+              sizes="(max-width: 1152px) 100vw, 1152px" 
+            />
           </div>
         )}
 
