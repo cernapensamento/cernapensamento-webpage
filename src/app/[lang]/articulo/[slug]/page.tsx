@@ -130,6 +130,7 @@ export default async function ArticuloPage({
               </div>
             )}
           </div>
+
         </header>
 
         {articulo.imagen_url && (
