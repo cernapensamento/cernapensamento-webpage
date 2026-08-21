@@ -51,7 +51,7 @@ export default function ContactForm() {
 
     if (status === 'success') {
         return (
-            <div className="p-8 bg-surface-container-low border border-lines text-center" role="status" aria-live="polite">
+            <div className="p-8 bg-surface border border-lines text-center" role="status" aria-live="polite">
                 <span className="material-symbols-outlined text-4xl text-gold mb-4">check_circle</span>
                 <h3 className="font-serif text-2xl text-charcoal mb-2">{dict.success}</h3>
             </div>
@@ -59,7 +59,7 @@ export default function ContactForm() {
     }
 
     return (
-        <form onSubmit={handleSubmit} noValidate className="space-y-8 bg-surface-container-lowest p-8 md:p-12 border border-lines relative shadow-sm">
+        <form onSubmit={handleSubmit} noValidate className="space-y-8 bg-surface p-8 md:p-12 border border-lines relative shadow-sm">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gold opacity-30"></div>
 
             {status === 'error' && (
@@ -80,7 +80,7 @@ export default function ContactForm() {
                     aria-required="true"
                     aria-invalid={!!errors.fullName}
                     aria-describedby={errors.fullName ? "contact-fullName-error" : undefined}
-                    className="w-full border-none border-b border-lines bg-transparent rounded-none px-0 py-2 focus:ring-0 focus:border-charcoal font-sans text-charcoal transition-colors"
+                    className="w-full border border-lines bg-parchment rounded-none px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gold focus:border-gold hover:border-gold/50 font-sans text-charcoal transition-colors"
                 />
                 {errors.fullName && <span id="contact-fullName-error" role="alert" className="text-error text-xs mt-1 block">{errors.fullName}</span>}
             </div>
@@ -97,7 +97,7 @@ export default function ContactForm() {
                     aria-required="true"
                     aria-invalid={!!errors.email}
                     aria-describedby={errors.email ? "contact-email-error" : undefined}
-                    className="w-full border-none border-b border-lines bg-transparent rounded-none px-0 py-2 focus:ring-0 focus:border-charcoal font-sans text-charcoal transition-colors"
+                    className="w-full border border-lines bg-parchment rounded-none px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gold focus:border-gold hover:border-gold/50 font-sans text-charcoal transition-colors"
                 />
                 {errors.email && <span id="contact-email-error" role="alert" className="text-error text-xs mt-1 block">{errors.email}</span>}
             </div>
@@ -110,7 +110,7 @@ export default function ContactForm() {
                     id="contact-subject"
                     name="subject"
                     type="text"
-                    className="w-full border-none border-b border-lines bg-transparent rounded-none px-0 py-2 focus:ring-0 focus:border-charcoal font-sans text-charcoal transition-colors"
+                    className="w-full border border-lines bg-parchment rounded-none px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gold focus:border-gold hover:border-gold/50 font-sans text-charcoal transition-colors"
                 />
             </div>
 
@@ -126,7 +126,7 @@ export default function ContactForm() {
                     aria-required="true"
                     aria-invalid={!!errors.message}
                     aria-describedby={errors.message ? "contact-message-error" : undefined}
-                    className="w-full p-3 border border-lines bg-surface-bright font-sans text-charcoal focus:ring-0 focus:border-charcoal resize-y transition-colors mt-2"
+                    className="w-full p-3 border border-lines bg-parchment font-sans text-charcoal focus:outline-none focus:ring-1 focus:ring-gold focus:border-gold hover:border-gold/50 resize-y transition-colors mt-2"
                 ></textarea>
                 {errors.message && <span id="contact-message-error" role="alert" className="text-error text-xs mt-1 block">{errors.message}</span>}
             </div>
@@ -135,7 +135,7 @@ export default function ContactForm() {
                 <button
                     type="submit"
                     disabled={status === 'loading'}
-                    className="w-full bg-charcoal text-parchment py-4 px-8 font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors duration-300 flex justify-center items-center gap-2 disabled:opacity-50"
+                    className="w-full bg-gold text-parchment py-4 px-8 font-sans text-xs uppercase tracking-widest hover:bg-charcoal transition-colors duration-300 flex justify-center items-center gap-2 disabled:opacity-50"
                 >
                     <span>{status === 'loading' ? dict.submitting : dict.submit}</span>
                     {!status && <span className="material-symbols-outlined text-sm">send</span>}
