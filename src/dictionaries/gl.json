@@ -158,5 +158,38 @@
     "saving": "Gardando...",
     "profileSaved": "Perfil gardado con éxito.",
     "articleSaved": "Artigo gardado con éxito."
+  },
+  "articleSubmission": {
+    "fullName": "Nome Completo",
+    "email": "Email",
+    "abstract": "Resumo",
+    "abstractDesc": "Un resumo do teu ensaio (máx. 300 palabras).",
+    "fileUpload": "Subir Arquivo (PDF)",
+    "uploadDesc": "PDF ata 3.5MB",
+    "submit": "Enviar Manuscrito",
+    "submitting": "Enviando...",
+    "success": "Manuscrito enviado con éxito.",
+    "errorSize": "O arquivo excede os 3.5MB permitidos.",
+    "errorType": "Só se permiten arquivos PDF.",
+    "guidelines": "Liñas Editoriais",
+    "agreement": "Lin as directrices editoriais e confirmo que este traballo é orixinal e inédito.",
+    "selectFile": "Seleccionar Arquivo"
+  },
+  "contactForm": {
+    "fullName": "Nome Completo",
+    "email": "Email",
+    "subject": "Asunto",
+    "message": "Mensaxe",
+    "submit": "Enviar Mensaxe",
+    "submitting": "Enviando...",
+    "success": "Mensaxe enviada con éxito."
+  },
+  "colaboraPage": {
+    "title": "Enviar Manuscrito",
+    "description": "Convidamos a pensadores, académicos e escritores a contribuír ao discurso intelectual. Buscamos ensaios rigorosos que exploren as interseccións da filosofía, a economía e a sociedade con profundidade e claridade."
+  },
+  "contactoPage": {
+    "title": "Contacto",
+    "description": "¿Tes algunha dúbida, suxestión ou queres poñerte en contacto co equipo editorial? Escríbenos e responderémosche o antes posible."
   }
 }
