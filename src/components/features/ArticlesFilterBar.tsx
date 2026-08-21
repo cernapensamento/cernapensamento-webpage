@@ -3,7 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useState, useEffect, useRef } from 'react';
 
-export default function ArticlesFilterBar({ availableTags, dict }: { availableTags: string[], dict: any }) {
+export default function ArticlesFilterBar({ availableTags, dict }: { availableTags: {slug: string, name: string}[], dict: any }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -73,11 +73,11 @@ export default function ArticlesFilterBar({ availableTags, dict }: { availableTa
           {dict.all}
         </button>
         {availableTags.map((tag) => (
-          <button type="button"             key={tag}
-            onClick={() => toggleTag(tag)}
-            className={`px-5 py-2 border font-sans text-xs uppercase tracking-[0.15em] transition-all duration-300 ${currentTagsSet.has(tag) ? 'bg-charcoal text-parchment border-charcoal' : 'border-lines text-charcoal/70 hover:border-charcoal hover:text-charcoal'}`}
+          <button type="button"             key={tag.slug}
+            onClick={() => toggleTag(tag.slug)}
+            className={`px-5 py-2 border font-sans text-xs uppercase tracking-[0.15em] transition-all duration-300 ${currentTagsSet.has(tag.slug) ? 'bg-charcoal text-parchment border-charcoal' : 'border-lines text-charcoal/70 hover:border-charcoal hover:text-charcoal'}`}
           >
-            {tag}
+            {tag.name}
           </button>
         ))}
       </div>

@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/utils/auth';
+import { getDictionary } from '@/dictionaries';
+import type { Locale } from '@/i18n-config';
 
 import SiteFooter from '@/components/layout/SiteFooter';
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
@@ -22,6 +24,7 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
     getAuthenticatedUser()
   ]);
   const lang = routeParamsResolved.lang || 'es';
+  const dict = await getDictionary(lang as Locale);
   const verTodo = params.ver === 'todo';
   const filtro = params.filtro || 'todos';
   if (!user) {
@@ -61,12 +64,12 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
           <div className="max-w-[1120px] mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div>
-                <h2 className="font-serif text-4xl mb-4">Bienvenido, {profile?.nombre || 'Editor'}.</h2>
+                <h2 className="font-serif text-4xl mb-4">{dict.escritorioPage.welcome}{profile?.nombre || 'Editor'}.</h2>
                 {isInvitado && (
                   <div className="flex flex-col text-sm font-sans text-charcoal/80 bg-gold/10 p-4 border border-gold/20 rounded-sm mb-4 md:mb-0">
-                    <p className="mb-1"><strong className="text-gold">Autor Invitado</strong></p>
-                    <p>Límite anual: {articulosEsteAno} / {limiteAnual}</p>
-                    <p>Límite total: {totalArticulos} / {limiteTotal}</p>
+                    <p className="mb-1"><strong className="text-gold">{dict.escritorioPage.guest}</strong></p>
+                    <p>{dict.escritorioPage.yearlyLimit}: {articulosEsteAno} / {limiteAnual}</p>
+                    <p>{dict.escritorioPage.totalLimit}: {totalArticulos} / {limiteTotal}</p>
                   </div>
                 )}
               </div>
@@ -76,12 +79,12 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                   className="flex items-center gap-3 bg-charcoal text-parchment px-8 py-5 font-sans text-sm uppercase tracking-widest hover:bg-gold transition-all duration-300 hover:shadow-lg hover:-translate-y-1 shrink-0 group"
                 >
                   <span className="material-symbols-outlined transition-transform duration-500 group-hover:rotate-90" data-icon="add">add</span>
-                  Crear nueva publicación
+                  {dict.escritorioPage.createPost}
                 </Link>
               ) : (
                 <div className="flex items-center gap-3 bg-lines text-charcoal/40 px-8 py-5 font-sans text-sm uppercase tracking-widest cursor-not-allowed shrink-0">
                   <span className="material-symbols-outlined" data-icon="lock">lock</span>
-                  Límite alcanzado
+                  {dict.escritorioPage.limitReached}
                 </div>
               )}
             </div>
@@ -91,17 +94,17 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
         <section className="max-w-4xl mx-auto flex flex-col">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-4 border-b border-lines shrink-0 gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-              <h3 className="font-serif text-2xl">Artículos</h3>
+              <h3 className="font-serif text-2xl">{dict.escritorioPage.articles}</h3>
               <div className="flex flex-wrap items-center gap-2 font-sans text-xs uppercase tracking-widest">
-                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'todos' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=todos">Todos</Link>
-                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'publicados' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=publicados">Publicados</Link>
-                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'borradores' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=borradores">Borradores</Link>
+                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'todos' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=todos">{dict.escritorioPage.all}</Link>
+                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'publicados' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=publicados">{dict.escritorioPage.published}</Link>
+                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'borradores' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=borradores">{dict.escritorioPage.drafts}</Link>
               </div>
             </div>
             {!verTodo && articulosFiltrados.length > 3 ? (
-              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`?filtro=${filtro}&ver=todo`}>Ver todo</Link>
+              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`?filtro=${filtro}&ver=todo`}>{dict.escritorioPage.viewAll}</Link>
             ) : verTodo ? (
-              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`?filtro=${filtro}`}>Ver recientes</Link>
+              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`?filtro=${filtro}`}>{dict.escritorioPage.viewRecent}</Link>
             ) : null}
           </div>
           <div className="overflow-y-auto scrollbar-none pb-16" style={{ maxHeight: 'calc(100vh - 400px)' }}>
@@ -126,7 +129,7 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                           {articulo.estado === 'borrador' && (
                             <>
                               <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>
-                              <span className="px-2 py-0.5 bg-gold/10 text-gold text-[10px] font-bold uppercase tracking-widest rounded-sm border border-gold/20">Borrador</span>
+                              <span className="px-2 py-0.5 bg-gold/10 text-gold text-[10px] font-bold uppercase tracking-widest rounded-sm border border-gold/20">{dict.escritorioPage.draft}</span>
                             </>
                           )}
                         </div>
@@ -139,7 +142,7 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                         <div className="mt-4 flex items-center gap-6">
                           <Link href={`/${lang}/escritorio/editar/${articulo.slug || articulo.id}`} className="flex items-center gap-1 text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
                             <span className="material-symbols-outlined text-sm" data-icon="edit">edit</span>
-                            <span className="font-sans text-xs">Editar</span>
+                            <span className="font-sans text-xs">{dict.escritorioPage.edit}</span>
                           </Link>
                           {articulo.estado === 'publicado' && (
                             <PinArticleButton id={articulo.id} fijado={articulo.fijado || false} />
@@ -150,7 +153,7 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                     </div>
                   </article>
                 )) : (
-                  <p className="font-sans text-charcoal/60">No tienes artículos todavía. Crea tu primera publicación.</p>
+                  <p className="font-sans text-charcoal/60">{dict.escritorioPage.noArticles}</p>
                 )}
               </div>
             </div>
