@@ -7,6 +7,8 @@ import ArticleEditor, { ArticleData } from '@/components/escritorio/ArticleEdito
 
 const generateSlug = (title: string) => {
     return title
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .trim()
         .replace(/[^\w\s-]/g, '')

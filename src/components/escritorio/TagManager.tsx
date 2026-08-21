@@ -52,7 +52,7 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
         setIsSaving(true);
         try {
             // Generar slug del término en castellano
-            const slug = newTagEs.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-');
+            const slug = newTagEs.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-');
             
             // Insertar tag
             const { data: tag, error: tagError } = await supabase
