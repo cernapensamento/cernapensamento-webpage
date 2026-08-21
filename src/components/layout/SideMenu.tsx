@@ -71,7 +71,7 @@ export default function SideMenu() {
               <div className="mb-4">
                 <Link 
                   href={user ? `/${lang}/escritorio/perfil` : `/${lang}/login`}
-                  className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight hover:text-gold transition-colors duration-300 inline-block"
+                  className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block"
                 >
                   {user ? dict.nav.escritorio : dict.nav.login}
                 </Link>
@@ -79,20 +79,32 @@ export default function SideMenu() {
             )}
 
             <div>
-              <Link href={`/${lang}/bases-editoriales`} className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
+              <Link href={`/${lang}/bases-editoriales`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
                 {dict.nav.bases}
               </Link>
             </div>
 
             <div>
-              <Link href={`/${lang}/articulos`} className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
+              <Link href={`/${lang}/articulos`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
                 {dict.nav.articulos}
               </Link>
             </div>
 
             <div>
-              <Link href={`/${lang}/estatutos`} className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
+              <Link href={`/${lang}/estatutos`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
                 {dict.nav.estatutos}
+              </Link>
+            </div>
+
+            <div>
+              <Link href={`/${lang}/colabora`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
+                Colabora
+              </Link>
+            </div>
+            
+            <div>
+              <Link href={`/${lang}/contacto`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
+                Contacto
               </Link>
             </div>
 
@@ -103,7 +115,7 @@ export default function SideMenu() {
                 tabIndex={0}
                 onClick={() => setAuthorsOpen(!authorsOpen)}
                 onKeyDown={(e) => { if(e.key === 'Enter' || e.key === ' ') setAuthorsOpen(!authorsOpen); }}
-                className="font-serif text-4xl sm:text-5xl md:text-6xl tracking-tight hover:text-gold transition-colors duration-300 text-left inline-flex items-center gap-4 group w-full cursor-pointer outline-none"
+                className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 text-left inline-flex items-center gap-4 group w-full cursor-pointer outline-none"
               >
                 <span className="font-serif">{dict.nav.autores}</span>
                 <span className={`material-symbols-outlined text-3xl sm:text-4xl transition-transform duration-300 ${authorsOpen ? 'rotate-180 text-gold' : 'group-hover:text-gold'}`}>

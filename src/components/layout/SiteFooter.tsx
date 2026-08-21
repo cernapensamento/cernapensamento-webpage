@@ -34,6 +34,8 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
           <div className="flex gap-6">
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href={`/${lang}/estatutos`}>{dict.footer.links.estatutos}</Link>
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
+            <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href={`/${lang}/colabora`}>Colabora</Link>
+            <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href={`/${lang}/contacto`}>Contacto</Link>
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href="#">{dict.footer.links.privacidad}</Link>
           </div>
         </div>
@@ -50,6 +52,8 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}`}>Inicio</Link>
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/login`}>{dict.nav.login}</Link>
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
+            <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/colabora`}>Colabora</Link>
+            <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/contacto`}>Contacto</Link>
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/estatutos`}>{dict.footer.links.estatutos}</Link>
           </nav>
           <div className="flex flex-col items-center text-center mt-4">
@@ -78,6 +82,8 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
           <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2" href={`/${lang}/bases-editoriales`}>{dict.footer.links.bases}</Link>
           <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2 mt-1" href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
           <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2 mt-1" href={`/${lang}/estatutos`}>{dict.footer.links.estatutos}</Link>
+          <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2 mt-1" href={`/${lang}/colabora`}>Colabora</Link>
+          <Link className="font-sans text-sm text-charcoal/60 hover:text-gold transition-colors duration-200 underline decoration-1 underline-offset-2 mt-1" href={`/${lang}/contacto`}>Contacto</Link>
         </div>
 
         <div className="flex flex-col gap-4 md:items-end">
