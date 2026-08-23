@@ -7,6 +7,8 @@ import { useAuth } from '@/hooks/useAuth';
 import LanguageToggle from '@/components/ui/LanguageToggle';
 import { useLocale } from '@/hooks/useLocale';
 import { getDictionaryClient } from '@/dictionaries/client';
+import Image from 'next/image';
+import { SITE_NAME } from '@/lib/constants';
 
 export default function SideMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,13 +47,13 @@ export default function SideMenu() {
       {/* Hamburger / Close Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)} 
-        className="w-10 h-10 relative focus:outline-none z-[60] flex items-center justify-center border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300"
+        className={`w-10 h-10 relative focus:outline-none z-[60] flex items-center justify-center border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300 ${isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         aria-label="Toggle Menu"
       >
         <div className="block w-5 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <span aria-hidden="true" className={`block absolute h-0.5 w-5 bg-current transform transition duration-300 ease-in-out ${isOpen ? 'rotate-45' : '-translate-y-1.5'}`}></span>
-          <span aria-hidden="true" className={`block absolute h-0.5 w-5 bg-current transform transition duration-300 ease-in-out ${isOpen ? 'opacity-0' : 'opacity-100'}`}></span>
-          <span aria-hidden="true" className={`block absolute h-0.5 w-5 bg-current transform transition duration-300 ease-in-out ${isOpen ? '-rotate-45' : 'translate-y-1.5'}`}></span>
+          <span aria-hidden="true" className={`block absolute h-0.5 w-5 bg-current transform transition duration-300 ease-in-out -translate-y-1.5`}></span>
+          <span aria-hidden="true" className={`block absolute h-0.5 w-5 bg-current transform transition duration-300 ease-in-out opacity-100`}></span>
+          <span aria-hidden="true" className={`block absolute h-0.5 w-5 bg-current transform transition duration-300 ease-in-out translate-y-1.5`}></span>
         </div>
       </button>
 
@@ -64,7 +66,37 @@ export default function SideMenu() {
       {/* Sidebar Panel */}
       <div className={`fixed top-0 left-0 h-full w-full sm:w-[450px] bg-parchment z-[55] transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-y-auto border-r border-lines flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
-        <div className="flex-1 pt-24 pb-12 px-8 sm:px-12 flex flex-col justify-center">
+        {/* Sidebar Header with Logo */}
+        <div className="py-1 flex justify-between items-center px-8 sm:px-12 border-b border-lines shrink-0">
+          <Link href="/" className="inline-block hover:opacity-80 transition-opacity" onClick={() => setIsOpen(false)}>
+            <Image 
+              src="/images/logo/cernawhite.png" 
+              alt={SITE_NAME} 
+              width={400} 
+              height={100} 
+              className="w-64 max-w-full h-auto object-contain block dark:hidden"
+              priority
+            />
+            <Image 
+              src="/images/logo/cernablack.png" 
+              alt={SITE_NAME} 
+              width={400} 
+              height={100} 
+              className="w-64 max-w-full h-auto object-contain hidden dark:block"
+              priority
+            />
+          </Link>
+          <button 
+            onClick={() => setIsOpen(false)} 
+            className="w-10 h-10 flex shrink-0 focus:outline-none items-center justify-center border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300"
+            aria-label="Cerrar Menú"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+
+        {/* Sidebar Navigation */}
+        <div className="flex-1 pb-12 px-8 sm:px-12 flex flex-col justify-start pt-16">
           <nav className="flex flex-col gap-6">
             
             {!loading && (
