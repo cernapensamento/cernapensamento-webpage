@@ -23,7 +23,7 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
             <p className="font-sans text-xs text-charcoal/60">
               © {currentYear} {SITE_NAME}. {dict.footer.rights}
             </p>
-            <div className="flex items-center gap-2 mt-2 text-[10px] text-charcoal/40">
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-2 text-[10px] text-charcoal/40">
               <span>Desenvolvido por Pablo</span>
               <span>•</span>
               <a href="https://github.com/Pabl0125" target="_blank" rel="noopener noreferrer" className="hover:text-charcoal transition-colors">GitHub</a>
@@ -31,7 +31,7 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
               <a href="mailto:contacto@cernapensamento.org" className="hover:text-charcoal transition-colors">Contacto</a>
             </div>
           </div>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-3">
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href={`/${lang}/estatutos`}>{dict.footer.links.estatutos}</Link>
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
             <Link className="font-sans text-xs text-charcoal/60 hover:text-gold transition-colors" href={`/${lang}/colabora`}>Colabora</Link>
@@ -48,7 +48,7 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
       <footer className="bg-surface border-t border-lines w-full mt-12">
         <div className="w-full py-16 px-5 md:px-16 flex flex-col items-center gap-6 max-w-[1120px] mx-auto">
           <Link className="font-serif text-3xl text-charcoal" href={`/${lang}`}>{SITE_NAME}</Link>
-          <nav className="flex gap-6">
+          <nav className="flex flex-wrap justify-center gap-x-6 gap-y-3">
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}`}>Inicio</Link>
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/login`}>{dict.nav.login}</Link>
             <Link className="font-sans text-sm text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
@@ -58,7 +58,7 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
           </nav>
           <div className="flex flex-col items-center text-center mt-4">
             <p className="text-xs font-semibold text-charcoal/60">© {currentYear} {SITE_NAME}. {dict.footer.rights}</p>
-            <div className="flex items-center justify-center gap-2 mt-2 text-[10px] text-charcoal/40">
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-2 text-[10px] text-charcoal/40">
               <span>Desenvolvido por Pablo</span>
               <span>•</span>
               <a href="https://github.com/Pabl0125" target="_blank" rel="noopener noreferrer" className="hover:text-charcoal transition-colors">GitHub</a>
@@ -118,7 +118,7 @@ export default async function SiteFooter({ variant = 'full' }: SiteFooterProps) 
           <p className="text-xs font-semibold text-charcoal/60 text-center md:text-left">
             © {currentYear} {SITE_NAME}. {dict.footer.rights}
           </p>
-          <div className="flex items-center gap-3 text-[10px] md:text-xs text-charcoal/40">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 text-[10px] md:text-xs text-charcoal/40 mt-2 md:mt-0">
             <span>Portal Web desenvolvido por Pablo Araújo</span>
             <span>•</span>
             <a href="https://github.com/Pabl0125" target="_blank" rel="noopener noreferrer" className="hover:text-charcoal transition-colors">GitHub</a>
