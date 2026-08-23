@@ -61,10 +61,10 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
     <main className="px-5 md:px-16 pb-24 flex flex-col flex-1">
       <div className="flex-1">
         <section className="mt-16 mb-16">
-          <div className="max-w-[1120px] mx-auto">
+          <div className="max-w-280 mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div>
-                <h2 className="font-serif text-4xl mb-4">{dict.escritorioPage.welcome}{profile?.nombre || 'Editor'}.</h2>
+                <h2 className="font-serif text-4xl mb-4">{dict.escritorioPage.welcome}{profile?.nombre || 'Editor'}</h2>
                 {isInvitado && (
                   <div className="flex flex-col text-sm font-sans text-charcoal/80 bg-gold/10 p-4 border border-gold/20 rounded-sm mb-4 md:mb-0">
                     <p className="mb-1"><strong className="text-gold">{dict.escritorioPage.guest}</strong></p>
@@ -121,7 +121,7 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                           </div>
                         )}
                       </div>
-                      <div className="flex-grow">
+                      <div className="grow">
                         <div className="flex items-center gap-4 mb-2">
                           <span className="font-sans text-xs text-gold uppercase tracking-widest">{articulo.tipo || 'Artigo'}</span>
                           <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>
