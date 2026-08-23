@@ -726,7 +726,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             />
                         </article>
 
-                            <div className="mt-20 pt-8 border-t border-lines flex items-start gap-6">
+                            <div className="w-full max-w-2xl px-5 md:px-0 mx-auto mt-20 pt-8 border-t border-lines flex items-start gap-6">
                                 <div className="w-12 h-12 rounded-full overflow-hidden border border-lines relative shrink-0">
                                     <NextImage className="object-cover" alt="Avatar del Autor" src={authorProfile?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="48px"/>
                                 </div>
