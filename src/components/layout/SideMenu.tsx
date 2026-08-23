@@ -67,22 +67,22 @@ export default function SideMenu() {
       <div className={`fixed top-0 left-0 h-full w-full sm:w-[450px] bg-parchment z-[55] transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-y-auto border-r border-lines flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
         {/* Sidebar Header with Logo */}
-        <div className="py-1 flex justify-between items-center px-8 sm:px-12 border-b border-lines shrink-0">
+        <div className="py-2 flex justify-between items-center px-8 sm:px-12 border-b border-lines shrink-0">
           <Link href="/" className="inline-block hover:opacity-80 transition-opacity" onClick={() => setIsOpen(false)}>
             <Image 
               src="/images/logo/cernawhite.png" 
               alt={SITE_NAME} 
-              width={400} 
-              height={100} 
-              className="w-64 max-w-full h-auto object-contain block dark:hidden"
+              width={300} 
+              height={75} 
+              className="w-50 max-w-full h-auto object-contain block dark:hidden"
               priority
             />
             <Image 
               src="/images/logo/cernablack.png" 
               alt={SITE_NAME} 
-              width={400} 
-              height={100} 
-              className="w-64 max-w-full h-auto object-contain hidden dark:block"
+              width={300} 
+              height={75} 
+              className="w-50 max-w-full h-auto object-contain hidden dark:block"
               priority
             />
           </Link>
