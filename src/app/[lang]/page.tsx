@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Image from 'next/image';
 import PublicNavBar from '@/components/layout/PublicNavBar';
-import SiteFooter from '@/components/layout/SiteFooter';
 import FeaturedArticleHero from '@/components/sections/FeaturedArticleHero';
 import PinnedArticlesPanel from '@/components/sections/PinnedArticlesPanel';
 import ArticleCard from '@/components/features/ArticleCard';
@@ -72,7 +71,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <ColumnistsSection lang={lang} dict={{ columnists: dict.columnists, authors: dict.authors }} />
       <ContactSection dict={dict.contact} />
 
-      <SiteFooter variant="full" />
 
 
     </>
