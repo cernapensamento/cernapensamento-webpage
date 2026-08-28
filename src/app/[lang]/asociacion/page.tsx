@@ -91,7 +91,7 @@ export default async function AsociacionPage({ params }: Props) {
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {collections.map((col: any, idx: number) => (
+            {collections.map((col: { id: string | number; title: string; description: string }, idx: number) => (
               <Link 
                 key={idx} 
                 href={`/${lang}/asociacion/coleccion-${col.id}`}

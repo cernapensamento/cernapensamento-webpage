@@ -1,6 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import Link from 'next/link';
-import Image from 'next/image';
 import PublicNavBar from '@/components/layout/PublicNavBar';
 import FeaturedArticleHero from '@/components/sections/FeaturedArticleHero';
 import PinnedArticlesPanel from '@/components/sections/PinnedArticlesPanel';
@@ -26,7 +24,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   );
 
   // Obtener artículos con el nombre del autor
-  const { data: articulos, error } = await supabase
+  const { data: articulos } = await supabase
     .from('articulos')
     .select('id, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, slug, imagen_url, contenido_gl, contenido_es, estado, creado_en, fijado, tipo, perfiles(nombre)')
     .eq('estado', 'publicado')

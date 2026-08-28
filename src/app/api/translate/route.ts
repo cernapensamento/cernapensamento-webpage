@@ -53,15 +53,17 @@ export async function POST(req: Request) {
         subtitle: extractSection(translatedText, '---SUBTITLE---', '---HTMLCONTENT---'), 
         htmlContent: extractSection(translatedText, '---HTMLCONTENT---') 
       });
-    } catch (e) {
+    } catch {
       console.error("Failed to parse response from Gemini", translatedText);
       return NextResponse.json({ error: 'Invalid response from model' }, { status: 500 });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Translation error:', error);
-    const isRateLimit = error.status === 429 || error.message?.includes('429') || error.message?.includes('Quota exceeded');
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStatus = (error && typeof error === 'object' && 'status' in error) ? (error as any).status : null;
+    const isRateLimit = errorStatus === 429 || errorMessage.includes('429') || errorMessage.includes('Quota exceeded');
     return NextResponse.json(
-      { error: 'Failed to translate', details: error.message },
+      { error: 'Failed to translate', details: error instanceof Error ? error.message : String(error) },
       { status: isRateLimit ? 429 : 500 }
     );
   }

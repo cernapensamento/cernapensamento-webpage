@@ -35,7 +35,7 @@ function getLocale(request: NextRequest): string {
   request.headers.forEach((value, key) => (negotiatorHeaders[key] = value));
 
   const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
-  if (cookieLocale && (i18n.locales as readonly string[]).includes(cookieLocale as any)) {
+  if (cookieLocale && (i18n.locales as readonly string[]).includes(cookieLocale as (typeof i18n.locales)[number])) {
     return cookieLocale;
   }
 
@@ -44,7 +44,7 @@ function getLocale(request: NextRequest): string {
 
   try {
     return matchLocale(languages, locales, i18n.defaultLocale);
-  } catch (e) {
+  } catch {
     return i18n.defaultLocale;
   }
 }
@@ -60,12 +60,12 @@ export async function proxy(request: NextRequest) {
   ].some((path) => pathname.startsWith(path));
 
   // Determine Locale
-  let currentLocale = i18n.defaultLocale;
+  let currentLocale: string = i18n.defaultLocale;
   const localeMatch = pathname.match(/^\/([^/]+)/);
-  if (localeMatch && (i18n.locales as readonly string[]).includes(localeMatch[1] as any)) {
-      currentLocale = localeMatch[1] as any;
+  if (localeMatch && (i18n.locales as readonly string[]).includes(localeMatch[1] as (typeof i18n.locales)[number])) {
+      currentLocale = localeMatch[1] as 'gl' | 'es';
   } else if (!isExcluded) {
-      currentLocale = getLocale(request) as any;
+      currentLocale = getLocale(request) as 'gl' | 'es';
   }
 
   // --- Rate Limiting Logic ---

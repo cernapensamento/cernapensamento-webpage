@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { usePathname } from 'next/navigation';
 
 export type ErrorCode = '400' | '401' | '403' | '404' | '500';
@@ -40,17 +40,7 @@ export function LiteraryError({
   actionHref
 }: LiteraryErrorProps) {
   const pathname = usePathname();
-  const [lang, setLang] = useState<'es' | 'gl'>('es');
-
-  useEffect(() => {
-    // pathname can be null in some error boundaries, default to es
-    if (pathname && pathname.startsWith('/gl')) {
-      setLang('gl');
-    } else {
-      setLang('es');
-    }
-  }, [pathname]);
-
+  const lang = (pathname && pathname.startsWith('/gl')) ? 'gl' : 'es';
   const content = errorCopy[code][lang];
 
   return (

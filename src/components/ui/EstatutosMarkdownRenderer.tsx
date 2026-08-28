@@ -8,7 +8,7 @@ interface MarkdownRendererProps {
 
 export function EstatutosMarkdownRenderer({ content }: MarkdownRendererProps) {
   const components: Components = {
-    h2: ({ node, ...props }) => {
+    h2: ({ ...props }) => {
       const text = props.children?.toString() || '';
       const parts = text.split('|');
       if (parts.length === 2) {
@@ -29,17 +29,17 @@ export function EstatutosMarkdownRenderer({ content }: MarkdownRendererProps) {
         </h2>
       );
     },
-    h3: ({ node, ...props }) => (
+    h3: ({ ...props }) => (
       <h3 className="font-serif text-xl md:text-[1.375rem] text-charcoal font-semibold mb-6 pb-3 border-b border-lines/60 mt-14 scroll-mt-8" {...props} />
     ),
-    p: ({ node, ...props }) => {
-      const text = props.children?.toString() || '';
+    p: ({ ...props }) => {
+      
       // We had type L and M before, but let's just render standard P since it's just paragraphs now.
       return <p className="mb-7 text-justify hyphens-auto" {...props} />;
     },
-    li: ({ node, ...props }) => <li className="mb-4 pl-6 ml-2 border-l-2 border-gold/35 text-charcoal/80" {...props} />,
-    ul: ({ node, ...props }) => <ul className="mb-7 text-justify hyphens-auto" {...props} />,
-    ol: ({ node, ...props }) => <ol className="mb-7 text-justify hyphens-auto list-decimal pl-4" {...props} />
+    li: ({ ...props }) => <li className="mb-4 pl-6 ml-2 border-l-2 border-gold/35 text-charcoal/80" {...props} />,
+    ul: ({ ...props }) => <ul className="mb-7 text-justify hyphens-auto" {...props} />,
+    ol: ({ ...props }) => <ol className="mb-7 text-justify hyphens-auto list-decimal pl-4" {...props} />
   };
 
   return (

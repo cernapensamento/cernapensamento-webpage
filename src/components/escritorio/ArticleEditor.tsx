@@ -14,7 +14,6 @@ import glDict from '@/dictionaries/gl.json';
 import { createClient } from '@/utils/supabase/client';
 import TagManager from '@/components/escritorio/TagManager';
 
-const TEMATICAS_SUGERIDAS = ['ECONOMÍA', 'POLÍTICA', 'CIENCIA', 'FILOSOFÍA', 'TECNOLOGÍA', 'ARTE'];
 
 const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
     const target = e.target as HTMLTextAreaElement;
@@ -72,8 +71,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const [tipo, setTipo] = useState(initialData?.tipo || 'artigo');
     const [coverImageUrl, setCoverImageUrl] = useState(initialData?.imagen_url || '');
     const [tematicas, setTematicas] = useState<string[]>(initialData?.tematicas || []);
-    const [tematicaInput, setTematicaInput] = useState('');
-    const [showPreview, setShowPreview] = useState(false);
+        const [showPreview, setShowPreview] = useState(false);
     const isUploadingCover = useRef(false);
     const isUploadingInline = useRef(false);
     const uploadedInlineImages = useRef<string[]>([]);
@@ -115,32 +113,16 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     .eq('id', user.id)
                     .single();
                 if (data) {
-                    setAuthorProfile(data as any);
+                    setAuthorProfile(data as { nombre: string; avatar_url?: string; bio?: string });
                 }
             }
         };
         fetchProfile();
-    }, []);
+    }, [supabase]);
 
-    const handleAddTematica = (t: string) => {
-        const cleanT = t.trim().toUpperCase();
-        if (cleanT && !tematicas.includes(cleanT)) {
-            setTematicas([...tematicas, cleanT]);
-        }
-        setTematicaInput('');
-    };
-
-    const handleKeyDownTematica = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault();
-            handleAddTematica(tematicaInput);
-        }
-    };
     
-    const handleRemoveTematica = (t: string) => {
-        setTematicas(tematicas.filter(item => item !== t));
-    };
-
+        
+    
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -223,22 +205,24 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 if (savedDraft) {
                     try {
                         const parsed = JSON.parse(savedDraft);
-                        if (parsed.tituloGl) setTituloGl(parsed.tituloGl);
-                        if (parsed.tituloEs) setTituloEs(parsed.tituloEs);
-                        if (parsed.subtituloGl) setSubtituloGl(parsed.subtituloGl);
-                        if (parsed.subtituloEs) setSubtituloEs(parsed.subtituloEs);
-                        if (parsed.tipo) setTipo(parsed.tipo);
-                        if (parsed.imagen_url) setCoverImageUrl(parsed.imagen_url);
-                        if (parsed.tematicas) setTematicas(parsed.tematicas);
-                        if (parsed.contenidoGl) {
-                            setContenidoGl(parsed.contenidoGl);
-                            if (activeLang === 'gl') editor.commands.setContent(parsed.contenidoGl);
-                        }
-                        if (parsed.contenidoEs) {
-                            setContenidoEs(parsed.contenidoEs);
-                            if (activeLang === 'es') editor.commands.setContent(parsed.contenidoEs);
-                        }
-                        setHasUnsavedChanges(true);
+                        setTimeout(() => {
+                            if (parsed.tituloGl) setTituloGl(parsed.tituloGl);
+                            if (parsed.tituloEs) setTituloEs(parsed.tituloEs);
+                            if (parsed.subtituloGl) setSubtituloGl(parsed.subtituloGl);
+                            if (parsed.subtituloEs) setSubtituloEs(parsed.subtituloEs);
+                            if (parsed.tipo) setTipo(parsed.tipo);
+                            if (parsed.imagen_url) setCoverImageUrl(parsed.imagen_url);
+                            if (parsed.tematicas) setTematicas(parsed.tematicas);
+                            if (parsed.contenidoGl) {
+                                setContenidoGl(parsed.contenidoGl);
+                                if (activeLang === 'gl') editor.commands.setContent(parsed.contenidoGl);
+                            }
+                            if (parsed.contenidoEs) {
+                                setContenidoEs(parsed.contenidoEs);
+                                if (activeLang === 'es') editor.commands.setContent(parsed.contenidoEs);
+                            }
+                            setHasUnsavedChanges(true);
+                        }, 0);
                         return;
                     } catch (e) {
                         console.error('Error parseando borrador', e);
@@ -250,7 +234,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 editor.commands.setContent(initialData.contenido_gl);
             }
         }
-    }, [editor, draftKey]);
+    }, [editor, draftKey, activeLang, initialData?.contenido_gl]);
 
     const handleChangeCoverImage = () => {
         coverInputRef.current?.click();
@@ -325,11 +309,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         
         const caption = window.prompt('Opcional: Añade una leyenda o pie de foto para esta imagen:');
         
-        (editor.chain().focus() as any).setFigure({ 
+        (editor.chain().focus() as unknown as { setFigure: (options: { src: string; caption?: string }) => { run: () => void } }).setFigure({ 
             src: localUrl, 
-            alt: caption || '', 
-            title: caption || '', 
-            caption: caption 
+            caption: caption || undefined 
         }).run();
 
         const { data: { user } } = await supabase.auth.getUser();
@@ -370,7 +352,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const handleTranslate = async () => {
         if (!editor) return;
         setIsTranslating(true);
-        const sourceLang = activeLang;
+        
         const targetLang = activeLang === 'gl' ? 'es' : 'gl';
         const sourceHtml = editor.getHTML();
         const sourceTitulo = activeLang === 'gl' ? tituloGl : tituloEs;
@@ -484,8 +466,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         setShowPublishModal(false);
     };
 
-    const tematicasSet = new Set(tematicas);
-
+    
     return (
         <>
             <input 

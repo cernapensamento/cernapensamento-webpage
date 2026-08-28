@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
         if (secretBuf.length === tokenBuf.length) {
             isValid = timingSafeEqual(secretBuf, tokenBuf);
         }
-    } catch (e) {
+    } catch {
         isValid = false;
     }
     

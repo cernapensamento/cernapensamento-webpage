@@ -2,9 +2,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 interface FeaturedArticleHeroProps {
-  articulo: any;
+  articulo: { id: string | number; slug?: string; tipo?: string; titulo_es?: string; titulo_gl?: string; subtitulo_es?: string; subtitulo_gl?: string; contenido_es?: string; contenido_gl?: string; perfiles?: any; imagen_url?: string; };
   lang: string;
-  dict?: any;
+  dict?: { documentTypes?: Record<string, string>; readArticle?: string; [key: string]: unknown };
 }
 
 export default function FeaturedArticleHero({ articulo, lang, dict }: FeaturedArticleHeroProps) {
@@ -33,7 +33,7 @@ export default function FeaturedArticleHero({ articulo, lang, dict }: FeaturedAr
         )}
       </Link>
       <div className="md:col-span-5 flex flex-col gap-6 pt-6 md:pt-0">
-        <span className="text-sm font-semibold text-gold uppercase tracking-widest">{dict?.documentTypes?.[articulo.tipo?.toLowerCase()] || articulo.tipo || 'Artigo'}</span>
+        <span className="text-sm font-semibold text-gold uppercase tracking-widest">{(dict as any)?.documentTypes?.[articulo.tipo?.toLowerCase() || ''] || articulo.tipo || 'Artigo'}</span>
         <Link href={`/${lang}/articulo/${articulo.slug || articulo.id}`}>
           <h1 className="font-serif text-4xl md:text-5xl text-charcoal cursor-pointer hover:text-gold transition-colors duration-300 leading-tight">
             {titulo}

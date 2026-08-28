@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import ArticleEditor, { ArticleData } from '@/components/escritorio/ArticleEditor';
 
 interface Props {
-  articulo: any;
+  articulo: { id?: string | number; titulo_gl?: string; titulo_es?: string; subtitulo_gl?: string; subtitulo_es?: string; contenido_gl?: string; contenido_es?: string; imagen_url?: string; tematicas?: string[]; estado?: string; tipo?: string; fijado?: boolean; idioma_original?: string; };
 }
 
 export default function EditarArticuloForm({ articulo }: Props) {
@@ -17,7 +17,7 @@ export default function EditarArticuloForm({ articulo }: Props) {
     const supabase = createClient();
 
     const initialData: ArticleData = {
-        id: articulo.id,
+        id: String(articulo.id),
         titulo_gl: articulo.titulo_gl || '',
         titulo_es: articulo.titulo_es || '',
         subtitulo_gl: articulo.subtitulo_gl || '',
@@ -69,7 +69,7 @@ export default function EditarArticuloForm({ articulo }: Props) {
                         const { data: tagIds } = await supabase.from('tags').select('id, slug').in('slug', data.tematicas);
                         if (tagIds && tagIds.length > 0) {
                             await supabase.from('article_tags').insert(
-                                tagIds.map(t => ({ article_id: articulo.id, tag_id: t.id }))
+                                tagIds.map(t => ({ article_id: String(articulo.id), tag_id: t.id }))
                             );
                         }
                     }

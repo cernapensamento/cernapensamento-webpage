@@ -13,22 +13,24 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('system');
-  const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      const storedTheme = localStorage.getItem('theme') as Theme | null;
+      if (storedTheme) return storedTheme;
+      if (document.documentElement.classList.contains('dark')) return 'dark';
+    }
+    return 'system';
+  });
+  const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      return mediaQuery.matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
 
   useEffect(() => {
-    // Check initial theme from localStorage
-    const storedTheme = localStorage.getItem('theme') as Theme | null;
-    if (storedTheme) {
-      setThemeState(storedTheme);
-    } else if (document.documentElement.classList.contains('dark')) {
-      setThemeState('dark');
-    }
-
-    // Check system preference
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setSystemTheme(mediaQuery.matches ? 'dark' : 'light');
-
     const listener = (e: MediaQueryListEvent) => {
       setSystemTheme(e.matches ? 'dark' : 'light');
     };
