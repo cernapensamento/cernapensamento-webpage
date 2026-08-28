@@ -31,9 +31,11 @@ export default function SideMenu() {
   }, [isOpen]);
 
   // Close menu on route change
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setIsOpen(false);
-  }, [pathname]);
+  }
 
   const authors = [
     { name: 'Anxo Pérez', slug: 'anxo-perez' },
