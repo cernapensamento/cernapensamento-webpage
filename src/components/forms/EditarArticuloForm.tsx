@@ -17,7 +17,7 @@ export default function EditarArticuloForm({ articulo }: Props) {
     const supabase = createClient();
 
     const initialData: ArticleData = {
-        id: articulo.id,
+        id: String(articulo.id),
         titulo_gl: articulo.titulo_gl || '',
         titulo_es: articulo.titulo_es || '',
         subtitulo_gl: articulo.subtitulo_gl || '',
@@ -69,7 +69,7 @@ export default function EditarArticuloForm({ articulo }: Props) {
                         const { data: tagIds } = await supabase.from('tags').select('id, slug').in('slug', data.tematicas);
                         if (tagIds && tagIds.length > 0) {
                             await supabase.from('article_tags').insert(
-                                tagIds.map(t => ({ article_id: articulo.id, tag_id: t.id }))
+                                tagIds.map(t => ({ article_id: String(articulo.id), tag_id: t.id }))
                             );
                         }
                     }

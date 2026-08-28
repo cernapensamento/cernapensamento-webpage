@@ -43,7 +43,7 @@ export default function ContactForm() {
             }
 
             setStatus('success');
-        } catch (err: unknown) {
+        } catch (err: any) {
             setStatus('error');
             setErrorMessage(err.message);
         }

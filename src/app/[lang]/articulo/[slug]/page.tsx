@@ -93,7 +93,7 @@ export default async function ArticuloPage({
       <main className="grow flex flex-col items-center w-full pb-30">
         <header className="w-full max-w-3xl px-5 md:px-0 pt-24 pb-12 mx-auto text-center relative">
           <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">
-            {(dict as Record<string, Record<string, string>>).documentTypes?.[articulo.tipo?.toLowerCase()] || articulo.tipo || 'Artigo'}
+            {(dict as any).documentTypes?.[articulo.tipo?.toLowerCase() || ''] || articulo.tipo || 'Artigo'}
           </span>
           <h1 className="font-serif text-4xl md:text-6xl text-charcoal mb-6 max-w-4xl mx-auto leading-tight">
             {titulo}

@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function CommentsSection({ articuloId }: { articuloId: string }) {
   const { user } = useAuth();
-  const [comentarios, setComentarios] = useState<{ id: string | number; contenido: string; creado_en: string; perfiles?: { nombre?: string; avatar_url?: string } }[]>([]);
+  const [comentarios, setComentarios] = useState<{ id: string | number; autor_id?: string; contenido: string; creado_en: string; perfiles?: { nombre?: string; avatar_url?: string } }[]>([]);
   const loading = useRef(true);
   const supabase = createClient();
 
@@ -26,7 +26,7 @@ export default function CommentsSection({ articuloId }: { articuloId: string }) 
     loading.current = false;
   }, [articuloId, supabase]);
 
-  const handleDelete = async (comentarioId: string) => {
+  const handleDelete = async (comentarioId: string | number) => {
     if (!window.confirm('¿Estás seguro de que quieres eliminar este comentario?')) return;
 
     // Actualización optimista

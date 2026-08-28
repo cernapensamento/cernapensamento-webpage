@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 interface PinnedArticlesPanelProps {
-  articulos: { id: string | number; slug?: string; tipo?: string; titulo_es?: string; titulo_gl?: string; perfiles?: { nombre?: string }; imagen_url?: string; }[];
+  articulos: any[];
   lang: string;
   dict?: { documentTypes?: Record<string, string>; [key: string]: unknown };
 }
@@ -35,7 +35,7 @@ export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArt
               )}
             </div>
             <span className="text-[10px] font-semibold text-gold uppercase tracking-widest mb-2">
-              {dict?.documentTypes?.[articulo.tipo?.toLowerCase()] || articulo.tipo || 'Artigo'}
+              {(dict as any)?.documentTypes?.[articulo.tipo?.toLowerCase() || ''] || articulo.tipo || 'Artigo'}
             </span>
             <h3 className="font-serif text-xl md:text-2xl mb-3 group-hover:text-gold transition-colors duration-300 line-clamp-3">
               {articulo.titulo_gl || articulo.titulo_es}

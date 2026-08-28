@@ -60,12 +60,12 @@ export async function proxy(request: NextRequest) {
   ].some((path) => pathname.startsWith(path));
 
   // Determine Locale
-  let currentLocale = i18n.defaultLocale;
+  let currentLocale: string = i18n.defaultLocale;
   const localeMatch = pathname.match(/^\/([^/]+)/);
   if (localeMatch && (i18n.locales as readonly string[]).includes(localeMatch[1] as (typeof i18n.locales)[number])) {
-      currentLocale = localeMatch[1];
+      currentLocale = localeMatch[1] as 'gl' | 'es';
   } else if (!isExcluded) {
-      currentLocale = getLocale(request);
+      currentLocale = getLocale(request) as 'gl' | 'es';
   }
 
   // --- Rate Limiting Logic ---

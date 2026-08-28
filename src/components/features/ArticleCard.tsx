@@ -1,6 +1,6 @@
 import Link from 'next/link';
 interface ArticleCardProps {
-  articulo: { id: string | number; slug?: string; tipo?: string; titulo_es?: string; titulo_gl?: string; subtitulo_es?: string; subtitulo_gl?: string; contenido_es?: string; contenido_gl?: string; perfiles?: { nombre?: string }; imagen_url?: string; };
+  articulo: { id: string | number; slug?: string; tipo?: string; titulo_es?: string; titulo_gl?: string; subtitulo_es?: string; subtitulo_gl?: string; contenido_es?: string; contenido_gl?: string; perfiles?: any; imagen_url?: string; };
   lang: string;
   dict?: { documentTypes?: Record<string, string>; readArticle?: string; [key: string]: unknown };
 }
@@ -15,7 +15,7 @@ export default function ArticleCard({ articulo, lang, dict }: ArticleCardProps) 
   return (
     <Link href={`/${lang}/articulo/${articulo.slug || articulo.id}`} className="flex flex-col group cursor-pointer h-full">
       <span className="text-sm font-semibold text-gold uppercase tracking-widest mb-3">
-        {dict?.documentTypes?.[articulo.tipo?.toLowerCase()] || articulo.tipo || 'Artigo'}
+        {(dict as any)?.documentTypes?.[articulo.tipo?.toLowerCase() || ''] || articulo.tipo || 'Artigo'}
       </span>
       <h3 className="font-serif text-2xl text-charcoal mb-3 group-hover:text-gold transition-colors duration-300 line-clamp-3">
         {titulo}

@@ -311,9 +311,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         
         (editor.chain().focus() as unknown as { setFigure: (options: { src: string; caption?: string }) => { run: () => void } }).setFigure({ 
             src: localUrl, 
-            alt: caption || '', 
-            title: caption || '', 
-            caption: caption 
+            caption: caption || undefined 
         }).run();
 
         const { data: { user } } = await supabase.auth.getUser();
@@ -393,7 +391,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 if (targetLang === 'gl') setContenidoGl(data.htmlContent); else setContenidoEs(data.htmlContent);
             }
             alert('Traducción generada correctamente. Puedes cambiar de idioma en las pestañas para revisarla.');
-        } catch (e: unknown) {
+        } catch (e: any) {
             console.error(e);
             alert(e.message || 'Error al traducir el contenido. Revisa la consola o tu API KEY.');
         } finally {
