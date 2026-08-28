@@ -3,7 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useState, useEffect, useRef } from 'react';
 
-export default function ArticlesFilterBar({ availableTags, dict }: { availableTags: {slug: string, name: string}[], dict: any }) {
+export default function ArticlesFilterBar({ availableTags, dict }: { availableTags: {slug: string, name: string}[], dict: { searchPlaceholder?: string; all?: string; [key: string]: unknown } }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -13,7 +13,7 @@ export default function ArticlesFilterBar({ availableTags, dict }: { availableTa
   const currentTagsSet = new Set(currentTags);
 
   const [query, setQuery] = useState(currentQuery);
-  const createQueryStringRef = useRef<any>(null);
+  const createQueryStringRef = useRef<((name: string, value: string) => string) | null>(null);
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
