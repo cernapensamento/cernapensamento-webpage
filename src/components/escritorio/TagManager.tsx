@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
 interface TagManagerProps {
@@ -10,17 +10,13 @@ interface TagManagerProps {
 
 export default function TagManager({ selectedTags, onChange }: TagManagerProps) {
     const supabase = createClient();
-    const [allTags, setAllTags] = useState<any[]>([]);
+    const [allTags, setAllTags] = useState<{ id?: string | number; slug: string; tag_translations: { lang: string; name: string }[] }[]>([]);
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
     
     const [newTagEs, setNewTagEs] = useState('');
     const [newTagGl, setNewTagGl] = useState('');
     const [isSaving, setIsSaving] = useState(false);
-
-    useEffect(() => {
-        fetchTags();
-    }, []);
 
     const fetchTags = async () => {
         try {
@@ -77,15 +73,15 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
             setShowModal(false);
             setNewTagEs('');
             setNewTagGl('');
-        } catch (e: any) {
-            alert('Error al crear etiqueta: ' + e.message);
+        } catch (e: unknown) {
+            alert('Error al crear etiqueta: ' + (e instanceof Error ? e.message : String(e)));
         } finally {
             setIsSaving(false);
         }
     };
 
-    const getTranslatedName = (tag: any, targetLang: string) => {
-        const trans = tag.tag_translations?.find((t: any) => t.lang === targetLang);
+    const getTranslatedName = (tag: { slug: string; tag_translations: { lang: string; name: string }[] }, targetLang: string) => {
+        const trans = tag.tag_translations?.find((t: { lang: string; name: string }) => t.lang === targetLang);
         return trans ? trans.name : tag.slug;
     };
 
@@ -117,7 +113,7 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
                     <div className="absolute top-full left-0 w-full mt-1 bg-surface border border-lines shadow-lg z-50 max-h-48 overflow-y-auto">
                         {allTags.filter(t => 
                             t.slug.includes(search.toLowerCase()) || 
-                            t.tag_translations?.some((tr: any) => tr.name.toLowerCase().includes(search.toLowerCase()))
+                            t.tag_translations?.some((tr: { lang: string; name: string }) => tr.name.toLowerCase().includes(search.toLowerCase()))
                         ).map(t => (
                             <button type="button" key={t.slug} className="w-full text-left px-4 py-2 text-xs uppercase tracking-widest hover:bg-gold/10 hover:text-gold transition-colors" onClick={() => handleAddExisting(t.slug)}>
                                 {getTranslatedName(t, 'es')} <span className="text-[10px] text-charcoal/50">({getTranslatedName(t, 'gl')})</span>
@@ -125,7 +121,7 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
                         ))}
                         
                         <button type="button" className="w-full text-left px-4 py-2 text-xs uppercase tracking-widest text-gold hover:bg-gold hover:text-parchment transition-colors border-t border-lines" onClick={() => setShowModal(true)}>
-                            + CREAR NUEVA ETIQUETA "{search}"
+                            + CREAR NUEVA ETIQUETA &quot;{search}&quot;
                         </button>
                     </div>
                 )}
