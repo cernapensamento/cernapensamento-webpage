@@ -68,7 +68,7 @@ export default function ArticleSubmissionForm() {
             }
 
             setStatus('success');
-        } catch (err: any) {
+        } catch (err: unknown) {
             setStatus('error');
             setErrorMessage(err.message);
         }
