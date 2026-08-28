@@ -2,22 +2,22 @@
   "nav": {
     "revista": "Revista",
     "estatutos": "Estatutos",
-    "bases": "Bases Editoriales",
     "articulos": "Archivo de Artículos",
     "autores": "Autores",
     "contactar": "Contactar",
     "idiomas": "Idiomas",
     "escritorio": "Escritorio",
     "login": "Acceder",
-    "logout": "Cerrar Sesión"
+    "logout": "Cerrar Sesión",
+    "asociacion": "La Asociación"
   },
   "footer": {
     "rights": "Todos los derechos reservados.",
     "links": {
       "estatutos": "Estatutos",
-      "bases": "Bases Editoriales",
       "privacidad": "Política de Privacidad",
-      "contacto": "Contacto"
+      "contacto": "Contacto",
+      "asociacion": "La Asociación"
     }
   },
   "common": {
@@ -248,5 +248,86 @@
   "contactoPage": {
     "title": "Contacto",
     "description": "¿Tienes alguna duda, sugerencia o quieres ponerte en contacto con el equipo editorial? Escríbenos y te responderemos lo antes posible."
+  },
+  "editorial": {
+    "hub": {
+      "title": "Proyecto Editorial",
+      "description": "CERNA es un espacio de encuentro para el pensamiento crítico y la reflexión sosegada. Nuestro proyecto editorial se estructura en cuatro colecciones principales:",
+      "readMore": "Leer más",
+      "collections": [
+        {
+          "id": "narrativa",
+          "title": "Colección Narrativa",
+          "description": "Explora nuestras obras de ficción."
+        },
+        {
+          "id": "poesia",
+          "title": "Colección Poesía",
+          "description": "Descubre nuestra selección poética."
+        },
+        {
+          "id": "articulos",
+          "title": "Colección Artículos",
+          "description": "Opinión, actualidad y crítica."
+        },
+        {
+          "id": "ensayos",
+          "title": "Colección Ensayos",
+          "description": "Reflexiones profundas y académicas."
+        }
+      ],
+      "estatutosCard": {
+        "title": "Estatutos",
+        "description": "Consulta el documento oficial que rige el funcionamiento, principios y objetivos de la Asociación Cerna Pensamento.",
+        "button": "Leer los Estatutos"
+      }
+    }
+  },
+  "asociacion": {
+    "title": "La Asociación Cerna Pensamento",
+    "introParagraphs": [
+      "La Asociación Cerna Pensamento es una entidad sin ánimo de lucro constituida el 28 de julio de 2026 en el Ayuntamiento de Cambados. Nace con un propósito firme: promover el pensamiento crítico y el diálogo como herramientas fundamentales para la convivencia y el desarrollo social, con especial foco en la juventud. Se trata de una iniciativa surgida en Galicia con vocación universal.",
+      "Sus cuatro miembros fundadores —Denís Fernández Casal, Diego Araújo Rodríguez, Héctor González Prego y Anxo Pérez Prego—, tras iniciar su etapa universitaria, identificaron la necesidad de ofrecer a la juventud gallega un espacio de socialización y reflexión constructiva. Cerna Pensamento se constituye así como una estructura plural y accesible, diseñada para el análisis y el debate riguroso, al margen de la polarización política y de las dinámicas partidistas."
+    ],
+    "origen": {
+      "title": "EL ORIGEN Y EL PROYECTO",
+      "paragraphs": [
+        "Cerna Pensamento surge de la amistad y de la trayectoria compartida por sus fundadores en el ámbito del debate académico durante la etapa de bachillerato. Esta afinidad personal e intelectual evoluciona hoy en un proyecto institucional que busca contagiar el interés por el conocimiento al resto de la juventud gallega.",
+        "La misión principal de la asociación es consolidar un foro de reflexión alrededor de los grandes retos y cuestiones de nuestro tiempo. Para lograrlo, la plataforma web corporativa se encuentra en el centro de su estrategia como el principal canal de difusión de ideas y debate intelectual."
+      ]
+    },
+    "agora": {
+      "title": "ÁGORA CERNA",
+      "intro": "Más allá de la publicación de artículos y el impulso a jóvenes autores, la asociación apuesta por un diálogo dinámico y estructurado. Ágora Cerna es el programa mensual de encuentros —principalmente en formato digital— articulado a través de tres modalidades:",
+      "modalities": [
+        {
+          "name": "Conferencias",
+          "desc": "Exposiciones a cargo de socios y colaboradores, seguidas de un coloquio con el público. Se organizan en ciclos temáticos con un mínimo de dos sesiones alrededor de un eje común."
+        },
+        {
+          "name": "Debates",
+          "desc": "Encuentros donde dos ponentes exponen posturas o análisis contrapuestos sobre un tema, obra o autor. La sesión consta de un debate moderado y de una ronda de preguntas e intervenciones del público."
+        },
+        {
+          "name": "Tertulias",
+          "desc": "Mesas de discusión donde dos o más relatores analizan una cuestión de actualidad bajo la guía de un moderador. Tras la exposición inicial, se abre la participación a los asistentes."
+        }
+      ],
+      "outro": "Como línea de expansión, Ágora Cerna iniciará su programación de eventos presenciales en la villa de Cambados, con la previsión de extender estas actividades a otras localizaciones de la geografía gallega."
+    },
+    "torneo": {
+      "title": "TORNEO DE DEBATE CERNA PENSAMENTO",
+      "paragraphs": [
+        "La experiencia del equipo fundador en el ámbito de la oratoria escolar (tras representar al IES Francisco Asorey en el certamen Parlamento Xove) avala el valor del debate académico como herramienta pedagógica para fomentar el trabajo en equipo y el pensamiento crítico.",
+        "Uno de los objetivos estratégicos de la asociación es la organización de un torneo de debate de ámbito comarcal en O Salnés. Con esta iniciativa, Cerna Pensamento busca contribuir a la descentralización de la oferta cultural y educativa en Galicia, acercando estas dinámicas fuera de los grandes núcleos urbanos. La ejecución de este proyecto se desarrollará de forma progresiva a medida que se consolide la red de colaboradores de la entidad."
+      ]
+    },
+    "sumate": {
+      "title": "SÚMATE A CERNA PENSAMENTO",
+      "paragraphs": [
+        "Cerna Pensamento está abierta a todos aquellos jóvenes con inquietud intelectual, deseo de análisis crítico e interés por formar parte de una comunidad activa y comprometida con los retos sociales actuales.",
+        "Se ofrece la posibilidad de formar parte de la asociación como miembro de pleno derecho o de participar de forma puntual en las distintas actividades e iniciativas programadas. Si quieres participar o simplemente tienes curiosidad, no dudes en contactar con nosotros."
+      ]
+    }
   }
 }
