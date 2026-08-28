@@ -1,7 +1,8 @@
 import React from 'react';
 import Image from 'next/image';
+
 import Link from 'next/link';
-import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
+import { SITE_NAME } from '@/lib/constants';
 
 const columnists = [
   {
