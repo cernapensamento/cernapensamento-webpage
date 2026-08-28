@@ -34,7 +34,7 @@ export default async function AutorPage({ params }: PageProps) {
   }
 
   // Fetch articles
-  const { data: articulos, error: articulosError } = await supabase
+  const { data: articulos } = await supabase
     .from('articulos')
     .select('*, perfiles(nombre, slug)')
     .eq('autor_id', autor.id)
@@ -53,9 +53,9 @@ export default async function AutorPage({ params }: PageProps) {
             <h1 className="font-serif text-4xl md:text-5xl text-charcoal mb-6">
               {dict.authorPage.articlesBy} {autor.nombre}
             </h1>
-            {((autor.slug && dict.authors && (dict.authors as any)[autor.slug]) || autor.bio) && (
+            {((autor.slug && dict.authors && (dict.authors as Record<string, string>)[autor.slug]) || autor.bio) && (
               <p className="font-sans text-base text-charcoal/70 max-w-2xl mx-auto leading-relaxed">
-                {(autor.slug && dict.authors && (dict.authors as any)[autor.slug]) || autor.bio}
+                {(autor.slug && dict.authors && (dict.authors as Record<string, string>)[autor.slug]) || autor.bio}
               </p>
             )}
           </header>
