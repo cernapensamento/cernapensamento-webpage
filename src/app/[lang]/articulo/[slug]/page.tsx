@@ -72,7 +72,7 @@ export default async function ArticuloPage({
     day: 'numeric'
   });
 
-  let translatedTags: Record<string, string> = {};
+  const translatedTags: Record<string, string> = {};
   if (articulo.tematicas && articulo.tematicas.length > 0) {
     const { data: tagTrans } = await supabase
       .from('tags')
