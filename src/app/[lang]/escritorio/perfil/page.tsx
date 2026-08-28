@@ -1,5 +1,4 @@
 import React from 'react';
-import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/utils/auth';
 import ProfileDashboard from '@/components/features/ProfileDashboard';
