@@ -1,8 +1,8 @@
 import Link from 'next/link';
 interface ArticleCardProps {
-  articulo: any;
+  articulo: { id: string | number; slug?: string; tipo?: string; titulo_es?: string; titulo_gl?: string; subtitulo_es?: string; subtitulo_gl?: string; contenido_es?: string; contenido_gl?: string; perfiles?: { nombre?: string }; imagen_url?: string; };
   lang: string;
-  dict?: any;
+  dict?: { documentTypes?: Record<string, string>; readArticle?: string; [key: string]: unknown };
 }
 
 export default function ArticleCard({ articulo, lang, dict }: ArticleCardProps) {
