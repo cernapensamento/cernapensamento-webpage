@@ -53,11 +53,11 @@ export async function POST(req: Request) {
         subtitle: extractSection(translatedText, '---SUBTITLE---', '---HTMLCONTENT---'), 
         htmlContent: extractSection(translatedText, '---HTMLCONTENT---') 
       });
-    } catch (e) {
+    } catch {
       console.error("Failed to parse response from Gemini", translatedText);
       return NextResponse.json({ error: 'Invalid response from model' }, { status: 500 });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Translation error:', error);
     const isRateLimit = error.status === 429 || error.message?.includes('429') || error.message?.includes('Quota exceeded');
     return NextResponse.json(
