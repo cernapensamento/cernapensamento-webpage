@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Libre_Caslon_Text, Source_Sans_3 } from "next/font/google";
 import "../globals.css";
-import ThemeToggle from '@/components/ui/ThemeToggle';
 import { ThemeProvider } from "@/components/ThemeProvider";
 import SiteFooter from '@/components/layout/SiteFooter';
 
@@ -40,6 +39,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* eslint-disable-next-line @next/next/no-page-custom-font, @next/next/google-font-display */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" />
       </head>
       <body className="min-h-screen flex flex-col font-sans bg-parchment text-charcoal">
