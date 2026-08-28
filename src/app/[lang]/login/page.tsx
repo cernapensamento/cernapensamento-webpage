@@ -5,7 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/utils/supabase/client';
-import { SITE_NAME } from '@/lib/constants';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -15,7 +14,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showResend, setShowResend] = useState(false);
   const router = useRouter();
@@ -24,17 +22,16 @@ export default function LoginPage() {
   const supabase = createClient();
   const dict = lang === 'es' ? esDict : glDict;
   const loginDict = dict.loginPage;
-
-  React.useEffect(() => {
+  const [error, setError] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('error') === 'invalid_token') {
-        setError(loginDict.invalidToken);
-      } else if (params.get('error') === 'auth_failed') {
-        setError(loginDict.googleAuthError);
-      }
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('error') === 'invalid_token') return loginDict?.invalidToken || esDict.loginPage.invalidToken;
+      if (p.get('error') === 'auth_failed') return loginDict?.googleAuthError || esDict.loginPage.googleAuthError;
     }
-  }, []);
+    return null;
+  });
+
+  
 
   const handleGoogleAuth = async () => {
     setLoading(true);
