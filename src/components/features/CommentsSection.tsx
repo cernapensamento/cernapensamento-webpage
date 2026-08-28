@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function CommentsSection({ articuloId }: { articuloId: string }) {
   const { user } = useAuth();
-  const [comentarios, setComentarios] = useState<any[]>([]);
+  const [comentarios, setComentarios] = useState<{ id: string | number; contenido: string; creado_en: string; perfiles?: { nombre?: string; avatar_url?: string } }[]>([]);
   const loading = useRef(true);
   const supabase = createClient();
 
@@ -41,12 +41,12 @@ export default function CommentsSection({ articuloId }: { articuloId: string }) 
     if (error || !data || data.length === 0) {
       console.error("Delete failed:", error || "No rows deleted (RLS blocked)");
       alert('Error de permisos o sesión caducada al intentar borrar. Recarga la página.');
-      fetchComments(); // Revertir en caso de error
+      const timer = setTimeout(() => fetchComments(), 0); return () => clearTimeout(timer); // Revertir en caso de error
     }
   };
 
   useEffect(() => {
-    fetchComments();
+    const timer = setTimeout(() => fetchComments(), 0); return () => clearTimeout(timer);
   }, [articuloId, fetchComments]);
 
   return (
