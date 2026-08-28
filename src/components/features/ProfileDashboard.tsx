@@ -10,7 +10,7 @@ import { handleSignOut } from '@/actions/auth';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
-export default function ProfileDashboard({ profile, user }: { profile: any, user: any }) {
+export default function ProfileDashboard({ profile, user }: { profile: { id?: string; nombre?: string; bio?: string; avatar_url?: string; recibir_newsletter?: boolean }, user: { id: string; app_metadata?: { providers?: string[] } } }) {
   const [nombre, setNombre] = useState(profile?.nombre || '');
   const [bio, setBio] = useState(profile?.bio || '');
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
