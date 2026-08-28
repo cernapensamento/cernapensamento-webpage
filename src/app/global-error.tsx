@@ -19,6 +19,7 @@ export default function GlobalError({
   return (
     <html lang="es">
       <head>
+        {/* eslint-disable-next-line @next/next/no-page-custom-font, @next/next/google-font-display */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" />
       </head>
       <body className="antialiased bg-parchment text-charcoal min-h-screen font-sans">
