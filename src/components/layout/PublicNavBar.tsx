@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { SITE_NAME, DEFAULT_AVATAR_URL } from '@/lib/constants';
 import Image from 'next/image';
 import BackButton from '@/components/ui/BackButton';
 import ThemeToggle from '@/components/ui/ThemeToggle';
