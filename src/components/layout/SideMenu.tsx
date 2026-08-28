@@ -111,20 +111,14 @@ export default function SideMenu() {
             )}
 
             <div>
-              <Link href={`/${lang}/bases-editoriales`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
-                {dict.nav.bases}
+              <Link href={`/${lang}/asociacion`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
+                {dict.nav.asociacion}
               </Link>
             </div>
 
             <div>
               <Link href={`/${lang}/articulos`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
                 {dict.nav.articulos}
-              </Link>
-            </div>
-
-            <div>
-              <Link href={`/${lang}/estatutos`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
-                {dict.nav.estatutos}
               </Link>
             </div>
 

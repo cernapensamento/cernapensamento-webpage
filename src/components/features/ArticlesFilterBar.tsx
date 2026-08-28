@@ -46,7 +46,7 @@ export default function ArticlesFilterBar({ availableTags, dict }: { availableTa
     params.delete('tema');
     
     if (tag !== '') {
-      let newTags = currentTags.includes(tag) ? currentTags.filter(t => t !== tag) : [...currentTags, tag];
+      const newTags = currentTags.includes(tag) ? currentTags.filter(t => t !== tag) : [...currentTags, tag];
       newTags.forEach(t => params.append('tema', t));
     }
     

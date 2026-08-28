@@ -40,7 +40,7 @@ function getLocale(request: NextRequest): string {
   }
 
   const locales: string[] = [...i18n.locales];
-  let languages = new Negotiator({ headers: negotiatorHeaders }).languages();
+  const languages = new Negotiator({ headers: negotiatorHeaders }).languages();
 
   try {
     return matchLocale(languages, locales, i18n.defaultLocale);

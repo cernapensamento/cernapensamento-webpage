@@ -3,6 +3,8 @@ import { Libre_Caslon_Text, Source_Sans_3 } from "next/font/google";
 import "../globals.css";
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { ThemeProvider } from "@/components/ThemeProvider";
+import SiteFooter from '@/components/layout/SiteFooter';
+
 const libreCaslon = Libre_Caslon_Text({
   weight: ["400", "700"],
   subsets: ["latin"],
@@ -43,6 +45,7 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col font-sans bg-parchment text-charcoal">
         <ThemeProvider>
           {children}
+          <SiteFooter />
         </ThemeProvider>
       </body>
     </html>
