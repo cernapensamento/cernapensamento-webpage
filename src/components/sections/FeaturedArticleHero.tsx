@@ -2,9 +2,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 interface FeaturedArticleHeroProps {
-  articulo: any;
+  articulo: { id: string | number; slug?: string; tipo?: string; titulo_es?: string; titulo_gl?: string; subtitulo_es?: string; subtitulo_gl?: string; contenido_es?: string; contenido_gl?: string; perfiles?: { nombre?: string }; imagen_url?: string; };
   lang: string;
-  dict?: any;
+  dict?: { documentTypes?: Record<string, string>; readArticle?: string; [key: string]: unknown };
 }
 
 export default function FeaturedArticleHero({ articulo, lang, dict }: FeaturedArticleHeroProps) {
