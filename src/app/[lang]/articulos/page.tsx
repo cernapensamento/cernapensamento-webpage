@@ -51,7 +51,7 @@ export default async function ArticulosPage({
         const t = tagTrans.find(tt => tt.slug === slug);
         let name = slug;
         if (t && t.tag_translations) {
-          const trans = t.tag_translations.find((tr: any) => tr.lang === lang);
+          const trans = t.tag_translations.find((tr: { lang: string; name: string }) => tr.lang === lang);
           if (trans) name = trans.name;
           else if (t.tag_translations.length > 0) name = t.tag_translations[0].name;
         }
