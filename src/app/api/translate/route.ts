@@ -59,9 +59,11 @@ export async function POST(req: Request) {
     }
   } catch (error: unknown) {
     console.error('Translation error:', error);
-    const isRateLimit = error.status === 429 || error.message?.includes('429') || error.message?.includes('Quota exceeded');
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStatus = (error && typeof error === 'object' && 'status' in error) ? (error as any).status : null;
+    const isRateLimit = errorStatus === 429 || errorMessage.includes('429') || errorMessage.includes('Quota exceeded');
     return NextResponse.json(
-      { error: 'Failed to translate', details: error.message },
+      { error: 'Failed to translate', details: error instanceof Error ? error.message : String(error) },
       { status: isRateLimit ? 429 : 500 }
     );
   }
