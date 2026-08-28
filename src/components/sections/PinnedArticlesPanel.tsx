@@ -2,9 +2,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 interface PinnedArticlesPanelProps {
-  articulos: any[];
+  articulos: { id: string | number; slug?: string; tipo?: string; titulo_es?: string; titulo_gl?: string; perfiles?: { nombre?: string }; imagen_url?: string; }[];
   lang: string;
-  dict?: any;
+  dict?: { documentTypes?: Record<string, string>; [key: string]: unknown };
 }
 
 export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArticlesPanelProps) {
