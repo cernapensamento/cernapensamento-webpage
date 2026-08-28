@@ -31,7 +31,7 @@ export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
         </div>
 
         <Link 
-          href={`/${lang}/bases-editoriales`}
+          href={`/${lang}/asociacion`}
           className="inline-block px-8 py-4 border border-charcoal text-charcoal hover:bg-charcoal hover:text-parchment font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300"
         >
           {dict.button}
