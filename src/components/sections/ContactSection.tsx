@@ -1,7 +1,7 @@
 import React from 'react';
 import { SITE_NAME } from '@/lib/constants';
 
-export default function ContactSection({ dict }: { dict: any }) {
+export default function ContactSection({ dict }: { dict: { tag?: string; title?: string; description: string; button?: string } }) {
   return (
     <section className="w-full py-24 bg-parchment border-t border-lines relative overflow-hidden">
       
