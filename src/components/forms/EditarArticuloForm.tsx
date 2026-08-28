@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import ArticleEditor, { ArticleData } from '@/components/escritorio/ArticleEditor';
 
 interface Props {
-  articulo: any;
+  articulo: { id?: string | number; titulo_gl?: string; titulo_es?: string; subtitulo_gl?: string; subtitulo_es?: string; contenido_gl?: string; contenido_es?: string; imagen_url?: string; tematicas?: string[]; estado?: string; tipo?: string; fijado?: boolean; idioma_original?: string; };
 }
 
 export default function EditarArticuloForm({ articulo }: Props) {
