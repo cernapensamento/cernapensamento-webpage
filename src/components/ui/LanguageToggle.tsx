@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useLocale } from '@/hooks/useLocale';
-import { i18n } from '@/i18n-config';
 
 export default function LanguageToggle() {
   const router = useRouter();
