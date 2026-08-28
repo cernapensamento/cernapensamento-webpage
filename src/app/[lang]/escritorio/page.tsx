@@ -7,7 +7,6 @@ import { getAuthenticatedUser } from '@/utils/auth';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
 
-import SiteFooter from '@/components/layout/SiteFooter';
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
 import PinArticleButton from '@/components/escritorio/PinArticleButton';
 
@@ -160,7 +159,6 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
         </section>
       </div>
 
-      <SiteFooter variant="minimal" />
     </main>
   );
 }

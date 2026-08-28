@@ -1,6 +1,5 @@
 import React from 'react';
 import ArticleSubmissionForm from '@/components/forms/ArticleSubmissionForm';
-import SiteFooter from '@/components/layout/SiteFooter';
 import { getDictionary } from '@/dictionaries';
 import { Locale } from '@/i18n-config';
 import PublicNavBar from '@/components/layout/PublicNavBar';
@@ -21,7 +20,6 @@ export default async function ColaboraPage({ params }: { params: Promise<{ lang:
             </header>
             <ArticleSubmissionForm />
         </main>
-        <SiteFooter variant="full" />
         </>
     );
 }

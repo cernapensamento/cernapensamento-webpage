@@ -3,7 +3,6 @@ import { createClient } from '@/utils/supabase/server';
 import ArticleCard from '@/components/features/ArticleCard';
 import ArticlesFilterBar from '@/components/features/ArticlesFilterBar';
 import PublicNavBar from '@/components/layout/PublicNavBar';
-import SiteFooter from '@/components/layout/SiteFooter';
 import Link from 'next/link';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
@@ -115,7 +114,6 @@ export default async function ArticulosPage({
           )}
         </div>
       </main>
-      <SiteFooter variant="full" />
     </>
   );
 }

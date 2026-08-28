@@ -5,7 +5,6 @@ import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
 import sanitizeHtml from 'sanitize-html';
 import PublicNavBar from '@/components/layout/PublicNavBar';
-import SiteFooter from '@/components/layout/SiteFooter';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 import CommentsSection from '@/components/features/CommentsSection';
 import { getDictionary } from '@/dictionaries';
@@ -205,7 +204,6 @@ export default async function ArticuloPage({
         </article>
       </main>
 
-      <SiteFooter variant="compact" />
     </>
   );
 }
