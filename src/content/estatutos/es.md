@@ -29,205 +29,203 @@ La asociación se constituye por tiempo indefinido y se regirá según los princ
 
 La asociación se regirá por los siguientes principios:
 
-L|a) Fomentar y crear espacios de diálogo alejados de la polarización política e ideológica.
+- a) Fomentar y crear espacios de diálogo alejados de la polarización política e ideológica.
 
-L|b) Promover entre la juventud la reflexión crítica sobre la libertad individual, la responsabilidad personal y la capacidad de participación activa en la vida cultural y social.
+- b) Promover entre la juventud la reflexión crítica sobre la libertad individual, la responsabilidad personal y la capacidad de participación activa en la vida cultural y social.
 
-L|c) Incentivar la participación de la juventud en iniciativas ciudadanas, culturales e intelectuales que contribuyan al desarrollo de una conciencia social crítica y constructiva.
+- c) Incentivar la participación de la juventud en iniciativas ciudadanas, culturales e intelectuales que contribuyan al desarrollo de una conciencia social crítica y constructiva.
 
-L|d) Impulsar el valor del aprendizaje autónomo y de la capacidad autodidacta, sin perjuicio del reconocimiento de las instituciones educativas, culturales y académicas.
+- d) Impulsar el valor del aprendizaje autónomo y de la capacidad autodidacta, sin perjuicio del reconocimiento de las instituciones educativas, culturales y académicas.
 
-L|e) Superar los límites de una especialización académica aislada mediante una actividad intelectual interdisciplinar, orientada a la comprensión amplia y rigurosa de la realidad.
+- e) Superar los límites de una especialización académica aislada mediante una actividad intelectual interdisciplinar, orientada a la comprensión amplia y rigurosa de la realidad.
 
-L|f) Defender y promover la lengua gallega, así como su sistema cultural y literario, favoreciendo también la reflexión sobre la realidad histórica, social y cultural de Galicia.
+- f) Defender y promover la lengua gallega, así como su sistema cultural y literario, favoreciendo también la reflexión sobre la realidad histórica, social y cultural de Galicia.
 
-L|g) Promover la honestidad intelectual, el rigor epistémico y la claridad argumentativa en las actividades desarrolladas por la asociación.
+- g) Promover la honestidad intelectual, el rigor epistémico y la claridad argumentativa en las actividades desarrolladas por la asociación.
 
 ### Artículo 7. Fines y actividades
 
-L|1. Son fines principales de la asociación:
+1. Son fines principales de la asociación:
 
-L|a) Promover la reflexión crítica, el debate razonado y el análisis riguroso de cuestiones culturales, sociales, filosóficas, científicas, jurídicas, económicas, literarias y de otros ámbitos del conocimiento.
+- a) Promover la reflexión crítica, el debate razonado y el análisis riguroso de cuestiones culturales, sociales, filosóficas, científicas, jurídicas, económicas, literarias y de otros ámbitos del conocimiento.
 
-L|b) Fomentar la escritura como medio de elaboración, expresión y difusión de ideas propias.
+- b) Fomentar la escritura como medio de elaboración, expresión y difusión de ideas propias.
 
-L|c) Crear espacios de encuentro intelectual en los que se favorezca el diálogo interdisciplinar, la pluralidad de perspectivas y la participación activa de la juventud.
+- c) Crear espacios de encuentro intelectual en los que se favorezca el diálogo interdisciplinar, la pluralidad de perspectivas y la participación activa de la juventud.
 
-L|d) Contribuir a la defensa, uso y promoción de la lengua gallega como vehículo de pensamiento, creación y comunicación cultural, así como al conocimiento de la realidad histórica y cultural de Galicia.
+- d) Contribuir a la defensa, uso y promoción de la lengua gallega como vehículo de pensamiento, creación y comunicación cultural, así como al conocimiento de la realidad histórica y cultural de Galicia.
 
-L|e) Colaborar con instituciones, entidades culturales, asociaciones, centros educativos u otras organizaciones cuyos fines sean compatibles con los principios generales de la asociación.
+- e) Colaborar con instituciones, entidades culturales, asociaciones, centros educativos u otras organizaciones cuyos fines sean compatibles con los principios generales de la asociación.
 
-L|2. Para llevar a cabo sus fines, la asociación podrá organizar las siguientes actividades:
+2. Para llevar a cabo sus fines, la asociación podrá organizar las siguientes actividades:
 
-L|a) Torneos, jornadas, encuentros y actividades de debate.
+- a) Torneos, jornadas, encuentros y actividades de debate.
 
-L|b) Creación y mantenimiento de una página web destinada a la publicación de artículos, ensayos, reflexiones y otros escritos elaborados por las personas asociadas o colaboradoras, de acuerdo con los criterios editoriales establecidos por el Consejo.
+- b) Creación y mantenimiento de una página web destinada a la publicación de artículos, ensayos, reflexiones y otros escritos elaborados por las personas asociadas o colaboradoras, de acuerdo con los criterios editoriales establecidos por el Consejo.
 
-L|c) Edición de una revista, digital o impresa, así como creación de un sello editorial propio
+- c) Edición de una revista, digital o impresa, así como creación de un sello editorial propio para la publicación de obras, textos o materiales de carácter cultural, intelectual, literario o divulgativo.
 
-para la publicación de obras, textos o materiales de carácter cultural, intelectual, literario o divulgativo.
+- d) Organización de charlas, presentaciones, foros, coloquios, mesas redondas o actividades semejantes destinadas a la difusión de los contenidos y fines de la asociación.
 
-L|d) Organización de charlas, presentaciones, foros, coloquios, mesas redondas o actividades semejantes destinadas a la difusión de los contenidos y fines de la asociación.
-
-L|e) Realización de proyectos culturales, editoriales, formativos o divulgativos relacionados con los fines de la asociación. Los beneficios que se obtengan por cualquier concepto se destinarán exclusivamente al cumplimiento de estos fines, sin que se puedan repartir entre las personas asociadas ni entre otras personas físicas o jurídicas con interés lucrativo. Cuando sea necesario para el desarrollo de sus actividades, la asociación podrá contratar personas físicas o jurídicas, siempre de acuerdo con la normativa aplicable y con la aprobación del órgano competente.
+- e) Realización de proyectos culturales, editoriales, formativos o divulgativos relacionados con los fines de la asociación. Los beneficios que se obtengan por cualquier concepto se destinarán exclusivamente al cumplimiento de estos fines, sin que se puedan repartir entre las personas asociadas ni entre otras personas físicas o jurídicas con interés lucrativo. Cuando sea necesario para el desarrollo de sus actividades, la asociación podrá contratar personas físicas o jurídicas, siempre de acuerdo con la normativa aplicable y con la aprobación del órgano competente.
 
 ## CAPÍTULO II|DE LAS PERSONAS ASOCIADAS
 
 ### Artículo 8. Requisitos y admisión
 
-L|1. Para adquirir la condición de persona asociada se requiere ser persona física o jurídica y tener interés en el desarrollo de los fines de la asociación.
+1. Para adquirir la condición de persona asociada se requiere ser persona física o jurídica y tener interés en el desarrollo de los fines de la asociación.
 
-L|2. Las personas físicas deben ser mayores de edad o menores emancipadas con capacidad de obrar y no estar sujetas a inhabilitación o condición legal para el ejercicio del derecho.
+2. Las personas físicas deben ser mayores de edad o menores emancipadas con capacidad de obrar y no estar sujetas a inhabilitación o condición legal para el ejercicio del derecho.
 
-L|3. Las personas menores de más de 14 años no emancipadas necesitan el consentimiento, documentalmente acreditado, de las personas que deban suplir su capacidad.
+3. Las personas menores de más de 14 años no emancipadas necesitan el consentimiento, documentalmente acreditado, de las personas que deban suplir su capacidad.
 
-L|4. Las personas jurídicas de naturaleza asociativa requerirán el acuerdo expreso de su órgano competente, y las de naturaleza institucional, el acuerdo de su órgano rector.
+4. Las personas jurídicas de naturaleza asociativa requerirán el acuerdo expreso de su órgano competente, y las de naturaleza institucional, el acuerdo de su órgano rector.
 
-L|5. La admisión de nuevas personas asociadas será acordada por la Junta Directiva, previa solicitud de la persona interesada y de conformidad con los presentes estatutos.
+5. La admisión de nuevas personas asociadas será acordada por la Junta Directiva, previa solicitud de la persona interesada y de conformidad con los presentes estatutos.
 
 ### Artículo 9. Clases de personas asociadas
 
 Dentro de la asociación podrán existir las siguientes clases de personas asociadas:
 
-L|a) Fundadoras, aquellas que suscribieron el acta fundacional.
+- a) Fundadoras, aquellas que suscribieron el acta fundacional.
 
-L|b) De número, aquellas que ingresaron con posterioridad a la suscripción del acta fundacional.
+- b) De número, aquellas que ingresaron con posterioridad a la suscripción del acta fundacional.
 
-L|c) De honor, aquellas que, por sus méritos personales o profesionales o por haber contribuido de forma relevante al desarrollo de la asociación, sean nombradas por la Asamblea General, bajo propuesta del Consejo.
+- c) De honor, aquellas que, por sus méritos personales o profesionales o por haber contribuido de forma relevante al desarrollo de la asociación, sean nombradas por la Asamblea General, bajo propuesta del Consejo.
 
 ### Artículo 10. Pérdida de la condición de persona asociada
 
-L|1. La condición de persona asociada se pierde:
+1. La condición de persona asociada se pierde:
 
-L|a) Por voluntad propia, que se hará efectiva mediante presentación de renuncia por escrito ante la Junta Directiva y dirigida a la Secretaría de la asociación. La renuncia tendrá efectos desde la fecha de su presentación.
+- a) Por voluntad propia, que se hará efectiva mediante presentación de renuncia por escrito ante la Junta Directiva y dirigida a la Secretaría de la asociación. La renuncia tendrá efectos desde la fecha de su presentación.
 
-L|b) Por falta de pago de dos cuotas, que será efectiva desde la notificación del acuerdo adoptado por la Junta Directiva a la persona interesada. La persona que perdiera su condición de asociada por este supuesto podrá ser rehabilitada, si en el plazo de seis meses desde la notificación abonase las cuotas pendientes de pago.
+- b) Por falta de pago de dos cuotas, que será efectiva desde la notificación del acuerdo adoptado por la Junta Directiva a la persona interesada. La persona que perdiera su condición de asociada por este supuesto podrá ser rehabilitada, si en el plazo de seis meses desde la notificación abonase las cuotas pendientes de pago.
 
-L|c) Por incumplimiento de los presentes estatutos o de los acuerdos válidamente adoptados por los órganos de la asociación, así como por la realización de acciones que perjudiquen gravemente los intereses de la asociación.
+- c) Por incumplimiento de los presentes estatutos o de los acuerdos válidamente adoptados por los órganos de la asociación, así como por la realización de acciones que perjudiquen gravemente los intereses de la asociación.
 
-L|d) Por fallecimiento de la persona física o extinción de la persona jurídica.
+- d) Por fallecimiento de la persona física o extinción de la persona jurídica.
 
-L|2. La expulsión de personas asociadas en los supuestos de los apartados b) y c) del párrafo anterior será acordada por la Junta Directiva, previa audiencia de la persona interesada. El acuerdo de expulsión deberá ser ratificado por la Asamblea General extraordinaria y contra su resolución se podrá recurrir ante la jurisdicción ordinaria.
+2. La expulsión de personas asociadas en los supuestos de los apartados b) y c) del párrafo anterior será acordada por la Junta Directiva, previa audiencia de la persona interesada. El acuerdo de expulsión deberá ser ratificado por la Asamblea General extraordinaria y contra su resolución se podrá recurrir ante la jurisdicción ordinaria.
 
 ### Artículo 11. Derechos
 
-L|1. Las personas asociadas tienen los siguientes derechos:
+1. Las personas asociadas tienen los siguientes derechos:
 
-L|a) Participar en las actividades de la asociación.
+- a) Participar en las actividades de la asociación.
 
-L|b) Ser electoras y elegibles para los cargos de los órganos de gobierno y representación.
+- b) Ser electoras y elegibles para los cargos de los órganos de gobierno y representación.
 
-L|c) Participar en las asambleas con voz y voto.
+- c) Participar en las asambleas con voz y voto.
 
-L|d) Recibir información de la composición de los órganos de representación de la asociación, de su estado de cuentas y del desarrollo de su actividad.
+- d) Recibir información de la composición de los órganos de representación de la asociación, de su estado de cuentas y del desarrollo de su actividad.
 
-L|e) Acceder a la documentación de la asociación a través de los órganos de representación.
+- e) Acceder a la documentación de la asociación a través de los órganos de representación.
 
-L|f) Ser oídas con carácter previo a la adopción de medidas disciplinarias contra ellas y ser informadas de los hechos que den lugar a dichas medidas, debiendo motivarse el acuerdo que, en su caso, imponga la sanción.
+- f) Ser oídas con carácter previo a la adopción de medidas disciplinarias contra ellas y ser informadas de los hechos que den lugar a dichas medidas, debiendo motivarse el acuerdo que, en su caso, imponga la sanción.
 
-L|g) Impugnar los acuerdos de los órganos de la asociación que estimen contrarios a la ley o a los estatutos.
+- g) Impugnar los acuerdos de los órganos de la asociación que estimen contrarios a la ley o a los estatutos.
 
-L|2. No podrán ejercer el derecho de sufragio activo ni pasivo las personas asociadas que no estén al día en el pago de las cuotas sociales.
+2. No podrán ejercer el derecho de sufragio activo ni pasivo las personas asociadas que no estén al día en el pago de las cuotas sociales.
 
-L|3. Las personas asociadas de honor no intervendrán en la dirección de la asociación ni en los órganos de representación de esta; podrán asistir a las asambleas con voz, pero sin voto, y estarán exentas de obligaciones.
+3. Las personas asociadas de honor no intervendrán en la dirección de la asociación ni en los órganos de representación de esta; podrán asistir a las asambleas con voz, pero sin voto, y estarán exentas de obligaciones.
 
 ### Artículo 12. Obligaciones
 
 Son obligaciones de las personas asociadas:
 
-L|a) Cumplir los presentes estatutos y los acuerdos válidamente adoptados por los órganos de gobierno y representación de la asociación.
+- a) Cumplir los presentes estatutos y los acuerdos válidamente adoptados por los órganos de gobierno y representación de la asociación.
 
-L|b) Pagar las cuotas que, de conformidad con los estatutos, se establezcan.
+- b) Pagar las cuotas que, de conformidad con los estatutos, se establezcan.
 
-L|c) Desempeñar las obligaciones inherentes a los cargos para los que fuesen elegidas o designadas, en los términos previstos en estos estatutos.
+- c) Desempeñar las obligaciones inherentes a los cargos para los que fuesen elegidas o designadas, en los términos previstos en estos estatutos.
 
-L|d) Asistir a las asambleas y demás actos organizados por la asociación, cuando proceda.
+- d) Asistir a las asambleas y demás actos organizados por la asociación, cuando proceda.
 
 ## CAPÍTULO III|DE LOS ÓRGANOS DE LA ASOCIACIÓN
 
 ### Artículo 13. Organización de la asociación
 
-L|1. El órgano de gobierno de la asociación es la Asamblea General y el órgano de representación es la Junta Directiva, que adoptarán sus acuerdos de conformidad con el principio mayoritario y de democracia interna.
+1. El órgano de gobierno de la asociación es la Asamblea General y el órgano de representación es la Junta Directiva, que adoptarán sus acuerdos de conformidad con el principio mayoritario y de democracia interna.
 
-L|2. Además, desde el momento de la fundación, existirá un Consejo de carácter editorial y consultivo, sin funciones de gobierno ni de representación legal de la asociación, en los términos previstos en estos estatutos.
+2. Además, desde el momento de la fundación, existirá un Consejo de carácter editorial y consultivo, sin funciones de gobierno ni de representación legal de la asociación, en los términos previstos en estos estatutos.
 
 ### Artículo 14. Asamblea General
 
-L|1. La Asamblea General es el órgano supremo de gobierno de la asociación y está integrada por todas las personas asociadas.
+1. La Asamblea General es el órgano supremo de gobierno de la asociación y está integrada por todas las personas asociadas.
 
-L|2. La presidencia y la secretaría de la Asamblea General corresponderán, respectivamente, a las personas titulares de la Presidencia y de la Secretaría de la Junta Directiva o a las personas que estatutariamente las sustituyan.
+2. La presidencia y la secretaría de la Asamblea General corresponderán, respectivamente, a las personas titulares de la Presidencia y de la Secretaría de la Junta Directiva o a las personas que estatutariamente las sustituyan.
 
-L|3. La Asamblea General ejercerá sus funciones con respeto a los principios de participación, igualdad, transparencia y garantía de los derechos de las personas asociadas.
+3. La Asamblea General ejercerá sus funciones con respeto a los principios de participación, igualdad, transparencia y garantía de los derechos de las personas asociadas.
 
 ### Artículo 15. Consejo
 
-L|1. El Consejo es el órgano de carácter editorial y consultivo de la asociación. Su función es velar por la coherencia intelectual y cultural del proyecto asociativo en concordancia con los principios y fines de la entidad, sin perjuicio de las competencias de la Asamblea General y de la Junta Directiva.
+1. El Consejo es el órgano de carácter editorial y consultivo de la asociación. Su función es velar por la coherencia intelectual y cultural del proyecto asociativo en concordancia con los principios y fines de la entidad, sin perjuicio de las competencias de la Asamblea General y de la Junta Directiva.
 
-L|2. El Consejo no tendrá funciones de gobierno ni representación legal de la asociación, ni podrá asumir competencias reservadas por los presentes estatutos a la Asamblea General o a la Junta Directiva.
+2. El Consejo no tendrá funciones de gobierno ni representación legal de la asociación, ni podrá asumir competencias reservadas por los presentes estatutos a la Asamblea General o a la Junta Directiva.
 
-L|3. El Consejo ejercerá sus funciones editoriales con autonomía funcional, siempre dentro de los fines de la asociación, de los presentes estatutos, de los acuerdos válidamente adoptados por la Asamblea General y de la normativa aplicable.
+3. El Consejo ejercerá sus funciones editoriales con autonomía funcional, siempre dentro de los fines de la asociación, de los presentes estatutos, de los acuerdos válidamente adoptados por la Asamblea General y de la normativa aplicable.
 
-L|4. El Consejo no podrá actuar válidamente si queda reducido a una sola persona integrante.
+4. El Consejo no podrá actuar válidamente si queda reducido a una sola persona integrante.
 
-L|5. El Consejo estará constituido por:
+5. El Consejo estará constituido por:
 
-L|a) Las personas asociadas fundadoras, mientras mantengan la condición de personas asociadas.
+- a) Las personas asociadas fundadoras, mientras mantengan la condición de personas asociadas.
 
-L|b) Las personas asociadas de número o de honor que sean incorporadas por el propio Consejo mediante acuerdo adoptado por mayoría absoluta de sus personas integrantes.
+- b) Las personas asociadas de número o de honor que sean incorporadas por el propio Consejo mediante acuerdo adoptado por mayoría absoluta de sus personas integrantes.
 
-L|6. Los miembros del Consejo cesarán por:
+6. Los miembros del Consejo cesarán por:
 
-L|a) Renuncia voluntaria.
+- a) Renuncia voluntaria.
 
-L|b) Pérdida de la condición de persona asociada.
+- b) Pérdida de la condición de persona asociada.
 
-L|c) Expulsión de la asociación.
+- c) Expulsión de la asociación.
 
-L|d) Acuerdo motivado del Consejo, previa audiencia de la persona interesada, por incumplimiento grave de las funciones o criterios editoriales que le sean propios.
+- d) Acuerdo motivado del Consejo, previa audiencia de la persona interesada, por incumplimiento grave de las funciones o criterios editoriales que le sean propios.
 
-L|7. El Consejo podrá designar de entre sus personas integrantes una persona coordinadora, encargada de ordenar su funcionamiento interno y de canalizar la comunicación ordinaria con la Junta Directiva y, cuando proceda, con la Asamblea General a través de la Presidencia.
+7. El Consejo podrá designar de entre sus personas integrantes una persona coordinadora, encargada de ordenar su funcionamiento interno y de canalizar la comunicación ordinaria con la Junta Directiva y, cuando proceda, con la Asamblea General a través de la Presidencia.
 
-L|8. El Consejo podrá aprobar normas internas de funcionamiento editorial, siempre que no contradigan los presentes estatutos ni los acuerdos de la Asamblea General.
+8. El Consejo podrá aprobar normas internas de funcionamiento editorial, siempre que no contradigan los presentes estatutos ni los acuerdos de la Asamblea General.
 
 ### Artículo 16. Facultades del Consejo
 
-L|1. Como órgano consultivo, el Consejo podrá:
+1. Como órgano consultivo, el Consejo podrá:
 
-L|a) Emitir informes sobre actividades, documentos o proyectos de la asociación, especialmente cuando pueda existir contradicción con los principios, fines o estatutos de la entidad.
+- a) Emitir informes sobre actividades, documentos o proyectos de la asociación, especialmente cuando pueda existir contradicción con los principios, fines o estatutos de la entidad.
 
-L|b) Elaborar propuestas de reforma estatutaria, proyectos culturales, editoriales o intelectuales, y someterlos a la consideración de la Junta Directiva o de la Asamblea General, según corresponda.
+- b) Elaborar propuestas de reforma estatutaria, proyectos culturales, editoriales o intelectuales, y someterlos a la consideración de la Junta Directiva o de la Asamblea General, según corresponda.
 
-L|c) Colaborar en la redacción inicial de propuestas de modificación estatutaria cuando así lo solicite la Asamblea General o la Junta Directiva, sin que sus propuestas tengan carácter vinculante.
+- c) Colaborar en la redacción inicial de propuestas de modificación estatutaria cuando así lo solicite la Asamblea General o la Junta Directiva, sin que sus propuestas tengan carácter vinculante.
 
-L|2. Como órgano editorial, el Consejo podrá:
+2. Como órgano editorial, el Consejo podrá:
 
-L|a) Establecer criterios editoriales para las publicaciones, canales y proyectos culturales de la asociación.
+- a) Establecer criterios editoriales para las publicaciones, canales y proyectos culturales de la asociación.
 
-L|b) Admitir o rechazar, de manera motivada, los contenidos propuestos para publicación en los canales de la asociación cuando no cumplan unos mínimos de calidad, rigor, adecuación a los fines de la entidad o respeto a los presentes estatutos.
+- b) Admitir o rechazar, de manera motivada, los contenidos propuestos para publicación en los canales de la asociación cuando no cumplan unos mínimos de calidad, rigor, adecuación a los fines de la entidad o respeto a los presentes estatutos.
 
-L|c) Impulsar y coordinar la página web, la revista, el sello editorial y demás medios culturales o informativos de la asociación, en coordinación con la Junta Directiva cuando existan implicaciones económicas, contractuales o administrativas.
+- c) Impulsar y coordinar la página web, la revista, el sello editorial y demás medios culturales o informativos de la asociación, en coordinación con la Junta Directiva cuando existan implicaciones económicas, contractuales o administrativas.
 
-L|d) Proponer colaboraciones con instituciones culturales, asociaciones, fundaciones, revistas, editoriales o agrupaciones culturales.
+- d) Proponer colaboraciones con instituciones culturales, asociaciones, fundaciones, revistas, editoriales o agrupaciones culturales.
 
-L|3. La actividad editorial del Consejo no podrá vulnerar los derechos de las personas asociadas ni limitar indebidamente la participación democrática en la asociación.
+3. La actividad editorial del Consejo no podrá vulnerar los derechos de las personas asociadas ni limitar indebidamente la participación democrática en la asociación.
 
-L|4. Las actuaciones del Consejo que impliquen obligaciones económicas, contrataciones, compromisos frente a terceros o uso de recursos patrimoniales de la asociación deberán ser aprobadas previamente por la Junta Directiva o por la Asamblea General, según corresponda.
+4. Las actuaciones del Consejo que impliquen obligaciones económicas, contrataciones, compromisos frente a terceros o uso de recursos patrimoniales de la asociación deberán ser aprobadas previamente por la Junta Directiva o por la Asamblea General, según corresponda.
 
-L|5. En el caso de publicaciones con rendimiento económico o compensaciones a autores o autoras, estas deberán ajustarse a la normativa aplicable, ser aprobadas por el órgano competente y no podrán desvirtuar el carácter no lucrativo de la asociación.
+5. En el caso de publicaciones con rendimiento económico o compensaciones a autores o autoras, estas deberán ajustarse a la normativa aplicable, ser aprobadas por el órgano competente y no podrán desvirtuar el carácter no lucrativo de la asociación.
 
 ### Artículo 17. Reuniones de la Asamblea General: clases y convocatoria
 
-L|1. Las reuniones de la Asamblea General pueden ser ordinarias o extraordinarias.
+1. Las reuniones de la Asamblea General pueden ser ordinarias o extraordinarias.
 
-L|2. La reunión ordinaria se celebrará como mínimo una vez al año, dentro de los cuatro meses siguientes al cierre del ejercicio económico.
+2. La reunión ordinaria se celebrará como mínimo una vez al año, dentro de los cuatro meses siguientes al cierre del ejercicio económico.
 
-L|3. Las reuniones extraordinarias se celebrarán cuando las circunstancias lo aconsejen, cuantas veces lo acuerde la Junta Directiva o cuando lo soliciten por escrito el 10 % de las personas asociadas.
+3. Las reuniones extraordinarias se celebrarán cuando las circunstancias lo aconsejen, cuantas veces lo acuerde la Junta Directiva o cuando lo soliciten por escrito el 10 % de las personas asociadas.
 
-L|4. Las personas asociadas que representen, como mínimo, el 10 % del total podrán solicitar por escrito la inclusión de asuntos en el orden del día de una Asamblea General.
+4. Las personas asociadas que representen, como mínimo, el 10 % del total podrán solicitar por escrito la inclusión de asuntos en el orden del día de una Asamblea General.
 
-L|5. Las convocatorias se realizarán por escrito, señalando el lugar, día y hora de la reunión, así como el orden del día. Entre la publicación o notificación de la convocatoria y la fecha de la celebración de la Asamblea en primera convocatoria deberá mediar como mínimo un plazo de quince días naturales.
+5. Las convocatorias se realizarán por escrito, señalando el lugar, día y hora de la reunión, así como el orden del día. Entre la publicación o notificación de la convocatoria y la fecha de la celebración de la Asamblea en primera convocatoria deberá mediar como mínimo un plazo de quince días naturales.
 
-L|6. La documentación e información sobre las materias incluidas en el orden del día estará a disposición de las personas asociadas en la Secretaría de la asociación con una antelación mínima de quince días naturales a la celebración de la Asamblea.
+6. La documentación e información sobre las materias incluidas en el orden del día estará a disposición de las personas asociadas en la Secretaría de la asociación con una antelación mínima de quince días naturales a la celebración de la Asamblea.
 
 ### Artículo 18. Constitución y quórum de convocatoria
 
@@ -245,145 +243,145 @@ En las reuniones a distancia, los acuerdos se entenderán adoptados en la sede d
 
 Serán competencias de la Asamblea General ordinaria:
 
-L|a) Examinar y aprobar las cuentas y balances del ejercicio anterior.
+- a) Examinar y aprobar las cuentas y balances del ejercicio anterior.
 
-L|b) Aprobar los presupuestos de ingresos y gastos para cada ejercicio, así como el plan de actividades.
+- b) Aprobar los presupuestos de ingresos y gastos para cada ejercicio, así como el plan de actividades.
 
-L|c) Examinar y aprobar las cuotas de las personas asociadas, a propuesta de la Junta Directiva.
+- c) Examinar y aprobar las cuotas de las personas asociadas, a propuesta de la Junta Directiva.
 
-L|d) Elegir y cesar a las personas integrantes de la Junta Directiva.
+- d) Elegir y cesar a las personas integrantes de la Junta Directiva.
 
-L|e) Aprobar la incorporación o separación a una federación.
+- e) Aprobar la incorporación o separación a una federación.
 
-L|f) Solicitar la declaración de utilidad pública de la asociación.
+- f) Solicitar la declaración de utilidad pública de la asociación.
 
-L|g) Aprobar el reglamento de régimen interno de la asociación.
+- g) Aprobar el reglamento de régimen interno de la asociación.
 
 ### Artículo 20. Facultades de la Asamblea General extraordinaria
 
 Serán competencias de la Asamblea General extraordinaria:
 
-L|a) Modificar los estatutos de la asociación, incluido el cambio de domicilio.
+- a) Modificar los estatutos de la asociación, incluido el cambio de domicilio.
 
-L|b) Acordar la transformación de la asociación.
+- b) Acordar la transformación de la asociación.
 
-L|c) Acordar la fusión de la asociación.
+- c) Acordar la fusión de la asociación.
 
-L|d) Acordar la disolución de la asociación y designar a las personas liquidadoras.
+- d) Acordar la disolución de la asociación y designar a las personas liquidadoras.
 
-L|e) Las que, siendo competencia de la Asamblea General ordinaria, por razones de urgencia o necesidad, no puedan esperar a su convocatoria.
+- e) Las que, siendo competencia de la Asamblea General ordinaria, por razones de urgencia o necesidad, no puedan esperar a su convocatoria.
 
-L|f) Todas las no conferidas expresamente a la Asamblea General ordinaria o a la Junta Directiva.
+- f) Todas las no conferidas expresamente a la Asamblea General ordinaria o a la Junta Directiva.
 
 ### Artículo 21. Adopción de acuerdos
 
-L|1. Los acuerdos de la Asamblea General se adoptarán por mayoría simple de las personas presentes o representadas, cuando los votos afirmativos superen a los negativos, no siendo computables a estos efectos los votos nulos, en blanco ni las abstenciones.
+1. Los acuerdos de la Asamblea General se adoptarán por mayoría simple de las personas presentes o representadas, cuando los votos afirmativos superen a los negativos, no siendo computables a estos efectos los votos nulos, en blanco ni las abstenciones.
 
-L|2. Sin perjuicio de las mayorías reforzadas previstas en los artículos 36 y 37 de los presentes estatutos, será necesaria la mayoría absoluta de los votos emitidos, que resultará cuando los votos afirmativos superen la mitad de los votos de las personas presentes o representadas, para adoptar los siguientes acuerdos:
+2. Sin perjuicio de las mayorías reforzadas previstas en los artículos 36 y 37 de los presentes estatutos, será necesaria la mayoría absoluta de los votos emitidos, que resultará cuando los votos afirmativos superen la mitad de los votos de las personas presentes o representadas, para adoptar los siguientes acuerdos:
 
-L|a) Designación de miembros de la Junta Directiva.
+- a) Designación de miembros de la Junta Directiva.
 
-L|b) Acuerdo para constituir federaciones y para integrarse o separarse de ellas.
+- b) Acuerdo para constituir federaciones y para integrarse o separarse de ellas.
 
-L|c) Disolución de la asociación, sin perjuicio del procedimiento reforzado previsto en el artículo 36.
+- c) Disolución de la asociación, sin perjuicio del procedimiento reforzado previsto en el artículo 36.
 
-L|d) Modificación de los estatutos, incluido el cambio de domicilio social, sin perjuicio del procedimiento reforzado previsto en el artículo 37 para las modificaciones sustanciales.
+- d) Modificación de los estatutos, incluido el cambio de domicilio social, sin perjuicio del procedimiento reforzado previsto en el artículo 37 para las modificaciones sustanciales.
 
-L|e) Disposición o enajenación de bienes.
+- e) Disposición o enajenación de bienes.
 
-L|f) Remuneración de las personas que integran los órganos de representación, cuando proceda conforme a la normativa aplicable.
+- f) Remuneración de las personas que integran los órganos de representación, cuando proceda conforme a la normativa aplicable.
 
-L|3. Los acuerdos adoptados conforme a los preceptos anteriores obligarán a todas las personas asociadas, incluidas las no asistentes.
+3. Los acuerdos adoptados conforme a los preceptos anteriores obligarán a todas las personas asociadas, incluidas las no asistentes.
 
 ### Artículo 22. Junta Directiva: composición
 
-L|1. La Junta Directiva es el órgano de representación que gestiona y representa los intereses de la asociación de acuerdo con las disposiciones y directivas de la Asamblea General.
+1. La Junta Directiva es el órgano de representación que gestiona y representa los intereses de la asociación de acuerdo con las disposiciones y directivas de la Asamblea General.
 
-L|2. Estará formada por Presidencia, Vicepresidencia, Secretaría, Tesorería y Vocalías, designadas por la Asamblea General entre las personas asociadas mayores de edad, en pleno uso de sus derechos civiles y que no estén incursas en motivos de incompatibilidad legalmente establecidos.
+2. Estará formada por Presidencia, Vicepresidencia, Secretaría, Tesorería y Vocalías, designadas por la Asamblea General entre las personas asociadas mayores de edad, en pleno uso de sus derechos civiles y que no estén incursas en motivos de incompatibilidad legalmente establecidos.
 
-L|3. La duración de su mandato será de dos años, pudiendo ser objeto de sucesivas reelecciones.
+3. La duración de su mandato será de dos años, pudiendo ser objeto de sucesivas reelecciones.
 
-L|4. Los cargos que componen la Junta Directiva serán desempeñados de forma gratuita, sin perjuicio del derecho al reembolso de los gastos debidamente justificados en que puedan incurrir por actuaciones relacionadas con la asociación, salvo que la Asamblea General acuerde válidamente otra cosa de conformidad con la normativa aplicable.
+4. Los cargos que componen la Junta Directiva serán desempeñados de forma gratuita, sin perjuicio del derecho al reembolso de los gastos debidamente justificados en que puedan incurrir por actuaciones relacionadas con la asociación, salvo que la Asamblea General acuerde válidamente otra cosa de conformidad con la normativa aplicable.
 
-L|5. Los cargos de la Junta Directiva cesarán en su función por:
+5. Los cargos de la Junta Directiva cesarán en su función por:
 
-L|a) Muerte o declaración de fallecimiento de la persona física, o extinción de la persona jurídica.
+- a) Muerte o declaración de fallecimiento de la persona física, o extinción de la persona jurídica.
 
-L|b) Incapacidad, inhabilitación o incompatibilidad, de acuerdo con lo establecido en el ordenamiento jurídico.
+- b) Incapacidad, inhabilitación o incompatibilidad, de acuerdo con lo establecido en el ordenamiento jurídico.
 
-L|c) Resolución judicial.
+- c) Resolución judicial.
 
-L|d) Renuncia voluntaria.
+- d) Renuncia voluntaria.
 
-L|e) Pérdida de la condición de persona asociada.
+- e) Pérdida de la condición de persona asociada.
 
-L|f) Incumplimiento de las obligaciones que tuviesen encomendadas.
+- f) Incumplimiento de las obligaciones que tuviesen encomendadas.
 
-L|g) Transcurso del período de su mandato. En este caso, y mientras no se proceda a la elección de la nueva Junta Directiva, aquella continuará en funciones hasta la designación de las nuevas personas titulares.
+- g) Transcurso del período de su mandato. En este caso, y mientras no se proceda a la elección de la nueva Junta Directiva, aquella continuará en funciones hasta la designación de las nuevas personas titulares.
 
-L|6. De producirse vacantes en la Junta Directiva, estas serán desempeñadas provisionalmente por las restantes personas integrantes, hasta la elección definitiva por la Asamblea General.
+6. De producirse vacantes en la Junta Directiva, estas serán desempeñadas provisionalmente por las restantes personas integrantes, hasta la elección definitiva por la Asamblea General.
 
 ### Artículo 23. Reuniones y acuerdos de la Junta Directiva
 
-L|1. La Junta Directiva será convocada por la Presidencia, por iniciativa propia o a petición de cualquiera de sus componentes.
+1. La Junta Directiva será convocada por la Presidencia, por iniciativa propia o a petición de cualquiera de sus componentes.
 
-L|2. Para estar válidamente constituida deberán estar presentes la mitad más uno de sus miembros y, en todo caso, las personas titulares de la Presidencia y de la Secretaría o las personas que las sustituyan.
+2. Para estar válidamente constituida deberán estar presentes la mitad más uno de sus miembros y, en todo caso, las personas titulares de la Presidencia y de la Secretaría o las personas que las sustituyan.
 
-L|3. Para que los acuerdos de la Junta Directiva sean válidos, deberán ser adoptados por la mayoría de votos de las personas asistentes. Los empates serán dirimidos mediante voto de calidad de la Presidencia.
+3. Para que los acuerdos de la Junta Directiva sean válidos, deberán ser adoptados por la mayoría de votos de las personas asistentes. Los empates serán dirimidos mediante voto de calidad de la Presidencia.
 
-L|4. La Junta Directiva se podrá convocar, constituir, celebrar sus sesiones y adoptar acuerdos de forma presencial o a distancia. En las sesiones que se celebren a distancia, las personas titulares de la Junta Directiva podrán encontrarse en distintos lugares siempre que se asegure por medios electrónicos, considerándose como tales los telefónicos y audiovisuales, su identidad, el contenido de sus manifestaciones, el momento en que estas se producen, así como la interactividad e intercomunicación entre ellas en tiempo real y la disponibilidad de los medios durante la sesión. Entre otros, se considerarán incluidos entre los medios electrónicos válidos el correo electrónico, las audioconferencias y las videoconferencias. En las reuniones a distancia, los acuerdos se entenderán adoptados en la sede de la asociación.
+4. La Junta Directiva se podrá convocar, constituir, celebrar sus sesiones y adoptar acuerdos de forma presencial o a distancia. En las sesiones que se celebren a distancia, las personas titulares de la Junta Directiva podrán encontrarse en distintos lugares siempre que se asegure por medios electrónicos, considerándose como tales los telefónicos y audiovisuales, su identidad, el contenido de sus manifestaciones, el momento en que estas se producen, así como la interactividad e intercomunicación entre ellas en tiempo real y la disponibilidad de los medios durante la sesión. Entre otros, se considerarán incluidos entre los medios electrónicos válidos el correo electrónico, las audioconferencias y las videoconferencias. En las reuniones a distancia, los acuerdos se entenderán adoptados en la sede de la asociación.
 
 ### Artículo 24. Facultades de la Junta Directiva
 
 La Junta Directiva tendrá las siguientes atribuciones:
 
-L|a) Programar y dirigir las actividades asociativas.
+- a) Programar y dirigir las actividades asociativas.
 
-L|b) Llevar la gestión administrativa y económica de la asociación.
+- b) Llevar la gestión administrativa y económica de la asociación.
 
-L|c) Ejecutar los acuerdos de la Asamblea General.
+- c) Ejecutar los acuerdos de la Asamblea General.
 
-L|d) Someter a la aprobación de la Asamblea General el presupuesto anual de ingresos y gastos, así como el estado de cuentas del año anterior.
+- d) Someter a la aprobación de la Asamblea General el presupuesto anual de ingresos y gastos, así como el estado de cuentas del año anterior.
 
-L|e) Convocar y fijar las fechas de las Asambleas Generales.
+- e) Convocar y fijar las fechas de las Asambleas Generales.
 
-L|f) Proponer a la Asamblea General la fijación de cuotas ordinarias y extraordinarias para las personas asociadas.
+- f) Proponer a la Asamblea General la fijación de cuotas ordinarias y extraordinarias para las personas asociadas.
 
-L|g) Designar las comisiones de trabajo o secciones que se estimen oportunas para el buen funcionamiento de la asociación.
+- g) Designar las comisiones de trabajo o secciones que se estimen oportunas para el buen funcionamiento de la asociación.
 
-L|h) Dictar normas interiores de organización y ejercer cuantas funciones no estén expresamente asignadas a la Asamblea General.
+- h) Dictar normas interiores de organización y ejercer cuantas funciones no estén expresamente asignadas a la Asamblea General.
 
-L|i) Resolver las solicitudes de ingreso de las personas asociadas.
+- i) Resolver las solicitudes de ingreso de las personas asociadas.
 
-L|l) Proponer el plan de actividades de la asociación a la Asamblea General para su aprobación, impulsando y dirigiendo sus tareas.
+- l) Proponer el plan de actividades de la asociación a la Asamblea General para su aprobación, impulsando y dirigiendo sus tareas.
 
-L|m) Resolver los procedimientos disciplinarios que se instruyan.
+- m) Resolver los procedimientos disciplinarios que se instruyan.
 
 ### Artículo 25. Obligaciones documentales
 
 La asociación dispondrá de los siguientes documentos, que estarán a disposición de todas las personas asociadas:
 
-L|a) Una relación actualizada de personas asociadas.
+- a) Una relación actualizada de personas asociadas.
 
-L|b) Documentación contable que permita obtener la imagen fiel del patrimonio, del resultado y de la situación financiera de la entidad, así como de las actividades realizadas. Tal contabilidad se llevará de conformidad con la normativa específica que resulte de aplicación.
+- b) Documentación contable que permita obtener la imagen fiel del patrimonio, del resultado y de la situación financiera de la entidad, así como de las actividades realizadas. Tal contabilidad se llevará de conformidad con la normativa específica que resulte de aplicación.
 
-L|c) Inventario de sus bienes.
+- c) Inventario de sus bienes.
 
-L|d) Libro de actas de las reuniones de sus órganos de gobierno y representación.
+- d) Libro de actas de las reuniones de sus órganos de gobierno y representación.
 
 ### Artículo 26. Presidencia
 
 La persona titular de la Presidencia tendrá las siguientes atribuciones:
 
-L|a) Representar legalmente a la asociación ante cualquier organismo público o privado.
+- a) Representar legalmente a la asociación ante cualquier organismo público o privado.
 
-L|b) Convocar y presidir las sesiones que celebre la Junta Directiva y la Asamblea General, dirigir las deliberaciones de una y otra, y decidir con voto de calidad los casos de empate de votos.
+- b) Convocar y presidir las sesiones que celebre la Junta Directiva y la Asamblea General, dirigir las deliberaciones de una y otra, y decidir con voto de calidad los casos de empate de votos.
 
-L|c) Ordenar la ejecución de los acuerdos adoptados por la Junta Directiva y la Asamblea General.
+- c) Ordenar la ejecución de los acuerdos adoptados por la Junta Directiva y la Asamblea General.
 
-L|d) Ordenar los pagos acordados válidamente.
+- d) Ordenar los pagos acordados válidamente.
 
-L|e) Firmar las actas, certificados, pagos y otros documentos de la asociación junto con la persona que ostente la Secretaría o con el miembro de la Junta Directiva a quien corresponda la elaboración del documento de que se trate.
+- e) Firmar las actas, certificados, pagos y otros documentos de la asociación junto con la persona que ostente la Secretaría o con el miembro de la Junta Directiva a quien corresponda la elaboración del documento de que se trate.
 
 ### Artículo 27. Vicepresidencia
 
@@ -391,39 +389,39 @@ La persona titular de la Vicepresidencia realizará las funciones de la Presiden
 
 ### Artículo 28. Secretaría
 
-L|1. La persona titular de la Secretaría tendrá las siguientes atribuciones:
+1. La persona titular de la Secretaría tendrá las siguientes atribuciones:
 
-L|a) Tramitar las solicitudes de ingreso en la asociación y formalizar las inscripciones de altas y bajas de las personas asociadas.
+- a) Tramitar las solicitudes de ingreso en la asociación y formalizar las inscripciones de altas y bajas de las personas asociadas.
 
-L|b) Dirigir la administración ordinaria de la asociación en el ámbito documental que le sea propio.
+- b) Dirigir la administración ordinaria de la asociación en el ámbito documental que le sea propio.
 
-L|c) Formalizar las convocatorias de reunión por orden de la Presidencia y redactar las actas correspondientes.
+- c) Formalizar las convocatorias de reunión por orden de la Presidencia y redactar las actas correspondientes.
 
-L|d) Expedir certificaciones de los acuerdos con el visto bueno de la Presidencia, así como emitir informes.
+- d) Expedir certificaciones de los acuerdos con el visto bueno de la Presidencia, así como emitir informes.
 
-L|e) Redactar el inventario de bienes de la asociación.
+- e) Redactar el inventario de bienes de la asociación.
 
-L|f) Custodiar el archivo de libros y documentos de la asociación.
+- f) Custodiar el archivo de libros y documentos de la asociación.
 
-L|g) Cumplir con las demás obligaciones documentales en los términos que legalmente correspondan.
+- g) Cumplir con las demás obligaciones documentales en los términos que legalmente correspondan.
 
-L|2. La persona titular de la Secretaría, en los casos de ausencia o enfermedad, será sustituida por otro miembro de la Junta Directiva designado por la Presidencia.
+2. La persona titular de la Secretaría, en los casos de ausencia o enfermedad, será sustituida por otro miembro de la Junta Directiva designado por la Presidencia.
 
 ### Artículo 29. Tesorería
 
-L|1. La persona titular de la Tesorería tendrá las siguientes atribuciones:
+1. La persona titular de la Tesorería tendrá las siguientes atribuciones:
 
-L|a) Recaudar y custodiar los fondos pertenecientes a la asociación e invertirlos en la forma acordada por la Junta Directiva o por la Asamblea General, según corresponda.
+- a) Recaudar y custodiar los fondos pertenecientes a la asociación e invertirlos en la forma acordada por la Junta Directiva o por la Asamblea General, según corresponda.
 
-L|b) Intervenir con su firma todos los documentos de cobros y pagos con el visto y conforme de la Presidencia.
+- b) Intervenir con su firma todos los documentos de cobros y pagos con el visto y conforme de la Presidencia.
 
-L|c) Dar cumplimiento a las órdenes de pago que expida la Presidencia.
+- c) Dar cumplimiento a las órdenes de pago que expida la Presidencia.
 
-L|d) Elaborar el anteproyecto de presupuestos para su aprobación.
+- d) Elaborar el anteproyecto de presupuestos para su aprobación.
 
-L|e) Llevar los libros de contabilidad de la asociación y elaborar las cuentas anuales para su aprobación por la Asamblea General.
+- e) Llevar los libros de contabilidad de la asociación y elaborar las cuentas anuales para su aprobación por la Asamblea General.
 
-L|f) Ejercer cualquier otra función propia de la Tesorería y de la gestión económico-financiera de la asociación.
+- f) Ejercer cualquier otra función propia de la Tesorería y de la gestión económico-financiera de la asociación.
 
 ### Artículo 30. Vocalías
 
@@ -439,23 +437,21 @@ La asociación, en el momento de iniciar sus actividades, dispone de un patrimon
 
 La asociación se mantendrá de los siguientes recursos:
 
-L|a) Las cuotas periódicas de las personas asociadas.
+- a) Las cuotas periódicas de las personas asociadas.
 
-L|b) Las cuotas extraordinarias que proponga la Junta Directiva y sean aprobadas por la Asamblea General.
+- b) Las cuotas extraordinarias que proponga la Junta Directiva y sean aprobadas por la Asamblea General.
 
-L|c) Las donaciones o subvenciones que puedan conceder órganos públicos, entidades privadas o particulares.
+- c) Las donaciones o subvenciones que puedan conceder órganos públicos, entidades privadas o particulares.
 
-L|d) Los ingresos que se puedan recibir por el desarrollo de las actividades de la asociación.
+- d) Los ingresos que se puedan recibir por el desarrollo de las actividades de la asociación.
 
-L|e) Cualquier otro ingreso admitido por la normativa vigente para actividades no lucrativas.
+- e) Cualquier otro ingreso admitido por la normativa vigente para actividades no lucrativas.
 
 ### Artículo 33. Cuentas anuales
 
-L|1. Anualmente, con referencia al último día del ejercicio económico, se elaborarán las cuentas anuales, expresivas de la situación patrimonial y contable de la asociación, así como una memoria de las actividades realizadas. Esta documentación estará a disposición de las
+1. Anualmente, con referencia al último día del ejercicio económico, se elaborarán las cuentas anuales, expresivas de la situación patrimonial y contable de la asociación, así como una memoria de las actividades realizadas. Esta documentación estará a disposición de las personas asociadas durante un plazo no inferior a quince días antes de la fecha señalada para su aprobación en Asamblea.
 
-personas asociadas durante un plazo no inferior a quince días antes de la fecha señalada para su aprobación en Asamblea.
-
-L|2. La Junta Directiva llevará los correspondientes libros de contabilidad, que permitan obtener una imagen fiel del patrimonio, del resultado y de la situación financiera de la asociación.
+2. La Junta Directiva llevará los correspondientes libros de contabilidad, que permitan obtener una imagen fiel del patrimonio, del resultado y de la situación financiera de la asociación.
 
 ### Artículo 34. Destino de ingresos a los fines de la asociación
 
@@ -475,13 +471,13 @@ El funcionamiento interno de la asociación estará sometido al orden jurisdicci
 
 La asociación se disolverá por las siguientes causas:
 
-L|a) Por acuerdo de la Asamblea General extraordinaria convocada específicamente para tal efecto, conforme al procedimiento reforzado previsto en este artículo.
+- a) Por acuerdo de la Asamblea General extraordinaria convocada específicamente para tal efecto, conforme al procedimiento reforzado previsto en este artículo.
 
-L|b) Por las causas previstas en el artículo 39 del Código Civil.
+- b) Por las causas previstas en el artículo 39 del Código Civil.
 
-L|c) Por sentencia judicial firme.
+- c) Por sentencia judicial firme.
 
-L|d) Por las demás causas legalmente aplicables. La propuesta de disolución deberá ser incluida expresamente en el orden del día de la convocatoria, acompañada de una memoria justificativa elaborada por la Junta Directiva o por las personas asociadas promotoras de la propuesta.
+- d) Por las demás causas legalmente aplicables. La propuesta de disolución deberá ser incluida expresamente en el orden del día de la convocatoria, acompañada de una memoria justificativa elaborada por la Junta Directiva o por las personas asociadas promotoras de la propuesta.
 
 Antes de la votación, el Consejo deberá emitir informe preceptivo sobre la adecuación de la propuesta de disolución a los principios, fines y continuidad del proyecto fundacional de la asociación. Este informe no tendrá carácter vinculante, mas deberá ser puesto a disposición de las personas asociadas junto con la documentación de la convocatoria.
 
@@ -493,9 +489,9 @@ En caso de que el informe del Consejo sea desfavorable a la disolución, la rati
 
 No podrá adoptarse acuerdo de disolución si no consta expresamente en el acta el resultado de la votación, el cuórum de asistencia, el número total de personas asociadas con derecho a voto y el cumplimiento de los requisitos establecidos en este artículo.
 
-### Artículo 37. Modificación sustancial de los fines, denominación e
+### Artículo 37. Modificación sustancial de los fines, denominación e identidad fundacional
 
-identidad fundacional Tendrán la consideración de modificaciones sustanciales aquellas que afecten a la denominación de la asociación, a sus fines principales, a sus principios fundacionales, a la lengua ordinaria de actividad o a la naturaleza cultural, intelectual, editorial o interdisciplinar del proyecto.
+Tendrán la consideración de modificaciones sustanciales aquellas que afecten a la denominación de la asociación, a sus fines principales, a sus principios fundacionales, a la lengua ordinaria de actividad o a la naturaleza cultural, intelectual, editorial o interdisciplinar del proyecto.
 
 No tendrán esta consideración las modificaciones meramente formales, técnicas o de adaptación normativa que no alteren el sentido material de los elementos anteriores.
 
@@ -515,15 +511,15 @@ Las personas miembros de la Junta Directiva en el momento de la disolución se c
 
 Corresponde a las personas liquidadoras:
 
-L|a) Velar por la integridad del patrimonio de la asociación.
+- a) Velar por la integridad del patrimonio de la asociación.
 
-L|b) Concluir las operaciones pendientes y efectuar aquellas que sean precisas para la liquidación.
+- b) Concluir las operaciones pendientes y efectuar aquellas que sean precisas para la liquidación.
 
-L|c) Cobrar los créditos de la asociación.
+- c) Cobrar los créditos de la asociación.
 
-L|d) Liquidar el patrimonio y pagar a las personas o entidades acreedoras.
+- d) Liquidar el patrimonio y pagar a las personas o entidades acreedoras.
 
-L|e) Solicitar la baja de la asociación y la cancelación de los asientos registrales. El patrimonio remanente, si lo hubiere, será destinado a una entidad sin ánimo de lucro, legalmente constituida, que desarrolle fines culturales, intelectuales, educativos, editoriales o de promoción de la lengua gallega, preferentemente en el ámbito territorial de Galicia. La Asamblea General extraordinaria que acuerde la disolución deberá determinar la entidad destinataria del patrimonio remanente, previo informe preceptivo del Consejo. En ningún caso el patrimonio resultante podrá ser repartido entre las personas asociadas ni entre personas físicas o jurídicas con interés lucrativo. Los archivos, publicaciones, materiales editoriales, dominios web, cuentas digitales, fondos documentales y demás elementos vinculados a la memoria intelectual de la asociación deberán conservarse, siempre que sea posible, de forma ordenada y accesible. El Consejo podrá presentar una propuesta motivada sobre la conservación, cesión o continuidad de estos elementos, incluida su integración en un proyecto de continuidad cultural o editorial o su cesión a una entidad sin ánimo de lucro compatible con los fines de la asociación. La Asamblea General extraordinaria deberá pronunciarse expresamente sobre esta propuesta en el acuerdo de liquidación o en un acuerdo complementario adoptado en el mismo proceso.
+- e) Solicitar la baja de la asociación y la cancelación de los asientos registrales. El patrimonio remanente, si lo hubiere, será destinado a una entidad sin ánimo de lucro, legalmente constituida, que desarrolle fines culturales, intelectuales, educativos, editoriales o de promoción de la lengua gallega, preferentemente en el ámbito territorial de Galicia. La Asamblea General extraordinaria que acuerde la disolución deberá determinar la entidad destinataria del patrimonio remanente, previo informe preceptivo del Consejo. En ningún caso el patrimonio resultante podrá ser repartido entre las personas asociadas ni entre personas físicas o jurídicas con interés lucrativo. Los archivos, publicaciones, materiales editoriales, dominios web, cuentas digitales, fondos documentales y demás elementos vinculados a la memoria intelectual de la asociación deberán conservarse, siempre que sea posible, de forma ordenada y accesible. El Consejo podrá presentar una propuesta motivada sobre la conservación, cesión o continuidad de estos elementos, incluida su integración en un proyecto de continuidad cultural o editorial o su cesión a una entidad sin ánimo de lucro compatible con los fines de la asociación. La Asamblea General extraordinaria deberá pronunciarse expresamente sobre esta propuesta en el acuerdo de liquidación o en un acuerdo complementario adoptado en el mismo proceso.
 
 ### Artículo 39. Principio de continuidad del proyecto
 
@@ -537,6 +533,6 @@ Cualquier propuesta que pueda afectar gravemente a la continuidad de la asociaci
 
 En todo cuanto no esté previsto en los presentes estatutos se aplicará la Ley orgánica 1/2002, de 22 de marzo, reguladora del derecho de asociación, y demás disposiciones complementarias.
 
-## |En Cambados, a 1 de julio de 2026.
+## |En Cambados, a 28 de julio de 2026.
 
 Firma de todas las personas promotoras de la asociación
