@@ -129,6 +129,12 @@ export default function SideMenu() {
                 Colabora
               </Link>
             </div>
+            <div>
+              <Link href={`/${lang}/noticias`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
+                {dict.nav.noticias}
+              </Link>
+            </div>
+
             
             <div>
               <Link href={`/${lang}/contacto`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
