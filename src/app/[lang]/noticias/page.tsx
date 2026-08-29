@@ -99,7 +99,7 @@ export default async function NoticiasPage({
             {/* SIDEBAR FILTER */}
             <aside className="w-full lg:w-[260px] shrink-0">
               <Suspense fallback={<div className="animate-pulse w-full h-32 bg-lines/50 rounded"></div>}>
-                <NoticiasSideFilter availableTags={translatedTags} dict={dict.articles} />
+                <NoticiasSideFilter availableTags={translatedTags} dict={{ ...((dict as any).noticias || {}), searchPlaceholder: dict.articles.searchPlaceholder, clearFilters: dict.articles.clearFilters }} />
               </Suspense>
             </aside>
 
@@ -114,7 +114,7 @@ export default async function NoticiasPage({
               {!error && articulos && articulos.length === 0 && (
                 <div className="text-center py-20 border border-lines">
                   <p className="font-serif text-2xl text-charcoal/50 mb-6">{dict.articles.noResults}</p>
-                  <Link href={`/${lang}/noticias`} className="px-6 py-3 border border-charcoal text-xs font-sans uppercase tracking-[0.2em] text-charcoal hover:bg-charcoal hover:text-parchment transition-colors">{dict.articles.clearFilters}</Link>
+                  
                 </div>
               )}
 

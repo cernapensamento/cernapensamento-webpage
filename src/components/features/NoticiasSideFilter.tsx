@@ -3,7 +3,13 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useState, useEffect, useRef } from 'react';
 
-export default function NoticiasSideFilter({ availableTags, dict }: { availableTags: {slug: string, name: string}[], dict: { searchPlaceholder?: string; all?: string; [key: string]: unknown } }) {
+export default function NoticiasSideFilter({ 
+  availableTags, 
+  dict 
+}: { 
+  availableTags: {slug: string, name: string}[], 
+  dict: { searchPlaceholder?: string; searchTitle: string; tagsTitle: string; addTagPlaceholder: string; removeTagTooltip: string; clearFilters: string; } 
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -56,17 +62,25 @@ export default function NoticiasSideFilter({ availableTags, dict }: { availableT
     router.push(pathname + '?' + params.toString(), { scroll: false });
   };
 
+  const clearFilters = () => {
+    setQuery('');
+    setTagSearch('');
+    router.push(pathname, { scroll: false });
+  };
+
   const filteredTags = availableTags.filter(t => 
       !currentTags.includes(t.slug) && 
       t.name.toLowerCase().includes(tagSearch.toLowerCase())
   );
+
+  const hasActiveFilters = currentQuery !== '' || currentTags.length > 0;
 
   return (
     <div className="flex flex-col gap-10">
       {/* Search Input */}
       <div>
         <h3 className="text-xs font-semibold text-gold uppercase tracking-[0.2em] mb-4">
-          Buscar
+          {dict.searchTitle}
         </h3>
         <div className="relative">
           <input 
@@ -83,7 +97,7 @@ export default function NoticiasSideFilter({ availableTags, dict }: { availableT
       {/* Tag Selector */}
       <div>
         <h3 className="text-xs font-semibold text-gold uppercase tracking-[0.2em] mb-4">
-          Etiquetas
+          {dict.tagsTitle}
         </h3>
 
         {/* Selected Tags Pills */}
@@ -93,7 +107,7 @@ export default function NoticiasSideFilter({ availableTags, dict }: { availableT
                 const tagObj = availableTags.find(t => t.slug === slug);
                 const name = tagObj ? tagObj.name : slug;
                 return (
-                    <button type="button" key={slug} className="flex items-center gap-1 px-3 py-1.5 bg-lines/30 text-charcoal text-[10px] uppercase tracking-[0.15em] rounded-sm group cursor-pointer hover:bg-charcoal hover:text-parchment transition-colors" onClick={() => toggleTag(slug)} title="Eliminar etiqueta">
+                    <button type="button" key={slug} className="flex items-center gap-1 px-3 py-1.5 bg-lines/30 text-charcoal text-[10px] uppercase tracking-[0.15em] rounded-sm group cursor-pointer hover:bg-charcoal hover:text-parchment transition-colors" onClick={() => toggleTag(slug)} title={dict.removeTagTooltip}>
                         {name}
                         <span className="material-symbols-outlined text-[12px] opacity-70 group-hover:opacity-100" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
                     </button>
@@ -106,7 +120,7 @@ export default function NoticiasSideFilter({ availableTags, dict }: { availableT
         <div className="relative">
             <input 
               className="w-full border border-lines bg-transparent font-sans text-xs text-charcoal tracking-widest uppercase focus:outline-none focus:border-gold p-3" 
-              placeholder="AÑADIR ETIQUETA..." 
+              placeholder={dict.addTagPlaceholder} 
               type="text" 
               value={tagSearch} 
               onChange={(e) => setTagSearch(e.target.value)} 
@@ -125,6 +139,19 @@ export default function NoticiasSideFilter({ availableTags, dict }: { availableT
             )}
         </div>
       </div>
+
+      {/* Clear Filters Button */}
+      {hasActiveFilters && (
+        <div>
+          <button 
+            type="button" 
+            onClick={clearFilters}
+            className="w-full px-6 py-3 border border-charcoal text-[10px] font-sans uppercase tracking-[0.2em] text-charcoal hover:bg-charcoal hover:text-parchment transition-colors text-center"
+          >
+            {dict.clearFilters}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
