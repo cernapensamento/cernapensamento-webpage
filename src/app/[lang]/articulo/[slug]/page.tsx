@@ -1,4 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
+import { getAuthenticatedUser } from '@/utils/auth';
+import { ARTICLE_STATES } from '@/lib/constants';
+import ReviewActionBar from '@/components/escritorio/ReviewActionBar';
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -47,6 +50,7 @@ export default async function ArticuloPage({
   const dict = await getDictionary(lang as Locale);
   
   const supabase = await createClient();
+  const { profile } = await getAuthenticatedUser();
 
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
 
@@ -200,8 +204,10 @@ export default async function ArticuloPage({
 
           <CommentsSection articuloId={articulo.id} />
         </article>
+        {articulo.estado === ARTICLE_STATES.PENDING && profile && ['admin', 'escritor'].includes(profile.rol) && (
+          <ReviewActionBar articuloId={articulo.id} />
+        )}
       </main>
-
     </>
   );
 }
