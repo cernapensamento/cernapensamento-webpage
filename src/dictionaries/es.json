@@ -334,5 +334,12 @@
   "wip": {
     "title": "Sección en construcción",
     "default_text": "Estamos trabajando duro para tener esta página lista pronto. Vuelve a visitarnos más adelante."
+  },
+  "noticias": {
+    "title": "Noticias",
+    "searchTitle": "Buscar",
+    "tagsTitle": "Etiquetas",
+    "addTagPlaceholder": "AÑADIR ETIQUETA...",
+    "removeTagTooltip": "Eliminar etiqueta"
   }
 }
