@@ -13,3 +13,11 @@ export const ARTICLE_TYPES = [
 ] as const;
 
 export type ArticleType = typeof ARTICLE_TYPES[number];
+
+export const ARTICLE_STATES = {
+  DRAFT: 'borrador',
+  PUBLISHED: 'publicado',
+  PENDING: 'pendiente_aprobacion'
+} as const;
+
+export type ArticleState = typeof ARTICLE_STATES[keyof typeof ARTICLE_STATES];
