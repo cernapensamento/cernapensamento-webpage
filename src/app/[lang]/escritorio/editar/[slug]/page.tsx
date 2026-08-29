@@ -1,6 +1,7 @@
 import React from 'react';
 import { getAuthenticatedUser } from '@/utils/auth';
 import { createClient } from '@/utils/supabase/server';
+import { ARTICLE_STATES } from '@/lib/constants';
 import { redirect, notFound } from 'next/navigation';
 import EditarArticuloForm from '@/components/forms/EditarArticuloForm';
 
@@ -42,9 +43,9 @@ export default async function EditarArticuloPage({ params }: Props) {
   }
 
   // Verificar que el usuario sea el autor del artículo o un admin
-  if (articulo.autor_id !== user.id && profile.rol !== 'admin') {
+  if (articulo.autor_id !== user.id && profile.rol !== 'admin' && !(profile.rol === 'escritor' && articulo.estado === ARTICLE_STATES.PENDING)) {
     redirect(`/${lang}/escritorio`);
   }
 
-  return <EditarArticuloForm articulo={articulo} />;
+  return <EditarArticuloForm articulo={articulo} userRole={profile.rol} />;
 }
