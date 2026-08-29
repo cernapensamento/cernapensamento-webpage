@@ -102,7 +102,7 @@ export default function SideMenu() {
           <nav className="flex flex-col gap-6">
             
             {!loading && (
-              <div className="mb-4">
+              <div>
                 <Link 
                   href={user ? `/${lang}/escritorio/perfil` : `/${lang}/login`}
                   className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block"
@@ -124,11 +124,6 @@ export default function SideMenu() {
               </Link>
             </div>
 
-            <div>
-              <Link href={`/${lang}/colabora`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
-                Colabora
-              </Link>
-            </div>
             <div>
               <Link href={`/${lang}/noticias`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
                 {dict.nav.noticias}
@@ -180,7 +175,7 @@ export default function SideMenu() {
         <div className="p-8 sm:p-12 border-t border-lines mt-auto flex flex-row justify-between items-start">
           
           {/* Contact Section */}
-          <div>
+            <div>
             <h3 className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans">{dict.nav.contactar}</h3>
             <div className="flex items-center gap-4 pl-4 border-l-2 border-lines ml-2">
               <a 
@@ -207,7 +202,7 @@ export default function SideMenu() {
           </div>
 
           {/* Language Section */}
-          <div>
+            <div>
             <h3 className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans">{dict.nav.idiomas}</h3>
             <div className="flex items-center pl-4 border-l-2 border-lines ml-2 h-12">
               <LanguageToggle />
