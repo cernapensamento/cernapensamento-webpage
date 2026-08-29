@@ -1,3 +1,4 @@
+import { ARTICLE_STATES } from '@/lib/constants';
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
@@ -36,10 +37,10 @@ export async function POST(request: NextRequest) {
     const payload = await request.json();
     
     // 2. Verificar que sea una publicación nueva o un cambio a "publicado"
-    const isInsert = payload.type === 'INSERT' && payload.record.estado === 'publicado';
+    const isInsert = payload.type === 'INSERT' && payload.record.estado === ARTICLE_STATES.PUBLISHED;
     const isUpdate = payload.type === 'UPDATE' && 
-                     payload.old_record.estado === 'borrador' && 
-                     payload.record.estado === 'publicado';
+                     payload.old_record.estado === ARTICLE_STATES.DRAFT && 
+                     payload.record.estado === ARTICLE_STATES.PUBLISHED;
 
     if (!isInsert && !isUpdate) {
       return NextResponse.json({ message: 'No es un evento de publicación, ignorado.' }, { status: 200 });
