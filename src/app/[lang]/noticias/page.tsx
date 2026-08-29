@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { createClient } from '@/utils/supabase/server';
 import ArticleCard from '@/components/features/ArticleCard';
-import NoticiasSideFilter from '@/components/features/NoticiasSideFilter';
+import ArticlesFilterBar from '@/components/features/ArticlesFilterBar';
 import PublicNavBar from '@/components/layout/PublicNavBar';
 import Link from 'next/link';
 import { getDictionary } from '@/dictionaries';
@@ -94,40 +94,30 @@ export default async function NoticiasPage({
             </h1>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 border-t border-lines pt-16">
-            
-            {/* SIDEBAR FILTER */}
-            <aside className="w-full lg:w-[260px] shrink-0">
-              <Suspense fallback={<div className="animate-pulse w-full h-32 bg-lines/50 rounded"></div>}>
-                <NoticiasSideFilter availableTags={translatedTags} dict={{ ...((dict as any).noticias || {}), searchPlaceholder: dict.articles.searchPlaceholder, clearFilters: dict.articles.clearFilters }} />
-              </Suspense>
-            </aside>
+          <Suspense fallback={<div className="h-32 flex items-center justify-center"><div className="animate-pulse w-full max-w-2xl h-12 bg-lines/50 rounded"></div></div>}>
+            <ArticlesFilterBar availableTags={translatedTags} dict={dict.articles} />
+          </Suspense>
 
-            {/* MAIN CONTENT / ARTICLES GRID */}
-            <div className="flex-1">
-              {error && (
-                <div className="text-center py-20 text-charcoal/50">
-                  <p>{dict.articles.errorLoading} {error.message}</p>
-                </div>
-              )}
-
-              {!error && articulos && articulos.length === 0 && (
-                <div className="text-center py-20 border border-lines">
-                  <p className="font-serif text-2xl text-charcoal/50 mb-6">{dict.articles.noResults}</p>
-                  
-                </div>
-              )}
-
-              {!error && articulos && articulos.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-x-8 gap-y-16">
-                  {articulos.map((articulo) => (
-                    <ArticleCard key={articulo.id} articulo={articulo} lang={lang} dict={dict} />
-                  ))}
-                </div>
-              )}
+          {error && (
+            <div className="text-center py-20 text-charcoal/50">
+              <p>{dict.articles.errorLoading} {error.message}</p>
             </div>
+          )}
 
-          </div>
+          {!error && articulos && articulos.length === 0 && (
+            <div className="text-center py-32 border-t border-lines">
+              <p className="font-serif text-2xl text-charcoal/50 mb-6">{dict.articles.noResults}</p>
+              <Link href={`/${lang}/noticias`} className="px-6 py-3 border border-charcoal text-xs font-sans uppercase tracking-[0.2em] text-charcoal hover:bg-charcoal hover:text-parchment transition-colors">{dict.articles.clearFilters}</Link>
+            </div>
+          )}
+
+          {!error && articulos && articulos.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16 border-t border-lines pt-16">
+              {articulos.map((articulo) => (
+                <ArticleCard key={articulo.id} articulo={articulo} lang={lang} dict={dict} />
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </>
