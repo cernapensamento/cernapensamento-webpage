@@ -1,3 +1,4 @@
+import { ARTICLE_STATES } from '@/lib/constants';
 import { createClient } from '@supabase/supabase-js';
 import PublicNavBar from '@/components/layout/PublicNavBar';
 import FeaturedArticleHero from '@/components/sections/FeaturedArticleHero';
@@ -27,7 +28,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const { data: articulos } = await supabase
     .from('articulos')
     .select('id, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, slug, imagen_url, contenido_gl, contenido_es, estado, creado_en, fijado, tipo, perfiles(nombre)')
-    .eq('estado', 'publicado')
+    .eq('estado', ARTICLE_STATES.PUBLISHED)
     .order('creado_en', { ascending: false });
 
   const allArticles = articulos || [];
