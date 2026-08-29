@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { createClient } from '@/utils/supabase/server';
+import { ARTICLE_STATES } from '@/lib/constants';
 import ArticleCard from '@/components/features/ArticleCard';
 import ArticlesFilterBar from '@/components/features/ArticlesFilterBar';
 import PublicNavBar from '@/components/layout/PublicNavBar';
@@ -29,7 +30,7 @@ export default async function ArticulosPage({
   const { data: allArticles } = await supabase
     .from('articulos')
     .select('tematicas')
-    .eq('estado', 'publicado');
+    .eq('estado', ARTICLE_STATES.PUBLISHED);
 
   const extractedTags = new Set<string>();
   if (allArticles) {
@@ -66,7 +67,7 @@ export default async function ArticulosPage({
   let query = supabase
     .from('articulos')
     .select(`*, perfiles ( nombre )`)
-    .eq('estado', 'publicado')
+    .eq('estado', ARTICLE_STATES.PUBLISHED)
     .order('creado_en', { ascending: false });
 
   if (q) {
