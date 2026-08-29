@@ -2,7 +2,7 @@
   "nav": {
     "revista": "Revista",
     "estatutos": "Estatutos",
-    "articulos": "Arquivo de Artigos",
+    "articulos": "Arquivo",
     "autores": "Autores",
     "contactar": "Contactar",
     "idiomas": "Idiomas",
@@ -220,22 +220,6 @@
     "originalGl": "Orixinal Galego",
     "originalEs": "Orixinal Castelán"
   },
-  "articleSubmission": {
-    "fullName": "Nome Completo",
-    "email": "Email",
-    "abstract": "Resumo",
-    "abstractDesc": "Un resumo do teu ensaio (máx. 300 palabras).",
-    "fileUpload": "Subir Arquivo (PDF)",
-    "uploadDesc": "PDF ata 3.5MB",
-    "submit": "Enviar Manuscrito",
-    "submitting": "Enviando...",
-    "success": "Manuscrito enviado con éxito.",
-    "errorSize": "O arquivo excede os 3.5MB permitidos.",
-    "errorType": "Só se permiten arquivos PDF.",
-    "guidelines": "Liñas Editoriais",
-    "agreement": "Lin as directrices editoriais e confirmo que este traballo é orixinal e inédito.",
-    "selectFile": "Seleccionar Arquivo"
-  },
   "contactForm": {
     "fullName": "Nome Completo",
     "email": "Email",
@@ -243,11 +227,19 @@
     "message": "Mensaxe",
     "submit": "Enviar Mensaxe",
     "submitting": "Enviando...",
-    "success": "Mensaxe enviada con éxito."
-  },
-  "colaboraPage": {
-    "title": "Colabora connosco",
-    "description": "Convidamos a pensadores, académicos e escritores a contribuír ao discurso intelectual. Buscamos ensaios rigorosos que exploren as interseccións da filosofía, a economía e a sociedade con profundidade e claridade."
+    "success": "Mensaxe enviada con éxito.",
+    "fileUpload": "Subir Arquivo (PDF Opcional)",
+    "selectFile": "Seleccionar Arquivo",
+    "uploadDesc": "PDF ata 3.5MB",
+    "agreement": "Declaro que o contido do arquivo é orixinal e inédito.",
+    "errorSize": "O arquivo excede os 3.5MB permitidos.",
+    "errorType": "Só se permiten arquivos PDF.",
+    "subjects": {
+      "placeholder": "Seleccione un asunto",
+      "article": "Envío de Artigo",
+      "association": "Solicitude de Asociación",
+      "question": "Pregunta"
+    }
   },
   "contactoPage": {
     "title": "Contacto",
