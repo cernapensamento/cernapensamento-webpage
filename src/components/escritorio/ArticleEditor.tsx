@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import NextImage from 'next/image';
+import { ARTICLE_STATES } from '@/lib/constants';
 import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL, ARTICLE_TYPES } from '@/lib/constants';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -37,14 +38,17 @@ export interface ArticleData {
     idioma_original?: string;
 }
 
+export type EditorAction = 'draft' | 'publish' | 'submit_approval' | 'approve' | 'reject' | 'revoke_approval';
+
 interface ArticleEditorProps {
     initialData?: ArticleData;
-    onSave: (data: ArticleData, isDraft: boolean) => Promise<void>;
+    onSave: (data: ArticleData, action: EditorAction) => Promise<void>;
     isPublishing: boolean;
     mode: 'create' | 'edit';
+    userRole?: string;
 }
 
-export default function ArticleEditor({ mode = 'create', initialData, onSave, isPublishing }: ArticleEditorProps) {
+export default function ArticleEditor({ mode = 'create', initialData, onSave, isPublishing , userRole = 'usuario'}: ArticleEditorProps) {
     const params = useParams();
     const routeLang = (params?.lang as string) || 'es';
     const dict = routeLang === 'gl' ? glDict.articleEditor : esDict.articleEditor;
@@ -60,7 +64,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const [contenidoGl, setContenidoGl] = useState(initialData?.contenido_gl || '');
     const [contenidoEs, setContenidoEs] = useState(initialData?.contenido_es || '');
     const [isTranslating, setIsTranslating] = useState(false);
-    const [idiomaOriginal, setIdiomaOriginal] = useState(initialData?.idioma_original || 'gl');
+    const [idiomaOriginal, setIdiomaOriginal] = useState((initialData?.idioma_original && ['es', 'gl'].includes(initialData.idioma_original)) ? initialData.idioma_original : 'gl');
     
     // Fix stale closure for onUpdate
     const activeLangRef = useRef(activeLang);
@@ -68,7 +72,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         activeLangRef.current = activeLang;
     }, [activeLang]);
 
-    const [tipo, setTipo] = useState(initialData?.tipo || 'artigo');
+    const [tipo, setTipo] = useState((initialData?.tipo && ARTICLE_TYPES.includes(initialData.tipo as any)) ? initialData.tipo : 'artigo');
     const [coverImageUrl, setCoverImageUrl] = useState(initialData?.imagen_url || '');
     const [tematicas, setTematicas] = useState<string[]>(initialData?.tematicas || []);
         const [showPreview, setShowPreview] = useState(false);
@@ -210,7 +214,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             if (parsed.tituloEs) setTituloEs(parsed.tituloEs);
                             if (parsed.subtituloGl) setSubtituloGl(parsed.subtituloGl);
                             if (parsed.subtituloEs) setSubtituloEs(parsed.subtituloEs);
-                            if (parsed.tipo) setTipo(parsed.tipo);
+                            if (parsed.tipo && ARTICLE_TYPES.includes(parsed.tipo)) setTipo(parsed.tipo);
                             if (parsed.imagen_url) setCoverImageUrl(parsed.imagen_url);
                             if (parsed.tematicas) setTematicas(parsed.tematicas);
                             if (parsed.contenidoGl) {
@@ -415,7 +419,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         }
     };
 
-    const handleSubmit = async (isDraft: boolean) => {
+    const handleSubmit = async (action: EditorAction = 'publish') => {
         const currentHtml = editor?.getHTML() || '';
         
         // --- LIMPIEZA DE IMÁGENES INLINE (GARBAGE COLLECTION) ---
@@ -453,13 +457,13 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             titulo_es: tituloEs,
             subtitulo_gl: subtituloGl,
             subtitulo_es: subtituloEs,
-            contenido_gl: activeLang === 'gl' ? currentHtml : contenidoGl,
-            contenido_es: activeLang === 'es' ? currentHtml : contenidoEs,
+            contenido_gl: contenidoGl,
+            contenido_es: contenidoEs,
             imagen_url: coverImageUrl,
             tematicas: tematicas,
             tipo: tipo,
-            idioma_original: idiomaOriginal,
-        }, isDraft);
+            idioma_original: idiomaOriginal
+        }, action);
 
         localStorage.removeItem(draftKey);
         setHasUnsavedChanges(false);
@@ -496,7 +500,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             <button type="button" className="px-6 py-2 font-sans text-xs uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors cursor-pointer" onClick={() => setShowPublishModal(false)}>
                                 Cancelar
                             </button>
-                            <button type="button" className="px-6 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(false)}>
+                            <button type="button" className="px-6 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('publish')}>
                                 {isPublishing ? (mode === 'create' ? dict.publishing : dict.saving) : dict.publish}
                             </button>
                         </div>
@@ -522,27 +526,67 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             <button type="button" aria-label="Lista con viñetas" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bulletList') ? 'bg-lines/30' : ''}`} title="Lista" onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_bulleted</span></button>
                             <button type="button" aria-label="Justificar Texto" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive({ textAlign: 'justify' }) ? 'bg-lines/30' : ''}`} title="Justificar" onClick={() => { if (editor?.isActive({ textAlign: 'justify' })) { editor?.chain().focus().unsetTextAlign().run(); } else { editor?.chain().focus().setTextAlign('justify').run(); } }}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_align_justify</span></button>
                             <div className="h-6 w-[1px] shrink-0 bg-lines mx-2"></div>
-                            <button type="button" aria-label="Limpiar todo" className="w-10 h-10 shrink-0 flex items-center justify-center text-error hover:bg-error/10 transition-colors cursor-pointer" title="Limpiar Todo" onClick={handleClearAll}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>delete_sweep</span></button>
+                            <button type="button" aria-label="Limpiar todo" className="w-10 h-10 shrink-0 flex items-center justify-center text-charcoal hover:bg-lines/30 transition-colors cursor-pointer" title="Limpiar Todo" onClick={handleClearAll}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>delete_sweep</span></button>
                             <button type="button" aria-label="Cambiar Imagen de Portada" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Portada" onClick={handleChangeCoverImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>add_a_photo</span></button>
                             <button type="button" aria-label="Vista Previa" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Vista Previa" onClick={() => setShowPreview(true)}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>visibility</span></button>
                         </div>
                         <div className="flex items-center gap-2 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
                             <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50 italic hidden xl:block shrink-0"></span>
-                            {mode === 'edit' && initialData?.estado === 'publicado' ? (
-                                <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>
-                                    <span className="hidden sm:inline">Despublicar</span>
-                                    <span className="sm:hidden">Despublicar</span>
-                                </button>
-                            ) : (
-                                <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(true)}>
-                                    <span className="hidden sm:inline">{dict.saveDraft}</span>
-                                    <span className="sm:hidden">Borrador</span>
-                                </button>
-                            )}
-                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => setShowPublishModal(true)}>
-                                {mode === 'create' ? 'Publicar' : 'Publicar'}
-                            </button>
-                        </div>
+                            {(() => {
+    const isInvitado = userRole === 'invitado';
+    const isPending = initialData?.estado === ARTICLE_STATES.PENDING;
+    const isPublished = initialData?.estado === ARTICLE_STATES.PUBLISHED;
+    const canApprove = userRole === 'admin' || userRole === 'escritor';
+
+    if (isPending && canApprove && mode === 'edit') {
+        return (
+            <>
+                <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('reject')}>
+                    <span className="hidden sm:inline">{dict.reject || 'Rechazar'}</span>
+                    <span className="sm:hidden">{dict.reject || 'Rechazar'}</span>
+                </button>
+                <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-gold text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('approve')}>
+                    {dict.approveAndPublish || 'Aprobar y Publicar'}
+                </button>
+            </>
+        );
+    }
+
+    if (isPending && isInvitado && mode === 'edit') {
+        return (
+            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('revoke_approval')}>
+                <span className="hidden sm:inline">{dict.revokeApproval || 'Volver a Borrador'}</span>
+                <span className="sm:hidden">{dict.revokeApproval || 'Borrador'}</span>
+            </button>
+        );
+    }
+
+    return (
+        <>
+            {mode === 'edit' && isPublished ? (
+                <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('draft')}>
+                    <span className="hidden sm:inline">Despublicar</span>
+                    <span className="sm:hidden">Despublicar</span>
+                </button>
+            ) : (
+                <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('draft')}>
+                    <span className="hidden sm:inline">{dict.saveDraft || 'Guardar Borrador'}</span>
+                    <span className="sm:hidden">Borrador</span>
+                </button>
+            )}
+            <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => {
+                if (isInvitado) {
+                    handleSubmit('submit_approval');
+                } else {
+                    setShowPublishModal(true); // For normal publish
+                }
+            }}>
+                {isInvitado ? (dict.sendForApproval || 'Enviar para Aprobación') : 'Publicar'}
+            </button>
+        </>
+    );
+})()}
+</div>
                     </div>
 
                     {/* Editor Area */}
