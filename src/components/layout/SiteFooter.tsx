@@ -36,8 +36,8 @@ export default async function SiteFooter() {
           <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/asociacion`}>{dict.footer.links.asociacion}</Link>
           <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
           <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/asociacion/estatutos`}>{dict.footer.links.estatutos}</Link>
-          <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/colabora`}>Colabora</Link>
           <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/noticias`}>{dict.nav.noticias}</Link>
+          <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/contacto`}>{dict.nav.contactar}</Link>
         </nav>
 
         {/* Social Icons */}
