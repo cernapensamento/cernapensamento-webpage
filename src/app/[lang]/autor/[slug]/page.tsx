@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import { ARTICLE_STATES } from '@/lib/constants';
 import { notFound } from 'next/navigation';
 import PublicNavBar from '@/components/layout/PublicNavBar';
 import ArticleCard from '@/components/features/ArticleCard';
@@ -38,7 +39,7 @@ export default async function AutorPage({ params }: PageProps) {
     .from('articulos')
     .select('*, perfiles(nombre, slug)')
     .eq('autor_id', autor.id)
-    .eq('estado', 'publicado')
+    .eq('estado', ARTICLE_STATES.PUBLISHED)
     .order('creado_en', { ascending: false });
 
   return (

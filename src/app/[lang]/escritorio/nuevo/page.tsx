@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
-import ArticleEditor, { ArticleData } from '@/components/escritorio/ArticleEditor';
+import ArticleEditor, { ArticleData, EditorAction } from '@/components/escritorio/ArticleEditor';
+import { ARTICLE_STATES } from '@/lib/constants';
 
 const generateSlug = (title: string) => {
     return title
@@ -18,12 +19,24 @@ const generateSlug = (title: string) => {
 
 export default function NuevoArticulo() {
     const [isPublishing, setIsPublishing] = useState(false);
+    const [userRole, setUserRole] = useState<string>('usuario');
     const router = useRouter();
     const params = useParams();
     const lang = (params?.lang as string) || 'es';
     const supabase = createClient();
 
-    const handleSave = async (data: ArticleData, isDraft: boolean) => {
+    useEffect(() => {
+        async function fetchRole() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase.from('perfiles').select('rol').eq('id', user.id).single();
+                if (data?.rol) setUserRole(data.rol);
+            }
+        }
+        fetchRole();
+    }, [supabase]);
+
+    const handleSave = async (data: ArticleData, action: EditorAction) => {
         setIsPublishing(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -33,6 +46,10 @@ export default function NuevoArticulo() {
             }
 
             const slug = generateSlug(data.titulo_gl || data.titulo_es || 'novo-artigo');
+
+            let targetEstado: string = ARTICLE_STATES.DRAFT;
+            if (action === 'publish' || action === 'approve') targetEstado = ARTICLE_STATES.PUBLISHED;
+            else if (action === 'submit_approval') targetEstado = ARTICLE_STATES.PENDING;
 
             const { data: insertedArticle, error } = await supabase.from('articulos').insert({
                 titulo_gl: data.titulo_gl || 'Sen Título',
@@ -45,7 +62,7 @@ export default function NuevoArticulo() {
                 autor_id: user.id,
                 imagen_url: data.imagen_url || null,
                 tematicas: data.tematicas || [],
-                estado: isDraft ? 'borrador' : 'publicado',
+                estado: targetEstado,
                 tipo: data.tipo || 'artigo',
                 idioma_original: data.idioma_original || 'gl'
             }).select().single();
@@ -63,7 +80,7 @@ export default function NuevoArticulo() {
                         );
                     }
                 }
-                alert(isDraft ? '¡Borrador guardado con éxito!' : '¡Artículo publicado con éxito!');
+                alert(action === 'draft' ? '¡Borrador guardado con éxito!' : '¡Acción realizada con éxito!');
                 router.push(`/${lang}/escritorio`);
             }
         } catch (error) {
@@ -79,6 +96,7 @@ export default function NuevoArticulo() {
             mode="create" 
             onSave={handleSave} 
             isPublishing={isPublishing} 
+            userRole={userRole}
         />
     );
 }

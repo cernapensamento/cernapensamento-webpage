@@ -6,10 +6,13 @@ import { useRouter, useParams } from 'next/navigation';
 import ArticleEditor, { ArticleData } from '@/components/escritorio/ArticleEditor';
 
 interface Props {
-  articulo: { id?: string | number; titulo_gl?: string; titulo_es?: string; subtitulo_gl?: string; subtitulo_es?: string; contenido_gl?: string; contenido_es?: string; imagen_url?: string; tematicas?: string[]; estado?: string; tipo?: string; fijado?: boolean; idioma_original?: string; };
+  articulo: any;
+  userRole: string;
 }
 
-export default function EditarArticuloForm({ articulo }: Props) {
+import { EditorAction } from '@/components/escritorio/ArticleEditor';
+import { ARTICLE_STATES } from '@/lib/constants';
+export default function EditarArticuloForm({ articulo, userRole }: Props) {
     const [isPublishing, setIsPublishing] = useState(false);
     const router = useRouter();
     const params = useParams();
@@ -26,12 +29,12 @@ export default function EditarArticuloForm({ articulo }: Props) {
         contenido_es: articulo.contenido_es || '',
         imagen_url: articulo.imagen_url || '',
         tematicas: articulo.tematicas || [],
-        estado: articulo.estado || 'publicado',
+        estado: articulo.estado || ARTICLE_STATES.PUBLISHED,
         tipo: articulo.tipo || 'artigo',
         idioma_original: articulo.idioma_original || 'gl'
     };
 
-    const handleSave = async (data: ArticleData, isDraft: boolean) => {
+    const handleSave = async (data: ArticleData, action: EditorAction) => {
         setIsPublishing(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -51,7 +54,7 @@ export default function EditarArticuloForm({ articulo }: Props) {
                     contenido_es: data.contenido_es || '',
                     imagen_url: data.imagen_url || null,
                     tematicas: data.tematicas || [],
-                    estado: isDraft ? 'borrador' : 'publicado',
+                    estado: action === 'draft' || action === 'reject' || action === 'revoke_approval' ? ARTICLE_STATES.DRAFT : (action === 'submit_approval' ? ARTICLE_STATES.PENDING : ARTICLE_STATES.PUBLISHED),
                     actualizado_en: new Date().toISOString(),
                     tipo: data.tipo || 'artigo',
                     idioma_original: data.idioma_original || 'gl'
@@ -74,7 +77,7 @@ export default function EditarArticuloForm({ articulo }: Props) {
                         }
                     }
                 }
-                alert(isDraft ? '¡Borrador actualizado!' : '¡Artículo guardado y publicado!');
+                alert(action === 'draft' || action === 'reject' || action === 'revoke_approval' ? '¡Borrador actualizado!' : '¡Acción realizada con éxito!');
                 router.push(`/${lang}/escritorio`);
             }
         } catch (error) {

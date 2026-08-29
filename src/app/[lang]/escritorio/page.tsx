@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/utils/auth';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
+import { ARTICLE_STATES } from '@/lib/constants';
 
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
 import PinArticleButton from '@/components/escritorio/PinArticleButton';
@@ -34,27 +35,36 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
     redirect(`/${lang}/escritorio/perfil`);
   }
 
-  const { data: articulos } = await supabase
-    .from('articulos')
-    .select('*')
-    .eq('autor_id', user.id)
-    .order('creado_en', { ascending: false });
+  const isInvitado = profile?.rol === 'invitado';
 
-  const todosLosArticulos = articulos || [];
-  const articulosFiltrados = filtro === 'borradores'
-    ? todosLosArticulos.filter(a => a.estado === 'borrador')
-    : filtro === 'publicados'
-    ? todosLosArticulos.filter(a => a.estado === 'publicado' || !a.estado)
-    : todosLosArticulos;
+    // Default to user's articles
+  let query = supabase.from('articulos').select('*, perfiles!left(nombre)').order('creado_en', { ascending: false });
+  
+  if (filtro === 'para_aprobar' && !isInvitado) {
+    query = query.eq('estado', ARTICLE_STATES.PENDING);
+  } else {
+    query = query.eq('autor_id', user.id);
+  }
+
+  const { data: articulos } = await query;
+  let todosLosArticulos = articulos || [];
+  
+  // Client-side filter (if not para_aprobar which is already server filtered)
+  let articulosFiltrados = todosLosArticulos;
+  if (filtro === 'borradores') articulosFiltrados = todosLosArticulos.filter(a => a.estado === ARTICLE_STATES.DRAFT);
+  else if (filtro === 'publicados') articulosFiltrados = todosLosArticulos.filter(a => a.estado === ARTICLE_STATES.PUBLISHED || !a.estado);
+  else if (filtro === 'pendientes') articulosFiltrados = todosLosArticulos.filter(a => a.estado === ARTICLE_STATES.PENDING);
+  
   const displayedArticles = verTodo ? articulosFiltrados : articulosFiltrados.slice(0, 3);
 
-  const isInvitado = profile?.rol === 'invitado';
-  const currentYear = new Date().getFullYear();
-  const articulosEsteAno = todosLosArticulos.filter(a => new Date(a.creado_en).getFullYear() === currentYear).length;
+  const articulosEsteAno = todosLosArticulos.filter(a => new Date(a.creado_en).getFullYear() === new Date().getFullYear()).length;
   const totalArticulos = todosLosArticulos.length;
   const limiteTotal = 4;
   const limiteAnual = 2;
   const canCreate = !isInvitado || (totalArticulos < limiteTotal && articulosEsteAno < limiteAnual);
+
+  // For core authors, fetch pending articles
+  
 
   return (
     <main className="px-5 md:px-16 pb-24 flex flex-col flex-1">
@@ -63,12 +73,12 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
           <div className="max-w-280 mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div>
-                <h2 className="font-serif text-4xl mb-4">{dict.escritorioPage.welcome}{profile?.nombre || 'Editor'}</h2>
+                <h2 className="font-serif text-4xl mb-4">{dict.escritorioPage?.welcome || 'Bienvenido, '}{profile?.nombre || 'Editor'}</h2>
                 {isInvitado && (
                   <div className="flex flex-col text-sm font-sans text-charcoal/80 bg-gold/10 p-4 border border-gold/20 rounded-sm mb-4 md:mb-0">
-                    <p className="mb-1"><strong className="text-gold">{dict.escritorioPage.guest}</strong></p>
-                    <p>{dict.escritorioPage.yearlyLimit}: {articulosEsteAno} / {limiteAnual}</p>
-                    <p>{dict.escritorioPage.totalLimit}: {totalArticulos} / {limiteTotal}</p>
+                    <p className="mb-1"><strong className="text-gold">{dict.escritorioPage?.guest || 'Autor Invitado'}</strong></p>
+                    <p>{dict.escritorioPage?.yearlyLimit || 'Límite anual'}: {articulosEsteAno} / {limiteAnual}</p>
+                    <p>{dict.escritorioPage?.totalLimit || 'Límite total'}: {totalArticulos} / {limiteTotal}</p>
                   </div>
                 )}
               </div>
@@ -78,38 +88,45 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                   className="flex items-center gap-3 bg-charcoal text-parchment px-8 py-5 font-sans text-sm uppercase tracking-widest hover:bg-gold transition-all duration-300 hover:shadow-lg hover:-translate-y-1 shrink-0 group"
                 >
                   <span className="material-symbols-outlined transition-transform duration-500 group-hover:rotate-90" data-icon="add">add</span>
-                  {dict.escritorioPage.createPost}
+                  {dict.escritorioPage?.createPost || 'Nuevo Artículo'}
                 </Link>
               ) : (
                 <div className="flex items-center gap-3 bg-lines text-charcoal/40 px-8 py-5 font-sans text-sm uppercase tracking-widest cursor-not-allowed shrink-0">
                   <span className="material-symbols-outlined" data-icon="lock">lock</span>
-                  {dict.escritorioPage.limitReached}
+                  {dict.escritorioPage?.limitReached || 'Límite alcanzado'}
                 </div>
               )}
             </div>
           </div>
         </section>
 
+        
+
         <section className="max-w-4xl mx-auto flex flex-col">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-4 border-b border-lines shrink-0 gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-              <h3 className="font-serif text-2xl">{dict.escritorioPage.articles}</h3>
+              <h3 className="font-serif text-2xl">{dict.escritorioPage?.articles || 'Tus Artículos'}</h3>
               <div className="flex flex-wrap items-center gap-2 font-sans text-xs uppercase tracking-widest">
-                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'todos' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=todos">{dict.escritorioPage.all}</Link>
-                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'publicados' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=publicados">{dict.escritorioPage.published}</Link>
-                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'borradores' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=borradores">{dict.escritorioPage.drafts}</Link>
+                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'todos' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=todos">{dict.escritorioPage?.all || 'Todos'}</Link>
+                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'publicados' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=publicados">{dict.escritorioPage?.published || 'Publicados'}</Link>
+                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'borradores' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=borradores">{dict.escritorioPage?.drafts || 'Borradores'}</Link>
+                {isInvitado ? (
+                  <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'pendientes' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=pendientes">{dict.escritorioPage?.pending || 'Pendientes'}</Link>
+                ) : (
+                  <Link className={`px-4 py-2 border border-gold/50 rounded-full transition-colors ${filtro === 'para_aprobar' ? 'bg-gold text-parchment border-gold' : 'bg-transparent text-gold hover:bg-gold/10 hover:border-gold'}`} href="?filtro=para_aprobar">{dict.escritorioPage?.toApprove || 'Para Aprobar'}</Link>
+                )}
               </div>
             </div>
             {!verTodo && articulosFiltrados.length > 3 ? (
-              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`?filtro=${filtro}&ver=todo`}>{dict.escritorioPage.viewAll}</Link>
+              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`?filtro=${filtro}&ver=todo`}>{dict.escritorioPage?.viewAll || 'Ver Todos'}</Link>
             ) : verTodo ? (
-              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`?filtro=${filtro}`}>{dict.escritorioPage.viewRecent}</Link>
+              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`?filtro=${filtro}`}>{dict.escritorioPage?.viewRecent || 'Ver Recientes'}</Link>
             ) : null}
           </div>
           <div className="overflow-y-auto scrollbar-none pb-16" style={{ maxHeight: 'calc(100vh - 400px)' }}>
             <div className="space-y-12">
                 {displayedArticles.length > 0 ? displayedArticles.map(articulo => (
-                  <article className={`group ${articulo.estado === 'borrador' ? 'opacity-80 hover:opacity-100 transition-opacity' : ''}`} key={articulo.id}>
+                  <article className={`group ${articulo.estado === ARTICLE_STATES.DRAFT ? 'opacity-80 hover:opacity-100 transition-opacity' : ''}`} key={articulo.id}>
                     <div className="flex gap-8">
                       <div className="hidden sm:block w-32 h-32 shrink-0 border border-lines overflow-hidden relative">
                         {articulo.imagen_url ? (
@@ -125,10 +142,22 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                           <span className="font-sans text-xs text-gold uppercase tracking-widest">{articulo.tipo || 'Artigo'}</span>
                           <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>
                           <span className="font-sans text-xs text-charcoal/60">{new Date(articulo.creado_en).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                          {articulo.estado === 'borrador' && (
+                          {articulo.estado === ARTICLE_STATES.DRAFT && (
                             <>
                               <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>
-                              <span className="px-2 py-0.5 bg-gold/10 text-gold text-[10px] font-bold uppercase tracking-widest rounded-sm border border-gold/20">{dict.escritorioPage.draft}</span>
+                              <span className="px-2 py-0.5 bg-gold/10 text-gold text-[10px] font-bold uppercase tracking-widest rounded-sm border border-gold/20">{dict.escritorioPage?.draft || 'Borrador'}</span>
+                            </>
+                          )}
+                          {articulo.estado === ARTICLE_STATES.PENDING && (
+                            <>
+                              <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>
+                              <span className="px-2 py-0.5 bg-gold/10 text-gold text-[10px] font-bold uppercase tracking-widest rounded-sm border border-gold/20">Pendiente</span>
+                            </>
+                          )}
+                          {filtro === 'para_aprobar' && articulo.perfiles?.nombre && (
+                            <>
+                              <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>
+                              <span className="font-sans text-xs text-charcoal/60 font-semibold">{dict.escritorio?.author || 'Autor:'} {articulo.perfiles.nombre}</span>
                             </>
                           )}
                         </div>
@@ -139,26 +168,31 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                           {articulo.subtitulo_gl || articulo.subtitulo_es || String(articulo.contenido_gl || articulo.contenido_es || '').replace(/<[^>]*>?/gm, '').substring(0, 150) + '...'}
                         </p>
                         <div className="mt-4 flex items-center gap-6">
-                          <Link href={`/${lang}/escritorio/editar/${articulo.slug || articulo.id}`} className="flex items-center gap-1 text-charcoal/60 hover:text-gold transition-colors cursor-pointer">
-                            <span className="material-symbols-outlined text-sm" data-icon="edit">edit</span>
-                            <span className="font-sans text-xs">{dict.escritorioPage.edit}</span>
+                          <Link href={filtro === 'para_aprobar' ? `/${lang}/articulo/${articulo.slug || articulo.id}` : `/${lang}/escritorio/editar/${articulo.slug || articulo.id}`} className={`flex items-center gap-1 transition-colors cursor-pointer ${filtro === 'para_aprobar' ? 'text-gold hover:text-charcoal' : 'text-charcoal/60 hover:text-gold'}`}>
+                            <span className="material-symbols-outlined text-sm" data-icon={filtro === 'para_aprobar' ? 'visibility' : 'edit'}>{filtro === 'para_aprobar' ? 'visibility' : 'edit'}</span>
+                            <span className={`font-sans text-xs ${filtro === 'para_aprobar' ? 'font-bold uppercase tracking-widest' : ''}`}>{filtro === 'para_aprobar' ? (dict.escritorio?.review || 'Revisar') : (dict.escritorioPage?.edit || 'Editar')}</span>
                           </Link>
-                          {articulo.estado === 'publicado' && (
+                          {articulo.estado === ARTICLE_STATES.PUBLISHED && (
                             <PinArticleButton id={articulo.id} fijado={articulo.fijado || false} />
                           )}
-                          <DeleteArticleButton id={articulo.id} titulo={articulo.titulo_gl || articulo.titulo_es} />
+                          {filtro !== 'para_aprobar' && (
+                            <DeleteArticleButton id={articulo.id} titulo={articulo.titulo_gl || articulo.titulo_es} />
+                          )}
                         </div>
                       </div>
                     </div>
                   </article>
                 )) : (
-                  <p className="font-sans text-charcoal/60">{dict.escritorioPage.noArticles}</p>
+                  <p className="font-sans text-charcoal/60">
+                    {(filtro === 'para_aprobar' || filtro === 'pendientes') 
+                      ? (dict.escritorioPage?.noPendingArticles || 'No hay publicaciones pendientes de aprobación.') 
+                      : (dict.escritorioPage?.noArticles || 'Aún no has escrito ningún artículo.')}
+                  </p>
                 )}
               </div>
             </div>
         </section>
       </div>
-
     </main>
   );
 }

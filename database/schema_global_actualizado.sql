@@ -172,9 +172,9 @@ CREATE TABLE IF NOT EXISTS "public"."articulos" (
     "subtitulo_es" "text",
     "contenido_gl" "text" NOT NULL,
     "contenido_es" "text" NOT NULL,
-    CONSTRAINT "articulos_estado_check" CHECK (("estado" = ANY (ARRAY['borrador'::"text", 'publicado'::"text"]))),
+    CONSTRAINT "articulos_estado_check" CHECK (("estado" = ANY (ARRAY['borrador'::"text", 'publicado'::"text", 'pendiente_aprobacion'::"text"]))),
     CONSTRAINT "articulos_idioma_original_check" CHECK (("idioma_original" = ANY (ARRAY['gl'::"text", 'es'::"text"]))),
-    CONSTRAINT "articulos_tipo_check" CHECK (("tipo" = ANY (ARRAY['artigo'::"text", 'ensaio'::"text", 'reportaxe'::"text", 'columna'::"text", 'entrevista'::"text", 'poesía'::"text"])))
+    CONSTRAINT "articulos_tipo_check" CHECK (("tipo" = ANY (ARRAY['artigo'::"text", 'ensaio'::"text", 'reportaxe'::"text", 'columna'::"text", 'entrevista'::"text", 'poesía'::"text", 'noticia'::"text"])))
 );
 
 

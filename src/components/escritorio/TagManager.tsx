@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
 interface TagManagerProps {
@@ -31,6 +31,10 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
             console.error(e);
         }
     };
+
+    useEffect(() => {
+        fetchTags();
+    }, []);
 
     const handleAddExisting = (slug: string) => {
         if (!selectedTags.includes(slug)) {
