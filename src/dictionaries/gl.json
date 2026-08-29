@@ -9,7 +9,8 @@
     "escritorio": "Escritorio",
     "login": "Acceder",
     "logout": "Pechar Sesión",
-    "asociacion": "A Asociación"
+    "asociacion": "A Asociación",
+    "noticias": "Novas"
   },
   "footer": {
     "rights": "Todos os dereitos reservados.",
@@ -330,5 +331,9 @@
         "Ofrécese a posibilidade de formar parte da asociación como membro de pleno dereito ou de participar de xeito puntual nas distintas actividades e iniciativas programadas. Se queres participar ou simplemente tes curiosidade, non dubides de contactar connosco."
       ]
     }
+  },
+  "wip": {
+    "title": "Sección en construción",
+    "default_text": "Estamos a traballar duro para ter esta páxina lista pronto. Volve visitarnos máis adiante."
   }
 }
