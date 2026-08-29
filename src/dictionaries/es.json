@@ -176,7 +176,10 @@
     "viewRecent": "Ver recientes",
     "draft": "Borrador",
     "edit": "Editar",
-    "noArticles": "No tienes artículos todavía. Crea tu primera publicación."
+    "noArticles": "No tienes artículos todavía. Crea tu primera publicación.",
+    "pending": "Pendientes",
+    "toApprove": "Para Aprobar",
+    "noPendingArticles": "No hay publicaciones pendientes de aprobación."
   },
   "articleEditor": {
     "publishModalTitleCreate": "¿Publicar artículo?",
@@ -217,7 +220,11 @@
       "clear": "Limpiar todo"
     },
     "originalGl": "Original Galego",
-    "originalEs": "Original Castellano"
+    "originalEs": "Original Castellano",
+    "sendForApproval": "Enviar para Aprobación",
+    "approveAndPublish": "Aprobar y Publicar",
+    "reject": "Rechazar",
+    "revokeApproval": "Volver a Borrador"
   },
   "contactForm": {
     "fullName": "Nombre Completo",
@@ -337,5 +344,10 @@
     "removeTagTooltip": "Eliminar etiqueta",
     "showFilters": "Mostrar Filtros",
     "hideFilters": "Ocultar Filtros"
+  },
+  "escritorio": {
+    "pendingArticles": "Artículos Pendientes de Aprobación",
+    "review": "Revisar",
+    "author": "Autor:"
   }
 }
