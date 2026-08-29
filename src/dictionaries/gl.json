@@ -44,7 +44,9 @@
     "all": "Todos",
     "errorLoading": "Erro cargando artigos:",
     "noResults": "Non se atoparon artigos con eses filtros.",
-    "clearFilters": "Limpar filtros"
+    "clearFilters": "Limpar filtros",
+    "showFilters": "Amosar Filtros",
+    "hideFilters": "Agochar Filtros"
   },
   "article": {
     "aboutAuthor": "Sobre o autor",
@@ -335,5 +337,14 @@
   "wip": {
     "title": "Sección en construción",
     "default_text": "Estamos a traballar duro para ter esta páxina lista pronto. Volve visitarnos máis adiante."
+  },
+  "noticias": {
+    "title": "Novas",
+    "searchTitle": "Buscar",
+    "tagsTitle": "Etiquetas",
+    "addTagPlaceholder": "ENGADIR ETIQUETA...",
+    "removeTagTooltip": "Eliminar etiqueta",
+    "showFilters": "Amosar Filtros",
+    "hideFilters": "Agochar Filtros"
   }
 }

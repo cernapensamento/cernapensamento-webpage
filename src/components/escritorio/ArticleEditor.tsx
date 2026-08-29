@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import NextImage from 'next/image';
-import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL } from '@/lib/constants';
+import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL, ARTICLE_TYPES } from '@/lib/constants';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Figure } from '@/lib/editor/FigureExtension';
@@ -589,12 +589,15 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                         onChange={(e) => setTipo(e.target.value)}
                                         style={{ colorScheme: 'light dark' }}
                                     >
-                                        <option value="artigo" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Artigo</option>
-                                        <option value="ensaio" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Ensaio</option>
-                                        <option value="reportaxe" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Reportaxe</option>
-                                        <option value="columna" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Columna</option>
-                                        <option value="entrevista" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Entrevista</option>
-                                        <option value="poesía" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>Poesía</option>
+                                        {ARTICLE_TYPES.map((type) => (
+                                        <option 
+                                            key={type} 
+                                            value={type} 
+                                            style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}
+                                        >
+                                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                                        </option>
+                                    ))}
                                     </select>
 
                                     <select 

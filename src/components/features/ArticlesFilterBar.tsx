@@ -67,13 +67,13 @@ export default function ArticlesFilterBar({ availableTags, dict }: { availableTa
       </div>
 
       <div className="flex flex-wrap justify-center gap-3">
-        <button type="button"           onClick={() => toggleTag('')}
+        <button type="button" onClick={() => toggleTag('')}
           className={`px-5 py-2 border font-sans text-xs uppercase tracking-[0.15em] transition-all duration-300 ${currentTags.length === 0 ? 'bg-charcoal text-parchment border-charcoal' : 'border-lines text-charcoal/70 hover:border-charcoal hover:text-charcoal'}`}
         >
           {dict.all}
         </button>
         {availableTags.map((tag) => (
-          <button type="button"             key={tag.slug}
+          <button type="button" key={tag.slug}
             onClick={() => toggleTag(tag.slug)}
             className={`px-5 py-2 border font-sans text-xs uppercase tracking-[0.15em] transition-all duration-300 ${currentTagsSet.has(tag.slug) ? 'bg-charcoal text-parchment border-charcoal' : 'border-lines text-charcoal/70 hover:border-charcoal hover:text-charcoal'}`}
           >
