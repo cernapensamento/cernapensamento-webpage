@@ -29,205 +29,203 @@ A asociación constitúese por tempo indefinido e rexerase segundo os principios
 
 A asociación rexerase polos seguintes principios:
 
-L|a) Fomentar e crear espazos de diálogo afastados da polarización política e ideolóxica.
+- a) Fomentar e crear espazos de diálogo afastados da polarización política e ideolóxica.
 
-L|b) Promover entre a mocidade a reflexión crítica sobre a liberdade individual, a responsabilidade persoal e a capacidade de participación activa na vida cultural e social.
+- b) Promover entre a mocidade a reflexión crítica sobre a liberdade individual, a responsabilidade persoal e a capacidade de participación activa na vida cultural e social.
 
-L|c) Incentivar a participación da mocidade en iniciativas cidadás, culturais e intelectuais que contribúan ao desenvolvemento dunha conciencia social crítica e construtiva.
+- c) Incentivar a participación da mocidade en iniciativas cidadás, culturais e intelectuais que contribúan ao desenvolvemento dunha conciencia social crítica e construtiva.
 
-L|d) Impulsar o valor da aprendizaxe autónoma e da capacidade autodidacta, sen prexuízo do recoñecemento das institucións educativas, culturais e académicas.
+- d) Impulsar o valor da aprendizaxe autónoma e da capacidade autodidacta, sen prexuízo do recoñecemento das institucións educativas, culturais e académicas.
 
-L|e) Superar os límites dunha especialización académica illada mediante unha actividade intelectual interdisciplinar, orientada á comprensión ampla e rigorosa da realidade.
+- e) Superar os límites dunha especialización académica illada mediante unha actividade intelectual interdisciplinar, orientada á comprensión ampla e rigorosa da realidade.
 
-L|f) Defender e promover a lingua galega, así como o seu sistema cultural e literario, favorecendo tamén a reflexión sobre a realidade histórica, social e cultural de Galicia.
+- f) Defender e promover a lingua galega, así como o seu sistema cultural e literario, favorecendo tamén a reflexión sobre a realidade histórica, social e cultural de Galicia.
 
-L|g) Promover a honestidade intelectual, o rigor epistémico e a claridade argumentativa nas actividades desenvolvidas pola asociación.
+- g) Promover a honestidade intelectual, o rigor epistémico e a claridade argumentativa nas actividades desenvolvidas pola asociación.
 
 ### Artigo 7. Fins e actividades
 
-L|1. Son fins principais da asociación:
+1. Son fins principais da asociación:
 
-L|a) Promover a reflexión crítica, o debate razoado e a análise rigorosa de cuestións culturais, sociais, filosóficas, científicas, xurídicas, económicas, literarias e doutros ámbitos do coñecemento.
+- a) Promover a reflexión crítica, o debate razoado e a análise rigorosa de cuestións culturais, sociais, filosóficas, científicas, xurídicas, económicas, literarias e doutros ámbitos do coñecemento.
 
-L|b) Fomentar a escrita como medio de elaboración, expresión e difusión de ideas propias.
+- b) Fomentar a escrita como medio de elaboración, expresión e difusión de ideas propias.
 
-L|c) Crear espazos de encontro intelectual nos que se favoreza o diálogo interdisciplinar, a pluralidade de perspectivas e a participación activa da mocidade.
+- c) Crear espazos de encontro intelectual nos que se favoreza o diálogo interdisciplinar, a pluralidade de perspectivas e a participación activa da mocidade.
 
-L|d) Contribuír á defensa, uso e promoción da lingua galega como vehículo de pensamento, creación e comunicación cultural, así como ao coñecemento da realidade histórica e cultural de Galicia.
+- d) Contribuír á defensa, uso e promoción da lingua galega como vehículo de pensamento, creación e comunicación cultural, así como ao coñecemento da realidade histórica e cultural de Galicia.
 
-L|e) Colaborar con institucións, entidades culturais, asociacións, centros educativos ou outras organizacións cuxos fins sexan compatibles cos principios xerais da asociación.
+- e) Colaborar con institucións, entidades culturais, asociacións, centros educativos ou outras organizacións cuxos fins sexan compatibles cos principios xerais da asociación.
 
-L|2. Para levar a cabo os seus fins, a asociación poderá organizar as seguintes actividades:
+2. Para levar a cabo os seus fins, a asociación poderá organizar as seguintes actividades:
 
-L|a) Torneos, xornadas, encontros e actividades de debate.
+- a) Torneos, xornadas, encontros e actividades de debate.
 
-L|b) Creación e mantemento dunha páxina web destinada á publicación de artigos, ensaios, reflexións e outros escritos elaborados polas persoas asociadas ou colaboradoras, de acordo cos criterios editoriais establecidos polo Consello.
+- b) Creación e mantemento dunha páxina web destinada á publicación de artigos, ensaios, reflexións e outros escritos elaborados polas persoas asociadas ou colaboradoras, de acordo cos criterios editoriais establecidos polo Consello.
 
-L|c) Edición dunha revista, dixital ou impresa, así como creación dun selo editorial propio
+- c) Edición dunha revista, dixital ou impresa, así como creación dun selo editorial propio para a publicación de obras, textos ou materiais de carácter cultural, intelectual, literario ou divulgativo.
 
-para a publicación de obras, textos ou materiais de carácter cultural, intelectual, literario ou divulgativo.
+- d) Organización de charlas, presentacións, foros, coloquios, mesas redondas ou actividades semellantes destinadas á difusión dos contidos e fins da asociación.
 
-L|d) Organización de charlas, presentacións, foros, coloquios, mesas redondas ou actividades semellantes destinadas á difusión dos contidos e fins da asociación.
-
-L|e) Realización de proxectos culturais, editoriais, formativos ou divulgativos relacionados cos fins da asociación. Os beneficios que se obteñan por calquera concepto destinaranse exclusivamente ao cumprimento destes fins, sen que se poidan repartir entre as persoas asociadas nin entre outras persoas físicas ou xurídicas con interese lucrativo. Cando sexa necesario para o desenvolvemento das súas actividades, a asociación poderá contratar persoas físicas ou xurídicas, sempre de acordo coa normativa aplicable e coa aprobación do órgano competente.
+- e) Realización de proxectos culturais, editoriais, formativos ou divulgativos relacionados cos fins da asociación. Os beneficios que se obteñan por calquera concepto destinaranse exclusivamente ao cumprimento destes fins, sen que se poidan repartir entre as persoas asociadas nin entre outras persoas físicas ou xurídicas con interese lucrativo. Cando sexa necesario para o desenvolvemento das súas actividades, a asociación poderá contratar persoas físicas ou xurídicas, sempre de acordo coa normativa aplicable e coa aprobación do órgano competente.
 
 ## CAPÍTULO II|DAS PERSOAS ASOCIADAS
 
 ### Artigo 8. Requisitos e admisión
 
-L|1. Para adquirir a condición de persoa asociada requírese ser persoa física ou xurídica e ter interese no desenvolvemento dos fins da asociación.
+1. Para adquirir a condición de persoa asociada requírese ser persoa física ou xurídica e ter interese no desenvolvemento dos fins da asociación.
 
-L|2. As persoas físicas deben ser maiores de idade ou menores emancipadas con capacidade de obrar e non estar suxeitas a inhabilitación ou condición legal para o exercicio do dereito.
+2. As persoas físicas deben ser maiores de idade ou menores emancipadas con capacidade de obrar e non estar suxeitas a inhabilitación ou condición legal para o exercicio do dereito.
 
-L|3. As persoas menores de máis de 14 anos non emancipadas necesitan o consentimento, documentalmente acreditado, das persoas que deban suplir a súa capacidade.
+3. As persoas menores de máis de 14 anos non emancipadas necesitan o consentimento, documentalmente acreditado, das persoas que deban suplir a súa capacidade.
 
-L|4. As persoas xurídicas de natureza asociativa requirirán o acordo expreso do seu órgano competente, e as de natureza institucional, o acordo do seu órgano reitor.
+4. As persoas xurídicas de natureza asociativa requirirán o acordo expreso do seu órgano competente, e as de natureza institucional, o acordo do seu órgano reitor.
 
-L|5. A admisión de novas persoas asociadas será acordada pola Xunta Directiva, logo de solicitude da persoa interesada e de conformidade cos presentes estatutos.
+5. A admisión de novas persoas asociadas será acordada pola Xunta Directiva, logo de solicitude da persoa interesada e de conformidade cos presentes estatutos.
 
 ### Artigo 9. Clases de persoas asociadas
 
 Dentro da asociación poderán existir as seguintes clases de persoas asociadas:
 
-L|a) Fundadoras, aquelas que subscribiron a acta fundacional.
+- a) Fundadoras, aquelas que subscribiron a acta fundacional.
 
-L|b) De número, aquelas que ingresaron con posterioridade á subscrición da acta fundacional.
+- b) De número, aquelas que ingresaron con posterioridade á subscrición da acta fundacional.
 
-L|c) De honra, aquelas que, polos seus méritos persoais ou profesionais ou por ter contribuído de xeito relevante ao desenvolvemento da asociación, sexan nomeadas pola Asemblea Xeral, baixo proposta do Consello.
+- c) De honra, aquelas que, polos seus méritos persoais ou profesionais ou por ter contribuído de xeito relevante ao desenvolvemento da asociación, sexan nomeadas pola Asemblea Xeral, baixo proposta do Consello.
 
 ### Artigo 10. Perda da condición de persoa asociada
 
-L|1. A condición de persoa asociada pérdese:
+1. A condición de persoa asociada pérdese:
 
-L|a) Por vontade propia, que se fará efectiva mediante presentación de renuncia por escrito ante a Xunta Directiva e dirixida á Secretaría da asociación. A renuncia terá efectos desde a data da súa presentación.
+- a) Por vontade propia, que se fará efectiva mediante presentación de renuncia por escrito ante a Xunta Directiva e dirixida á Secretaría da asociación. A renuncia terá efectos desde a data da súa presentación.
 
-L|b) Por falta de pagamento de dúas cotas, que será efectiva desde a notificación do acordo adoptado pola Xunta Directiva á persoa interesada. A persoa que perdese a súa condición de asociada por este suposto poderá ser rehabilitada, se no prazo de seis meses desde a notificación aboase as cotas pendentes de pagamento.
+- b) Por falta de pagamento de dúas cotas, que será efectiva desde a notificación do acordo adoptado pola Xunta Directiva á persoa interesada. A persoa que perdese a súa condición de asociada por este suposto poderá ser rehabilitada, se no prazo de seis meses desde a notificación aboase as cotas pendentes de pagamento.
 
-L|c) Por incumprimento dos presentes estatutos ou dos acordos validamente adoptados polos órganos da asociación, así como pola realización de accións que prexudiquen gravemente os intereses da asociación.
+- c) Por incumprimento dos presentes estatutos ou dos acordos validamente adoptados polos órganos da asociación, así como pola realización de accións que prexudiquen gravemente os intereses da asociación.
 
-L|d) Por falecemento da persoa física ou extinción da persoa xurídica.
+- d) Por falecemento da persoa física ou extinción da persoa xurídica.
 
-L|2. A expulsión de persoas asociadas nos supostos dos apartados b) e c) do parágrafo anterior será acordada pola Xunta Directiva, logo da audiencia da persoa interesada. O acordo de expulsión deberá ser ratificado pola Asemblea Xeral extraordinaria e contra a súa resolución poderase recorrer ante a xurisdición ordinaria.
+2. A expulsión de persoas asociadas nos supostos dos apartados b) e c) do parágrafo anterior será acordada pola Xunta Directiva, logo da audiencia da persoa interesada. O acordo de expulsión deberá ser ratificado pola Asemblea Xeral extraordinaria e contra a súa resolución poderase recorrer ante a xurisdición ordinaria.
 
 ### Artigo 11. Dereitos
 
-L|1. As persoas asociadas teñen os seguintes dereitos:
+1. As persoas asociadas teñen os seguintes dereitos:
 
-L|a) Participar nas actividades da asociación.
+- a) Participar nas actividades da asociación.
 
-L|b) Ser electoras e elixibles para os cargos dos órganos de goberno e representación.
+- b) Ser electoras e elixibles para os cargos dos órganos de goberno e representación.
 
-L|c) Participar nas asembleas con voz e voto.
+- c) Participar nas asembleas con voz e voto.
 
-L|d) Recibir información da composición dos órganos de representación da asociación, do seu estado de contas e do desenvolvemento da súa actividade.
+- d) Recibir información da composición dos órganos de representación da asociación, do seu estado de contas e do desenvolvemento da súa actividade.
 
-L|e) Acceder á documentación da asociación a través dos órganos de representación.
+- e) Acceder á documentación da asociación a través dos órganos de representación.
 
-L|f) Ser oídas con carácter previo á adopción de medidas disciplinarias contra elas e ser informadas dos feitos que dean lugar ás ditas medidas, debendo motivarse o acordo que, no seu caso, impoña a sanción.
+- f) Ser oídas con carácter previo á adopción de medidas disciplinarias contra elas e ser informadas dos feitos que dean lugar ás ditas medidas, debendo motivarse o acordo que, no seu caso, impoña a sanción.
 
-L|g) Impugnar os acordos dos órganos da asociación que estimen contrarios á lei ou aos estatutos.
+- g) Impugnar os acordos dos órganos da asociación que estimen contrarios á lei ou aos estatutos.
 
-L|2. Non poderán exercer o dereito de sufraxio activo nin pasivo as persoas asociadas que non estean ao día no pagamento das cotas sociais.
+2. Non poderán exercer o dereito de sufraxio activo nin pasivo as persoas asociadas que non estean ao día no pagamento das cotas sociais.
 
-L|3. As persoas asociadas de honra non intervirán na dirección da asociación nin nos órganos de representación desta; poderán asistir ás asembleas con voz, pero sen voto, e estarán exentas de obrigas.
+3. As persoas asociadas de honra non intervirán na dirección da asociación nin nos órganos de representación desta; poderán asistir ás asembleas con voz, pero sen voto, e estarán exentas de obrigas.
 
 ### Artigo 12. Obrigas
 
 Son obrigas das persoas asociadas:
 
-L|a) Cumprir os presentes estatutos e os acordos validamente adoptados polos órganos de goberno e representación da asociación.
+- a) Cumprir os presentes estatutos e os acordos validamente adoptados polos órganos de goberno e representación da asociación.
 
-L|b) Pagar as cotas que, de conformidade cos estatutos, se establezan.
+- b) Pagar as cotas que, de conformidade cos estatutos, se establezan.
 
-L|c) Desempeñar as obrigas inherentes aos cargos para os que fosen elixidas ou designadas, nos termos previstos nestes estatutos.
+- c) Desempeñar as obrigas inherentes aos cargos para os que fosen elixidas ou designadas, nos termos previstos nestes estatutos.
 
-L|d) Asistir ás asembleas e demais actos organizados pola asociación, cando proceda.
+- d) Asistir ás asembleas e demais actos organizados pola asociación, cando proceda.
 
 ## CAPÍTULO III|DOS ÓRGANOS DA ASOCIACIÓN
 
 ### Artigo 13. Organización da asociación
 
-L|1. O órgano de goberno da asociación é a Asemblea Xeral e o órgano de representación é a Xunta Directiva, que adoptarán os seus acordos de conformidade co principio maioritario e de democracia interna.
+1. O órgano de goberno da asociación é a Asemblea Xeral e o órgano de representación é a Xunta Directiva, que adoptarán os seus acordos de conformidade co principio maioritario e de democracia interna.
 
-L|2. Ademais, desde o momento da fundación, existirá un Consello de carácter editorial e consultivo, sen funcións de goberno nin de representación legal da asociación, nos termos previstos nestes estatutos.
+2. Ademais, desde o momento da fundación, existirá un Consello de carácter editorial e consultivo, sen funcións de goberno nin de representación legal da asociación, nos termos previstos nestes estatutos.
 
 ### Artigo 14. Asemblea Xeral
 
-L|1. A Asemblea Xeral é o órgano supremo de goberno da asociación e está integrada por todas as persoas asociadas.
+1. A Asemblea Xeral é o órgano supremo de goberno da asociación e está integrada por todas as persoas asociadas.
 
-L|2. A presidencia e a secretaría da Asemblea Xeral corresponderán, respectivamente, ás persoas titulares da Presidencia e da Secretaría da Xunta Directiva ou ás persoas que estatutariamente as substitúan.
+2. A presidencia e a secretaría da Asemblea Xeral corresponderán, respectivamente, ás persoas titulares da Presidencia e da Secretaría da Xunta Directiva ou ás persoas que estatutariamente as substitúan.
 
-L|3. A Asemblea Xeral exercerá as súas funcións con respecto aos principios de participación, igualdade, transparencia e garantía dos dereitos das persoas asociadas.
+3. A Asemblea Xeral exercerá as súas funcións con respecto aos principios de participación, igualdade, transparencia e garantía dos dereitos das persoas asociadas.
 
 ### Artigo 15. Consello
 
-L|1. O Consello é o órgano de carácter editorial e consultivo da asociación. A súa función é velar pola coherencia intelectual e cultural do proxecto asociativo en concordancia cos principios e fins da entidade, sen prexuízo das competencias da Asemblea Xeral e da Xunta Directiva.
+1. O Consello é o órgano de carácter editorial e consultivo da asociación. A súa función é velar pola coherencia intelectual e cultural do proxecto asociativo en concordancia cos principios e fins da entidade, sen prexuízo das competencias da Asemblea Xeral e da Xunta Directiva.
 
-L|2. O Consello non terá funcións de goberno nin representación legal da asociación, nin poderá asumir competencias reservadas polos presentes estatutos á Asemblea Xeral ou á Xunta Directiva.
+2. O Consello non terá funcións de goberno nin representación legal da asociación, nin poderá asumir competencias reservadas polos presentes estatutos á Asemblea Xeral ou á Xunta Directiva.
 
-L|3. O Consello exercerá as súas funcións editoriais con autonomía funcional, sempre dentro dos fins da asociación, dos presentes estatutos, dos acordos validamente adoptados pola Asemblea Xeral e da normativa aplicable.
+3. O Consello exercerá as súas funcións editoriais con autonomía funcional, sempre dentro dos fins da asociación, dos presentes estatutos, dos acordos validamente adoptados pola Asemblea Xeral e da normativa aplicable.
 
-L|4. O Consello non poderá actuar validamente se queda reducido a unha soa persoa integrante.
+4. O Consello non poderá actuar validamente se queda reducido a unha soa persoa integrante.
 
-L|5. O Consello estará constituído por:
+5. O Consello estará constituído por:
 
-L|a) As persoas asociadas fundadoras, mentres manteñan a condición de persoas asociadas.
+- a) As persoas asociadas fundadoras, mentres manteñan a condición de persoas asociadas.
 
-L|b) As persoas asociadas de número ou de honra que sexan incorporadas polo propio Consello mediante acordo adoptado por maioría absoluta das súas persoas integrantes.
+- b) As persoas asociadas de número ou de honra que sexan incorporadas polo propio Consello mediante acordo adoptado por maioría absoluta das súas persoas integrantes.
 
-L|6. Os membros do Consello cesarán por:
+6. Os membros do Consello cesarán por:
 
-L|a) Renuncia voluntaria.
+- a) Renuncia voluntaria.
 
-L|b) Perda da condición de persoa asociada.
+- b) Perda da condición de persoa asociada.
 
-L|c) Expulsión da asociación.
+- c) Expulsión da asociación.
 
-L|d) Acordo motivado do Consello, logo de audiencia da persoa interesada, por incumprimento grave das funcións ou criterios editoriais que lle sexan propios.
+- d) Acordo motivado do Consello, logo de audiencia da persoa interesada, por incumprimento grave das funcións ou criterios editoriais que lle sexan propios.
 
-L|7. O Consello poderá designar de entre as súas persoas integrantes unha persoa coordinadora, encargada de ordenar o seu funcionamento interno e de canalizar a comunicación ordinaria coa Xunta Directiva e, cando proceda, coa Asemblea Xeral a través da Presidencia.
+7. O Consello poderá designar de entre as súas persoas integrantes unha persoa coordinadora, encargada de ordenar o seu funcionamento interno e de canalizar a comunicación ordinaria coa Xunta Directiva e, cando proceda, coa Asemblea Xeral a través da Presidencia.
 
-L|8. O Consello poderá aprobar normas internas de funcionamento editorial, sempre que non contradigan os presentes estatutos nin os acordos da Asemblea Xeral.
+8. O Consello poderá aprobar normas internas de funcionamento editorial, sempre que non contradigan os presentes estatutos nin os acordos da Asemblea Xeral.
 
 ### Artigo 16. Facultades do Consello
 
-L|1. Como órgano consultivo, o Consello poderá:
+1. Como órgano consultivo, o Consello poderá:
 
-L|a) Emitir informes sobre actividades, documentos ou proxectos da asociación, especialmente cando poida existir contradición cos principios, fins ou estatutos da entidade.
+- a) Emitir informes sobre actividades, documentos ou proxectos da asociación, especialmente cando poida existir contradición cos principios, fins ou estatutos da entidade.
 
-L|b) Elaborar propostas de reforma estatutaria, proxectos culturais, editoriais ou intelectuais, e sometelos á consideración da Xunta Directiva ou da Asemblea Xeral, segundo corresponda.
+- b) Elaborar propostas de reforma estatutaria, proxectos culturais, editoriais ou intelectuais, e sometelos á consideración da Xunta Directiva ou da Asemblea Xeral, segundo corresponda.
 
-L|c) Colaborar na redacción inicial de propostas de modificación estatutaria cando así o solicite a Asemblea Xeral ou a Xunta Directiva, sen que as súas propostas teñan carácter vinculante.
+- c) Colaborar na redacción inicial de propostas de modificación estatutaria cando así o solicite a Asemblea Xeral ou a Xunta Directiva, sen que as súas propostas teñan carácter vinculante.
 
-L|2. Como órgano editorial, o Consello poderá:
+2. Como órgano editorial, o Consello poderá:
 
-L|a) Establecer criterios editoriais para as publicacións, canles e proxectos culturais da asociación.
+- a) Establecer criterios editoriais para as publicacións, canles e proxectos culturais da asociación.
 
-L|b) Admitir ou rexeitar, de maneira motivada, os contidos propostos para publicación nas canles da asociación cando non cumpran uns mínimos de calidade, rigor, adecuación aos fins da entidade ou respecto aos presentes estatutos.
+- b) Admitir ou rexeitar, de maneira motivada, os contidos propostos para publicación nas canles da asociación cando non cumpran uns mínimos de calidade, rigor, adecuación aos fins da entidade ou respecto aos presentes estatutos.
 
-L|c) Impulsar e coordinar a páxina web, a revista, o selo editorial e demais medios culturais ou informativos da asociación, en coordinación coa Xunta Directiva cando existan implicacións económicas, contractuais ou administrativas.
+- c) Impulsar e coordinar a páxina web, a revista, o selo editorial e demais medios culturais ou informativos da asociación, en coordinación coa Xunta Directiva cando existan implicacións económicas, contractuais ou administrativas.
 
-L|d) Propoñer colaboracións con institucións culturais, asociacións, fundacións, revistas, editoriais ou agrupacións culturais.
+- d) Propoñer colaboracións con institucións culturais, asociacións, fundacións, revistas, editoriais ou agrupacións culturais.
 
-L|3. A actividade editorial do Consello non poderá vulnerar os dereitos das persoas asociadas nin limitar indebidamente a participación democrática na asociación.
+3. A actividade editorial do Consello non poderá vulnerar os dereitos das persoas asociadas nin limitar indebidamente a participación democrática na asociación.
 
-L|4. As actuacións do Consello que impliquen obrigas económicas, contratacións, compromisos fronte a terceiros ou uso de recursos patrimoniais da asociación deberán ser aprobadas previamente pola Xunta Directiva ou pola Asemblea Xeral, segundo corresponda.
+4. As actuacións do Consello que impliquen obrigas económicas, contratacións, compromisos fronte a terceiros ou uso de recursos patrimoniais da asociación deberán ser aprobadas previamente pola Xunta Directiva ou pola Asemblea Xeral, segundo corresponda.
 
-L|5. No caso de publicacións con rendemento económico ou compensacións a autores ou autoras, estas deberán axustarse á normativa aplicable, ser aprobadas polo órgano competente e non poderán desvirtuar o carácter non lucrativo da asociación.
+5. No caso de publicacións con rendemento económico ou compensacións a autores ou autoras, estas deberán axustarse á normativa aplicable, ser aprobadas polo órgano competente e non poderán desvirtuar o carácter non lucrativo da asociación.
 
 ### Artigo 17. Reunións da Asemblea Xeral: clases e convocatoria
 
-L|1. As reunións da Asemblea Xeral poden ser ordinarias ou extraordinarias.
+1. As reunións da Asemblea Xeral poden ser ordinarias ou extraordinarias.
 
-L|2. A reunión ordinaria celebrarase como mínimo unha vez ao ano, dentro dos catro meses seguintes ao peche do exercicio económico.
+2. A reunión ordinaria celebrarase como mínimo unha vez ao ano, dentro dos catro meses seguintes ao peche do exercicio económico.
 
-L|3. As reunións extraordinarias celebraranse cando as circunstancias o aconsellen, cantas veces o acorde a Xunta Directiva ou cando o soliciten por escrito o 10 % das persoas asociadas.
+3. As reunións extraordinarias celebraranse cando as circunstancias o aconsellen, cantas veces o acorde a Xunta Directiva ou cando o soliciten por escrito o 10 % das persoas asociadas.
 
-L|4. As persoas asociadas que representen, como mínimo, o 10 % do total poderán solicitar por escrito a inclusión de asuntos na orde do día dunha Asemblea Xeral.
+4. As persoas asociadas que representen, como mínimo, o 10 % do total poderán solicitar por escrito a inclusión de asuntos na orde do día dunha Asemblea Xeral.
 
-L|5. As convocatorias realizaranse por escrito, sinalando o lugar, día e hora da reunión, así como a orde do día. Entre a publicación ou notificación da convocatoria e a data da celebración da Asemblea en primeira convocatoria deberá mediar como mínimo un prazo de quince días naturais.
+5. As convocatorias realizaranse por escrito, sinalando o lugar, día e hora da reunión, así como a orde do día. Entre a publicación ou notificación da convocatoria e a data da celebración da Asemblea en primeira convocatoria deberá mediar como mínimo un prazo de quince días naturais.
 
-L|6. A documentación e información sobre as materias incluídas na orde do día estará a disposición das persoas asociadas na Secretaría da asociación cunha antelación mínima de quince días naturais á celebración da Asemblea.
+6. A documentación e información sobre as materias incluídas na orde do día estará a disposición das persoas asociadas na Secretaría da asociación cunha antelación mínima de quince días naturais á celebración da Asemblea.
 
 ### Artigo 18. Constitución e quórum de convocatoria
 
@@ -245,145 +243,145 @@ Nas reunións a distancia, os acordos entenderanse adoptados na sede da asociaci
 
 Serán competencias da Asemblea Xeral ordinaria:
 
-L|a) Examinar e aprobar as contas e balances do exercicio anterior.
+- a) Examinar e aprobar as contas e balances do exercicio anterior.
 
-L|b) Aprobar os orzamentos de ingresos e gastos para cada exercicio, así como o plan de actividades.
+- b) Aprobar os orzamentos de ingresos e gastos para cada exercicio, así como o plan de actividades.
 
-L|c) Examinar e aprobar as cotas das persoas asociadas, a proposta da Xunta Directiva.
+- c) Examinar e aprobar as cotas das persoas asociadas, a proposta da Xunta Directiva.
 
-L|d) Elixir e cesar as persoas integrantes da Xunta Directiva.
+- d) Elixir e cesar as persoas integrantes da Xunta Directiva.
 
-L|e) Aprobar a incorporación ou separación a unha federación.
+- e) Aprobar a incorporación ou separación a unha federación.
 
-L|f) Solicitar a declaración de utilidade pública da asociación.
+- f) Solicitar a declaración de utilidade pública da asociación.
 
-L|g) Aprobar o regulamento de réxime interno da asociación.
+- g) Aprobar o regulamento de réxime interno da asociación.
 
 ### Artigo 20. Facultades da Asemblea Xeral extraordinaria
 
 Serán competencias da Asemblea Xeral extraordinaria:
 
-L|a) Modificar os estatutos da asociación, incluído o cambio de domicilio.
+- a) Modificar os estatutos da asociación, incluído o cambio de domicilio.
 
-L|b) Acordar a transformación da asociación.
+- b) Acordar a transformación da asociación.
 
-L|c) Acordar a fusión da asociación.
+- c) Acordar a fusión da asociación.
 
-L|d) Acordar a disolución da asociación e designar as persoas liquidadoras.
+- d) Acordar a disolución da asociación e designar as persoas liquidadoras.
 
-L|e) As que, sendo competencia da Asemblea Xeral ordinaria, por razóns de urxencia ou necesidade, non poidan agardar á súa convocatoria.
+- e) As que, sendo competencia da Asemblea Xeral ordinaria, por razóns de urxencia ou necesidade, non poidan agardar á súa convocatoria.
 
-L|f) Todas as non conferidas expresamente á Asemblea Xeral ordinaria ou á Xunta Directiva.
+- f) Todas as non conferidas expresamente á Asemblea Xeral ordinaria ou á Xunta Directiva.
 
 ### Artigo 21. Adopción de acordos
 
-L|1. Os acordos da Asemblea Xeral adoptaranse por maioría simple das persoas presentes ou representadas, cando os votos afirmativos superen aos negativos, non sendo computables para estes efectos os votos nulos, en branco nin as abstencións.
+1. Os acordos da Asemblea Xeral adoptaranse por maioría simple das persoas presentes ou representadas, cando os votos afirmativos superen aos negativos, non sendo computables para estes efectos os votos nulos, en branco nin as abstencións.
 
-L|2. Sen prexuízo das maiorías reforzadas previstas nos artigos 36 e 37 dos presentes estatutos, será necesaria a maioría absoluta dos votos emitidos, que resultará cando os votos afirmativos superen a metade dos votos das persoas presentes ou representadas, para adoptar os seguintes acordos:
+2. Sen prexuízo das maiorías reforzadas previstas nos artigos 36 e 37 dos presentes estatutos, será necesaria a maioría absoluta dos votos emitidos, que resultará cando os votos afirmativos superen a metade dos votos das persoas presentes ou representadas, para adoptar os seguintes acordos:
 
-L|a) Designación de membros da Xunta Directiva.
+- a) Designación de membros da Xunta Directiva.
 
-L|b) Acordo para constituír federacións e para integrarse ou separarse delas.
+- b) Acordo para constituír federacións e para integrarse ou separarse delas.
 
-L|c) Disolución da asociación, sen prexuízo do procedemento reforzado previsto no artigo 36.
+- c) Disolución da asociación, sen prexuízo do procedemento reforzado previsto no artigo 36.
 
-L|d) Modificación dos estatutos, incluído o cambio de domicilio social, sen prexuízo do procedemento reforzado previsto no artigo 37 para as modificacións substanciais.
+- d) Modificación dos estatutos, incluído o cambio de domicilio social, sen prexuízo do procedemento reforzado previsto no artigo 37 para as modificacións substanciais.
 
-L|e) Disposición ou alleamento de bens.
+- e) Disposición ou alleamento de bens.
 
-L|f) Remuneración das persoas que integran os órganos de representación, cando proceda conforme á normativa aplicable.
+- f) Remuneración das persoas que integran os órganos de representación, cando proceda conforme á normativa aplicable.
 
-L|3. Os acordos adoptados conforme aos preceptos anteriores obrigarán a todas as persoas asociadas, incluídas as non asistentes.
+3. Os acordos adoptados conforme aos preceptos anteriores obrigarán a todas as persoas asociadas, incluídas as non asistentes.
 
 ### Artigo 22. Xunta Directiva: composición
 
-L|1. A Xunta Directiva é o órgano de representación que xestiona e representa os intereses da asociación de acordo coas disposicións e directivas da Asemblea Xeral.
+1. A Xunta Directiva é o órgano de representación que xestiona e representa os intereses da asociación de acordo coas disposicións e directivas da Asemblea Xeral.
 
-L|2. Estará formada por Presidencia, Vicepresidencia, Secretaría, Tesouraría e Vogalías, designadas pola Asemblea Xeral entre as persoas asociadas maiores de idade, en pleno uso dos seus dereitos civís e que non estean incursas en motivos de incompatibilidade legalmente establecidos.
+2. Estará formada por Presidencia, Vicepresidencia, Secretaría, Tesouraría e Vogalías, designadas pola Asemblea Xeral entre as persoas asociadas maiores de idade, en pleno uso dos seus dereitos civís e que non estean incursas en motivos de incompatibilidade legalmente establecidos.
 
-L|3. A duración do seu mandato será de dous anos, podendo ser obxecto de sucesivas reeleccións.
+3. A duración do seu mandato será de dous anos, podendo ser obxecto de sucesivas reeleccións.
 
-L|4. Os cargos que compoñen a Xunta Directiva serán desempeñados de forma gratuíta, sen prexuízo do dereito ao reembolso dos gastos debidamente xustificados en que poidan incorrer por actuacións relacionadas coa asociación, salvo que a Asemblea Xeral acorde validamente outra cousa de conformidade coa normativa aplicable.
+4. Os cargos que compoñen a Xunta Directiva serán desempeñados de forma gratuíta, sen prexuízo do dereito ao reembolso dos gastos debidamente xustificados en que poidan incorrer por actuacións relacionadas coa asociación, salvo que a Asemblea Xeral acorde validamente outra cousa de conformidade coa normativa aplicable.
 
-L|5. Os cargos da Xunta Directiva cesarán na súa función por:
+5. Os cargos da Xunta Directiva cesarán na súa función por:
 
-L|a) Morte ou declaración de falecemento da persoa física, ou extinción da persoa xurídica.
+- a) Morte ou declaración de falecemento da persoa física, ou extinción da persoa xurídica.
 
-L|b) Incapacidade, inhabilitación ou incompatibilidade, de acordo co establecido no ordenamento xurídico.
+- b) Incapacidade, inhabilitación ou incompatibilidade, de acordo co establecido no ordenamento xurídico.
 
-L|c) Resolución xudicial.
+- c) Resolución xudicial.
 
-L|d) Renuncia voluntaria.
+- d) Renuncia voluntaria.
 
-L|e) Perda da condición de persoa asociada.
+- e) Perda da condición de persoa asociada.
 
-L|f) Incumprimento das obrigas que tivesen encomendadas.
+- f) Incumprimento das obrigas que tivesen encomendadas.
 
-L|g) Transcurso do período do seu mandato. Neste caso, e mentres non se proceda á elección da nova Xunta Directiva, aquela continuará en funcións ata a designación das novas persoas titulares.
+- g) Transcurso do período do seu mandato. Neste caso, e mentres non se proceda á elección da nova Xunta Directiva, aquela continuará en funcións ata a designación das novas persoas titulares.
 
-L|6. De producirse vacantes na Xunta Directiva, estas serán desempeñadas provisionalmente polas restantes persoas integrantes, ata a elección definitiva pola Asemblea Xeral.
+6. De producirse vacantes na Xunta Directiva, estas serán desempeñadas provisionalmente polas restantes persoas integrantes, ata a elección definitiva pola Asemblea Xeral.
 
 ### Artigo 23. Reunións e acordos da Xunta Directiva
 
-L|1. A Xunta Directiva será convocada pola Presidencia, por iniciativa propia ou a petición de calquera dos seus compoñentes.
+1. A Xunta Directiva será convocada pola Presidencia, por iniciativa propia ou a petición de calquera dos seus compoñentes.
 
-L|2. Para estar validamente constituída deberán estar presentes a metade máis un dos seus membros e, en todo caso, as persoas titulares da Presidencia e da Secretaría ou as persoas que as substitúan.
+2. Para estar validamente constituída deberán estar presentes a metade máis un dos seus membros e, en todo caso, as persoas titulares da Presidencia e da Secretaría ou as persoas que as substitúan.
 
-L|3. Para que os acordos da Xunta Directiva sexan válidos, deberán ser adoptados pola maioría de votos das persoas asistentes. Os empates serán dirimidos mediante voto de calidade da Presidencia.
+3. Para que os acordos da Xunta Directiva sexan válidos, deberán ser adoptados pola maioría de votos das persoas asistentes. Os empates serán dirimidos mediante voto de calidade da Presidencia.
 
-L|4. A Xunta Directiva poderase convocar, constituír, celebrar as súas sesións e adoptar acordos de forma presencial ou a distancia. Nas sesións que se celebren a distancia, as persoas titulares da Xunta Directiva poderán encontrarse en distintos lugares sempre que se asegure por medios electrónicos, considerándose como tales os telefónicos e audiovisuais, a súa identidade, o contido das súas manifestacións, o momento en que estas se producen, así como a interactividade e intercomunicación entre elas en tempo real e a dispoñibilidade dos medios durante a sesión. Entre outros, consideraranse incluídos entre os medios electrónicos válidos o correo electrónico, as audioconferencias e as videoconferencias. Nas reunións a distancia, os acordos entenderanse adoptados na sede da asociación.
+4. A Xunta Directiva poderase convocar, constituír, celebrar as súas sesións e adoptar acordos de forma presencial ou a distancia. Nas sesións que se celebren a distancia, as persoas titulares da Xunta Directiva poderán encontrarse en distintos lugares sempre que se asegure por medios electrónicos, considerándose como tales os telefónicos e audiovisuais, a súa identidade, o contido das súas manifestacións, o momento en que estas se producen, así como a interactividade e intercomunicación entre elas en tempo real e a dispoñibilidade dos medios durante a sesión. Entre outros, consideraranse incluídos entre os medios electrónicos válidos o correo electrónico, as audioconferencias e as videoconferencias. Nas reunións a distancia, os acordos entenderanse adoptados na sede da asociación.
 
 ### Artigo 24. Facultades da Xunta Directiva
 
 A Xunta Directiva terá as seguintes atribucións:
 
-L|a) Programar e dirixir as actividades asociativas.
+- a) Programar e dirixir as actividades asociativas.
 
-L|b) Levar a xestión administrativa e económica da asociación.
+- b) Levar a xestión administrativa e económica da asociación.
 
-L|c) Executar os acordos da Asemblea Xeral.
+- c) Executar os acordos da Asemblea Xeral.
 
-L|d) Someter á aprobación da Asemblea Xeral o orzamento anual de ingresos e gastos, así como o estado de contas do ano anterior.
+- d) Someter á aprobación da Asemblea Xeral o orzamento anual de ingresos e gastos, así como o estado de contas do ano anterior.
 
-L|e) Convocar e fixar as datas das Asembleas Xerais.
+- e) Convocar e fixar as datas das Asembleas Xerais.
 
-L|f) Propoñerlle á Asemblea Xeral a fixación de cotas ordinarias e extraordinarias para as persoas asociadas.
+- f) Propoñerlle á Asemblea Xeral a fixación de cotas ordinarias e extraordinarias para as persoas asociadas.
 
-L|g) Designar as comisións de traballo ou seccións que se estimen oportunas para o bo funcionamento da asociación.
+- g) Designar as comisións de traballo ou seccións que se estimen oportunas para o bo funcionamento da asociación.
 
-L|h) Ditar normas interiores de organización e exercer cantas funcións non estean expresamente asignadas á Asemblea Xeral.
+- h) Ditar normas interiores de organización e exercer cantas funcións non estean expresamente asignadas á Asemblea Xeral.
 
-L|i) Resolver as solicitudes de ingreso das persoas asociadas.
+- i) Resolver as solicitudes de ingreso das persoas asociadas.
 
-L|l) Propoñer o plan de actividades da asociación á Asemblea Xeral para a súa aprobación, impulsando e dirixindo as súas tarefas.
+- l) Propoñer o plan de actividades da asociación á Asemblea Xeral para a súa aprobación, impulsando e dirixindo as súas tarefas.
 
-L|m) Resolver os procedementos disciplinarios que se instrúan.
+- m) Resolver os procedementos disciplinarios que se instrúan.
 
 ### Artigo 25. Obrigas documentais
 
 A asociación disporá dos seguintes documentos, que estarán a disposición de todas as persoas asociadas:
 
-L|a) Unha relación actualizada de persoas asociadas.
+- a) Unha relación actualizada de persoas asociadas.
 
-L|b) Documentación contable que permita obter a imaxe fiel do patrimonio, do resultado e da situación financeira da entidade, así como das actividades realizadas. Tal contabilidade levarase de conformidade coa normativa específica que resulte de aplicación.
+- b) Documentación contable que permita obter a imaxe fiel do patrimonio, do resultado e da situación financeira da entidade, así como das actividades realizadas. Tal contabilidade levarase de conformidade coa normativa específica que resulte de aplicación.
 
-L|c) Inventario dos seus bens.
+- c) Inventario dos seus bens.
 
-L|d) Libro de actas das reunións dos seus órganos de goberno e representación.
+- d) Libro de actas das reunións dos seus órganos de goberno e representación.
 
 ### Artigo 26. Presidencia
 
 A persoa titular da Presidencia terá as seguintes atribucións:
 
-L|a) Representar legalmente a asociación perante calquera organismo público ou privado.
+- a) Representar legalmente a asociación perante calquera organismo público ou privado.
 
-L|b) Convocar e presidir as sesións que celebre a Xunta Directiva e a Asemblea Xeral, dirixir as deliberacións dunha e outra, e decidir con voto de calidade os casos de empate de votos.
+- b) Convocar e presidir as sesións que celebre a Xunta Directiva e a Asemblea Xeral, dirixir as deliberacións dunha e outra, e decidir con voto de calidade os casos de empate de votos.
 
-L|c) Ordenar a execución dos acordos adoptados pola Xunta Directiva e a Asemblea Xeral.
+- c) Ordenar a execución dos acordos adoptados pola Xunta Directiva e a Asemblea Xeral.
 
-L|d) Ordenar os pagamentos acordados validamente.
+- d) Ordenar os pagamentos acordados validamente.
 
-L|e) Asinar as actas, certificados, pagamentos e outros documentos da asociación xunto coa persoa que ostente a Secretaría ou co membro da Xunta Directiva a quen corresponda a elaboración do documento de que se trate.
+- e) Asinar as actas, certificados, pagamentos e outros documentos da asociación xunto coa persoa que ostente a Secretaría ou co membro da Xunta Directiva a quen corresponda a elaboración do documento de que se trate.
 
 ### Artigo 27. Vicepresidencia
 
@@ -391,39 +389,39 @@ A persoa titular da Vicepresidencia realizará as funcións da Presidencia nos c
 
 ### Artigo 28. Secretaría
 
-L|1. A persoa titular da Secretaría terá as seguintes atribucións:
+1. A persoa titular da Secretaría terá as seguintes atribucións:
 
-L|a) Tramitar as solicitudes de ingreso na asociación e formalizar as inscricións de altas e baixas das persoas asociadas.
+- a) Tramitar as solicitudes de ingreso na asociación e formalizar as inscricións de altas e baixas das persoas asociadas.
 
-L|b) Dirixir a administración ordinaria da asociación no ámbito documental que lle sexa propio.
+- b) Dirixir a administración ordinaria da asociación no ámbito documental que lle sexa propio.
 
-L|c) Formalizar as convocatorias de reunión por orde da Presidencia e redactar as actas correspondentes.
+- c) Formalizar as convocatorias de reunión por orde da Presidencia e redactar as actas correspondentes.
 
-L|d) Expedir certificacións dos acordos co visto e prace da Presidencia, así como emitir informes.
+- d) Expedir certificacións dos acordos co visto e prace da Presidencia, así como emitir informes.
 
-L|e) Redactar o inventario de bens da asociación.
+- e) Redactar o inventario de bens da asociación.
 
-L|f) Custodiar o arquivo de libros e documentos da asociación.
+- f) Custodiar o arquivo de libros e documentos da asociación.
 
-L|g) Cumprir coas demais obrigas documentais nos termos que legalmente correspondan.
+- g) Cumprir coas demais obrigas documentais nos termos que legalmente correspondan.
 
-L|2. A persoa titular da Secretaría, nos casos de ausencia ou enfermidade, será substituída por outro membro da Xunta Directiva designado pola Presidencia.
+2. A persoa titular da Secretaría, nos casos de ausencia ou enfermidade, será substituída por outro membro da Xunta Directiva designado pola Presidencia.
 
 ### Artigo 29. Tesouraría
 
-L|1. A persoa titular da Tesouraría terá as seguintes atribucións:
+1. A persoa titular da Tesouraría terá as seguintes atribucións:
 
-L|a) Recadar e custodiar os fondos pertencentes á asociación e investilos na forma acordada pola Xunta Directiva ou pola Asemblea Xeral, segundo corresponda.
+- a) Recadar e custodiar os fondos pertencentes á asociación e investilos na forma acordada pola Xunta Directiva ou pola Asemblea Xeral, segundo corresponda.
 
-L|b) Intervir coa súa sinatura todos os documentos de cobros e pagamentos co visto e conforme da Presidencia.
+- b) Intervir coa súa sinatura todos os documentos de cobros e pagamentos co visto e conforme da Presidencia.
 
-L|c) Dar cumprimento ás ordes de pagamento que expida a Presidencia.
+- c) Dar cumprimento ás ordes de pagamento que expida a Presidencia.
 
-L|d) Elaborar o anteproxecto de orzamentos para a súa aprobación.
+- d) Elaborar o anteproxecto de orzamentos para a súa aprobación.
 
-L|e) Levar os libros de contabilidade da asociación e elaborar as contas anuais para a súa aprobación pola Asemblea Xeral.
+- e) Levar os libros de contabilidade da asociación e elaborar as contas anuais para a súa aprobación pola Asemblea Xeral.
 
-L|f) Exercer calquera outra función propia da Tesouraría e da xestión económicofinanceira da asociación.
+- f) Exercer calquera outra función propia da Tesouraría e da xestión económicofinanceira da asociación.
 
 ### Artigo 30. Vogalías
 
@@ -439,23 +437,21 @@ A asociación, no momento de iniciar as súas actividades, dispón dun patrimoni
 
 A asociación manterase dos seguintes recursos:
 
-L|a) As cotas periódicas das persoas asociadas.
+- a) As cotas periódicas das persoas asociadas.
 
-L|b) As cotas extraordinarias que propoña a Xunta Directiva e sexan aprobadas pola Asemblea Xeral.
+- b) As cotas extraordinarias que propoña a Xunta Directiva e sexan aprobadas pola Asemblea Xeral.
 
-L|c) As doazóns ou subvencións que poidan conceder órganos públicos, entidades privadas ou particulares.
+- c) As doazóns ou subvencións que poidan conceder órganos públicos, entidades privadas ou particulares.
 
-L|d) Os ingresos que se poidan recibir polo desenvolvemento das actividades da asociación.
+- d) Os ingresos que se poidan recibir polo desenvolvemento das actividades da asociación.
 
-L|e) Calquera outro ingreso admitido pola normativa vixente para actividades non lucrativas.
+- e) Calquera outro ingreso admitido pola normativa vixente para actividades non lucrativas.
 
 ### Artigo 33. Contas anuais
 
-L|1. Anualmente, con referencia ao último día do exercicio económico, elaboraranse as contas anuais, expresivas da situación patrimonial e contable da asociación, así como unha memoria das actividades realizadas. Esta documentación estará a disposición das
+1. Anualmente, con referencia ao último día do exercicio económico, elaboraranse as contas anuais, expresivas da situación patrimonial e contable da asociación, así como unha memoria das actividades realizadas. Esta documentación estará a disposición das persoas asociadas durante un prazo non inferior a quince días antes da data sinalada para a súa aprobación en Asemblea.
 
-persoas asociadas durante un prazo non inferior a quince días antes da data sinalada para a súa aprobación en Asemblea.
-
-L|2. A Xunta Directiva levará os correspondentes libros de contabilidade, que permitan obter unha imaxe fiel do patrimonio, do resultado e da situación financeira da asociación.
+2. A Xunta Directiva levará os correspondentes libros de contabilidade, que permitan obter unha imaxe fiel do patrimonio, do resultado e da situación financeira da asociación.
 
 ### Artigo 34. Destino de ingresos aos fins da asociación
 
@@ -475,13 +471,13 @@ O funcionamento interno da asociación estará sometido á orde xurisdicional ci
 
 A asociación disolverase polas seguintes causas:
 
-L|a) Por acordo da Asemblea Xeral extraordinaria convocada especificamente para tal efecto, conforme ao procedemento reforzado previsto neste artigo.
+- a) Por acordo da Asemblea Xeral extraordinaria convocada especificamente para tal efecto, conforme ao procedemento reforzado previsto neste artigo.
 
-L|b) Polas causas previstas no artigo 39 do Código Civil.
+- b) Polas causas previstas no artigo 39 do Código Civil.
 
-L|c) Por sentenza xudicial firme.
+- c) Por sentenza xudicial firme.
 
-L|d) Polas demais causas legalmente aplicables. A proposta de disolución deberá ser incluída expresamente na orde do día da convocatoria, acompañada dunha memoria xustificativa elaborada pola Xunta Directiva ou polas persoas asociadas promotoras da proposta.
+- d) Polas demais causas legalmente aplicables. A proposta de disolución deberá ser incluída expresamente na orde do día da convocatoria, acompañada dunha memoria xustificativa elaborada pola Xunta Directiva ou polas persoas asociadas promotoras da proposta.
 
 Antes da votación, o Consello deberá emitir informe preceptivo sobre a adecuación da proposta de disolución aos principios, fins e continuidade do proxecto fundacional da asociación. Este informe non terá carácter vinculante, mais deberá ser posto a disposición das persoas asociadas xunto coa documentación da convocatoria.
 
@@ -493,9 +489,9 @@ No caso de que o informe do Consello sexa desfavorable á disolución, a ratific
 
 Non poderá adoptarse acordo de disolución se non consta expresamente na acta o resultado da votación, o quórum de asistencia, o número total de persoas asociadas con dereito a voto e o cumprimento dos requisitos establecidos neste artigo.
 
-### Artigo 37. Modificación substancial dos fins, denominación e
+### Artigo 37. Modificación substancial dos fins, denominación e identidade fundacional
 
-identidade fundacional Terán a consideración de modificacións substanciais aquelas que afecten á denominación da asociación, aos seus fins principais, aos seus principios fundacionais, á lingua ordinaria de actividade ou á natureza cultural, intelectual, editorial ou interdisciplinar do proxecto.
+Terán a consideración de modificacións substanciais aquelas que afecten á denominación da asociación, aos seus fins principais, aos seus principios fundacionais, á lingua ordinaria de actividade ou á natureza cultural, intelectual, editorial ou interdisciplinar do proxecto.
 
 Non terán esta consideración as modificacións meramente formais, técnicas ou de adaptación normativa que non alteren o sentido material dos elementos anteriores.
 
@@ -515,15 +511,15 @@ As persoas membros da Xunta Directiva no momento da disolución converteranse en
 
 Corresponde ás persoas liquidadoras:
 
-L|a) Velar pola integridade do patrimonio da asociación.
+- a) Velar pola integridade do patrimonio da asociación.
 
-L|b) Concluír as operacións pendentes e efectuar aquelas que sexan precisas para a liquidación.
+- b) Concluír as operacións pendentes e efectuar aquelas que sexan precisas para a liquidación.
 
-L|c) Cobrar os créditos da asociación.
+- c) Cobrar os créditos da asociación.
 
-L|d) Liquidar o patrimonio e pagar ás persoas ou entidades acredoras.
+- d) Liquidar o patrimonio e pagar ás persoas ou entidades acredoras.
 
-L|e) Solicitar a baixa da asociación e a cancelación dos asentos rexistrais. O patrimonio remanente, se o houber, será destinado a unha entidade sen ánimo de lucro, legalmente constituída, que desenvolva fins culturais, intelectuais, educativos, editoriais ou de promoción da lingua galega, preferentemente no ámbito territorial de Galicia. A Asemblea Xeral extraordinaria que acorde a disolución deberá determinar a entidade destinataria do patrimonio remanente, logo de informe preceptivo do Consello. En ningún caso o patrimonio resultante poderá ser repartido entre as persoas asociadas nin entre persoas físicas ou xurídicas con interese lucrativo. Os arquivos, publicacións, materiais editoriais, dominios web, contas dixitais, fondos documentais e demais elementos vinculados á memoria intelectual da asociación deberán conservarse, sempre que sexa posible, de forma ordenada e accesible. O Consello poderá presentar unha proposta motivada sobre a conservación, cesión ou continuidade destes elementos, incluída a súa integración nun proxecto de continuidade cultural ou editorial ou a súa cesión a unha entidade sen ánimo de lucro compatible cos fins da asociación. A Asemblea Xeral extraordinaria deberá pronunciarse expresamente sobre esta proposta no acordo de liquidación ou nun acordo complementario adoptado no mesmo proceso.
+- e) Solicitar a baixa da asociación e a cancelación dos asentos rexistrais. O patrimonio remanente, se o houber, será destinado a unha entidade sen ánimo de lucro, legalmente constituída, que desenvolva fins culturais, intelectuais, educativos, editoriais ou de promoción da lingua galega, preferentemente no ámbito territorial de Galicia. A Asemblea Xeral extraordinaria que acorde a disolución deberá determinar a entidade destinataria do patrimonio remanente, logo de informe preceptivo do Consello. En ningún caso o patrimonio resultante poderá ser repartido entre as persoas asociadas nin entre persoas físicas ou xurídicas con interese lucrativo. Os arquivos, publicacións, materiais editoriais, dominios web, contas dixitais, fondos documentais e demais elementos vinculados á memoria intelectual da asociación deberán conservarse, sempre que sexa posible, de forma ordenada e accesible. O Consello poderá presentar unha proposta motivada sobre a conservación, cesión ou continuidade destes elementos, incluída a súa integración nun proxecto de continuidade cultural ou editorial ou a súa cesión a unha entidade sen ánimo de lucro compatible cos fins da asociación. A Asemblea Xeral extraordinaria deberá pronunciarse expresamente sobre esta proposta no acordo de liquidación ou nun acordo complementario adoptado no mesmo proceso.
 
 ### Artigo 39. Principio de continuidade do proxecto
 
@@ -537,6 +533,6 @@ Calquera proposta que poida afectar gravemente á continuidade da asociación, �
 
 En todo canto non estea previsto nos presentes estatutos aplicarase a Lei orgánica 1/2002, do 22 de marzo, reguladora do dereito de asociación, e demais disposicións complementarias.
 
-## |En Cambados, a 1 de xullo de 2026.
+## |En Cambados, a 28 de xullo de 2026.
 
 Sinatura de todas as persoas promotoras da asociación
