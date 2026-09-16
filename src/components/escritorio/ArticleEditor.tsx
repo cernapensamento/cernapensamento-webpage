@@ -269,7 +269,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
 
         const { error } = await supabase.storage
             .from('imagenes-articulos')
-            .upload(path, file, { upsert: true });
+            .upload(path, file, {});
 
         if (error) {
             alert('Error al subir la imagen: ' + error.message);
@@ -326,7 +326,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
 
         const { error } = await supabase.storage
             .from('imagenes-articulos')
-            .upload(path, file, { upsert: true });
+            .upload(path, file, {});
 
         if (error) {
             alert('Error al subir la imagen: ' + error.message);
