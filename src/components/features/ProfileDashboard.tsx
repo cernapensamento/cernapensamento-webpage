@@ -78,7 +78,7 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
 
     const { error } = await supabase.storage
       .from('imagenes-articulos')
-      .upload(path, file, { upsert: true });
+      .upload(path, file, {});
 
     if (error) {
       alert('Error al subir la imagen: ' + error.message);
