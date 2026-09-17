@@ -21,7 +21,7 @@ erDiagram
         text nombre
         text bio
         text avatar_url
-        text rol "usuario | escritor | admin | invitado"
+        text rol
         boolean preferencia_boletin
         timestamp creado_en
     }
@@ -36,8 +36,8 @@ erDiagram
         text contenido_gl
         text contenido_es
         text imagen_url
-        text estado "borrador | en_revision | publicado"
-        text tipo "artigo | ensaio | reportaxe | columna | entrevista | poesia"
+        text estado
+        text tipo
         boolean fijado
         uuid autor_id FK
         timestamp creado_en
@@ -51,7 +51,7 @@ erDiagram
     tag_translations {
         uuid id PK
         uuid tag_id FK
-        text lang "gl | es"
+        text lang
         text name
     }
 
@@ -63,6 +63,8 @@ erDiagram
         timestamp creado_en
     }
 ```
+
+> Valores permitidos: `perfiles.rol` (`usuario`, `escritor`, `admin`, `invitado`); `articulos.estado` (`borrador`, `en_revision`, `publicado`); `articulos.tipo` (`artigo`, `ensaio`, `reportaxe`, `columna`, `entrevista`, `poesia`); `tag_translations.lang` (`gl`, `es`).
 
 ---
 
