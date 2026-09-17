@@ -9,6 +9,15 @@ import StarterKit from '@tiptap/starter-kit';
 import { Figure } from '@/lib/editor/FigureExtension';
 import Youtube from '@tiptap/extension-youtube';
 import TextAlign from '@tiptap/extension-text-align';
+import { TextStyle, FontSize } from '@tiptap/extension-text-style';
+import 'katex/dist/katex.min.css';
+import { MathKit } from '@/lib/editor/MathExtensions';
+import { CustomTable, TableRow, CustomTableCell, CustomTableHeader } from '@/lib/editor/TableExtensions';
+import TableControls from '@/components/escritorio/TableControls';
+import { renderMathInHtml } from '@/lib/editor/renderMath';
+import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
+import { getHeadingsFromHtml, generateIndex, stripIndex } from '@/lib/editor/generateIndex';
+import { ArticleIndex } from '@/lib/editor/ArticleIndexExtension';
 import { useParams } from 'next/navigation';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
@@ -142,12 +151,20 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 width: 800,
                 height: 450,
             }),
+            TextStyle,
+            FontSize,
+            CustomTable,
+            TableRow,
+            CustomTableCell,
+            CustomTableHeader,
+            MathKit,
+            ArticleIndex,
         ],
         content: initialData?.contenido_gl || (mode === 'create' ? '<p>La naturaleza del pensamiento contemporáneo exige una pausa deliberada...</p>' : ''),
         immediatelyRender: false,
         editorProps: {
             attributes: {
-                class: 'w-full border-none bg-transparent font-sans text-lg text-charcoal focus:outline-none min-h-[400px] outline-none prose prose-p:my-4 [&_h1+p]:mt-2 [&_h2+p]:mt-2 [&_h3+p]:mt-2 prose-img:my-8 prose-h1:font-serif prose-h1:font-bold prose-h1:text-4xl prose-h1:md:text-5xl prose-h1:text-charcoal prose-h1:mt-12 prose-h1:mb-0 prose-h1:tracking-tight prose-h2:font-serif prose-h2:font-bold prose-h2:text-3xl prose-h2:md:text-4xl prose-h2:text-charcoal/90 prose-h2:mt-10 prose-h2:mb-0 prose-h2:tracking-tight prose-h3:font-serif prose-h3:font-bold prose-h3:text-2xl prose-h3:md:text-3xl prose-h3:text-charcoal/80 prose-h3:mt-8 prose-h3:mb-0 prose-h3:tracking-tight',
+                class: 'w-full border-none bg-transparent font-sans text-lg text-charcoal focus:outline-none min-h-[400px] outline-none prose prose-p:my-4 [&_h1+p]:mt-2 [&_h2+p]:mt-2 [&_h3+p]:mt-2 prose-img:my-8 prose-h1:font-serif prose-h1:font-bold prose-h1:text-4xl prose-h1:md:text-5xl prose-h1:text-charcoal prose-h1:mt-12 prose-h1:mb-0 prose-h1:tracking-tight prose-h2:font-serif prose-h2:font-bold prose-h2:text-3xl prose-h2:md:text-4xl prose-h2:text-charcoal/90 prose-h2:mt-10 prose-h2:mb-0 prose-h2:tracking-tight prose-h3:font-serif prose-h3:font-bold prose-h3:text-2xl prose-h3:md:text-3xl prose-h3:text-charcoal/80 prose-h3:mt-8 prose-h3:mb-0 prose-h3:tracking-tight [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_span[data-type="inline-math"]]:bg-lines/30 [&_span[data-type="inline-math"]]:px-1.5 [&_span[data-type="inline-math"]]:py-0.5 [&_span[data-type="inline-math"]]:rounded [&_div[data-type="block-math"]]:bg-lines/20 [&_div[data-type="block-math"]]:p-4 [&_div[data-type="block-math"]]:my-6 [&_div[data-type="block-math"]]:rounded [&_div[data-type="block-math"]]:text-center',
             },
         },
         onUpdate: ({ editor }) => {
@@ -353,6 +370,62 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         }
     };
 
+    const insertMath = () => {
+        if (!editor) return;
+        const latex = window.prompt('Introduce a fórmula matemática en LaTeX / Introduce la fórmula matemática en LaTeX:\n(ex: \\int_0^\\infty e^{-x} dx = 1)');
+        if (latex && latex.trim()) {
+            (editor.chain().focus() as unknown as { insertBlockMath: (opts: { latex: string }) => { run: () => boolean } }).insertBlockMath({ latex: latex.trim() }).run();
+        }
+    };
+
+    const insertTable = () => {
+        if (!editor) return;
+        (editor.chain().focus() as unknown as { insertTable: (opts: { rows: number; cols: number; withHeaderRow?: boolean }) => { run: () => boolean } }).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+    };
+
+    const handleInsertIndex = () => {
+        if (!editor) return;
+        const rawHtml = editor.getHTML();
+        const items = getHeadingsFromHtml(rawHtml);
+        if (!items.length) {
+            alert(
+                activeLang === 'gl'
+                    ? 'Non se atoparon seccións (H1, H2, H3) no artigo.'
+                    : 'No se encontraron secciones (H1, H2, H3) en el artículo.'
+            );
+            return;
+        }
+
+        const editorAny = editor as any;
+        if (typeof editorAny.commands?.insertArticleIndex === 'function') {
+            editorAny.commands.insertArticleIndex({ items, lang: activeLang });
+        } else if (editor.state?.schema?.nodes?.articleIndex) {
+            const { state, view } = editor;
+            let existingPos: number | null = null;
+            let existingSize = 0;
+            state.doc.descendants((node, pos) => {
+                if (node.type.name === 'articleIndex') {
+                    existingPos = pos;
+                    existingSize = node.nodeSize;
+                    return false;
+                }
+            });
+
+            const indexNode = state.schema.nodes.articleIndex.create({ items, lang: activeLang });
+            const tr = state.tr;
+            if (existingPos !== null) {
+                tr.replaceWith(existingPos, existingPos + existingSize, indexNode);
+            } else {
+                tr.insert(0, indexNode);
+            }
+            view.dispatch(tr);
+        } else {
+            const stripped = stripIndex(rawHtml);
+            const indexHtml = generateIndex(stripped, activeLang);
+            editor.commands.setContent(indexHtml + '\n' + stripped);
+        }
+    };
+
     const handleTranslate = async () => {
         if (!editor) return;
         setIsTranslating(true);
@@ -515,6 +588,40 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         <div className="flex items-center gap-1 text-charcoal/80 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
                             <button type="button" aria-label="Negrita" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bold') ? 'bg-lines/30' : ''}`} title="Negrita" onClick={() => editor?.chain().focus().toggleBold().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_bold</span></button>
                             <button type="button" aria-label="Cursiva" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('italic') ? 'bg-lines/30' : ''}`} title="Cursiva" onClick={() => editor?.chain().focus().toggleItalic().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_italic</span></button>
+                            <select
+                                aria-label="Tamaño do texto / Tamaño de texto"
+                                className={`h-9 shrink-0 bg-transparent text-xs border px-2 focus:outline-none cursor-pointer transition-colors mx-1 ${
+                                    (['9pt', '10pt', '11pt', '12pt', '16pt', '18pt', '20pt', '24pt', '28pt', '32pt', '36pt'].find((size) => editor?.isActive('textStyle', { fontSize: size })) || 'default') === 'default'
+                                        ? 'border-gold text-gold font-semibold'
+                                        : 'border-lines text-charcoal/80 focus:border-gold'
+                                }`}
+                                value={
+                                    ['9pt', '10pt', '11pt', '12pt', '16pt', '18pt', '20pt', '24pt', '28pt', '32pt', '36pt'].find((size) => editor?.isActive('textStyle', { fontSize: size })) || 'default'
+                                }
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const chain = editor?.chain().focus() as unknown as { unsetFontSize: () => { run: () => boolean }; setFontSize: (size: string) => { run: () => boolean } } | undefined;
+                                    if (val === 'default') {
+                                        chain?.unsetFontSize().run();
+                                    } else {
+                                        chain?.setFontSize(val).run();
+                                    }
+                                }}
+                                title="Tamaño do texto / Tamaño de texto"
+                            >
+                                <option value="9pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>9 pt</option>
+                                <option value="10pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>10 pt</option>
+                                <option value="11pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>11 pt</option>
+                                <option value="12pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>12 pt</option>
+                                <option value="default" style={{ backgroundColor: 'rgba(212, 175, 55, 0.25)', color: '#b8860b', fontWeight: 'bold' }}>14 pt</option>
+                                <option value="16pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>16 pt</option>
+                                <option value="18pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>18 pt</option>
+                                <option value="20pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>20 pt</option>
+                                <option value="24pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>24 pt</option>
+                                <option value="28pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>28 pt</option>
+                                <option value="32pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>32 pt</option>
+                                <option value="36pt" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>36 pt</option>
+                            </select>
                             <div className="h-6 w-[1px] shrink-0 bg-lines mx-2"></div>
                             <button type="button" aria-label="Título 1" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer font-serif font-bold ${editor?.isActive('heading', { level: 1 }) ? 'bg-lines/30' : ''}`} title="Título 1" onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}>H1</button>
                             <button type="button" aria-label="Título 2" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer font-serif font-bold ${editor?.isActive('heading', { level: 2 }) ? 'bg-lines/30' : ''}`} title="Título 2" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>H2</button>
@@ -525,6 +632,10 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             <button type="button" aria-label="Insertar Vídeo" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Vídeo de YouTube" onClick={insertYoutube}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>smart_display</span></button>
                             <button type="button" aria-label="Lista con viñetas" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bulletList') ? 'bg-lines/30' : ''}`} title="Lista" onClick={() => editor?.chain().focus().toggleBulletList().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_bulleted</span></button>
                             <button type="button" aria-label="Justificar Texto" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive({ textAlign: 'justify' }) ? 'bg-lines/30' : ''}`} title="Justificar" onClick={() => { if (editor?.isActive({ textAlign: 'justify' })) { editor?.chain().focus().unsetTextAlign().run(); } else { editor?.chain().focus().setTextAlign('justify').run(); } }}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_align_justify</span></button>
+                            <div className="h-6 w-[1px] shrink-0 bg-lines mx-1"></div>
+                            <button type="button" aria-label="Fórmula Matemática" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Fórmula Matemática (LaTeX)" onClick={insertMath}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>functions</span></button>
+                            <button type="button" aria-label="Insertar Táboa" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('table') ? 'bg-lines/30' : ''}`} title="Táboa / Tabla" onClick={insertTable}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>table_chart</span></button>
+                            <button type="button" aria-label="Insertar / Actualizar Índice" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Insertar / Actualizar Índice" onClick={handleInsertIndex}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_numbered</span></button>
                             <div className="h-6 w-[1px] shrink-0 bg-lines mx-2"></div>
                             <button type="button" aria-label="Limpiar todo" className="w-10 h-10 shrink-0 flex items-center justify-center text-charcoal hover:bg-lines/30 transition-colors cursor-pointer" title="Limpiar Todo" onClick={handleClearAll}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>delete_sweep</span></button>
                             <button type="button" aria-label="Cambiar Imagen de Portada" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Portada" onClick={handleChangeCoverImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>add_a_photo</span></button>
@@ -590,7 +701,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     </div>
 
                     {/* Editor Area */}
-                    <div className="max-w-[800px] mx-auto py-8 px-8 editor-container [&_h1+p]:mt-2 [&_h2+p]:mt-2 [&_h3+p]:mt-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-6 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:my-8 [&_div[data-youtube-video]]:w-full [&_div[data-youtube-video]]:flex [&_div[data-youtube-video]]:justify-center [&_h1]:font-serif [&_h1]:font-bold [&_h1]:text-4xl [&_h1]:md:text-5xl [&_h1]:text-charcoal [&_h1]:mt-12 [&_h1]:mb-0 [&_h1]:tracking-tight [&_h2]:font-serif [&_h2]:font-bold [&_h2]:text-3xl [&_h2]:md:text-4xl [&_h2]:text-charcoal/90 [&_h2]:mt-10 [&_h2]:mb-0 [&_h2]:tracking-tight [&_h3]:font-serif [&_h3]:font-bold [&_h3]:text-2xl [&_h3]:md:text-3xl [&_h3]:text-charcoal/80 [&_h3]:mt-8 [&_h3]:mb-0 [&_h3]:tracking-tight">
+                    <div className="max-w-[800px] mx-auto py-8 px-8 editor-container [&_h1+p]:mt-2 [&_h2+p]:mt-2 [&_h3+p]:mt-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-6 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:my-8 [&_div[data-youtube-video]]:w-full [&_div[data-youtube-video]]:flex [&_div[data-youtube-video]]:justify-center [&_h1]:font-serif [&_h1]:font-bold [&_h1]:text-4xl [&_h1]:md:text-5xl [&_h1]:text-charcoal [&_h1]:mt-12 [&_h1]:mb-0 [&_h1]:tracking-tight [&_h2]:font-serif [&_h2]:font-bold [&_h2]:text-3xl [&_h2]:md:text-4xl [&_h2]:text-charcoal/90 [&_h2]:mt-10 [&_h2]:mb-0 [&_h2]:tracking-tight [&_h3]:font-serif [&_h3]:font-bold [&_h3]:text-2xl [&_h3]:md:text-3xl [&_h3]:text-charcoal/80 [&_h3]:mt-8 [&_h3]:mb-0 [&_h3]:tracking-tight [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_span[data-type=inline-math]]:bg-lines/30 [&_span[data-type=inline-math]]:px-1.5 [&_span[data-type=inline-math]]:py-0.5 [&_span[data-type=inline-math]]:rounded [&_div[data-type=block-math]]:bg-lines/20 [&_div[data-type=block-math]]:p-4 [&_div[data-type=block-math]]:my-6 [&_div[data-type=block-math]]:rounded [&_div[data-type=block-math]]:text-center">
                         <div className="flex flex-wrap items-center justify-between mb-8 pb-4 border-b border-lines">
                             <div className="flex gap-4">
                                 <button type="button"                                     onClick={() => { 
@@ -682,6 +793,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             {/* Body Content */}
                             <div className="space-y-8">
                                 <EditorContent editor={editor} />
+                                <TableControls editor={editor} />
                             </div>
                         </div>
                     </div>
@@ -749,8 +861,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         [&>li]:mb-2
                         [&>figure]:my-10 [&>figure]:mx-0 [&>figure]:w-full [&>figure>img]:w-full [&>figure>img]:h-auto [&>figure>img]:border [&>figure>img]:border-lines
                         [&_figure_figcaption]:mt-4 [&_figure_figcaption]:text-base [&_figure_figcaption]:text-charcoal/60 [&_figure_figcaption]:italic [&_figure_figcaption]:text-center
-                        [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-gold/80"
-                                dangerouslySetInnerHTML={{ __html: activeLang === 'gl' ? contenidoGl : contenidoEs }}
+                        [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-gold/80
+                        [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_.katex]:text-charcoal"
+                                dangerouslySetInnerHTML={{ __html: renderHeadingAnchors(renderMathInHtml(activeLang === 'gl' ? contenidoGl : contenidoEs)) }}
                             />
                         </article>
 
