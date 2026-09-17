@@ -1,6 +1,5 @@
 import { ARTICLE_STATES } from '@/lib/constants';
 import { createClient } from '@supabase/supabase-js';
-import PublicNavBar from '@/components/layout/PublicNavBar';
 import FeaturedArticleHero from '@/components/sections/FeaturedArticleHero';
 import PinnedArticlesPanel from '@/components/sections/PinnedArticlesPanel';
 import ArticleCard from '@/components/features/ArticleCard';
@@ -40,8 +39,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
   return (
     <>
-      <PublicNavBar />
-
       <main className="flex-grow w-full max-w-[1120px] mx-auto px-5 md:px-16 pt-12 pb-[120px] flex flex-col gap-[120px]">
         
         {featuredArticle && (

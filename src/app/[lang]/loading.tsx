@@ -9,7 +9,7 @@ export default function Loading() {
   const loadingText = lang === 'gl' ? 'Recompilando manuscritos...' : 'Recopilando manuscritos...';
 
   return (
-    <div className="min-h-screen bg-parchment flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-40 bg-parchment flex flex-col items-center justify-center">
       <div className="flex flex-col items-center gap-6">
         {/* Un indicador visual minimalista tipo editorial */}
         <div className="w-12 h-12 border border-lines flex items-center justify-center animate-pulse text-charcoal/30">
