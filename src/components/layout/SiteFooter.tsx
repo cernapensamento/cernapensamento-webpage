@@ -3,6 +3,8 @@ import { SITE_NAME } from '@/lib/constants';
 import { headers } from 'next/headers';
 import { getDictionary } from '@/dictionaries';
 import { Locale } from '@/i18n-config';
+import FooterVisibilityWrapper from './FooterVisibilityWrapper';
+import SocialLinks from '@/components/ui/SocialLinks';
 
 export default async function SiteFooter() {
   const headersList = await headers();
@@ -11,7 +13,8 @@ export default async function SiteFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-surface border-t border-lines w-full mt-auto">
+    <FooterVisibilityWrapper>
+      <footer className="bg-surface border-t border-lines w-full mt-auto">
       <div className="w-full py-16 px-5 md:px-16 flex flex-col items-center gap-8 max-w-[1120px] mx-auto">
         
         {/* Brand & Tagline */}
@@ -41,28 +44,7 @@ export default async function SiteFooter() {
         </nav>
 
         {/* Social Icons */}
-        <div className="flex items-center justify-center gap-5 mt-2">
-          <a 
-            href="mailto:contacto@cernapensamento.org" 
-            className="w-12 h-12 flex items-center justify-center border border-lines rounded-full text-charcoal hover:text-gold hover:border-gold transition-all duration-300 bg-surface hover:shadow-sm"
-            aria-label="Contacto por Correo"
-          >
-            <span className="material-symbols-outlined text-[22px]" aria-hidden="true">mail</span>
-          </a>
-          <a 
-            href="https://www.instagram.com/cernapensamento" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-12 h-12 flex items-center justify-center border border-lines rounded-full text-charcoal hover:text-gold hover:border-gold transition-all duration-300 bg-surface hover:shadow-sm"
-            aria-label="Instagram"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-            </svg>
-          </a>
-        </div>
+        <SocialLinks className="flex items-center justify-center gap-5 mt-2" itemClassName="bg-surface hover:shadow-sm" />
 
         {/* Divider */}
         <div className="w-full h-px bg-lines/50 max-w-3xl my-2"></div>
@@ -82,6 +64,7 @@ export default async function SiteFooter() {
         </div>
 
       </div>
-    </footer>
+      </footer>
+    </FooterVisibilityWrapper>
   );
 }
