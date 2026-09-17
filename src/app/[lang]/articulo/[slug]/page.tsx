@@ -6,7 +6,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import sanitizeHtml from 'sanitize-html';
-import PublicNavBar from '@/components/layout/PublicNavBar';
+import 'katex/dist/katex.min.css';
+import { renderMathInHtml } from '@/lib/editor/renderMath';
+import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 import CommentsSection from '@/components/features/CommentsSection';
 import { getDictionary } from '@/dictionaries';
@@ -92,9 +94,7 @@ export default async function ArticuloPage({
 
   return (
     <>
-      <PublicNavBar />
-
-      <main className="grow flex flex-col items-center w-full pb-30">
+      <main className="flex-grow flex flex-col items-center w-full pb-30">
         <header className="w-full max-w-3xl px-5 md:px-0 pt-24 pb-12 mx-auto text-center relative">
           <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">
             {(dict as any).documentTypes?.[articulo.tipo?.toLowerCase() || ''] || articulo.tipo || 'Artigo'}
@@ -160,14 +160,73 @@ export default async function ArticuloPage({
                         [&>li]:mb-2
                         [&>figure]:my-10 [&>figure]:mx-0 [&>figure]:w-full [&>figure>img]:w-full [&>figure>img]:h-auto [&>figure>img]:border [&>figure>img]:border-lines
                         [&_figure_figcaption]:mt-4 [&_figure_figcaption]:text-base [&_figure_figcaption]:text-charcoal/60 [&_figure_figcaption]:italic [&_figure_figcaption]:text-center
-                        [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-gold/80"
+                        [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-gold/80
+                        [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_.katex]:text-charcoal
+                        [&_[data-type='article-index']]:border-l-4 [&_[data-type='article-index']]:border-gold [&_[data-type='article-index']]:pl-6 [&_[data-type='article-index']]:py-4 [&_[data-type='article-index']]:bg-[#faf9f5] [&_[data-type='article-index']]:mb-10 [&_[data-type='article-index']]:rounded-r
+                        [&_[data-type='article-index']_.index-label]:text-xs [&_[data-type='article-index']_.index-label]:font-semibold [&_[data-type='article-index']_.index-label]:uppercase [&_[data-type='article-index']_.index-label]:tracking-widest [&_[data-type='article-index']_.index-label]:text-charcoal/50 [&_[data-type='article-index']_.index-label]:mb-3
+                        [&_[data-type='article-index']_ul]:list-none [&_[data-type='article-index']_ul]:pl-0 [&_[data-type='article-index']_ul]:mb-0
+                        [&_[data-type='article-index']_li]:py-0.5 [&_[data-type='article-index']_li]:mb-0
+                        [&_[data-type='article-index']_a:hover]:underline"
             dangerouslySetInnerHTML={{ 
-              __html: sanitizeHtml(contenido, { 
-                allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'h3', 'iframe', 'div', 'figure', 'figcaption']),
+              __html: sanitizeHtml(renderHeadingAnchors(renderMathInHtml(contenido)), { 
+                allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+                  'img', 'h1', 'h2', 'h3', 'iframe', 'div', 'figure', 'figcaption',
+                  'table', 'thead', 'tbody', 'tr', 'th', 'td', 'colgroup', 'col',
+                  'span', 'math', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'msup',
+                  'msub', 'mfrac', 'msqrt', 'mover', 'munder', 'mtable', 'mtr',
+                  'mtd', 'mtext', 'annotation', 'svg', 'path', 'line', 'rect',
+                  'nav', 'p',
+                ]),
                 allowedAttributes: {
                     ...sanitizeHtml.defaults.allowedAttributes,
                     iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'title'],
-                    div: ['data-youtube-video']
+                    div: ['data-youtube-video', 'class', 'style', 'data-type', 'data-latex', 'role'],
+                    span: ['class', 'style', 'aria-hidden', 'data-type', 'data-latex'],
+                    table: ['class', 'style'],
+                    th: ['style', 'colspan', 'rowspan', 'colwidth'],
+                    td: ['style', 'colspan', 'rowspan', 'colwidth'],
+                    col: ['style', 'width'],
+                    math: ['xmlns', 'display'],
+                    annotation: ['encoding'],
+                    svg: ['xmlns', 'width', 'height', 'viewBox', 'style', 'preserveAspectRatio'],
+                    path: ['d'],
+                    line: ['x1', 'x2', 'y1', 'y2', 'stroke', 'stroke-width'],
+                    nav: ['data-type', 'data-items', 'lang', 'class', 'style', 'aria-label'],
+                    p: ['class', 'style'],
+                    ul: ['style'],
+                    li: ['style'],
+                    a: [...(sanitizeHtml.defaults.allowedAttributes['a'] ?? ['href']), 'style', 'class'],
+                    h1: ['id'],
+                    h2: ['id'],
+                    h3: ['id'],
+                },
+                allowedStyles: {
+                    '*': {
+                        'font-size': [/./],
+                        'background-color': [/./],
+                        'text-align': [/./],
+                        'font-weight': [/./],
+                        'font-family': [/./],
+                        'font-variant-numeric': [/./],
+                        'letter-spacing': [/./],
+                        'text-transform': [/./],
+                        'text-decoration': [/./],
+                        'color': [/./],
+                        'opacity': [/./],
+                        'display': [/./],
+                        'flex-direction': [/./],
+                        'align-items': [/./],
+                        'gap': [/./],
+                        'padding': [/./],
+                        'margin': [/./],
+                        'border-top': [/./],
+                        'border-bottom': [/./],
+                        'min-width': [/./],
+                        'flex-shrink': [/./],
+                        'line-height': [/./],
+                        'list-style': [/./],
+                        'transition': [/./],
+                    },
                 },
                 allowedIframeHostnames: ['www.youtube.com', 'www.youtube-nocookie.com', 'youtu.be']
               }) 
