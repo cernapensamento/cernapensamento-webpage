@@ -1,4 +1,3 @@
-import PublicNavBar from '@/components/layout/PublicNavBar';
 import React from 'react';
 
 export default function ProyectoEditorialLayout({
@@ -8,7 +7,6 @@ export default function ProyectoEditorialLayout({
 }) {
   return (
     <>
-      <PublicNavBar />
       {children}
     </>
   );

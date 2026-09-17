@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { ARTICLE_STATES } from '@/lib/constants';
 import { notFound } from 'next/navigation';
-import PublicNavBar from '@/components/layout/PublicNavBar';
 import ArticleCard from '@/components/features/ArticleCard';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
@@ -43,9 +42,7 @@ export default async function AutorPage({ params }: PageProps) {
     .order('creado_en', { ascending: false });
 
   return (
-    <div className="min-h-screen bg-parchment flex flex-col selection:bg-gold/20 selection:text-charcoal">
-      <PublicNavBar />
-      
+    <div className="flex-grow bg-parchment flex flex-col selection:bg-gold/20 selection:text-charcoal">
       <main className="flex-grow pt-32 pb-24">
         <div className="max-w-[1120px] mx-auto px-5 md:px-16">
           

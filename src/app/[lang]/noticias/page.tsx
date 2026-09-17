@@ -3,7 +3,6 @@ import { createClient } from '@/utils/supabase/server';
 import { ARTICLE_STATES } from '@/lib/constants';
 import ArticleCard from '@/components/features/ArticleCard';
 import ArticlesFilterBar from '@/components/features/ArticlesFilterBar';
-import PublicNavBar from '@/components/layout/PublicNavBar';
 import Link from 'next/link';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
@@ -83,8 +82,7 @@ export default async function NoticiasPage({
 
   return (
     <>
-      <PublicNavBar />
-      <main className="min-h-screen bg-parchment pt-32 pb-24">
+      <main className="flex-grow min-h-screen bg-parchment pt-32 pb-24">
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <div className="text-center mb-16">
             <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-4">

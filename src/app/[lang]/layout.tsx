@@ -23,6 +23,9 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/images/logo/screen.webp" }],
 };
 
+import HeaderVisibilityWrapper from '@/components/layout/HeaderVisibilityWrapper';
+import PublicNavBar from '@/components/layout/PublicNavBar';
+
 export default async function RootLayout({
   children,
   params,
@@ -44,7 +47,12 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col font-sans bg-parchment text-charcoal">
         <ThemeProvider>
-          {children}
+          <HeaderVisibilityWrapper>
+            <PublicNavBar />
+          </HeaderVisibilityWrapper>
+          <main className="flex-grow flex flex-col relative">
+            {children}
+          </main>
           <SiteFooter />
         </ThemeProvider>
       </body>
