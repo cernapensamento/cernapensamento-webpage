@@ -90,6 +90,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const uploadedInlineImages = useRef<string[]>([]);
     const coverInputRef = useRef<HTMLInputElement>(null);
     const inlineImageRef = useRef<HTMLInputElement>(null);
+    const previewContainerRef = useRef<HTMLDivElement>(null);
     const [authorProfile, setAuthorProfile] = useState<{ nombre: string; avatar_url?: string; bio?: string } | null>(null);
     
     const supabase = createClient();
@@ -269,8 +270,8 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             alert('Solo se permiten imágenes JPG, PNG o WebP');
             return;
         }
-        if (file.size > 2 * 1024 * 1024) {
-            alert('La imagen no puede superar los 2 MB');
+        if (file.size > 4 * 1024 * 1024) {
+            alert(activeLang === 'gl' ? 'A imaxe non pode superar os 4 MB' : 'La imagen no puede superar los 4 MB');
             return;
         }
 
@@ -320,8 +321,8 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             alert('Solo se permiten imágenes JPG, PNG o WebP');
             return;
         }
-        if (file.size > 2 * 1024 * 1024) {
-            alert('La imagen no puede superar los 2 MB');
+        if (file.size > 4 * 1024 * 1024) {
+            alert(activeLang === 'gl' ? 'A imaxe non pode superar os 4 MB' : 'La imagen no puede superar los 4 MB');
             return;
         }
 
@@ -336,7 +337,17 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         }).run();
 
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { isUploadingInline.current = false; return; }
+        if (!user) {
+            alert('Debes iniciar sesión para subir imágenes');
+            editor.state.doc.descendants((node, pos) => {
+                if (node.type.name === 'figure' && node.attrs.src === localUrl) {
+                    editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
+                }
+            });
+            URL.revokeObjectURL(localUrl);
+            isUploadingInline.current = false;
+            return;
+        }
 
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const path = `contenido/${user.id}/${Date.now()}-${safeName}`;
@@ -347,13 +358,37 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
 
         if (error) {
             alert('Error al subir la imagen: ' + error.message);
+            editor.state.doc.descendants((node, pos) => {
+                if (node.type.name === 'figure' && node.attrs.src === localUrl) {
+                    editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
+                }
+            });
         } else {
             const { data: urlData } = supabase.storage
                 .from('imagenes-articulos')
                 .getPublicUrl(path);
             uploadedInlineImages.current.push(urlData.publicUrl);
-            const html = editor.getHTML().replace(localUrl, urlData.publicUrl);
-            editor.commands.setContent(html);
+            
+            let replaced = false;
+            editor.state.doc.descendants((node, pos) => {
+                if (node.type.name === 'figure' && node.attrs.src === localUrl) {
+                    editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, {
+                        ...node.attrs,
+                        src: urlData.publicUrl
+                    }));
+                    replaced = true;
+                }
+            });
+            if (!replaced) {
+                const html = editor.getHTML().replaceAll(localUrl, urlData.publicUrl);
+                editor.commands.setContent(html);
+            }
+            const updatedHtml = editor.getHTML();
+            if (activeLangRef.current === 'gl') {
+                setContenidoGl(updatedHtml);
+            } else {
+                setContenidoEs(updatedHtml);
+            }
         }
 
         URL.revokeObjectURL(localUrl);
@@ -493,7 +528,14 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     };
 
     const handleSubmit = async (action: EditorAction = 'publish') => {
+        if (isUploadingCover.current || isUploadingInline.current) {
+            alert(activeLang === 'gl' ? 'Por favor, agarda a que rematen de subirse as imaxes.' : 'Por favor, espera a que terminen de subirse las imágenes.');
+            return;
+        }
+
         const currentHtml = editor?.getHTML() || '';
+        const finalGl = activeLang === 'gl' ? currentHtml : contenidoGl;
+        const finalEs = activeLang === 'es' ? currentHtml : contenidoEs;
         
         // --- LIMPIEZA DE IMÁGENES INLINE (GARBAGE COLLECTION) ---
         const supabaseRegex = /https:\/\/[a-zA-Z0-9.-]+\.supabase\.co\/storage\/v1\/object\/public\/imagenes-articulos\/contenido\/[a-zA-Z0-9-]+\/[^"'\s]+/g;
@@ -503,8 +545,8 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             ...(initialData?.contenido_es?.match(supabaseRegex) || [])
         ];
         const newUrls: string[] = [
-            ...(contenidoGl.match(supabaseRegex) || []),
-            ...(contenidoEs.match(supabaseRegex) || [])
+            ...(finalGl.match(supabaseRegex) || []),
+            ...(finalEs.match(supabaseRegex) || [])
         ];
         
         const newUrlsSet = new Set(newUrls);
@@ -530,8 +572,8 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             titulo_es: tituloEs,
             subtitulo_gl: subtituloGl,
             subtitulo_es: subtituloEs,
-            contenido_gl: contenidoGl,
-            contenido_es: contenidoEs,
+            contenido_gl: finalGl,
+            contenido_es: finalEs,
             imagen_url: coverImageUrl,
             tematicas: tematicas,
             tipo: tipo,
@@ -803,7 +845,50 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             
             {/* Preview Modal */}
             {showPreview && (
-                <div className="fixed inset-0 z-50 overflow-y-auto bg-parchment">
+                <div 
+                    ref={previewContainerRef}
+                    className="fixed inset-0 z-50 overflow-y-auto bg-parchment"
+                    onClick={(e) => {
+                        const target = (e.target as HTMLElement).closest('a');
+                        if (target && target.hash && target.hash.startsWith('#')) {
+                            e.preventDefault();
+                            try {
+                                const id = decodeURIComponent(target.hash.slice(1));
+                                const container = previewContainerRef.current;
+                                if (!container) return;
+                                const stripped = id.replace(/^\d+(?:-\d+)*-/, '');
+                                let element = container.querySelector(`[id="${CSS.escape(id)}"]`) as HTMLElement;
+                                if (!element && stripped && stripped !== id) {
+                                    element = container.querySelector(`[id="${CSS.escape(stripped)}"]`) as HTMLElement;
+                                }
+                                if (!element) {
+                                    const targets = container.querySelectorAll<HTMLElement>('h1[id], h2[id], h3[id], span[id]');
+                                    for (let i = 0; i < targets.length; i++) {
+                                        const t = targets[i];
+                                        const tId = t.id;
+                                        if (tId === id || tId === stripped || tId.replace(/^\d+(?:-\d+)*-/, '') === stripped || tId.endsWith(`-${stripped}`) || tId.endsWith(`-${id}`)) {
+                                            element = t;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (element) {
+                                    const elementRect = element.getBoundingClientRect();
+                                    const containerRect = container.getBoundingClientRect();
+                                    // Sticky topbar is ~68px, plus generous 42px breathing room so screen stops before the title
+                                    const headerOffset = 110;
+                                    const targetScrollTop = container.scrollTop + (elementRect.top - containerRect.top) - headerOffset;
+                                    container.scrollTo({
+                                        top: Math.max(0, targetScrollTop),
+                                        behavior: 'smooth'
+                                    });
+                                }
+                            } catch {
+                                // Fallback
+                            }
+                        }
+                    }}
+                >
                     {/* Preview TopBar */}
                     <div className="sticky top-0 z-50 border-b border-lines bg-parchment/95 backdrop-blur-sm px-8 py-4 flex items-center justify-between">
                         <span className="font-sans text-[10px] text-gold uppercase tracking-[0.2em]">{dict.previewHeader}</span>
@@ -828,7 +913,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             {tematicas.length > 0 && (
                                 <div className="flex flex-wrap justify-center gap-3 mt-6">
                                     {tematicas.map((t: string) => (
-                                        <span key={t} className="px-4 py-1.5 border border-lines text-charcoal text-[10px] uppercase tracking-[0.2em]">{t}</span>
+                                         <span key={t} className="px-4 py-1.5 border border-lines text-charcoal text-[10px] uppercase tracking-[0.2em]">{t}</span>
                                     ))}
                                 </div>
                             )}
@@ -844,8 +929,8 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         </header>
 
                         {coverImageUrl && (
-                            <div className="w-full h-[50vh] min-h-[350px] mb-16 border-y border-lines bg-lines/30 relative">
-                                <NextImage className="object-cover" alt="Vista Previa Portada" src={coverImageUrl || DEFAULT_COVER_URL} fill priority sizes="100vw" />
+                            <div className="w-full max-w-6xl px-5 mx-auto mb-16">
+                                <NextImage className="w-full h-auto" alt="Vista Previa Portada" src={coverImageUrl || DEFAULT_COVER_URL} width={1200} height={800} priority sizes="(max-width: 1152px) 100vw, 1152px" />
                             </div>
                         )}
 
@@ -853,8 +938,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             <div 
                                 className="prose prose-lg max-w-none text-charcoal
                         [&>p]:mb-6 [&>p]:leading-relaxed
-                        [&>h2]:font-serif [&>h2]:text-3xl [&>h2]:mt-12 [&>h2]:mb-6
-                        [&>h3]:font-serif [&>h3]:text-2xl [&>h3]:mt-10 [&>h3]:mb-4
+                        [&_h1]:font-serif [&_h1]:font-bold [&_h1]:text-4xl [&_h1]:md:text-5xl [&_h1]:text-charcoal [&_h1]:mt-12 [&_h1]:mb-6 [&_h1]:tracking-tight [&_h1]:leading-tight [&_h1]:scroll-mt-36
+                        [&_h2]:font-serif [&_h2]:font-bold [&_h2]:text-3xl [&_h2]:md:text-4xl [&_h2]:text-charcoal/90 [&_h2]:mt-10 [&_h2]:mb-6 [&_h2]:tracking-tight [&_h2]:leading-snug [&_h2]:scroll-mt-36
+                        [&_h3]:font-serif [&_h3]:font-bold [&_h3]:text-2xl [&_h3]:md:text-3xl [&_h3]:text-charcoal/80 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:tracking-tight [&_h3]:leading-snug [&_h3]:scroll-mt-36
                         [&>blockquote]:border-l-4 [&>blockquote]:border-gold [&>blockquote]:pl-6 [&>blockquote]:font-serif [&>blockquote]:text-2xl [&>blockquote]:italic [&>blockquote]:text-charcoal/80 [&>blockquote]:my-10
                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-6
                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-6
@@ -862,7 +948,12 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         [&>figure]:my-10 [&>figure]:mx-0 [&>figure]:w-full [&>figure>img]:w-full [&>figure>img]:h-auto [&>figure>img]:border [&>figure>img]:border-lines
                         [&_figure_figcaption]:mt-4 [&_figure_figcaption]:text-base [&_figure_figcaption]:text-charcoal/60 [&_figure_figcaption]:italic [&_figure_figcaption]:text-center
                         [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-gold/80
-                        [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_.katex]:text-charcoal"
+                        [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_.katex]:text-charcoal
+                        [&_[data-type='article-index']]:border-l-4 [&_[data-type='article-index']]:border-gold [&_[data-type='article-index']]:!px-8 [&_[data-type='article-index']]:!py-6 [&_[data-type='article-index']]:bg-surface [&_[data-type='article-index']]:mb-10 [&_[data-type='article-index']]:rounded-r
+                        [&_[data-type='article-index']_.index-label]:text-xs [&_[data-type='article-index']_.index-label]:font-semibold [&_[data-type='article-index']_.index-label]:uppercase [&_[data-type='article-index']_.index-label]:tracking-widest [&_[data-type='article-index']_.index-label]:text-charcoal/50 [&_[data-type='article-index']_.index-label]:mb-3
+                        [&_[data-type='article-index']_ul]:list-none [&_[data-type='article-index']_ul]:pl-0 [&_[data-type='article-index']_ul]:mb-0
+                        [&_[data-type='article-index']_li]:py-0.5 [&_[data-type='article-index']_li]:mb-0
+                        [&_[data-type='article-index']_a:hover]:underline"
                                 dangerouslySetInnerHTML={{ __html: renderHeadingAnchors(renderMathInHtml(activeLang === 'gl' ? contenidoGl : contenidoEs)) }}
                             />
                         </article>
