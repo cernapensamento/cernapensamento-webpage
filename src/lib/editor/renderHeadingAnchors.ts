@@ -10,7 +10,7 @@
  *   sanitizeHtml(renderHeadingAnchors(renderMathInHtml(contenido)), { ... })
  */
 
-import { slugifyHeading } from './generateIndex';
+import { slugifyHeading, stripHeadingNumbering } from './generateIndex';
 
 /**
  * Replaces <h1>, <h2>, <h3> opening tags with versions that carry an
@@ -25,9 +25,18 @@ export function renderHeadingAnchors(html: string): string {
       // Strip existing id attribute to avoid duplicates
       const cleanAttrs = attrs.replace(/\s*id="[^"]*"/gi, '');
 
-      // Extract plain text from inner HTML (strip tags)
-      const text = inner.replace(/<[^>]*>/g, '').trim();
-      const baseSlug = slugifyHeading(text);
+      // Extract plain text from inner HTML (strip tags, math delimiters, collapse whitespace)
+      const rawText = inner
+        .replace(/<[^>]*>/g, '')          // strip tags
+        .replace(/\$\$[\s\S]*?\$\$/g, '') // strip block math
+        .replace(/\$[^$]*?\$/g, '')       // strip inline math
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const text = stripHeadingNumbering(rawText) || rawText;
+      const rawSlug = slugifyHeading(rawText);
+      const cleanSlug = slugifyHeading(text);
+      const baseSlug = rawSlug || cleanSlug;
 
       if (!baseSlug) return match;
 
@@ -35,7 +44,19 @@ export function renderHeadingAnchors(html: string): string {
       seen.set(baseSlug, count + 1);
       const slug = count === 0 ? baseSlug : `${baseSlug}-${count + 1}`;
 
-      return `<${tag}${cleanAttrs} id="${slug}">${inner}</${tag}>`;
+      let finalAttrs = cleanAttrs;
+      if (/style="/i.test(finalAttrs)) {
+        finalAttrs = finalAttrs.replace(/style="/i, 'style="scroll-margin-top: 9rem; ');
+      } else {
+        finalAttrs = `${finalAttrs} style="scroll-margin-top: 9rem;"`;
+      }
+
+      let aliasHtml = '';
+      if (cleanSlug && cleanSlug !== slug) {
+        aliasHtml = `<span id="${cleanSlug}" style="scroll-margin-top: 9rem; display: block; height: 0; overflow: hidden;"></span>`;
+      }
+
+      return `${aliasHtml}<${tag}${finalAttrs} id="${slug}">${inner}</${tag}>`;
     }
   );
 }

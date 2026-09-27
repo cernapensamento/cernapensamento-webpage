@@ -22,7 +22,7 @@ export const ArticleIndex = Node.create({
   group: 'block',
   atom: true,
   draggable: true,
-  selectable: true,
+  selectable: false,
 
   addAttributes() {
     return {
@@ -118,7 +118,7 @@ export const ArticleIndex = Node.create({
           {
             href: `#${item.slug}`,
             class: 'index-link',
-            style: `color: var(--color-charcoal); opacity: ${opacity}; text-decoration: none; font-size: ${fontSize}; font-weight: ${fontWeight}; line-height: 1.5; font-family: var(--font-serif); transition: opacity 0.2s;`,
+            style: `color: var(--color-charcoal, inherit); opacity: ${opacity}; text-decoration: none; font-size: ${fontSize}; font-weight: ${fontWeight}; line-height: 1.5; font-family: var(--font-serif); transition: opacity 0.2s;`,
           },
           item.text,
         ],
@@ -132,7 +132,7 @@ export const ArticleIndex = Node.create({
         'aria-label': ariaLabel,
         class: 'article-index-block',
         style:
-          'border-top: 1px solid rgba(197, 160, 89, 0.4); border-bottom: 1px solid rgba(197, 160, 89, 0.4); padding: 1.5rem 0; margin-bottom: 2.5rem;',
+          'border-top: 1px solid rgba(197, 160, 89, 0.4); border-bottom: 1px solid rgba(197, 160, 89, 0.4); padding: 1.75rem 2rem; margin-bottom: 2.5rem;',
       }),
       [
         'div',

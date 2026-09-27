@@ -26,6 +26,25 @@ export function slugifyHeading(text: string): Slug {
     .replace(/^-+|-+$/g, '') as Slug;  // trim leading/trailing hyphens
 }
 
+/**
+ * Strips leading section numbering from user-authored heading text
+ * (e.g. "1. Title", "2.2. Subtitle", "1.2.3. Section", "1.- Intro")
+ * to avoid duplicate numbering when the index generates its own hierarchy.
+ */
+export function stripHeadingNumbering(text: string): string {
+  // 1. Hierarchical numbers like 1.1, 1.2.3, 2.2., with optional trailing dot/paren/dash
+  const hierarchical = /^(\d+(?:\.\d+)+(?:[\.\)\-]|(?:\.-))?)\s*/;
+  if (hierarchical.test(text)) {
+    return text.replace(hierarchical, '').trim();
+  }
+  // 2. Single numbers up to 2 digits followed by dot, paren, or dash: '1. ', '1) ', '1.- ', '1.Title'
+  const single = /^(\d{1,2}(?:\.-|[\.\)\-])\s*)/;
+  if (single.test(text)) {
+    return text.replace(single, '').trim();
+  }
+  return text;
+}
+
 export interface HeadingEntry {
   readonly level: 1 | 2 | 3;
   readonly text: string;
@@ -50,16 +69,18 @@ export function parseHeadings(html: string): HeadingEntry[] {
     const inner = match[2];
 
     // Strip HTML tags and math delimiters, then collapse whitespace
-    const text = inner
+    const rawText = inner
       .replace(/<[^>]*>/g, '')          // strip tags
       .replace(/\$\$[\s\S]*?\$\$/g, '') // strip block math
       .replace(/\$[^$]*?\$/g, '')       // strip inline math
       .replace(/\s+/g, ' ')
       .trim();
 
-    if (!text) continue;
+    if (!rawText) continue;
 
-    const baseSlug = slugifyHeading(text);
+    const text = stripHeadingNumbering(rawText) || rawText;
+
+    const baseSlug = slugifyHeading(rawText) || slugifyHeading(text);
     if (!baseSlug) continue;
 
     const count = seen.get(baseSlug) ?? 0;
@@ -168,7 +189,7 @@ export function generateIndex(html: string, lang: 'gl' | 'es'): string {
       return `
         <div class="index-row index-level-${level}" role="listitem" style="display: flex; align-items: baseline; gap: 0.5rem; padding: 0.25rem 0 0.25rem ${indent}; margin: 0;">
           <span class="index-num" style="color: var(--color-gold); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.02em; min-width: ${numWidth}; flex-shrink: 0; font-variant-numeric: tabular-nums; font-family: var(--font-sans);">${num}</span>
-          <a href="#${item.slug}" class="index-link" style="color: var(--color-charcoal); opacity: ${opacity}; text-decoration: none; font-size: ${fontSize}; font-weight: ${fontWeight}; line-height: 1.5; font-family: var(--font-serif); transition: opacity 0.2s;">${item.text}</a>
+          <a href="#${item.slug}" class="index-link" style="color: var(--color-charcoal, inherit); opacity: ${opacity}; text-decoration: none; font-size: ${fontSize}; font-weight: ${fontWeight}; line-height: 1.5; font-family: var(--font-serif); transition: opacity 0.2s;">${item.text}</a>
         </div>
       `;
     })
@@ -177,7 +198,7 @@ export function generateIndex(html: string, lang: 'gl' | 'es'): string {
   return `
     <nav data-type="article-index" aria-label="${ariaLabel}" class="article-index-block" lang="${lang}" data-items='${JSON.stringify(
       items
-    ).replace(/'/g, "&apos;")}' style="border-top: 1px solid rgba(197, 160, 89, 0.4); border-bottom: 1px solid rgba(197, 160, 89, 0.4); padding: 1.5rem 0; margin-bottom: 2.5rem;">
+    ).replace(/'/g, "&apos;")}' style="border-top: 1px solid rgba(197, 160, 89, 0.4); border-bottom: 1px solid rgba(197, 160, 89, 0.4); padding: 1.75rem 2rem; margin-bottom: 2.5rem;">
       <div class="index-label" style="display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 1rem; font-family: var(--font-sans);">${label}</div>
       <div class="index-list" role="list" style="display: flex; flex-direction: column; gap: 0.25rem;">
         ${rows}

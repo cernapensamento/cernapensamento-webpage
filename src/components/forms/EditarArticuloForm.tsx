@@ -94,6 +94,7 @@ export default function EditarArticuloForm({ articulo, userRole }: Props) {
             initialData={initialData}
             onSave={handleSave} 
             isPublishing={isPublishing} 
+            userRole={userRole}
         />
     );
 }

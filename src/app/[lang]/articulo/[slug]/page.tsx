@@ -11,6 +11,7 @@ import { renderMathInHtml } from '@/lib/editor/renderMath';
 import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 import CommentsSection from '@/components/features/CommentsSection';
+import ArticleScrollManager from '@/components/features/ArticleScrollManager';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
 
@@ -66,9 +67,9 @@ export default async function ArticuloPage({
     notFound();
   }
 
-  const titulo = lang === 'es' ? articulo.titulo_es : articulo.titulo_gl;
-  const subtitulo = lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl;
-  const contenido = lang === 'es' ? articulo.contenido_es : articulo.contenido_gl;
+  const titulo = (lang === 'es' ? articulo.titulo_es : articulo.titulo_gl) || articulo.titulo_gl || articulo.titulo_es;
+  const subtitulo = (lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl) || articulo.subtitulo_gl || articulo.subtitulo_es;
+  const contenido = (lang === 'es' ? articulo.contenido_es : articulo.contenido_gl) || articulo.contenido_gl || articulo.contenido_es || '';
 
   const fecha = new Date(articulo.creado_en).toLocaleDateString(lang === 'es' ? 'es-ES' : 'gl-ES', {
     year: 'numeric',
@@ -148,12 +149,14 @@ export default async function ArticuloPage({
           </div>
         )}
 
+        <ArticleScrollManager className="w-full">
           <article className="w-full max-w-2xl px-5 md:px-0 mx-auto font-sans text-xl text-charcoal leading-relaxed flex flex-col gap-2 whitespace-pre-wrap">
           <div 
             className="prose prose-lg max-w-none text-charcoal
                         [&>p]:mb-6 [&>p]:leading-relaxed
-                        [&>h2]:font-serif [&>h2]:text-3xl [&>h2]:mt-12 [&>h2]:mb-6
-                        [&>h3]:font-serif [&>h3]:text-2xl [&>h3]:mt-10 [&>h3]:mb-4
+                        [&_h1]:font-serif [&_h1]:font-bold [&_h1]:text-4xl [&_h1]:md:text-5xl [&_h1]:text-charcoal [&_h1]:mt-12 [&_h1]:mb-6 [&_h1]:tracking-tight [&_h1]:leading-tight [&_h1]:scroll-mt-36
+                        [&_h2]:font-serif [&_h2]:font-bold [&_h2]:text-3xl [&_h2]:md:text-4xl [&_h2]:text-charcoal/90 [&_h2]:mt-10 [&_h2]:mb-6 [&_h2]:tracking-tight [&_h2]:leading-snug [&_h2]:scroll-mt-36
+                        [&_h3]:font-serif [&_h3]:font-bold [&_h3]:text-2xl [&_h3]:md:text-3xl [&_h3]:text-charcoal/80 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:tracking-tight [&_h3]:leading-snug [&_h3]:scroll-mt-36
                         [&>blockquote]:border-l-4 [&>blockquote]:border-gold [&>blockquote]:pl-6 [&>blockquote]:font-serif [&>blockquote]:text-2xl [&>blockquote]:italic [&>blockquote]:text-charcoal/80 [&>blockquote]:my-10
                         [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-6
                         [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-6
@@ -162,7 +165,7 @@ export default async function ArticuloPage({
                         [&_figure_figcaption]:mt-4 [&_figure_figcaption]:text-base [&_figure_figcaption]:text-charcoal/60 [&_figure_figcaption]:italic [&_figure_figcaption]:text-center
                         [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-gold/80
                         [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_.katex]:text-charcoal
-                        [&_[data-type='article-index']]:border-l-4 [&_[data-type='article-index']]:border-gold [&_[data-type='article-index']]:pl-6 [&_[data-type='article-index']]:py-4 [&_[data-type='article-index']]:bg-[#faf9f5] [&_[data-type='article-index']]:mb-10 [&_[data-type='article-index']]:rounded-r
+                        [&_[data-type='article-index']]:border-l-4 [&_[data-type='article-index']]:border-gold [&_[data-type='article-index']]:!px-8 [&_[data-type='article-index']]:!py-6 [&_[data-type='article-index']]:bg-surface [&_[data-type='article-index']]:mb-10 [&_[data-type='article-index']]:rounded-r
                         [&_[data-type='article-index']_.index-label]:text-xs [&_[data-type='article-index']_.index-label]:font-semibold [&_[data-type='article-index']_.index-label]:uppercase [&_[data-type='article-index']_.index-label]:tracking-widest [&_[data-type='article-index']_.index-label]:text-charcoal/50 [&_[data-type='article-index']_.index-label]:mb-3
                         [&_[data-type='article-index']_ul]:list-none [&_[data-type='article-index']_ul]:pl-0 [&_[data-type='article-index']_ul]:mb-0
                         [&_[data-type='article-index']_li]:py-0.5 [&_[data-type='article-index']_li]:mb-0
@@ -173,20 +176,28 @@ export default async function ArticuloPage({
                   'img', 'h1', 'h2', 'h3', 'iframe', 'div', 'figure', 'figcaption',
                   'table', 'thead', 'tbody', 'tr', 'th', 'td', 'colgroup', 'col',
                   'span', 'math', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'msup',
-                  'msub', 'mfrac', 'msqrt', 'mover', 'munder', 'mtable', 'mtr',
-                  'mtd', 'mtext', 'annotation', 'svg', 'path', 'line', 'rect',
+                  'msub', 'mfrac', 'msqrt', 'mover', 'munder', 'munderover',
+                  'mroot', 'mstyle', 'msubsup', 'mpadded', 'mspace', 'mphantom', 'menclose',
+                  'mtable', 'mtr', 'mtd', 'mtext', 'annotation', 'svg', 'path', 'line', 'rect',
                   'nav', 'p',
                 ]),
                 allowedAttributes: {
                     ...sanitizeHtml.defaults.allowedAttributes,
+                    figure: ['class', 'style'],
+                    figcaption: ['class', 'style'],
+                    img: ['src', 'srcset', 'alt', 'title', 'width', 'height', 'loading', 'class', 'style'],
                     iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'title'],
                     div: ['data-youtube-video', 'class', 'style', 'data-type', 'data-latex', 'role'],
-                    span: ['class', 'style', 'aria-hidden', 'data-type', 'data-latex'],
+                    span: ['class', 'style', 'aria-hidden', 'data-type', 'data-latex', 'id'],
                     table: ['class', 'style'],
                     th: ['style', 'colspan', 'rowspan', 'colwidth'],
                     td: ['style', 'colspan', 'rowspan', 'colwidth'],
                     col: ['style', 'width'],
-                    math: ['xmlns', 'display'],
+                    math: ['xmlns', 'display', 'alttext'],
+                    mstyle: ['displaystyle', 'scriptlevel', 'mathsize', 'mathcolor', 'mathbackground'],
+                    mspace: ['width', 'height', 'depth'],
+                    mpadded: ['width', 'height', 'depth', 'lspace', 'voffset'],
+                    mo: ['fence', 'separator', 'stretchy', 'symmetric', 'largeop', 'movablelimits', 'accent', 'lspace', 'rspace'],
                     annotation: ['encoding'],
                     svg: ['xmlns', 'width', 'height', 'viewBox', 'style', 'preserveAspectRatio'],
                     path: ['d'],
@@ -196,12 +207,16 @@ export default async function ArticuloPage({
                     ul: ['style'],
                     li: ['style'],
                     a: [...(sanitizeHtml.defaults.allowedAttributes['a'] ?? ['href']), 'style', 'class'],
-                    h1: ['id'],
-                    h2: ['id'],
-                    h3: ['id'],
+                    h1: ['id', 'style', 'class'],
+                    h2: ['id', 'style', 'class'],
+                    h3: ['id', 'style', 'class'],
                 },
+                allowedSchemes: ['http', 'https', 'mailto', 'data', 'blob'],
                 allowedStyles: {
                     '*': {
+                        'scroll-margin-top': [/./],
+                        'height': [/./],
+                        'overflow': [/./],
                         'font-size': [/./],
                         'background-color': [/./],
                         'text-align': [/./],
@@ -263,6 +278,7 @@ export default async function ArticuloPage({
 
           <CommentsSection articuloId={articulo.id} />
         </article>
+        </ArticleScrollManager>
         {articulo.estado === ARTICLE_STATES.PENDING && profile && ['admin', 'escritor'].includes(profile.rol) && (
           <ReviewActionBar articuloId={articulo.id} />
         )}
