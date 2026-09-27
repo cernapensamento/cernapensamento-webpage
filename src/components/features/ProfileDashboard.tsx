@@ -64,8 +64,8 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
       alert('Solo se permiten imágenes JPG, PNG o WebP');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      alert('La imagen no puede superar los 2 MB');
+    if (file.size > 4 * 1024 * 1024) {
+      alert('La imagen no puede superar los 4 MB');
       return;
     }
 
