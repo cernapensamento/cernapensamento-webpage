@@ -67,7 +67,7 @@ export default async function ArticulosPage({
     .from('articulos')
     .select(`*, perfiles ( nombre )`)
     .eq('estado', ARTICLE_STATES.PUBLISHED)
-    .order('creado_en', { ascending: false });
+    .order('actualizado_en', { ascending: false });
 
   if (q) {
     query = query.or(`titulo_gl.ilike.%${q}%,titulo_es.ilike.%${q}%,contenido_gl.ilike.%${q}%,contenido_es.ilike.%${q}%`);
