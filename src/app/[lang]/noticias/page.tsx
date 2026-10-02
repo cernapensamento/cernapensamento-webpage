@@ -69,7 +69,7 @@ export default async function NoticiasPage({
     .select(`*, perfiles ( nombre )`)
     .eq('estado', ARTICLE_STATES.PUBLISHED)
     .eq('tipo', 'noticia')
-    .order('creado_en', { ascending: false });
+    .order('actualizado_en', { ascending: false });
 
   if (q) {
     query = query.or(`titulo_gl.ilike.%${q}%,titulo_es.ilike.%${q}%,contenido_gl.ilike.%${q}%,contenido_es.ilike.%${q}%`);

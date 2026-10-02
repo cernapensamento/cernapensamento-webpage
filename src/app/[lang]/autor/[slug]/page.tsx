@@ -5,7 +5,7 @@ import ArticleCard from '@/components/features/ArticleCard';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
 
-export const revalidate = 60;
+export const revalidate = 0;
 
 interface PageProps {
   params: Promise<{ slug: string; lang: string }>;
@@ -39,7 +39,7 @@ export default async function AutorPage({ params }: PageProps) {
     .select('*, perfiles(nombre, slug)')
     .eq('autor_id', autor.id)
     .eq('estado', ARTICLE_STATES.PUBLISHED)
-    .order('creado_en', { ascending: false });
+    .order('actualizado_en', { ascending: false });
 
   return (
     <div className="flex-grow bg-parchment flex flex-col selection:bg-gold/20 selection:text-charcoal">

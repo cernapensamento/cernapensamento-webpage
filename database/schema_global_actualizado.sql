@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS "public"."articulos" (
     "estado" "text" DEFAULT 'publicado'::"text",
     "creado_en" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
     "actualizado_en" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL,
+    "publicado_en" timestamp with time zone,
     "autor_id" "uuid" NOT NULL,
     "fijado" boolean DEFAULT false,
     "tipo" "text" DEFAULT 'artigo'::"text",
@@ -176,6 +177,10 @@ CREATE TABLE IF NOT EXISTS "public"."articulos" (
     CONSTRAINT "articulos_idioma_original_check" CHECK (("idioma_original" = ANY (ARRAY['gl'::"text", 'es'::"text"]))),
     CONSTRAINT "articulos_tipo_check" CHECK (("tipo" = ANY (ARRAY['artigo'::"text", 'ensaio'::"text", 'reportaxe'::"text", 'columna'::"text", 'entrevista'::"text", 'poesía'::"text", 'noticia'::"text"])))
 );
+
+-- Migración idónea para aplicar en Supabase SQL Editor si se desea columna dedicada:
+-- ALTER TABLE public.articulos ADD COLUMN IF NOT EXISTS publicado_en timestamp with time zone;
+-- UPDATE public.articulos SET publicado_en = actualizado_en WHERE estado = 'publicado' AND publicado_en IS NULL;
 
 
 ALTER TABLE "public"."articulos" OWNER TO "postgres";
