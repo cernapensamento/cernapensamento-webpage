@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     const payload = `---TITLE---\n${title || ''}\n---SUBTITLE---\n${subtitle || ''}\n---HTMLCONTENT---\n${htmlContent || ''}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite',
+      model: 'gemini-3.5-flash-lite',
       contents: payload,
       config: {
         systemInstruction: systemPrompt,
@@ -60,11 +60,14 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     console.error('Translation error:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStatus = (error && typeof error === 'object' && 'status' in error) ? (error as any).status : null;
+    const errorStatus = (error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number') 
+      ? (error as { status: number }).status 
+      : null;
     const isRateLimit = errorStatus === 429 || errorMessage.includes('429') || errorMessage.includes('Quota exceeded');
+    const isOverloaded = errorStatus === 503 || errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand');
     return NextResponse.json(
       { error: 'Failed to translate', details: error instanceof Error ? error.message : String(error) },
-      { status: isRateLimit ? 429 : 500 }
+      { status: isRateLimit ? 429 : (isOverloaded ? 503 : 500) }
     );
   }
 }

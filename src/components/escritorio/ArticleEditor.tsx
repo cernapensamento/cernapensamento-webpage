@@ -942,17 +942,17 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         [&_h2]:font-serif [&_h2]:font-bold [&_h2]:text-3xl [&_h2]:md:text-4xl [&_h2]:text-charcoal/90 [&_h2]:mt-10 [&_h2]:mb-6 [&_h2]:tracking-tight [&_h2]:leading-snug [&_h2]:scroll-mt-36
                         [&_h3]:font-serif [&_h3]:font-bold [&_h3]:text-2xl [&_h3]:md:text-3xl [&_h3]:text-charcoal/80 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:tracking-tight [&_h3]:leading-snug [&_h3]:scroll-mt-36
                         [&>blockquote]:border-l-4 [&>blockquote]:border-gold [&>blockquote]:pl-6 [&>blockquote]:font-serif [&>blockquote]:text-2xl [&>blockquote]:italic [&>blockquote]:text-charcoal/80 [&>blockquote]:my-10
-                        [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-6
-                        [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:mb-6
-                        [&>li]:mb-2
+                        [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4
+                        [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4
+                        [&_li]:my-1.5 [&_li>p]:my-0.5
                         [&>figure]:my-10 [&>figure]:mx-0 [&>figure]:w-full [&>figure>img]:w-full [&>figure>img]:h-auto [&>figure>img]:border [&>figure>img]:border-lines
                         [&_figure_figcaption]:mt-4 [&_figure_figcaption]:text-base [&_figure_figcaption]:text-charcoal/60 [&_figure_figcaption]:italic [&_figure_figcaption]:text-center
                         [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-gold/80
                         [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_.katex]:text-charcoal
                         [&_[data-type='article-index']]:border-l-4 [&_[data-type='article-index']]:border-gold [&_[data-type='article-index']]:!px-8 [&_[data-type='article-index']]:!py-6 [&_[data-type='article-index']]:bg-surface [&_[data-type='article-index']]:mb-10 [&_[data-type='article-index']]:rounded-r
                         [&_[data-type='article-index']_.index-label]:text-xs [&_[data-type='article-index']_.index-label]:font-semibold [&_[data-type='article-index']_.index-label]:uppercase [&_[data-type='article-index']_.index-label]:tracking-widest [&_[data-type='article-index']_.index-label]:text-charcoal/50 [&_[data-type='article-index']_.index-label]:mb-3
-                        [&_[data-type='article-index']_ul]:list-none [&_[data-type='article-index']_ul]:pl-0 [&_[data-type='article-index']_ul]:mb-0
-                        [&_[data-type='article-index']_li]:py-0.5 [&_[data-type='article-index']_li]:mb-0
+                        [&_[data-type='article-index']_ul]:!list-none [&_[data-type='article-index']_ul]:!pl-0 [&_[data-type='article-index']_ul]:!my-0
+                        [&_[data-type='article-index']_li]:!py-0.5 [&_[data-type='article-index']_li]:!my-0
                         [&_[data-type='article-index']_a:hover]:underline"
                                 dangerouslySetInnerHTML={{ __html: renderHeadingAnchors(renderMathInHtml(activeLang === 'gl' ? contenidoGl : contenidoEs)) }}
                             />
