@@ -1,43 +1,12 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 
 import Link from 'next/link';
 import { SITE_NAME } from '@/lib/constants';
 
-const columnists = [
-  {
-    id: 'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
-    slug: 'diego-araujo',
-    name: 'Diego Araújo',
-    email: 'diegoaraujo@cernapensamento.org',
-    instagram: '@diegoaraujorodriguez_',
-    image: '/images/columnistas/diego.jpeg'
-  },
-  {
-    id: 'd2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2',
-    slug: 'hector-gonzalez',
-    name: 'Héctor González',
-    email: 'hectorgonzalez@cernapensamento.org',
-    instagram: '@hector.gonzalezzz_',
-    image: '/images/columnistas/hector.jpeg'
-  },
-  {
-    id: 'd3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3',
-    slug: 'denis-fernandez',
-    name: 'Denís Fernández',
-    email: 'denisfernandez@cernapensamento.org',
-    instagram: '@denisfdeez',
-    image: '/images/columnistas/denis.jpeg'
-  },
-  {
-    id: 'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4',
-    slug: 'anxo-perez',
-    name: 'Anxo Pérez',
-    email: 'anxoperez@cernapensamento.org',
-    instagram: '@anxoperezprego',
-    image: '/images/columnistas/anxo.jpeg'
-  }
-];
+import { COLUMNISTS as columnists } from '@/lib/columnists';
 
 interface ColumnistsSectionProps {
   lang: string;
@@ -52,8 +21,76 @@ interface ColumnistsSectionProps {
 }
 
 export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps) {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let userInteracted = false;
+    const markInteracted = () => {
+      userInteracted = true;
+    };
+
+    window.addEventListener('wheel', markInteracted, { passive: true });
+    window.addEventListener('touchmove', markInteracted, { passive: true });
+    window.addEventListener('keydown', markInteracted, { passive: true });
+
+    const scrollToSectionDelimiter = (behavior: ScrollBehavior = 'auto') => {
+      const hash = window.location.hash;
+      if (hash === '#autores' || hash === '#columnistas') {
+        const el = document.getElementById('autores');
+        if (el) {
+          const nav = document.querySelector('nav');
+          const navHeight = nav ? Math.round(nav.getBoundingClientRect().height) : 89;
+          const absoluteTop = el.getBoundingClientRect().top + window.scrollY;
+          const targetY = Math.round(absoluteTop - navHeight);
+          
+          if (Math.abs(window.scrollY - targetY) > 1) {
+            window.scrollTo({ top: targetY, behavior });
+          }
+        }
+      }
+    };
+
+    // Immediate attempt
+    scrollToSectionDelimiter('auto');
+
+    // Timers for font and content rendering phases
+    const timers = [50, 150, 300, 600, 1000, 1500, 2200].map(d =>
+      setTimeout(() => {
+        if (!userInteracted) scrollToSectionDelimiter('auto');
+      }, d)
+    );
+
+    // ResizeObserver on document.body to react to dynamic image loads above the section
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && document.body) {
+      resizeObserver = new ResizeObserver(() => {
+        if (!userInteracted) {
+          scrollToSectionDelimiter('auto');
+        }
+      });
+      resizeObserver.observe(document.body);
+    }
+
+    const onHashChange = () => {
+      userInteracted = false;
+      scrollToSectionDelimiter('smooth');
+    };
+    window.addEventListener('hashchange', onHashChange);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      window.removeEventListener('hashchange', onHashChange);
+      window.removeEventListener('wheel', markInteracted);
+      window.removeEventListener('touchmove', markInteracted);
+      window.removeEventListener('keydown', markInteracted);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, []);
+
   return (
-    <section className="w-full border-t border-lines py-24 bg-surface">
+    <section id="autores" className="w-full border-t border-lines py-24 bg-surface scroll-mt-[89px]">
       <div className="max-w-[1120px] mx-auto px-5 md:px-16">
         <div className="text-center mb-20">
           <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-4">{dict.columnists.tag}</span>

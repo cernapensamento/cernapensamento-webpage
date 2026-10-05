@@ -1,5 +1,6 @@
 {
   "nav": {
+    "inicio": "Inicio",
     "revista": "Revista",
     "estatutos": "Estatutos",
     "articulos": "Arquivo",
@@ -66,7 +67,35 @@
   },
   "authorPage": {
     "articlesBy": "Artigos de",
-    "noArticles": "Non hai artigos publicados por este autor."
+    "noArticles": "Non hai artigos publicados por este autor.",
+    "allWorks": "Todos",
+    "publishedWorks": "textos publicados",
+    "publishedWorkSingular": "texto publicado",
+    "readingTime": "min de lectura",
+    "topics": "Temáticas habituais",
+    "contact": "Contacto",
+    "aboutAuthor": "Sobre o autor",
+    "latestWork": "Última publicación",
+    "archive": "Arquivo de publicacións",
+    "foundingMember": "Membro fundador de Cerna",
+    "cernaContributor": "Colaborador en Cerna",
+    "editorialBoard": "Consello Editorial",
+    "allTopics": "Tódalas temáticas",
+    "clearFilter": "Limpar filtro",
+    "readFullText": "Ler texto completo",
+    "home": "Inicio",
+    "authors": "Autores",
+    "defaultBio": "Autor e colaborador en Cerna.",
+    "email": "Correo",
+    "sendEmailTo": "Enviar correo a",
+    "instagramProfileOf": "Perfil de Instagram de",
+    "portraitOf": "Retrato de",
+    "filterByTopic": "Filtrar por",
+    "publicationSingular": "publicación",
+    "publicationPlural": "publicacións",
+    "textSingular": "texto",
+    "textPlural": "textos",
+    "defaultMetaDescription": "Textos e ensaios de {name} en {site}."
   },
   "authors": {
     "anxo-perez": "Estudante de Lingua e Literatura Españolas na Universidade de Navarra. A súa obra foi recoñecida en certames literarios galegos, como o Premio de Poesía «Cambados Mar de Letras» e o «Certame Literario de Ames», e en 2025 foi distinguido como mellor orador da categoría de Bacharelato na fase final de Parlamento Xove. A súa escrita céntrase no problema da identidade, con especial atención á tradición como forma de resistencia. Aborda o proceso de secularización de Europa e dialoga coa tradición galeguista e co pensamento europeo.",
