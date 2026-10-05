@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+supabase_logs.csv
 
 # debug
 npm-debug.log*
