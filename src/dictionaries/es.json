@@ -1,5 +1,6 @@
 {
   "nav": {
+    "inicio": "Inicio",
     "revista": "Revista",
     "estatutos": "Estatutos",
     "articulos": "Archivo",
@@ -87,7 +88,35 @@
   },
   "authorPage": {
     "articlesBy": "Artículos de",
-    "noArticles": "No hay artículos publicados de este autor."
+    "noArticles": "No hay artículos publicados de este autor.",
+    "allWorks": "Todos",
+    "publishedWorks": "textos publicados",
+    "publishedWorkSingular": "texto publicado",
+    "readingTime": "min de lectura",
+    "topics": "Temáticas habituales",
+    "contact": "Contacto",
+    "aboutAuthor": "Sobre el autor",
+    "latestWork": "Última publicación",
+    "archive": "Archivo de publicaciones",
+    "foundingMember": "Miembro fundador de Cerna",
+    "cernaContributor": "Colaborador en Cerna",
+    "editorialBoard": "Consejo Editorial",
+    "allTopics": "Todas las temáticas",
+    "clearFilter": "Limpiar filtro",
+    "readFullText": "Leer texto completo",
+    "home": "Inicio",
+    "authors": "Autores",
+    "defaultBio": "Autor y colaborador en Cerna.",
+    "email": "Correo",
+    "sendEmailTo": "Enviar correo a",
+    "instagramProfileOf": "Perfil de Instagram de",
+    "portraitOf": "Retrato de",
+    "filterByTopic": "Filtrar por",
+    "publicationSingular": "publicación",
+    "publicationPlural": "publicaciones",
+    "textSingular": "texto",
+    "textPlural": "textos",
+    "defaultMetaDescription": "Textos y ensayos de {name} en {site}."
   },
   "authors": {
     "anxo-perez": "Estudiante de Lengua y Literatura Españolas en la Universidad de Navarra. Su obra ha sido reconocida en certámenes literarios gallegos, como el Premio de Poesía «Cambados Mar de Letras» y el «Certamen Literario de Ames», y en 2025 fue distinguido como mejor orador de la categoría de Bachillerato en la fase final de Parlamento Xove. Su escritura se centra en el problema de la identidad, con especial atención a la tradición como forma de resistencia. Aborda el proceso de secularización de Europa y dialoga con la tradición galleguista y con el pensamiento europeo.",
