@@ -92,7 +92,7 @@ interface AuthorProfileViewProps {
 }
 
 function calculateReadingTime(text?: string | null): number {
-  if (!text) return 1;
+  if (!text) return 4;
   const clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   const words = clean.split(' ').filter(Boolean).length;
   return Math.max(1, Math.ceil(words / 200));
@@ -497,7 +497,7 @@ export default function AuthorProfileView({
                           </Link>
 
                           <p className="font-sans text-base sm:text-lg text-charcoal/80 line-clamp-3 md:line-clamp-4 leading-relaxed mb-6">
-                            {subtitulo || (contenido?.replace(/<[^>]*>/g, '').substring(0, 180) + '...')}
+                            {subtitulo || (contenido ? contenido.replace(/<[^>]*>/g, '').substring(0, 180) + '...' : '')}
                           </p>
                         </div>
 
@@ -591,7 +591,7 @@ export default function AuthorProfileView({
                         </Link>
 
                         <p className="font-sans text-sm sm:text-base text-charcoal/70 line-clamp-3 leading-relaxed mb-4">
-                          {subtitulo || (contenido?.replace(/<[^>]*>/g, '').substring(0, 140) + '...')}
+                          {subtitulo || (contenido ? contenido.replace(/<[^>]*>/g, '').substring(0, 140) + '...' : '')}
                         </p>
 
                         {/* Labels / Temáticas: beneath subtitle, above publication date */}

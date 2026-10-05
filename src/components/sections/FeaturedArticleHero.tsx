@@ -40,7 +40,7 @@ export default function FeaturedArticleHero({ articulo, lang, dict }: FeaturedAr
           </h1>
         </Link>
         <p className="font-sans text-lg text-charcoal/80 line-clamp-4">
-          {subtitulo || (contenido?.replace(/<[^>]*>/g, '').substring(0, 150) + '...')}
+          {subtitulo || (contenido ? contenido.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : '')}
         </p>
         <div className="pt-4 border-t border-lines w-1/4 mt-2">
           <span className="text-sm font-semibold text-charcoal uppercase tracking-widest">

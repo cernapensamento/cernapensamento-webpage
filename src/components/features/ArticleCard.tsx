@@ -21,7 +21,7 @@ export default function ArticleCard({ articulo, lang, dict }: ArticleCardProps) 
         {titulo}
       </h3>
       <p className="font-sans text-lg text-charcoal/80 mb-4 line-clamp-3">
-        {subtitulo || (contenido?.replace(/<[^>]*>/g, '').substring(0, 150) + '...')}
+        {subtitulo || (contenido ? contenido.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : '')}
       </p>
       <div className="mt-auto border-t border-lines pt-3 w-1/3">
         <span className="text-xs font-semibold text-charcoal uppercase tracking-widest">

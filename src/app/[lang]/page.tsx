@@ -12,7 +12,7 @@ import ContactSection from '@/components/sections/ContactSection';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
@@ -23,10 +23,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Obtener artículos con el nombre del autor
+  // Obtener artículos con el nombre del autor (solo metadatos para tarjetas)
   const { data: articulos } = await supabase
     .from('articulos')
-    .select('id, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, slug, imagen_url, contenido_gl, contenido_es, estado, creado_en, actualizado_en, fijado, tipo, perfiles(nombre)')
+    .select('id, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, slug, imagen_url, estado, creado_en, actualizado_en, fijado, tipo, perfiles(nombre)')
     .eq('estado', ARTICLE_STATES.PUBLISHED)
     .order('actualizado_en', { ascending: false });
 

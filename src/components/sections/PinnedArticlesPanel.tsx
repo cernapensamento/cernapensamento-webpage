@@ -41,7 +41,7 @@ export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArt
               {articulo.titulo_gl || articulo.titulo_es}
             </h3>
             <p className="font-sans text-sm text-charcoal/60 line-clamp-3">
-              {articulo.subtitulo_gl || articulo.subtitulo_es || String(articulo.contenido_gl || articulo.contenido_es || '').replace(/<[^>]*>?/g, '').substring(0, 100) + '...'}
+              {articulo.subtitulo_gl || articulo.subtitulo_es || ((articulo.contenido_gl || articulo.contenido_es) ? String(articulo.contenido_gl || articulo.contenido_es).replace(/<[^>]*>?/g, '').substring(0, 100) + '...' : '')}
             </p>
             <div className="mt-auto border-t border-lines pt-3 w-1/3">
               <span className="text-[10px] font-semibold text-charcoal/80 uppercase tracking-widest">
