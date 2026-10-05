@@ -147,10 +147,6 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
   // 3. i18n Redirection
   if (!isExcluded) {
     const pathnameIsMissingLocale = i18n.locales.every(
@@ -164,20 +160,26 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 4. Auth Protection (Handling [lang] prefix)
+  // 4. Auth Protection (Handling [lang] prefix) - Only query Supabase Auth for protected/login routes
   const isEscritorio = /^(\/[a-z]{2})?\/escritorio/.test(pathname);
   const isLogin = /^(\/[a-z]{2})?\/login$/.test(pathname);
 
-  if (!user && isEscritorio) {
-    const url = request.nextUrl.clone()
-    url.pathname = `/${currentLocale}/login`;
-    return NextResponse.redirect(url)
-  }
+  if (isEscritorio || isLogin) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (user && isLogin) {
-    const url = request.nextUrl.clone()
-    url.pathname = `/${currentLocale}/escritorio`;
-    return NextResponse.redirect(url)
+    if (!user && isEscritorio) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/${currentLocale}/login`;
+      return NextResponse.redirect(url)
+    }
+
+    if (user && isLogin) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/${currentLocale}/escritorio`;
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
