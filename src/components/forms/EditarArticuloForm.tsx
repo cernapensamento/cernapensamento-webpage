@@ -43,6 +43,26 @@ export default function EditarArticuloForm({ articulo, userRole }: Props) {
                 return;
             }
 
+            let updatedSlug = articulo.slug;
+            const currentTitle = data.titulo_gl || data.titulo_es;
+            const isPlaceholderSlug = !articulo.slug || articulo.slug.startsWith('novo-artigo') || articulo.slug.startsWith('sin-titulo') || articulo.slug.startsWith('sen-titulo');
+            const isDraft = articulo.estado === ARTICLE_STATES.DRAFT;
+            if (currentTitle && (isPlaceholderSlug || isDraft)) {
+                const match = articulo.slug?.match(/-([a-z0-9]{6})$/i);
+                const suffix = match ? match[1] : Math.random().toString(36).substring(2, 8);
+                const base = currentTitle
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/[\s_-]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                if (base) {
+                    updatedSlug = `${base}-${suffix}`;
+                }
+            }
+
             const { error } = await supabase
                 .from('articulos')
                 .update({
@@ -50,6 +70,7 @@ export default function EditarArticuloForm({ articulo, userRole }: Props) {
                     titulo_es: data.titulo_es || 'Sin Título',
                     subtitulo_gl: data.subtitulo_gl || null,
                     subtitulo_es: data.subtitulo_es || null,
+                    slug: updatedSlug,
                     contenido_gl: data.contenido_gl || '',
                     contenido_es: data.contenido_es || '',
                     imagen_url: data.imagen_url || null,

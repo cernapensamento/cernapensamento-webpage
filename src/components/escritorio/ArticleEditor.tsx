@@ -165,7 +165,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         immediatelyRender: false,
         editorProps: {
             attributes: {
-                class: 'w-full border-none bg-transparent font-sans text-lg text-charcoal focus:outline-none min-h-[400px] outline-none prose prose-p:my-4 [&_h1+p]:mt-2 [&_h2+p]:mt-2 [&_h3+p]:mt-2 prose-img:my-8 prose-h1:font-serif prose-h1:font-bold prose-h1:text-4xl prose-h1:md:text-5xl prose-h1:text-charcoal prose-h1:mt-12 prose-h1:mb-0 prose-h1:tracking-tight prose-h2:font-serif prose-h2:font-bold prose-h2:text-3xl prose-h2:md:text-4xl prose-h2:text-charcoal/90 prose-h2:mt-10 prose-h2:mb-0 prose-h2:tracking-tight prose-h3:font-serif prose-h3:font-bold prose-h3:text-2xl prose-h3:md:text-3xl prose-h3:text-charcoal/80 prose-h3:mt-8 prose-h3:mb-0 prose-h3:tracking-tight [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_span[data-type="inline-math"]]:bg-lines/30 [&_span[data-type="inline-math"]]:px-1.5 [&_span[data-type="inline-math"]]:py-0.5 [&_span[data-type="inline-math"]]:rounded [&_div[data-type="block-math"]]:bg-lines/20 [&_div[data-type="block-math"]]:p-4 [&_div[data-type="block-math"]]:my-6 [&_div[data-type="block-math"]]:rounded [&_div[data-type="block-math"]]:text-center',
+                class: 'w-full border-none bg-transparent font-sans text-lg text-charcoal focus:outline-none min-h-[400px] outline-none prose prose-p:my-4 break-words [overflow-wrap:anywhere] [&_a]:break-all [&_a]:[overflow-wrap:anywhere] [&_h1+p]:mt-2 [&_h2+p]:mt-2 [&_h3+p]:mt-2 prose-img:my-8 prose-h1:font-serif prose-h1:font-bold prose-h1:text-4xl prose-h1:md:text-5xl prose-h1:text-charcoal prose-h1:mt-12 prose-h1:mb-0 prose-h1:tracking-tight prose-h2:font-serif prose-h2:font-bold prose-h2:text-3xl prose-h2:md:text-4xl prose-h2:text-charcoal/90 prose-h2:mt-10 prose-h2:mb-0 prose-h2:tracking-tight prose-h3:font-serif prose-h3:font-bold prose-h3:text-2xl prose-h3:md:text-3xl prose-h3:text-charcoal/80 prose-h3:mt-8 prose-h3:mb-0 prose-h3:tracking-tight [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_span[data-type="inline-math"]]:bg-lines/30 [&_span[data-type="inline-math"]]:px-1.5 [&_span[data-type="inline-math"]]:py-0.5 [&_span[data-type="inline-math"]]:rounded [&_div[data-type="block-math"]]:bg-lines/20 [&_div[data-type="block-math"]]:p-4 [&_div[data-type="block-math"]]:my-6 [&_div[data-type="block-math"]]:rounded [&_div[data-type="block-math"]]:text-center',
             },
         },
         onUpdate: ({ editor }) => {
@@ -979,9 +979,10 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             </div>
                         )}
 
-                        <article className="w-full max-w-2xl px-5 md:px-0 mx-auto font-sans text-xl text-charcoal leading-relaxed flex flex-col gap-2 whitespace-pre-wrap">
+                        <article className={`w-full max-w-2xl px-5 md:px-0 mx-auto font-sans text-xl text-charcoal leading-relaxed flex flex-col gap-2 break-words [overflow-wrap:anywhere] min-w-0 ${tipo?.toLowerCase() === 'ensaio' ? 'text-justify' : ''}`}>
                             <div 
-                                className="prose prose-lg max-w-none text-charcoal
+                                className={`prose prose-lg max-w-none text-charcoal break-words [overflow-wrap:anywhere]
+                        ${tipo?.toLowerCase() === 'ensaio' ? '[&>p]:text-justify [&_p]:[text-align:justify] [&_p]:[text-justify:inter-word]' : ''}
                         [&>p]:mb-6 [&>p]:leading-relaxed
                         [&_h1]:font-serif [&_h1]:font-bold [&_h1]:text-4xl [&_h1]:md:text-5xl [&_h1]:text-charcoal [&_h1]:mt-12 [&_h1]:mb-6 [&_h1]:tracking-tight [&_h1]:leading-tight [&_h1]:scroll-mt-36
                         [&_h2]:font-serif [&_h2]:font-bold [&_h2]:text-3xl [&_h2]:md:text-4xl [&_h2]:text-charcoal/90 [&_h2]:mt-10 [&_h2]:mb-6 [&_h2]:tracking-tight [&_h2]:leading-snug [&_h2]:scroll-mt-36
@@ -992,13 +993,13 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         [&_li]:my-1.5 [&_li>p]:my-0.5
                         [&>figure]:my-10 [&>figure]:mx-0 [&>figure]:w-full [&>figure>img]:w-full [&>figure>img]:h-auto [&>figure>img]:border [&>figure>img]:border-lines
                         [&_figure_figcaption]:mt-4 [&_figure_figcaption]:text-base [&_figure_figcaption]:text-charcoal/60 [&_figure_figcaption]:italic [&_figure_figcaption]:text-center
-                        [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-gold/80
-                        [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_.katex]:text-charcoal
+                        [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 [&_a]:break-all [&_a]:[overflow-wrap:anywhere] hover:[&_a]:text-gold/80
+                        [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_.katex-display]:overflow-x-auto [&_.katex-display]:overflow-y-hidden [&_.katex-display]:max-w-full [&_.katex-display]:py-2 [&_.katex]:text-charcoal
                         [&_[data-type='article-index']]:border-l-4 [&_[data-type='article-index']]:border-gold [&_[data-type='article-index']]:!px-8 [&_[data-type='article-index']]:!py-6 [&_[data-type='article-index']]:bg-surface [&_[data-type='article-index']]:mb-10 [&_[data-type='article-index']]:rounded-r
                         [&_[data-type='article-index']_.index-label]:text-xs [&_[data-type='article-index']_.index-label]:font-semibold [&_[data-type='article-index']_.index-label]:uppercase [&_[data-type='article-index']_.index-label]:tracking-widest [&_[data-type='article-index']_.index-label]:text-charcoal/50 [&_[data-type='article-index']_.index-label]:mb-3
                         [&_[data-type='article-index']_ul]:!list-none [&_[data-type='article-index']_ul]:!pl-0 [&_[data-type='article-index']_ul]:!my-0
                         [&_[data-type='article-index']_li]:!py-0.5 [&_[data-type='article-index']_li]:!my-0
-                        [&_[data-type='article-index']_a:hover]:underline"
+                        [&_[data-type='article-index']_a:hover]:underline`}
                                 dangerouslySetInnerHTML={{ __html: renderHeadingAnchors(renderMathInHtml(activeLang === 'gl' ? contenidoGl : contenidoEs)) }}
                             />
                         </article>

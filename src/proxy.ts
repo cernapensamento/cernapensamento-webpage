@@ -59,6 +59,15 @@ export async function proxy(request: NextRequest) {
     '/images',
   ].some((path) => pathname.startsWith(path));
 
+  // Legacy article slug redirects (301 Moved Permanently)
+  const legacySlugMatch = pathname.match(/^\/([a-z]{2})\/articulo\/la-ia-no-te-va-a-quitar-el-trabajo-6m0u1y$/);
+  if (legacySlugMatch) {
+    const lang = legacySlugMatch[1];
+    const url = request.nextUrl.clone();
+    url.pathname = `/${lang}/articulo/los-enemigos-de-la-maquina-6m0u1y`;
+    return NextResponse.redirect(url, 301);
+  }
+
   // Determine Locale
   let currentLocale: string = i18n.defaultLocale;
   const localeMatch = pathname.match(/^\/([^/]+)/);

@@ -25,13 +25,15 @@ export async function POST(req: Request) {
 
     const langName = targetLanguage === 'es' ? 'Spanish' : 'Galician';
     
-    const systemPrompt = `You are an expert bilingual translator specialized in literary and journalistic articles (Galician and Spanish). Translate the user's text to ${langName}. The user will provide their content with separators. You MUST return the translated content using the EXACT SAME separators:
+    const systemPrompt = `You are an expert bilingual translator specialized in literary and journalistic articles (Galician and Spanish). Translate the user's text to ${langName}. The user will provide their content with separators.
+CRITICAL: You MUST preserve ALL HTML tags, inline styles (such as style="text-align: justify;"), classes, ids, and attributes EXACTLY as they appear. Do not remove or alter any HTML formatting or style attributes.
+You MUST return the translated content using the EXACT SAME separators:
 ---TITLE---
 [translated title here]
 ---SUBTITLE---
 [translated subtitle here]
 ---HTMLCONTENT---
-[translated html content here, keep all HTML tags exactly as they are]`;
+[translated html content here, keep all HTML tags and style attributes exactly as they are]`;
 
     const payload = `---TITLE---\n${title || ''}\n---SUBTITLE---\n${subtitle || ''}\n---HTMLCONTENT---\n${htmlContent || ''}`;
 
