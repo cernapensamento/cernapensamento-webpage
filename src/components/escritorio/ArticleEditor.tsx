@@ -527,15 +527,60 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         }
     };
 
+    const sanitizeBase64Images = async (html: string, userId: string): Promise<string> => {
+        if (!html || !html.includes(';base64,')) return html;
+        const base64Regex = /data:image\/([a-zA-Z0-9]+);base64,([A-Za-z0-9+/=]+)/g;
+        const matches: { fullMatch: string; format: string; base64Data: string }[] = [];
+        let match;
+        while ((match = base64Regex.exec(html)) !== null) {
+            matches.push({ fullMatch: match[0], format: match[1], base64Data: match[2] });
+        }
+        let cleaned = html;
+        for (let i = 0; i < matches.length; i++) {
+            const m = matches[i];
+            try {
+                const byteCharacters = atob(m.base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let j = 0; j < byteCharacters.length; j++) {
+                    byteNumbers[j] = byteCharacters.charCodeAt(j);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: `image/${m.format === 'jpg' ? 'jpeg' : m.format}` });
+                const path = `contenido/${userId}/pasted-${Date.now()}-${i}.${m.format}`;
+                const { error: uploadErr } = await supabase.storage
+                    .from('imagenes-articulos')
+                    .upload(path, blob, { upsert: true });
+                if (!uploadErr) {
+                    const { data: urlData } = supabase.storage
+                        .from('imagenes-articulos')
+                        .getPublicUrl(path);
+                    if (urlData?.publicUrl) {
+                        cleaned = cleaned.replace(m.fullMatch, urlData.publicUrl);
+                        uploadedInlineImages.current.push(urlData.publicUrl);
+                    }
+                }
+            } catch (err) {
+                console.error('Error uploading pasted base64 image:', err);
+            }
+        }
+        return cleaned;
+    };
+
     const handleSubmit = async (action: EditorAction = 'publish') => {
         if (isUploadingCover.current || isUploadingInline.current) {
             alert(activeLang === 'gl' ? 'Por favor, agarda a que rematen de subirse as imaxes.' : 'Por favor, espera a que terminen de subirse las imágenes.');
             return;
         }
 
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const userId = currentUser?.id || 'general';
+
         const currentHtml = editor?.getHTML() || '';
-        const finalGl = activeLang === 'gl' ? currentHtml : contenidoGl;
-        const finalEs = activeLang === 'es' ? currentHtml : contenidoEs;
+        let finalGl = activeLang === 'gl' ? currentHtml : contenidoGl;
+        let finalEs = activeLang === 'es' ? currentHtml : contenidoEs;
+
+        finalGl = await sanitizeBase64Images(finalGl, userId);
+        finalEs = await sanitizeBase64Images(finalEs, userId);
         
         // --- LIMPIEZA DE IMÁGENES INLINE (GARBAGE COLLECTION) ---
         const supabaseRegex = /https:\/\/[a-zA-Z0-9.-]+\.supabase\.co\/storage\/v1\/object\/public\/imagenes-articulos\/contenido\/[a-zA-Z0-9-]+\/[^"'\s]+/g;

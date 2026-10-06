@@ -7,7 +7,7 @@ import type { Locale } from '@/i18n-config';
 import type { Metadata } from 'next';
 import AuthorProfileView from '@/components/features/AuthorProfileView';
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 interface PageProps {
   params: Promise<{ slug: string; lang: string }>;
@@ -83,7 +83,7 @@ export default async function AutorPage({ params }: PageProps) {
   // Fetch published articles
   const { data: articulosRaw } = await supabase
     .from('articulos')
-    .select('id, slug, tipo, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, contenido_gl, contenido_es, imagen_url, tematicas, creado_en, actualizado_en, fijado')
+    .select('id, slug, tipo, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, imagen_url, tematicas, creado_en, actualizado_en, fijado')
     .eq('autor_id', autor.id)
     .eq('estado', ARTICLE_STATES.PUBLISHED);
 

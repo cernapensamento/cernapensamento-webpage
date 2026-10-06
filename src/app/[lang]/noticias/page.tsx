@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 export default async function NoticiasPage({
   params,
@@ -66,7 +66,7 @@ export default async function NoticiasPage({
   // 2. Obtener las noticias aplicando los filtros
   let query = supabase
     .from('articulos')
-    .select(`*, perfiles ( nombre )`)
+    .select(`id, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, slug, imagen_url, tipo, tematicas, creado_en, actualizado_en, perfiles ( nombre )`)
     .eq('estado', ARTICLE_STATES.PUBLISHED)
     .eq('tipo', 'noticia')
     .order('actualizado_en', { ascending: false });
