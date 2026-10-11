@@ -383,7 +383,7 @@ export default function AuthorProfileView({
                           : 'border-transparent text-charcoal/60 hover:text-charcoal'
                       }`}
                     >
-                      {tAll} <span className="opacity-60 text-xs">({articulos.length})</span>
+                      {tAll} <span className="opacity-60 text-xs">({allArticles.length})</span>
                     </button>
                     {uniqueTypes.map(type => (
                       <button

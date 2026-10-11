@@ -75,28 +75,29 @@ function normalizeTags(
   if (!Array.isArray(rawPublicationTags)) return [];
 
   const list = rawPublicationTags as RawTagRelation[];
+  const result: TagItem[] = [];
 
-  return list
-    .map((pt) => {
-      const tag = pt.tag || pt.tags;
-      if (!tag) return null;
+  for (const pt of list) {
+    const tag = pt.tag || pt.tags;
+    if (!tag) continue;
 
-      const slug = tag.slug;
-      const translations = tag.translations || tag.tag_translations || [];
+    const slug = tag.slug;
+    const translations = tag.translations || tag.tag_translations || [];
 
-      let name = slug;
-      if (translations.length > 0) {
-        const matching = translations.find((t) => t.lang === preferredLang);
-        name = matching?.name || translations[0]?.name || slug;
-      }
+    let name = slug;
+    if (translations.length > 0) {
+      const matching = translations.find((t) => t.lang === preferredLang);
+      name = matching?.name || translations[0]?.name || slug;
+    }
 
-      return {
-        id: tag.id,
-        slug,
-        name,
-      };
-    })
-    .filter((t): t is TagItem => t !== null);
+    result.push({
+      id: tag.id,
+      slug,
+      name,
+    });
+  }
+
+  return result;
 }
 
 /**

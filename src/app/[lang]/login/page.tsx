@@ -91,7 +91,7 @@ export default function LoginPage() {
           .single();
 
         const role = jwtRole || profile?.role;
-        const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || role === 'escritor';
+        const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || (role as string) === 'escritor';
         if (canAccessDesk) {
           router.push(`/${lang}/escritorio`);
         } else {
@@ -183,7 +183,7 @@ export default function LoginPage() {
             .single();
             
           const role = jwtRole || profile?.role;
-          const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || role === 'escritor';
+          const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || (role as string) === 'escritor';
           if (canAccessDesk) {
             router.push(`/${lang}/escritorio`);
           } else {

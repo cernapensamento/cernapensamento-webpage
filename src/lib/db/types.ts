@@ -161,7 +161,7 @@ export interface CommentItem {
 export interface ColumnistItem {
   id: string;
   full_name: string;
-  slug: string;
+  slug: string | null;
   bio: LocalizedString | null;
   avatar_url: string | null;
   role: UserRole;
@@ -173,7 +173,7 @@ export interface ColumnistItem {
 export interface AuthorProfileDetail {
   id: string;
   full_name: string;
-  slug: string;
+  slug: string | null;
   bio: LocalizedString | null;
   avatar_url: string | null;
   role: UserRole;
