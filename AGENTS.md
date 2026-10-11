@@ -29,6 +29,7 @@ Comprehensive operating guide and architectural reference for AI coding agents a
 | **Styling & Design** | Tailwind CSS v4 (`@tailwindcss/postcss`), CSS Variables | Tailwind `4.x` |
 | **Typography & Icons** | `Libre Caslon Text` (Serif), `Source Sans 3` (Sans), Google Material Symbols | Next Font / Google Fonts |
 | **Database & Auth** | Supabase PostgreSQL, `@supabase/ssr`, `@supabase/supabase-js`, GoTrue | Postgres 15+, Supabase SSR `0.12.x` |
+| **Data Access Layer (DAL)** | Strongly-typed queries, constants & models (`src/lib/db/`) | Custom TypeScript DAL |
 | **WYSIWYG Editor** | TipTap 3, ProseMirror, KaTeX (math), custom tables, custom index | TipTap `3.27.x`, KaTeX `0.16.x` |
 | **Sanitization** | `sanitize-html` | `2.17.x` |
 | **Edge & Rate Limiting** | Next.js Edge Middleware (`src/proxy.ts`), Upstash Redis, `@upstash/ratelimit` | Upstash Redis `1.38.x` |
@@ -51,7 +52,7 @@ cerna/
 │   │   │   ├── asociacion/       # Institutional pages (manifesto, statutes, editorial collections)
 │   │   │   ├── autor/[slug]/     # Author profile & author's publications
 │   │   │   ├── contacto/         # Contact form page
-│   │   │   ├── escritorio/       # Private dashboard & TipTap editor (/nuevo, /editar/[slug])
+│   │   │   ├── escritorio/       # Private dashboard & TipTap editor (/nuevo, /editar/[slug], /perfil)
 │   │   │   ├── login/            # Authentication page (Google OAuth + Email/Password)
 │   │   │   ├── layout.tsx        # Root localized layout (NavBar, Footer, ThemeProvider)
 │   │   │   └── page.tsx          # Homepage (Hero, Pinned, Columnists, Themes)
@@ -64,19 +65,22 @@ cerna/
 │   ├── components/               # Modular React components by domain
 │   │   ├── escritorio/           # TipTap editor, toolbars, metadata sidebars, table controls
 │   │   ├── features/             # Article cards, comments, topic filter bar, author profile
-│   │   ├── forms/                # ContactForm, ArticleSubmissionForm, CommentForm
+│   │   ├── forms/                # ContactForm, ArticleSubmissionForm, CommentForm, EditarArticuloForm
 │   │   ├── layout/               # PublicNavBar, SideMenu drawer, SiteFooter
 │   │   ├── sections/             # Homepage sections (FeaturedHero, Columnists, Themes)
 │   │   └── ui/                   # Shared UI primitives (SocialLinks, ThemeToggle, LanguageToggle)
 │   ├── dictionaries/             # Canonical i18n JSONs: gl.json (default), es.json
 │   ├── hooks/                    # React hooks (useAuth, useLocale)
 │   ├── lib/                      # Editor extensions, KaTeX renderer, constants, columnist metadata
+│   │   └── db/                   # Strongly-Typed Data Access Layer (DAL)
+│   │       ├── schema.ts         # Constants: DB_TABLES, column names, enums
+│   │       ├── types.ts          # Table rows, aggregates, and view interfaces
+│   │       ├── queries/          # Modular typed query modules (publications, users, comments, tags)
+│   │       └── index.ts          # Barrel export for lib/db
 │   ├── proxy.ts                  # Perimeter Edge middleware (i18n, rate limiting, auth gating)
 │   └── utils/                    # Supabase SSR clients (server.ts, client.ts) and auth helpers
-├── database/                     # SQL schemas, migration scripts, and seed CSVs
-│   ├── schema_global_actualizado.sql  # Complete canonical PostgreSQL schema
-│   ├── auth.users/               # User restoration scripts and JSON backups
-│   └── csv_data/                 # Table data exports (articulos, perfiles, tags, etc.)
+├── database/                     # PostgreSQL schema definitions
+│   └── full_schema.sql           # Complete canonical database schema dump (tables, RLS, functions)
 ├── docs/                         # Architecture codemaps and operational protocols
 │   ├── CODEMAPS/                 # Modular architectural blueprints (frontend, backend, editor, etc.)
 │   ├── style-guide.md            # Visual style guide for executive reports
@@ -107,15 +111,29 @@ cerna/
 * **Bilingual Parity:**  
   Every public UI string must exist in both `src/dictionaries/gl.json` and `src/dictionaries/es.json`. Never hardcode raw strings in components.
 * **Database Multilingual Fields:**  
-  Publications and profiles use unified JSONB fields: `title` (`{ gl, es }`), `subtitle` (`{ gl, es }`), `content` (`{ gl, es }`), and `bio` (`{ gl, es }`). Always supply both language variants.
+  Publications and user profiles use unified JSONB fields: `title` (`{ gl, es }`), `subtitle` (`{ gl, es }`), `content` (`{ gl, es }`), and `bio` (`{ gl, es }`). Always supply both language variants.
 * **Path Prefixing:**  
   All localized routes must begin with `/${lang}/` (`/gl` or `/es`). Use the helper `LanguageToggle` or construct internal links using `/${lang}/...`.
 
-### 4.3. Supabase Egress & Database Bandwidth Guardrails
-* **Zero Hardcoded Table or Column Strings:**  
-  Always use the Data Access Layer constants (`DB_TABLES`, `PUBLICATION_COLS`, `USER_COLS`, `TAG_COLS`, `PUBLICATION_STATUSES`, `USER_ROLES`) from `src/lib/db/schema`.
-* **Never Query Heavy Content on Listings:**  
-  On the homepage (`page.tsx`), archive (`articulos/page.tsx`), news, and author profiles, **never select full article content** (`content`). Select only the metadata needed for cards (`id, slug, title, subtitle, cover_image_url, type, created_at, users(full_name)`).
+### 4.3. Data Access Layer (DAL) & Supabase Guardrails
+* **Zero Magic Strings:**  
+  Never hardcode table names, column names, statuses, or roles in application code. Always import identifiers from `@/lib/db/schema`:
+  - Tables: `DB_TABLES.PUBLICATIONS`, `DB_TABLES.USERS`, `DB_TABLES.COMMENTS`, `DB_TABLES.TAGS`, `DB_TABLES.PUBLICATION_TAGS`.
+  - Columns: `PUBLICATION_COLS`, `USER_COLS`, `COMMENT_COLS`, `TAG_COLS`, `PUBLICATION_TAG_COLS`.
+  - Enums: `USER_ROLES`, `PUBLICATION_STATUSES`, `PUBLICATION_TYPES`.
+* **Standard Schema Tables:**
+  - `publications` (formerly `articulos`): id, slug, title, subtitle, content, cover_image_url, status, type, original_language, is_pinned, author_id, created_at, updated_at.
+  - `users` (formerly `perfiles`): id, full_name, slug, bio, avatar_url, newsletter_subscribed, role.
+  - `comments` (formerly `comentarios`): id, publication_id, author_id, content, updated_at.
+  - `tags` & `tag_translations`: taxonomy table with localized names connected to publications via `publication_tags`.
+* **Editorial Roles & Permissions:**
+  - Roles: `reader`, `guest`, `member`, `founder`, `admin`.
+  - Direct Publishing: Only `founder` and `admin` can directly publish (`status = 'published'`).
+  - Editorial Review: Submissions from `member` and `guest` enter review (`status = 'in_review'`).
+  - Approval Authority: `founder` and `admin` have rights to review, approve, or reject submissions in review.
+  - Readers: `reader` is read-only and redirected away from writer desk tools to `/escritorio/perfil`.
+* **Never Query Heavy Content on Listings (Egress Bandwidth Guardrail):**  
+  On the homepage (`page.tsx`), archive (`articulos/page.tsx`), news, author profiles, and dashboard lists, **never select full article content** (`content`). Select only the metadata needed for cards (`id, slug, title, subtitle, cover_image_url, type, created_at, users(full_name)`).
 * **Decouple Auth from Public Reader SSR:**  
   Public article pages (`/articulo/[slug]`) must not call `getAuthenticatedUser()` / `cookies()` during initial server render. Doing so disables static caching/ISR and triggers dynamic SSR on every bot/crawler hit. Keep reader rendering cached (ISR `revalidate = 60` or on-demand revalidation) and handle user-specific review actions on the client.
 * **Storage Bucket Rules:**  
@@ -125,10 +143,6 @@ cerna/
     * In-article images: `contenido/{userId}/{timestamp}-{safeName}`
     * Avatars: `avatares/{userId}/{timestamp}.{ext}`
   * Client-side compression must be enforced before uploading images (max 1600px width, WebP/JPEG quality 80%) to avoid exhausting storage egress quotas.
-* **PostgreSQL Schema Constraints:**  
-  * Taxonomy uses normalized relational tables: `publication_tags` connects `publications` to `tags`.
-  * Public read on `publications` is protected by RLS: anonymous visitors can only select rows where `status = 'published'`.
-  * Editorial role hierarchy: `reader`, `guest`, `member`, `founder`, `admin`. Only `founder` and `admin` can directly publish articles (`status = 'published'`). `member` and `guest` submissions enter review (`status = 'in_review'`).
 
 ### 4.4. TipTap Editor & HTML Sanitization Pipeline
 * **Rendering Order:**  
@@ -153,7 +167,7 @@ Always use semantic CSS variables via Tailwind classes to ensure dark mode works
 When tasked with fixing bugs, implementing features, or refactoring code in Cerna:
 
 ### 1. Plan Before Executing
-* Review existing components and codemaps in `docs/CODEMAPS/` before introducing new abstractions.
+* Review existing components, DAL queries in `src/lib/db/`, and codemaps in `docs/CODEMAPS/` before introducing new abstractions.
 * If making multi-file modifications, formulate a clear, sequential plan.
 
 ### 2. Surgical, High-Cohesion Edits
@@ -164,20 +178,16 @@ When tasked with fixing bugs, implementing features, or refactoring code in Cern
 * After code modifications, always verify with:
   ```bash
   npm run lint
+  npm run build
   ```
-* Address any type errors (`@typescript-eslint/no-explicit-any`), unused variables, or React hook dependency warnings immediately.
+* Address any type errors (`@typescript-eslint/no-explicit-any`), unused variables, or React hook warnings immediately.
 
-### 4. Git & Commit Guidelines (Strictly Local)
+### 4. Branching & Git Guidelines
+* **Integration Branch:** The active integration branch is **`development`**. Production is on **`main`**.
 * **Atomic Commits:** Follow Conventional Commits (`feat:`, `fix:`, `refactor:`, `style:`, `chore:`, `docs:`).
 * **Never Run Massive Adds:** Do not run `git add .` or `git commit -am`. Add individual files per atomic commit.
-* **CRITICAL RULE — Never Push:**  
-  The agent is strictly forbidden from executing `git push` or merging on GitHub. The human developer reviews, verifies, pushes, and merges.
-* **Release Protocol:**  
-  When the user asks to prepare a branch for delivery or release, adhere to [`docs/RELEASE_PROTOCOL.md`](docs/RELEASE_PROTOCOL.md):
-  1. Propose and execute atomic commits locally.
-  2. For client-facing milestones, draft the executive, non-technical report in `docs/reports/<branch>-<date>/reporte-cambios.md` following [`docs/style-guide.md`](docs/style-guide.md).
-  3. Compile the PDF using Pandoc / Chromium.
-  4. Generate the GitHub Pull Request summary for the user to review.
+* **Remote Push & Release Protocol:**  
+  Push changes to `development` for ongoing work. When preparing a production release or client-facing milestone, adhere to [`docs/RELEASE_PROTOCOL.md`](docs/RELEASE_PROTOCOL.md).
 
 ---
 
@@ -205,6 +215,9 @@ npm run build
 4. In Client Components, retrieve via `getDictionaryClient(lang)` or pass down from the parent Server Component.
 
 ### Applying Database Changes
-1. Update `database/schema_global_actualizado.sql` with the new tables, policies, or functions.
-2. Execute the migration in the Supabase SQL Editor.
-3. Update relevant types and Server Actions in `src/actions/`.
+1. Dump or synchronize schema changes via the Supabase CLI:
+   ```bash
+   npx supabase db dump --project-ref <project-ref> -f database/full_schema.sql
+   ```
+2. Update constants in `src/lib/db/schema.ts` and types in `src/lib/db/types.ts`.
+3. Update relevant DAL queries in `src/lib/db/queries/`.
