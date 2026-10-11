@@ -1,43 +1,46 @@
 "use server";
 
-import { createClient } from '@supabase/supabase-js';
 import { getAuthenticatedUser } from '@/utils/auth';
+import { updatePublicationStatus } from '@/lib/db/queries/publications';
+import type { PublicationStatus } from '@/lib/db/types';
+import { USER_ROLES } from '@/lib/db/schema';
 
-// Use service role key to bypass RLS for administrative actions
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export async function updateArticleState(articuloId: string, newState: string) {
+export async function updateArticleState(
+  publicationId: string,
+  newState: string
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const { user, profile } = await getAuthenticatedUser();
+    const { user, role } = await getAuthenticatedUser();
     
-    if (!user || !profile) {
+    if (!user || !role) {
       return { success: false, error: 'No autorizado' };
     }
 
-    // Only allow admin or escritor to perform this action on OTHER people's articles
-    if (!['admin', 'escritor'].includes(profile.rol)) {
+    // Only allow admin, founder, or legacy escritor to review and publish
+    const canManageStatus = [
+      USER_ROLES.ADMIN,
+      USER_ROLES.FOUNDER,
+      'escritor',
+    ].includes(role);
+
+    if (!canManageStatus) {
       return { success: false, error: 'Permisos insuficientes' };
     }
 
-    const { error } = await supabaseAdmin
-      .from('articulos')
-      .update({
-        estado: newState,
-        actualizado_en: new Date().toISOString()
-      })
-      .eq('id', articuloId);
+    const { success, error } = await updatePublicationStatus(
+      publicationId,
+      newState as PublicationStatus
+    );
 
-    if (error) {
+    if (error || !success) {
       console.error('Error actualizando estado:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error?.message || 'Error al actualizar el estado' };
     }
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Action error:', err);
-    return { success: false, error: err.message || 'Error del servidor' };
+    const message = err instanceof Error ? err.message : 'Error del servidor';
+    return { success: false, error: message };
   }
 }

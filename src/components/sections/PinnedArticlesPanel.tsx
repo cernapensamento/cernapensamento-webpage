@@ -1,8 +1,36 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import type { LocalizedString } from '@/lib/db/types';
+
+interface PinnedArticleData {
+  id: string | number;
+  slug?: string | null;
+  type?: string;
+  tipo?: string;
+  title?: LocalizedString;
+  subtitle?: LocalizedString | null;
+  content?: LocalizedString;
+  titulo_es?: string;
+  titulo_gl?: string;
+  subtitulo_es?: string;
+  subtitulo_gl?: string;
+  contenido_es?: string;
+  contenido_gl?: string;
+  author?: {
+    full_name?: string;
+    nombre?: string;
+    avatar_url?: string | null;
+    slug?: string | null;
+  } | null;
+  perfiles?: {
+    nombre?: string;
+  } | null;
+  cover_image_url?: string | null;
+  imagen_url?: string | null;
+}
 
 interface PinnedArticlesPanelProps {
-  articulos: any[];
+  articulos: PinnedArticleData[];
   lang: string;
   dict?: { documentTypes?: Record<string, string>; [key: string]: unknown };
 }
@@ -17,39 +45,59 @@ export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArt
         <h2 className="font-serif text-2xl md:text-3xl text-charcoal">{lang === 'es' ? 'Artículos Fijados' : 'Artigos Fixados'}</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {articulos.map((articulo) => (
-          <Link key={articulo.id} href={`/${lang}/articulo/${articulo.slug || articulo.id}`} className="group flex flex-col h-full cursor-pointer">
-            <div className="w-full aspect-video relative mb-4 overflow-hidden bg-lines/30">
-              {articulo.imagen_url ? (
-                <Image 
-                  src={articulo.imagen_url} 
-                  alt={articulo.titulo_gl || articulo.titulo_es || 'Artículo'} 
-                  fill 
-                  className="object-cover group-hover:scale-105 transition-all duration-700" 
-                  sizes="(max-width: 768px) 100vw, 25vw"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center border border-lines">
-                  <span className="font-serif text-4xl text-charcoal/20">§</span>
-                </div>
-              )}
-            </div>
-            <span className="text-[10px] font-semibold text-gold uppercase tracking-widest mb-2">
-              {(dict as any)?.documentTypes?.[articulo.tipo?.toLowerCase() || ''] || articulo.tipo || 'Artigo'}
-            </span>
-            <h3 className="font-serif text-xl md:text-2xl mb-3 group-hover:text-gold transition-colors duration-300 line-clamp-3">
-              {articulo.titulo_gl || articulo.titulo_es}
-            </h3>
-            <p className="font-sans text-sm text-charcoal/60 line-clamp-3">
-              {articulo.subtitulo_gl || articulo.subtitulo_es || ((articulo.contenido_gl || articulo.contenido_es) ? String(articulo.contenido_gl || articulo.contenido_es).replace(/<[^>]*>?/g, '').substring(0, 100) + '...' : '')}
-            </p>
-            <div className="mt-auto border-t border-lines pt-3 w-1/3">
-              <span className="text-[10px] font-semibold text-charcoal/80 uppercase tracking-widest">
-                {articulo.perfiles?.nombre || 'Autor Descoñecido'}
+        {articulos.map((articulo) => {
+          const titulo = articulo.title
+            ? (articulo.title[lang] || articulo.title.gl || articulo.title.es || '')
+            : (articulo.titulo_gl || articulo.titulo_es || '');
+
+          const subtitulo = articulo.subtitle
+            ? (articulo.subtitle[lang] || articulo.subtitle.gl || articulo.subtitle.es || null)
+            : (articulo.subtitulo_gl || articulo.subtitulo_es || null);
+
+          const rawContent = articulo.content
+            ? (articulo.content[lang] || articulo.content.gl || articulo.content.es || '')
+            : (articulo.contenido_gl || articulo.contenido_es || '');
+
+          const typeKey = (articulo.type || articulo.tipo || 'article').toLowerCase();
+          const typeLabel = dict?.documentTypes?.[typeKey] || dict?.documentTypes?.[typeKey === 'article' ? 'artigo' : typeKey] || typeKey;
+
+          const coverUrl = articulo.cover_image_url || articulo.imagen_url;
+          const authorName = articulo.author?.full_name || articulo.author?.nombre || articulo.perfiles?.nombre || 'Autor Descoñecido';
+
+          return (
+            <Link key={articulo.id} href={`/${lang}/articulo/${articulo.slug || articulo.id}`} className="group flex flex-col h-full cursor-pointer">
+              <div className="w-full aspect-video relative mb-4 overflow-hidden bg-lines/30">
+                {coverUrl ? (
+                  <Image 
+                    src={coverUrl} 
+                    alt={titulo || 'Publicación'} 
+                    fill 
+                    className="object-cover group-hover:scale-105 transition-all duration-700" 
+                    sizes="(max-width: 768px) 100vw, 25vw"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center border border-lines">
+                    <span className="font-serif text-4xl text-charcoal/20">§</span>
+                  </div>
+                )}
+              </div>
+              <span className="text-[10px] font-semibold text-gold uppercase tracking-widest mb-2">
+                {typeLabel}
               </span>
-            </div>
-          </Link>
-        ))}
+              <h3 className="font-serif text-xl md:text-2xl mb-3 group-hover:text-gold transition-colors duration-300 line-clamp-3">
+                {titulo}
+              </h3>
+              <p className="font-sans text-sm text-charcoal/60 line-clamp-3">
+                {subtitulo || (rawContent ? String(rawContent).replace(/<[^>]*>?/g, '').substring(0, 100) + '...' : '')}
+              </p>
+              <div className="mt-auto border-t border-lines pt-3 w-1/3">
+                <span className="text-[10px] font-semibold text-charcoal/80 uppercase tracking-widest">
+                  {authorName}
+                </span>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

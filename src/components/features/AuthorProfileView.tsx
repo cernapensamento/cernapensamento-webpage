@@ -4,22 +4,31 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Columnist } from '@/lib/columnists';
+import type { LocalizedString, TagItem } from '@/lib/db/types';
 
 export interface ArticleData {
   id: string | number;
-  slug?: string;
+  slug?: string | null;
+  type?: string;
   tipo?: string;
+  title?: LocalizedString;
+  subtitle?: LocalizedString | null;
   titulo_es?: string;
   titulo_gl?: string;
   subtitulo_es?: string;
   subtitulo_gl?: string;
   contenido_es?: string;
   contenido_gl?: string;
+  cover_image_url?: string | null;
   imagen_url?: string | null;
+  tags?: TagItem[] | null;
   tematicas?: string[] | null;
+  created_at?: string;
+  updated_at?: string;
   creado_en?: string;
   actualizado_en?: string;
   publicado_en?: string | null;
+  is_pinned?: boolean | null;
   fijado?: boolean;
 }
 
@@ -32,10 +41,12 @@ export interface TopicInfo {
 interface AuthorProfileViewProps {
   autor: {
     id: string;
-    nombre: string;
-    bio?: string | null;
+    nombre?: string;
+    full_name?: string;
+    bio?: string | LocalizedString | null;
     avatar_url?: string | null;
     rol?: string | null;
+    role?: string | null;
     slug?: string | null;
   };
   columnist?: Columnist;
@@ -44,7 +55,8 @@ interface AuthorProfileViewProps {
   roleLabel: string;
   worksCountLabel: string;
   availableTopics: TopicInfo[];
-  articulos: ArticleData[];
+  articulos?: ArticleData[];
+  publications?: ArticleData[];
   lang: string;
   dict: {
     nav?: {
@@ -91,13 +103,6 @@ interface AuthorProfileViewProps {
   };
 }
 
-function calculateReadingTime(text?: string | null): number {
-  if (!text) return 4;
-  const clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  const words = clean.split(' ').filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 200));
-}
-
 const GL_MONTHS = [
   'xaneiro', 'febreiro', 'marzo', 'abril', 'maio', 'xuño',
   'xullo', 'agosto', 'setembro', 'outubro', 'novembro', 'decembro'
@@ -130,9 +135,13 @@ export default function AuthorProfileView({
   worksCountLabel,
   availableTopics,
   articulos,
+  publications,
   lang,
   dict,
 }: AuthorProfileViewProps) {
+  const allArticles = useMemo(() => publications || articulos || [], [publications, articulos]);
+  const authorName = autor.full_name || autor.nombre || 'Autor';
+
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
 
@@ -149,26 +158,28 @@ export default function AuthorProfileView({
     return topicNameMap.get(slug) || slug;
   };
 
-  // Types summary (all / artigo / ensaio...)
+  // Types summary (all / article / essay...)
   const typesSummary = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const art of articulos) {
-      const t = art.tipo?.toLowerCase() || 'artigo';
+    for (const art of allArticles) {
+      const t = (art.type || art.tipo || 'article').toLowerCase();
       counts[t] = (counts[t] || 0) + 1;
     }
     return counts;
-  }, [articulos]);
+  }, [allArticles]);
 
   const uniqueTypes = useMemo(() => Object.keys(typesSummary), [typesSummary]);
 
   // Filter articles by type AND selected topic
   const filteredArticles = useMemo(() => {
-    return articulos.filter(a => {
-      const matchesType = selectedType === 'all' || (a.tipo?.toLowerCase() || 'artigo') === selectedType;
-      const matchesTopic = !selectedTopic || (Array.isArray(a.tematicas) && a.tematicas.includes(selectedTopic));
+    return allArticles.filter((a) => {
+      const artType = (a.type || a.tipo || 'article').toLowerCase();
+      const matchesType = selectedType === 'all' || artType === selectedType;
+      const aTopics = a.tags ? a.tags.map((t) => t.slug) : (Array.isArray(a.tematicas) ? a.tematicas : []);
+      const matchesTopic = !selectedTopic || aTopics.includes(selectedTopic);
       return matchesType && matchesTopic;
     });
-  }, [articulos, selectedType, selectedTopic]);
+  }, [allArticles, selectedType, selectedTopic]);
 
   const hasMultipleTypes = uniqueTypes.length > 1;
   const isDefaultView = selectedType === 'all' && !selectedTopic;
@@ -232,7 +243,7 @@ export default function AuthorProfileView({
             </Link>
             <span className="text-charcoal/30 text-[10px]">/</span>
             <span className="text-charcoal/80 font-medium truncate">
-              {autor.nombre}
+              {authorName}
             </span>
           </nav>
 
@@ -245,7 +256,7 @@ export default function AuthorProfileView({
                 <div className="relative w-full h-full rounded-full overflow-hidden border border-lines/80 bg-lines/20">
                   <Image
                     src={avatarSrc}
-                    alt={`${tPortraitOf} ${autor.nombre}`}
+                    alt={`${tPortraitOf} ${authorName}`}
                     fill
                     sizes="(max-width: 768px) 256px, (max-width: 1200px) 288px, 320px"
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
@@ -261,7 +272,7 @@ export default function AuthorProfileView({
                     <a
                       href={`mailto:${columnist.email}`}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-lines bg-surface/60 hover:bg-surface text-charcoal/70 hover:text-charcoal hover:border-gold/40 text-xs font-sans transition-all"
-                      aria-label={`${tSendEmailTo} ${autor.nombre}`}
+                      aria-label={`${tSendEmailTo} ${authorName}`}
                     >
                       <span className="material-symbols-outlined text-[16px] text-gold" aria-hidden="true">mail</span>
                       <span className="uppercase tracking-wider text-[11px] font-medium">{tEmail}</span>
@@ -273,7 +284,7 @@ export default function AuthorProfileView({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-lines bg-surface/60 hover:bg-surface text-charcoal/70 hover:text-charcoal hover:border-gold/40 text-xs font-sans transition-all"
-                      aria-label={`${tInstagramProfileOf} ${autor.nombre}`}
+                      aria-label={`${tInstagramProfileOf} ${authorName}`}
                     >
                       <span className="material-symbols-outlined text-[16px] text-gold" aria-hidden="true">photo_camera</span>
                       <span className="uppercase tracking-wider text-[11px] font-medium">Instagram</span>
@@ -299,7 +310,7 @@ export default function AuthorProfileView({
 
               {/* Author Headline */}
               <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-charcoal tracking-tight leading-[1.08] mb-6">
-                {autor.nombre}
+                {authorName}
               </h1>
 
               {/* Literary Bio */}
@@ -372,7 +383,7 @@ export default function AuthorProfileView({
                           : 'border-transparent text-charcoal/60 hover:text-charcoal'
                       }`}
                     >
-                      {tAll} <span className="opacity-60 text-xs">({articulos.length})</span>
+                      {tAll} <span className="opacity-60 text-xs">({allArticles.length})</span>
                     </button>
                     {uniqueTypes.map(type => (
                       <button
@@ -444,11 +455,17 @@ export default function AuthorProfileView({
                 </div>
 
                 {(() => {
-                  const titulo = lang === 'es' ? featuredArticle.titulo_es : featuredArticle.titulo_gl;
-                  const subtitulo = lang === 'es' ? featuredArticle.subtitulo_es : featuredArticle.subtitulo_gl;
-                  const contenido = lang === 'es' ? featuredArticle.contenido_es : featuredArticle.contenido_gl;
-                  const dateStr = featuredArticle.actualizado_en || featuredArticle.creado_en;
-                  const readingMins = calculateReadingTime(contenido);
+                  const titulo = featuredArticle.title
+                    ? (featuredArticle.title[lang] || featuredArticle.title.gl || featuredArticle.title.es || '')
+                    : (lang === 'es' ? featuredArticle.titulo_es : featuredArticle.titulo_gl) || featuredArticle.titulo_gl || featuredArticle.titulo_es || '';
+                  const subtitulo = featuredArticle.subtitle
+                    ? (featuredArticle.subtitle[lang] || featuredArticle.subtitle.gl || featuredArticle.subtitle.es || null)
+                    : (lang === 'es' ? featuredArticle.subtitulo_es : featuredArticle.subtitulo_gl) || featuredArticle.subtitulo_gl || featuredArticle.subtitulo_es || null;
+                  const dateStr = featuredArticle.updated_at || featuredArticle.created_at || featuredArticle.actualizado_en || featuredArticle.creado_en;
+                  const imageUrl = featuredArticle.cover_image_url || featuredArticle.imagen_url;
+                  const articleTopics = featuredArticle.tags ? featuredArticle.tags.map((t) => t.slug) : (featuredArticle.tematicas || []);
+                  const rawType = featuredArticle.type || featuredArticle.tipo || 'article';
+                  const readingMins = 4;
 
                   return (
                     <article className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center bg-surface/40 border border-lines p-6 md:p-10 rounded-2xl group transition-all duration-500 hover:border-gold/50 hover:shadow-md">
@@ -457,9 +474,9 @@ export default function AuthorProfileView({
                         className="lg:col-span-6 relative w-full h-[260px] sm:h-[340px] rounded-xl overflow-hidden bg-lines/40 block shrink-0"
                         aria-label={titulo}
                       >
-                        {featuredArticle.imagen_url ? (
+                        {imageUrl ? (
                           <Image
-                            src={featuredArticle.imagen_url}
+                            src={imageUrl}
                             alt={titulo || 'Portada do artigo destacado'}
                             fill
                             sizes="(max-width: 1024px) 100vw, 50vw"
@@ -477,7 +494,7 @@ export default function AuthorProfileView({
                         <div>
                           <div className="flex flex-wrap items-center gap-3 mb-4">
                             <span className="px-2.5 py-1 text-[11px] font-semibold text-gold bg-gold/10 rounded uppercase tracking-widest">
-                              {getTypeLabel(featuredArticle.tipo)}
+                              {getTypeLabel(rawType)}
                             </span>
                             {dateStr && (
                               <time dateTime={dateStr} className="text-xs text-charcoal/60 font-sans">
@@ -496,15 +513,17 @@ export default function AuthorProfileView({
                             </h2>
                           </Link>
 
-                          <p className="font-sans text-base sm:text-lg text-charcoal/80 line-clamp-3 md:line-clamp-4 leading-relaxed mb-6">
-                            {subtitulo || (contenido ? contenido.replace(/<[^>]*>/g, '').substring(0, 180) + '...' : '')}
-                          </p>
+                          {subtitulo && (
+                            <p className="font-sans text-base sm:text-lg text-charcoal/80 line-clamp-3 md:line-clamp-4 leading-relaxed mb-6">
+                              {subtitulo}
+                            </p>
+                          )}
                         </div>
 
                         <div className="pt-6 border-t border-lines/60 flex flex-wrap items-center justify-between gap-4">
-                          {featuredArticle.tematicas && featuredArticle.tematicas.length > 0 && (
+                          {articleTopics && articleTopics.length > 0 && (
                             <div className="flex flex-wrap gap-2">
-                              {featuredArticle.tematicas.slice(0, 3).map((tag, idx) => (
+                              {articleTopics.slice(0, 3).map((tag, idx) => (
                                 <button
                                   key={idx}
                                   type="button"
@@ -545,12 +564,18 @@ export default function AuthorProfileView({
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {gridArticles.map(articulo => {
-                    const titulo = lang === 'es' ? articulo.titulo_es : articulo.titulo_gl;
-                    const subtitulo = lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl;
-                    const contenido = lang === 'es' ? articulo.contenido_es : articulo.contenido_gl;
-                    const dateStr = articulo.actualizado_en || articulo.creado_en;
-                    const readingMins = calculateReadingTime(contenido);
+                  {gridArticles.map((articulo) => {
+                    const titulo = articulo.title
+                      ? (articulo.title[lang] || articulo.title.gl || articulo.title.es || '')
+                      : (lang === 'es' ? articulo.titulo_es : articulo.titulo_gl) || articulo.titulo_gl || articulo.titulo_es || '';
+                    const subtitulo = articulo.subtitle
+                      ? (articulo.subtitle[lang] || articulo.subtitle.gl || articulo.subtitle.es || null)
+                      : (lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl) || articulo.subtitulo_gl || articulo.subtitulo_es || null;
+                    const dateStr = articulo.updated_at || articulo.created_at || articulo.actualizado_en || articulo.creado_en;
+                    const imageUrl = articulo.cover_image_url || articulo.imagen_url;
+                    const articleTopics = articulo.tags ? articulo.tags.map((t) => t.slug) : (articulo.tematicas || []);
+                    const rawType = articulo.type || articulo.tipo || 'article';
+                    const readingMins = 4;
 
                     return (
                       <article
@@ -558,7 +583,7 @@ export default function AuthorProfileView({
                         className="group flex flex-col bg-surface/30 hover:bg-surface/70 border border-lines hover:border-gold/50 rounded-xl p-6 transition-all duration-300 hover:shadow-sm h-full"
                       >
                         {/* Optional thumbnail preview */}
-                        {articulo.imagen_url && (
+                        {imageUrl && (
                           <Link
                             href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
                             className="relative w-full h-44 rounded-lg overflow-hidden bg-lines/30 mb-5 block"
@@ -566,7 +591,7 @@ export default function AuthorProfileView({
                             tabIndex={-1}
                           >
                             <Image
-                              src={articulo.imagen_url}
+                              src={imageUrl}
                               alt={titulo || 'Miniatura do artigo'}
                               fill
                               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -577,7 +602,7 @@ export default function AuthorProfileView({
 
                         <div className="flex items-center justify-between gap-2 mb-3">
                           <span className="text-xs font-semibold text-gold uppercase tracking-widest">
-                            {getTypeLabel(articulo.tipo)}
+                            {getTypeLabel(rawType)}
                           </span>
                           <span className="text-[11px] text-charcoal/50 font-sans">
                             {readingMins} {tReadingTime}
@@ -590,14 +615,16 @@ export default function AuthorProfileView({
                           </h4>
                         </Link>
 
-                        <p className="font-sans text-sm sm:text-base text-charcoal/70 line-clamp-3 leading-relaxed mb-4">
-                          {subtitulo || (contenido ? contenido.replace(/<[^>]*>/g, '').substring(0, 140) + '...' : '')}
-                        </p>
+                        {subtitulo && (
+                          <p className="font-sans text-sm sm:text-base text-charcoal/70 line-clamp-3 leading-relaxed mb-4">
+                            {subtitulo}
+                          </p>
+                        )}
 
                         {/* Labels / Temáticas: beneath subtitle, above publication date */}
-                        {articulo.tematicas && articulo.tematicas.length > 0 && (
+                        {articleTopics && articleTopics.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mb-5">
-                            {articulo.tematicas.map((tag, i) => (
+                            {articleTopics.map((tag, i) => (
                               <button
                                 key={i}
                                 type="button"

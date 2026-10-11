@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { DB_TABLES, TAG_COLS, TAG_TRANSLATION_COLS } from '@/lib/db/schema';
 
 interface TagManagerProps {
     selectedTags: string[]; // For backwards compatibility we can keep string[] for now, or object array
@@ -18,23 +19,36 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
     const [newTagGl, setNewTagGl] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    const fetchTags = async () => {
+    const fetchTags = useCallback(async () => {
         try {
             const { data, error } = await supabase
-                .from('tags')
-                .select('slug, tag_translations(lang, name)');
+                .from(DB_TABLES.TAGS)
+                .select(`${TAG_COLS.SLUG}, ${DB_TABLES.TAG_TRANSLATIONS}(${TAG_TRANSLATION_COLS.LANG}, ${TAG_TRANSLATION_COLS.NAME})`);
             
             if (!error && data) {
-                setAllTags(data);
+                setAllTags(data as unknown as { id?: string | number; slug: string; tag_translations: { lang: string; name: string }[] }[]);
             }
         } catch (e) {
             console.error(e);
         }
-    };
+    }, [supabase]);
 
     useEffect(() => {
-        fetchTags();
-    }, []);
+        let isMounted = true;
+        const load = async () => {
+            const { data, error } = await supabase
+                .from(DB_TABLES.TAGS)
+                .select(`${TAG_COLS.SLUG}, ${DB_TABLES.TAG_TRANSLATIONS}(${TAG_TRANSLATION_COLS.LANG}, ${TAG_TRANSLATION_COLS.NAME})`);
+            
+            if (isMounted && !error && data) {
+                setAllTags(data as unknown as { id?: string | number; slug: string; tag_translations: { lang: string; name: string }[] }[]);
+            }
+        };
+        load();
+        return () => {
+            isMounted = false;
+        };
+    }, [supabase]);
 
     const handleAddExisting = (slug: string) => {
         if (!selectedTags.includes(slug)) {
@@ -56,18 +70,18 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
             
             // Insertar tag
             const { data: tag, error: tagError } = await supabase
-                .from('tags')
-                .insert({ slug })
+                .from(DB_TABLES.TAGS)
+                .insert({ [TAG_COLS.SLUG]: slug })
                 .select().single();
                 
             if (tagError) throw tagError;
             
             // Insertar traducciones
             const { error: transError } = await supabase
-                .from('tag_translations')
+                .from(DB_TABLES.TAG_TRANSLATIONS)
                 .insert([
-                    { tag_id: tag.id, lang: 'es', name: newTagEs },
-                    { tag_id: tag.id, lang: 'gl', name: newTagGl }
+                    { [TAG_TRANSLATION_COLS.TAG_ID]: tag.id, [TAG_TRANSLATION_COLS.LANG]: 'es', [TAG_TRANSLATION_COLS.NAME]: newTagEs },
+                    { [TAG_TRANSLATION_COLS.TAG_ID]: tag.id, [TAG_TRANSLATION_COLS.LANG]: 'gl', [TAG_TRANSLATION_COLS.NAME]: newTagGl }
                 ]);
                 
             if (transError) throw transError;

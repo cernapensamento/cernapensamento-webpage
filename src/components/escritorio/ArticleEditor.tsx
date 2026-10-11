@@ -23,6 +23,8 @@ import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 import { createClient } from '@/utils/supabase/client';
 import TagManager from '@/components/escritorio/TagManager';
+import type { LocalizedString } from '@/lib/db/types';
+import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
 
 
 const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -33,13 +35,22 @@ const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
 
 export interface ArticleData {
     id?: string;
-    titulo_gl: string;
-    titulo_es: string;
-    subtitulo_gl: string;
-    subtitulo_es: string;
-    contenido_gl: string;
-    contenido_es: string;
-    imagen_url: string;
+    title?: LocalizedString;
+    subtitle?: LocalizedString | null;
+    content?: LocalizedString;
+    cover_image_url?: string | null;
+    tags?: string[];
+    status?: string;
+    type?: string;
+    original_language?: string;
+    // Backwards compatibility aliases
+    titulo_gl?: string;
+    titulo_es?: string;
+    subtitulo_gl?: string;
+    subtitulo_es?: string;
+    contenido_gl?: string;
+    contenido_es?: string;
+    imagen_url?: string;
     tematicas?: string[];
     estado?: string;
     tipo?: string;
@@ -66,14 +77,15 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     
     // Bilingual state
     const [activeLang, setActiveLang] = useState<'gl'|'es'>('gl');
-    const [tituloGl, setTituloGl] = useState(initialData?.titulo_gl || '');
-    const [tituloEs, setTituloEs] = useState(initialData?.titulo_es || '');
-    const [subtituloGl, setSubtituloGl] = useState(initialData?.subtitulo_gl || '');
-    const [subtituloEs, setSubtituloEs] = useState(initialData?.subtitulo_es || '');
-    const [contenidoGl, setContenidoGl] = useState(initialData?.contenido_gl || '');
-    const [contenidoEs, setContenidoEs] = useState(initialData?.contenido_es || '');
+    const [tituloGl, setTituloGl] = useState(initialData?.title?.gl || initialData?.titulo_gl || '');
+    const [tituloEs, setTituloEs] = useState(initialData?.title?.es || initialData?.titulo_es || '');
+    const [subtituloGl, setSubtituloGl] = useState(initialData?.subtitle?.gl || initialData?.subtitulo_gl || '');
+    const [subtituloEs, setSubtituloEs] = useState(initialData?.subtitle?.es || initialData?.subtitulo_es || '');
+    const [contenidoGl, setContenidoGl] = useState(initialData?.content?.gl || initialData?.contenido_gl || '');
+    const [contenidoEs, setContenidoEs] = useState(initialData?.content?.es || initialData?.contenido_es || '');
     const [isTranslating, setIsTranslating] = useState(false);
-    const [idiomaOriginal, setIdiomaOriginal] = useState((initialData?.idioma_original && ['es', 'gl'].includes(initialData.idioma_original)) ? initialData.idioma_original : 'gl');
+    const origLang = initialData?.original_language || initialData?.idioma_original;
+    const [idiomaOriginal, setIdiomaOriginal] = useState((origLang && ['es', 'gl'].includes(origLang)) ? origLang : 'gl');
     
     // Fix stale closure for onUpdate
     const activeLangRef = useRef(activeLang);
@@ -81,9 +93,10 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         activeLangRef.current = activeLang;
     }, [activeLang]);
 
-    const [tipo, setTipo] = useState((initialData?.tipo && ARTICLE_TYPES.includes(initialData.tipo as any)) ? initialData.tipo : 'artigo');
-    const [coverImageUrl, setCoverImageUrl] = useState(initialData?.imagen_url || '');
-    const [tematicas, setTematicas] = useState<string[]>(initialData?.tematicas || []);
+    const initialType = initialData?.type || initialData?.tipo;
+    const [tipo, setTipo] = useState(initialType || 'artigo');
+    const [coverImageUrl, setCoverImageUrl] = useState(initialData?.cover_image_url || initialData?.imagen_url || '');
+    const [tematicas, setTematicas] = useState<string[]>(initialData?.tags || initialData?.tematicas || []);
         const [showPreview, setShowPreview] = useState(false);
     const isUploadingCover = useRef(false);
     const isUploadingInline = useRef(false);
@@ -122,12 +135,17 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const { data } = await supabase
-                    .from('perfiles')
-                    .select('nombre, avatar_url, bio')
-                    .eq('id', user.id)
+                    .from(DB_TABLES.USERS)
+                    .select(`${USER_COLS.FULL_NAME}, ${USER_COLS.AVATAR_URL}, ${USER_COLS.BIO}`)
+                    .eq(USER_COLS.ID, user.id)
                     .single();
                 if (data) {
-                    setAuthorProfile(data as { nombre: string; avatar_url?: string; bio?: string });
+                    const row = data as { full_name?: string | null; avatar_url?: string | null; bio?: LocalizedString | null };
+                    setAuthorProfile({
+                        nombre: row.full_name || '',
+                        avatar_url: row.avatar_url || undefined,
+                        bio: typeof row.bio === 'string' ? row.bio : (row.bio?.gl || row.bio?.es || '')
+                    });
                 }
             }
         };
@@ -431,9 +449,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             return;
         }
 
-        const editorAny = editor as any;
-        if (typeof editorAny.commands?.insertArticleIndex === 'function') {
-            editorAny.commands.insertArticleIndex({ items, lang: activeLang });
+        const editorWithIndex = editor as unknown as { commands?: { insertArticleIndex?: (args: { items: typeof items; lang: string }) => boolean } } | null;
+        if (typeof editorWithIndex?.commands?.insertArticleIndex === 'function') {
+            editorWithIndex.commands.insertArticleIndex({ items, lang: activeLang });
         } else if (editor.state?.schema?.nodes?.articleIndex) {
             const { state, view } = editor;
             let existingPos: number | null = null;
@@ -503,9 +521,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 if (targetLang === 'gl') setContenidoGl(data.htmlContent); else setContenidoEs(data.htmlContent);
             }
             alert('Traducción generada correctamente. Puedes cambiar de idioma en las pestañas para revisarla.');
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            alert(e.message || 'Error al traducir el contenido. Revisa la consola o tu API KEY.');
+            alert((e instanceof Error ? e.message : String(e)) || 'Error al traducir el contenido. Revisa la consola o tu API KEY.');
         } finally {
             setIsTranslating(false);
         }
@@ -613,6 +631,13 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         // ---------------------------------------------------------
 
         await onSave({
+            title: { gl: tituloGl, es: tituloEs },
+            subtitle: { gl: subtituloGl, es: subtituloEs },
+            content: { gl: finalGl, es: finalEs },
+            cover_image_url: coverImageUrl,
+            tags: tematicas,
+            type: tipo,
+            original_language: idiomaOriginal,
             titulo_gl: tituloGl,
             titulo_es: tituloEs,
             subtitulo_gl: subtituloGl,
@@ -731,59 +756,60 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         <div className="flex items-center gap-2 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
                             <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50 italic hidden xl:block shrink-0"></span>
                             {(() => {
-    const isInvitado = userRole === 'invitado';
-    const isPending = initialData?.estado === ARTICLE_STATES.PENDING;
-    const isPublished = initialData?.estado === ARTICLE_STATES.PUBLISHED;
-    const canApprove = userRole === 'admin' || userRole === 'escritor';
+                                const isDirectPublisher = userRole === 'admin' || userRole === 'founder' || userRole === 'escritor';
+                                const isPending = initialData?.status === 'in_review' || initialData?.estado === ARTICLE_STATES.PENDING;
+                                const isPublished = initialData?.status === 'published' || initialData?.estado === ARTICLE_STATES.PUBLISHED;
+                                const canApprove = isDirectPublisher;
+                                const isReviewRole = !isDirectPublisher;
 
-    if (isPending && canApprove && mode === 'edit') {
-        return (
-            <>
-                <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('reject')}>
-                    <span className="hidden sm:inline">{dict.reject || 'Rechazar'}</span>
-                    <span className="sm:hidden">{dict.reject || 'Rechazar'}</span>
-                </button>
-                <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-gold text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('approve')}>
-                    {dict.approveAndPublish || 'Aprobar y Publicar'}
-                </button>
-            </>
-        );
-    }
+                                if (isPending && canApprove && mode === 'edit') {
+                                    return (
+                                        <>
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('reject')}>
+                                                <span className="hidden sm:inline">{dict.reject || 'Rechazar'}</span>
+                                                <span className="sm:hidden">{dict.reject || 'Rechazar'}</span>
+                                            </button>
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-gold text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('approve')}>
+                                                {dict.approveAndPublish || 'Aprobar y Publicar'}
+                                            </button>
+                                        </>
+                                    );
+                                }
 
-    if (isPending && isInvitado && mode === 'edit') {
-        return (
-            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('revoke_approval')}>
-                <span className="hidden sm:inline">{dict.revokeApproval || 'Volver a Borrador'}</span>
-                <span className="sm:hidden">{dict.revokeApproval || 'Borrador'}</span>
-            </button>
-        );
-    }
+                                if (isPending && isReviewRole && mode === 'edit') {
+                                    return (
+                                        <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('revoke_approval')}>
+                                            <span className="hidden sm:inline">{dict.revokeApproval || 'Volver a Borrador'}</span>
+                                            <span className="sm:hidden">{dict.revokeApproval || 'Borrador'}</span>
+                                        </button>
+                                    );
+                                }
 
-    return (
-        <>
-            {mode === 'edit' && isPublished ? (
-                <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('draft')}>
-                    <span className="hidden sm:inline">Despublicar</span>
-                    <span className="sm:hidden">Despublicar</span>
-                </button>
-            ) : (
-                <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('draft')}>
-                    <span className="hidden sm:inline">{dict.saveDraft || 'Guardar Borrador'}</span>
-                    <span className="sm:hidden">Borrador</span>
-                </button>
-            )}
-            <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => {
-                if (isInvitado) {
-                    handleSubmit('submit_approval');
-                } else {
-                    setShowPublishModal(true); // For normal publish
-                }
-            }}>
-                {isInvitado ? (dict.sendForApproval || 'Enviar para Aprobación') : 'Publicar'}
-            </button>
-        </>
-    );
-})()}
+                                return (
+                                    <>
+                                        {mode === 'edit' && isPublished ? (
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('draft')}>
+                                                <span className="hidden sm:inline">Despublicar</span>
+                                                <span className="sm:hidden">Despublicar</span>
+                                            </button>
+                                        ) : (
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('draft')}>
+                                                <span className="hidden sm:inline">{dict.saveDraft || 'Guardar Borrador'}</span>
+                                                <span className="sm:hidden">Borrador</span>
+                                            </button>
+                                        )}
+                                        <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => {
+                                            if (isReviewRole) {
+                                                handleSubmit('submit_approval');
+                                            } else {
+                                                setShowPublishModal(true); // For normal publish
+                                            }
+                                        }}>
+                                            {isReviewRole ? (dict.sendForApproval || 'Enviar para Aprobación') : 'Publicar'}
+                                        </button>
+                                    </>
+                                );
+                            })()}
 </div>
                     </div>
 

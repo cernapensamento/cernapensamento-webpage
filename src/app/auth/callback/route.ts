@@ -22,14 +22,16 @@ export async function GET(request: Request) {
       }
 
       // Get user profile to determine role
+      const jwtRole = data.user.app_metadata?.user_role;
       const { data: profile } = await supabase
-        .from('perfiles')
-        .select('rol')
+        .from('users')
+        .select('role')
         .eq('id', data.user.id)
         .single();
         
-      const rol = profile?.rol;
-      const redirectPath = (rol === 'escritor' || rol === 'admin') ? '/escritorio' : '/escritorio/perfil';
+      const role = jwtRole || profile?.role;
+      const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || role === 'escritor';
+      const redirectPath = canAccessDesk ? '/escritorio' : '/escritorio/perfil';
       return NextResponse.redirect(`${origin}${redirectPath}`)
     }
   }

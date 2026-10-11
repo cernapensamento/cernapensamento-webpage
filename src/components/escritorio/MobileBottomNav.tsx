@@ -15,7 +15,7 @@ export default function MobileBottomNav({ role }: MobileBottomNavProps) {
   const lang = (params?.lang as string) || 'es';
   const dict = lang === 'es' ? esDict : glDict;
   const dashDict = dict.dashboard;
-  const isWriter = role === 'escritor' || role === 'admin' || role === 'invitado';
+  const isWriter = ['founder', 'member', 'guest', 'admin', 'escritor', 'invitado'].includes(role || '');
 
   const isCurrentRoute = (route: string) => {
     if (route === '/') {

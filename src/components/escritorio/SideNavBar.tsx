@@ -23,7 +23,7 @@ export default function SideNavBar({ role, collapsed = false, onToggle }: SideNa
   const dict = lang === 'es' ? esDict : glDict;
   const dashDict = dict.dashboard;
 
-  const isWriter = role === 'escritor' || role === 'admin' || role === 'invitado';
+  const isWriter = ['founder', 'member', 'guest', 'admin', 'escritor', 'invitado'].includes(role || '');
 
   const isHome = pathname === '/' || pathname === `/${lang}`;
   const isArticles = pathname === `/${lang}/escritorio` || pathname === '/escritorio';

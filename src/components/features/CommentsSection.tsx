@@ -6,108 +6,150 @@ import CommentForm from '@/components/forms/CommentForm';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { DB_TABLES, COMMENT_COLS, USER_COLS } from '@/lib/db/schema';
 
-export default function CommentsSection({ articuloId }: { articuloId: string }) {
+interface CommentAuthor {
+  full_name?: string;
+  nombre?: string;
+  avatar_url?: string | null;
+  slug?: string | null;
+}
+
+interface CommentViewItem {
+  id: string;
+  author_id: string;
+  content: string;
+  updated_at: string;
+  author?: CommentAuthor | null;
+}
+
+export default function CommentsSection({
+  articuloId,
+  publicationId,
+}: {
+  articuloId?: string;
+  publicationId?: string;
+}) {
+  const targetId = publicationId || articuloId || '';
   const { user } = useAuth();
-  const [comentarios, setComentarios] = useState<{ id: string | number; autor_id?: string; contenido: string; creado_en: string; perfiles?: { nombre?: string; avatar_url?: string } }[]>([]);
+  const [comentarios, setComentarios] = useState<CommentViewItem[]>([]);
   const loading = useRef(true);
   const supabase = createClient();
 
   const fetchComments = useCallback(async () => {
+    if (!targetId) return;
+
     const { data, error } = await supabase
-      .from('comentarios')
-      .select('*, perfiles(nombre, avatar_url)')
-      .eq('articulo_id', articuloId)
-      .order('creado_en', { ascending: false });
+      .from(DB_TABLES.COMMENTS)
+      .select(`
+        ${COMMENT_COLS.ID},
+        ${COMMENT_COLS.AUTHOR_ID},
+        ${COMMENT_COLS.CONTENT},
+        ${COMMENT_COLS.UPDATED_AT},
+        author:${DB_TABLES.USERS} (
+          ${USER_COLS.FULL_NAME},
+          ${USER_COLS.AVATAR_URL},
+          ${USER_COLS.SLUG}
+        )
+      `)
+      .eq(COMMENT_COLS.PUBLICATION_ID, targetId)
+      .order(COMMENT_COLS.UPDATED_AT, { ascending: true });
 
     if (!error && data) {
-      setComentarios(data);
+      setComentarios(data as unknown as CommentViewItem[]);
     }
     loading.current = false;
-  }, [articuloId, supabase]);
+  }, [targetId, supabase]);
 
-  const handleDelete = async (comentarioId: string | number) => {
+  const handleDelete = async (comentarioId: string) => {
     if (!window.confirm('¿Estás seguro de que quieres eliminar este comentario?')) return;
 
-    // Actualización optimista
+    // Optimistic update
     setComentarios(prev => prev.filter(c => c.id !== comentarioId));
 
     const { data, error } = await supabase
-      .from('comentarios')
+      .from(DB_TABLES.COMMENTS)
       .delete()
-      .eq('id', comentarioId)
+      .eq(COMMENT_COLS.ID, comentarioId)
       .select();
 
     if (error || !data || data.length === 0) {
       console.error("Delete failed:", error || "No rows deleted (RLS blocked)");
       alert('Error de permisos o sesión caducada al intentar borrar. Recarga la página.');
-      const timer = setTimeout(() => fetchComments(), 0); return () => clearTimeout(timer); // Revertir en caso de error
+      const timer = setTimeout(() => fetchComments(), 0);
+      return () => clearTimeout(timer);
     }
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => fetchComments(), 0); return () => clearTimeout(timer);
-  }, [articuloId, fetchComments]);
+    const timer = setTimeout(() => fetchComments(), 0);
+    return () => clearTimeout(timer);
+  }, [targetId, fetchComments]);
 
   return (
     <section className="w-full border-t border-lines pt-12 mt-8">
       <h3 className="font-serif text-2xl text-charcoal mb-8">Comentarios ({comentarios?.length || 0})</h3>
       
       <div className="flex flex-col gap-8 mb-12">
-        {comentarios?.map((comentario) => (
-          <div key={comentario.id} className="flex gap-4">
-            <div className="w-10 h-10 rounded-full bg-lines flex-shrink-0 border border-charcoal/10 overflow-hidden relative">
-              {comentario.perfiles?.avatar_url ? (
-                <Image 
-                  src={comentario.perfiles.avatar_url} 
-                  alt={comentario.perfiles?.nombre || 'Usuario'} 
-                  fill
-                  sizes="40px"
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center font-sans text-xs uppercase tracking-widest text-charcoal/60 bg-surface">
-                  {comentario.perfiles?.nombre?.substring(0, 2) || 'US'}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col flex-grow">
-              <div className="flex items-baseline justify-between mb-2">
-                <div className="flex items-baseline gap-3">
-                  <span className="font-sans text-sm font-semibold text-charcoal">{comentario.perfiles?.nombre || 'Usuario'}</span>
-                  <time className="font-sans text-[10px] uppercase tracking-widest text-charcoal/50">
-                    {new Date(comentario.creado_en).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}
-                  </time>
-                </div>
-                {user && user.id === comentario.autor_id && (
-                  <button type="button" 
-                    onClick={() => handleDelete(comentario.id)}
-                    className="text-[10px] uppercase tracking-widest text-red-600/70 hover:text-red-600 transition-colors cursor-pointer"
-                    title="Eliminar comentario"
-                  >
-                    Eliminar
-                  </button>
+        {comentarios?.map((comentario) => {
+          const authorName = comentario.author?.full_name || comentario.author?.nombre || 'Usuario';
+          const avatarUrl = comentario.author?.avatar_url;
+
+          return (
+            <div key={comentario.id} className="flex gap-4">
+              <div className="w-10 h-10 rounded-full bg-lines flex-shrink-0 border border-charcoal/10 overflow-hidden relative">
+                {avatarUrl ? (
+                  <Image 
+                    src={avatarUrl} 
+                    alt={authorName} 
+                    fill
+                    sizes="40px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center font-sans text-xs uppercase tracking-widest text-charcoal/60 bg-surface">
+                    {authorName.substring(0, 2).toUpperCase()}
+                  </div>
                 )}
               </div>
-              <p className="font-sans text-sm text-charcoal/80 leading-relaxed whitespace-pre-wrap">
-                {comentario.contenido}
-              </p>
+              <div className="flex flex-col flex-grow">
+                <div className="flex items-baseline justify-between mb-2">
+                  <div className="flex items-baseline gap-3">
+                    <span className="font-sans text-sm font-semibold text-charcoal">{authorName}</span>
+                    <time className="font-sans text-[10px] uppercase tracking-widest text-charcoal/50">
+                      {new Date(comentario.updated_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}
+                    </time>
+                  </div>
+                  {user && user.id === comentario.author_id && (
+                    <button type="button" 
+                      onClick={() => handleDelete(comentario.id)}
+                      className="text-[10px] uppercase tracking-widest text-red-600/70 hover:text-red-600 transition-colors cursor-pointer"
+                      title="Eliminar comentario"
+                    >
+                      Eliminar
+                    </button>
+                  )}
+                </div>
+                <p className="font-sans text-sm text-charcoal/80 leading-relaxed whitespace-pre-wrap">
+                  {comentario.content}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {(!comentarios || comentarios.length === 0) && (
           <p className="font-sans text-sm text-charcoal/60 italic">Todavía no hay comentarios. Sé el primero en compartir tu reflexión.</p>
         )}
       </div>
 
       {user ? (
-        comentarios?.some(c => c.autor_id === user.id) ? (
+        comentarios?.some(c => c.author_id === user.id) ? (
           <div className="bg-surface border border-lines p-8 text-center mt-8">
             <p className="font-sans text-sm text-charcoal/70">Ya has compartido tu reflexión en este artículo.</p>
           </div>
         ) : (
-          <CommentForm articuloId={articuloId} onCommentAdded={fetchComments} />
+          <CommentForm articuloId={targetId} onCommentAdded={fetchComments} />
         )
       ) : (
         <div className="bg-surface border border-lines p-8 text-center">

@@ -2,6 +2,7 @@ import React from 'react';
 import { getAuthenticatedUser } from '@/utils/auth';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
+import { DB_TABLES, PUBLICATION_COLS, USER_ROLES } from '@/lib/db/schema';
 
 export default async function NuevoArticuloLayout({
   children,
@@ -20,22 +21,32 @@ export default async function NuevoArticuloLayout({
     redirect(`/${lang}/login`);
   }
 
-  if (!['escritor', 'admin', 'invitado'].includes(profile?.rol)) {
+  const roleStr = String(profile?.role || profile?.rol || '');
+  const isAllowed = [
+    USER_ROLES.FOUNDER,
+    USER_ROLES.MEMBER,
+    USER_ROLES.GUEST,
+    USER_ROLES.ADMIN,
+    'escritor',
+    'invitado',
+  ].includes(roleStr as (typeof USER_ROLES)[keyof typeof USER_ROLES]);
+
+  if (!isAllowed) {
     redirect(`/${lang}/escritorio/perfil`);
   }
 
-  if (profile?.rol === 'invitado') {
+  if (roleStr === USER_ROLES.GUEST || roleStr === 'invitado') {
     const supabase = await createClient();
-    const { data: articulos } = await supabase
-      .from('articulos')
-      .select('creado_en')
-      .eq('autor_id', user.id);
+    const { data: publications } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select(PUBLICATION_COLS.CREATED_AT)
+      .eq(PUBLICATION_COLS.AUTHOR_ID, user.id);
 
-    const todosLosArticulos = articulos || [];
+    const allPublications = publications || [];
     const currentYear = new Date().getFullYear();
-    const articulosEsteAno = todosLosArticulos.filter(a => new Date(a.creado_en).getFullYear() === currentYear).length;
-    
-    if (todosLosArticulos.length >= 4 || articulosEsteAno >= 2) {
+    const pubThisYear = allPublications.filter((p) => new Date(p.created_at).getFullYear() === currentYear).length;
+
+    if (allPublications.length >= 4 || pubThisYear >= 2) {
       redirect(`/${lang}/escritorio?error=limite_alcanzado`);
     }
   }

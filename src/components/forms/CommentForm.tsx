@@ -2,14 +2,25 @@
 
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-export default function CommentForm({ articuloId, onCommentAdded }: { articuloId: string, onCommentAdded: () => void }) {
+import { DB_TABLES, COMMENT_COLS } from '@/lib/db/schema';
+
+export default function CommentForm({
+  articuloId,
+  publicationId,
+  onCommentAdded,
+}: {
+  articuloId?: string;
+  publicationId?: string;
+  onCommentAdded: () => void;
+}) {
+  const targetId = publicationId || articuloId || '';
   const [contenido, setContenido] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contenido.trim()) return;
+    if (!contenido.trim() || !targetId) return;
 
     setIsSubmitting(true);
 
@@ -20,11 +31,11 @@ export default function CommentForm({ articuloId, onCommentAdded }: { articuloId
     }
 
     const { error } = await supabase
-      .from('comentarios')
+      .from(DB_TABLES.COMMENTS)
       .insert({
-        articulo_id: articuloId,
-        autor_id: user.id,
-        contenido: contenido.trim()
+        [COMMENT_COLS.PUBLICATION_ID]: targetId,
+        [COMMENT_COLS.AUTHOR_ID]: user.id,
+        [COMMENT_COLS.CONTENT]: contenido.trim(),
       });
 
     if (error) {

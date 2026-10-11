@@ -19,7 +19,15 @@ export default function DashboardTopBar({ avatarUrl, role }: DashboardTopBarProp
   const dict = lang === 'es' ? esDict : glDict;
   const dashDict = dict.dashboard;
 
-  const rolTexto = role === 'admin' ? dashDict.admin : role === 'escritor' ? dashDict.writer : role === 'invitado' ? dashDict.guest : dashDict.reader;
+  const rolTexto = role === 'admin'
+    ? dashDict.admin
+    : (role === 'founder' || role === 'escritor')
+    ? (dashDict.founder || dashDict.writer)
+    : (role === 'member')
+    ? (dashDict.member || dashDict.writer)
+    : (role === 'guest' || role === 'invitado')
+    ? dashDict.guest
+    : dashDict.reader;
 
   return (
     <header className="w-full sticky top-0 bg-surface flex justify-between items-center h-16 z-40 border-b border-lines px-5 md:px-16 shrink-0">
