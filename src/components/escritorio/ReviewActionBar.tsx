@@ -28,8 +28,8 @@ export default function ReviewActionBar({ articuloId }: Props) {
         router.push(`/${lang}/escritorio?filtro=para_aprobar`);
         router.refresh();
       }
-    } catch (e: any) {
-      alert('Error: ' + e.message);
+    } catch (e: unknown) {
+      alert('Error: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setIsProcessing(false);
     }

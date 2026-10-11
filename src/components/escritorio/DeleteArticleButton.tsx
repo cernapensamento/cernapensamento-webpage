@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { DB_TABLES, PUBLICATION_COLS } from '@/lib/db/schema';
 
 interface Props {
     id: string;
@@ -21,7 +22,10 @@ export default function DeleteArticleButton({ id, titulo }: Props) {
 
         setIsDeleting(true);
         try {
-            const { error } = await supabase.from('articulos').delete().eq('id', id);
+            const { error } = await supabase
+                .from(DB_TABLES.PUBLICATIONS)
+                .delete()
+                .eq(PUBLICATION_COLS.ID, id);
             if (error) {
                 alert('Error al eliminar: ' + error.message);
             } else {

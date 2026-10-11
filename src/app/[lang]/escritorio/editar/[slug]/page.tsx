@@ -1,18 +1,22 @@
 import React from 'react';
 import { getAuthenticatedUser } from '@/utils/auth';
 import { createClient } from '@/utils/supabase/server';
-import { ARTICLE_STATES } from '@/lib/constants';
 import { redirect, notFound } from 'next/navigation';
 import EditarArticuloForm from '@/components/forms/EditarArticuloForm';
+import { getPublicationBySlug } from '@/lib/db/queries/publications';
+import {
+  USER_ROLES,
+  PUBLICATION_STATUSES,
+} from '@/lib/db/schema';
 
 interface Props {
-  params: Promise<{ slug: string, lang: string }>;
+  params: Promise<{ slug: string; lang: string }>;
 }
 
 export default async function EditarArticuloPage({ params }: Props) {
   const [resolvedParams, { user, profile }] = await Promise.all([
     params,
-    getAuthenticatedUser()
+    getAuthenticatedUser(),
   ]);
   const { slug, lang = 'es' } = resolvedParams;
 
@@ -20,32 +24,31 @@ export default async function EditarArticuloPage({ params }: Props) {
     redirect(`/${lang}/login`);
   }
 
-  // Verificar rol de escritor/admin globalmente
-  if (profile.rol === 'usuario') {
+  const roleStr = String(profile.role || profile.rol || USER_ROLES.READER);
+
+  // Block reader role from writer desk
+  if (roleStr === USER_ROLES.READER || roleStr === 'usuario') {
     redirect(`/${lang}/escritorio/perfil`);
   }
 
   const supabase = await createClient();
+  const publication = await getPublicationBySlug(slug, { client: supabase });
 
-  // Buscar artículo por slug o por ID (seguro contra inyección)
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
-  let query = supabase.from('articulos').select('*');
-  if (isUUID) {
-    query = query.eq('id', slug);
-  } else {
-    query = query.eq('slug', slug);
-  }
-  
-  const { data: articulo, error } = await query.single();
-
-  if (error || !articulo) {
+  if (!publication) {
     notFound();
   }
 
-  // Verificar que el usuario sea el autor del artículo o un admin
-  if (articulo.autor_id !== user.id && profile.rol !== 'admin' && !(profile.rol === 'escritor' && articulo.estado === ARTICLE_STATES.PENDING)) {
+  // Verify that user is author, admin, or founder reviewing pending submission
+  const isAuthor = publication.author.id === user.id;
+  const isAdmin = roleStr === USER_ROLES.ADMIN || roleStr === 'admin';
+  const isReviewer =
+    (roleStr === USER_ROLES.FOUNDER || roleStr === 'escritor') &&
+    (publication.status === PUBLICATION_STATUSES.IN_REVIEW ||
+      (publication as unknown as { estado?: string }).estado === 'pendiente_aprobacion');
+
+  if (!isAuthor && !isAdmin && !isReviewer) {
     redirect(`/${lang}/escritorio`);
   }
 
-  return <EditarArticuloForm articulo={articulo} userRole={profile.rol} />;
+  return <EditarArticuloForm publication={publication} userRole={roleStr} />;
 }
