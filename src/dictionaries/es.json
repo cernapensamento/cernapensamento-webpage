@@ -37,6 +37,13 @@
     "button": "Nuestro Proyecto Editorial"
   },
   "documentTypes": {
+    "article": "Artículo",
+    "essay": "Ensayo",
+    "reportage": "Reportaje",
+    "column": "Columna",
+    "interview": "Entrevista",
+    "poetry": "Poesía",
+    "news": "Noticia",
     "artigo": "Artículo",
     "ensaio": "Ensayo",
     "reportaxe": "Reportaje",

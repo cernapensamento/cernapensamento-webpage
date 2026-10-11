@@ -118,6 +118,13 @@
     "button": "O Noso Proxecto Editorial"
   },
   "documentTypes": {
+    "article": "Artigo",
+    "essay": "Ensaio",
+    "reportage": "Reportaxe",
+    "column": "Columna",
+    "interview": "Entrevista",
+    "poetry": "Poesía",
+    "news": "Noticia",
     "artigo": "Artigo",
     "ensaio": "Ensaio",
     "reportaxe": "Reportaxe",

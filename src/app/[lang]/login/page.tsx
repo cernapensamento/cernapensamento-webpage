@@ -83,14 +83,16 @@ export default function LoginPage() {
       if (error) throw error;
 
       if (data.user) {
+        const jwtRole = data.user.app_metadata?.user_role;
         const { data: profile } = await supabase
-          .from('perfiles')
-          .select('rol')
+          .from('users')
+          .select('role')
           .eq('id', data.user.id)
           .single();
 
-        const rol = profile?.rol;
-        if (rol === 'escritor' || rol === 'admin') {
+        const role = jwtRole || profile?.role;
+        const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || role === 'escritor';
+        if (canAccessDesk) {
           router.push(`/${lang}/escritorio`);
         } else {
           router.push(`/${lang}/escritorio/perfil`);
@@ -173,14 +175,16 @@ export default function LoginPage() {
         if (error) throw error;
         
         if (data.user) {
+          const jwtRole = data.user.app_metadata?.user_role;
           const { data: profile } = await supabase
-            .from('perfiles')
-            .select('rol')
+            .from('users')
+            .select('role')
             .eq('id', data.user.id)
             .single();
             
-          const rol = profile?.rol;
-          if (rol === 'escritor' || rol === 'admin') {
+          const role = jwtRole || profile?.role;
+          const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || role === 'escritor';
+          if (canAccessDesk) {
             router.push(`/${lang}/escritorio`);
           } else {
             router.push(`/${lang}/escritorio/perfil`);
