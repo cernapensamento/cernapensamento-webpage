@@ -93,19 +93,34 @@ export async function getColumnists(
 }
 
 /**
+ * Fetch a user profile by slug or internal UUID.
+ */
+export async function getUserBySlugOrId(
+  slugOrId: string,
+  client?: SupabaseClient
+): Promise<UserRow | null> {
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slugOrId);
+  if (isUUID) {
+    return await getUserById(slugOrId, client);
+  }
+  return await getUserBySlug(slugOrId, client);
+}
+
+/**
  * Fetch author profile with all their published publications for /autor/[slug].
+ * Supports both author slug and UUID.
  */
 export async function getAuthorProfileBySlug(
-  slug: string,
+  slugOrId: string,
   client?: SupabaseClient,
   lang?: string
 ): Promise<AuthorProfileDetail | null> {
-  const user = await getUserBySlug(slug, client);
+  const user = await getUserBySlugOrId(slugOrId, client);
   if (!user) return null;
 
   const publications = await getPublicationCards({
     authorId: user.id,
-    limit: 50,
+    limit: 100,
     client,
     lang,
   });
@@ -120,6 +135,8 @@ export async function getAuthorProfileBySlug(
     publications,
   };
 }
+
+export const getAuthorProfileBySlugOrId = getAuthorProfileBySlug;
 
 /**
  * Update a user profile row.

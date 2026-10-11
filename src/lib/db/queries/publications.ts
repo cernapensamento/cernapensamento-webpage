@@ -12,7 +12,9 @@ import {
   USER_COLS,
   PUBLICATION_STATUSES,
 } from '../schema';
+import { getPublicationIdsByTagSlugs } from './tags';
 import type {
+
   PublicationRow,
   PublicationCardItem,
   PublicationDetail,
@@ -164,23 +166,40 @@ export async function getPublicationBySlug(
  * Fetch lightweight publication card items for listings, archive, and feeds.
  * GUARDS AGAINST EGRESS: Excludes heavy content fields!
  */
+export interface GetPublicationCardsOptions {
+  limit?: number;
+  offset?: number;
+  type?: PublicationType;
+  status?: PublicationStatus;
+  authorId?: string;
+  isPinned?: boolean;
+  tagSlug?: string;
+  tagSlugs?: string[];
+  searchQuery?: string;
+  client?: SupabaseClient;
+  lang?: string;
+}
+
 export async function getPublicationCards(
-  options?: {
-    limit?: number;
-    offset?: number;
-    type?: PublicationType;
-    status?: PublicationStatus;
-    authorId?: string;
-    isPinned?: boolean;
-    tagSlug?: string;
-    client?: SupabaseClient;
-    lang?: string;
-  }
+  options?: GetPublicationCardsOptions
 ): Promise<PublicationCardItem[]> {
   const supabase = await resolveClient(options?.client);
   const limit = options?.limit ?? 20;
   const offset = options?.offset ?? 0;
   const status = options?.status ?? PUBLICATION_STATUSES.PUBLISHED;
+
+  // Handle tag filtering via junction table
+  const tagSlugsFilter = options?.tagSlug
+    ? [options.tagSlug]
+    : (options?.tagSlugs && options.tagSlugs.length > 0 ? options.tagSlugs : null);
+
+  let allowedIds: string[] | null = null;
+  if (tagSlugsFilter && tagSlugsFilter.length > 0) {
+    allowedIds = await getPublicationIdsByTagSlugs(tagSlugsFilter, supabase);
+    if (allowedIds.length === 0) {
+      return [];
+    }
+  }
 
   let query = supabase
     .from(DB_TABLES.PUBLICATIONS)
@@ -212,6 +231,9 @@ export async function getPublicationCards(
     .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
     .range(offset, offset + limit - 1);
 
+  if (allowedIds !== null) {
+    query = query.in(PUBLICATION_COLS.ID, allowedIds);
+  }
   if (options?.type) {
     query = query.eq(PUBLICATION_COLS.TYPE, options.type);
   }
@@ -220,6 +242,12 @@ export async function getPublicationCards(
   }
   if (options?.isPinned !== undefined) {
     query = query.eq(PUBLICATION_COLS.IS_PINNED, options.isPinned);
+  }
+  if (options?.searchQuery) {
+    const q = options.searchQuery.trim();
+    if (q) {
+      query = query.or(`title->>gl.ilike.%${q}%,title->>es.ilike.%${q}%,subtitle->>gl.ilike.%${q}%,subtitle->>es.ilike.%${q}%`);
+    }
   }
 
   const { data, error } = await query;

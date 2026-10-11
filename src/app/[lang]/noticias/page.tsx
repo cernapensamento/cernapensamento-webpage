@@ -1,11 +1,10 @@
 import { Suspense } from 'react';
-import { createClient } from '@/utils/supabase/server';
-import { ARTICLE_STATES } from '@/lib/constants';
 import ArticleCard from '@/components/features/ArticleCard';
 import ArticlesFilterBar from '@/components/features/ArticlesFilterBar';
 import Link from 'next/link';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
+import { getAllTagsWithTranslations, getPublicationCards, PUBLICATION_TYPES } from '@/lib/db';
 
 export const revalidate = 60;
 
@@ -18,67 +17,25 @@ export default async function NoticiasPage({
 }) {
   const { lang } = await params;
   const dict = await getDictionary(lang as Locale);
-  const supabase = await createClient();
   const resolvedParams = await searchParams;
-  
+
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : '';
   const temaRaw = resolvedParams.tema;
   const temasArray = Array.isArray(temaRaw) ? temaRaw : (typeof temaRaw === 'string' && temaRaw ? [temaRaw] : []);
 
-  // 1. Obtener todas las etiquetas únicas directamente de las noticias publicadas
-  const { data: allArticles } = await supabase
-    .from('articulos')
-    .select('tematicas')
-    .eq('estado', ARTICLE_STATES.PUBLISHED)
-    .eq('tipo', 'noticia');
+  // 1. Get all available tags with localized names
+  const availableTags = await getAllTagsWithTranslations({ lang });
 
-  const extractedTags = new Set<string>();
-  if (allArticles) {
-    allArticles.forEach(a => {
-      if (a.tematicas) a.tematicas.forEach((t: string) => extractedTags.add(t));
-    });
-  }
-  const dynamicTagSlugs = Array.from(extractedTags);
-  
-  let translatedTags: {slug: string, name: string}[] = [];
-  if (dynamicTagSlugs.length > 0) {
-    const { data: tagTrans } = await supabase
-      .from('tags')
-      .select('slug, tag_translations(lang, name)')
-      .in('slug', dynamicTagSlugs);
-      
-    if (tagTrans) {
-      translatedTags = dynamicTagSlugs.map(slug => {
-        const t = tagTrans.find(tt => tt.slug === slug);
-        let name = slug;
-        if (t && t.tag_translations) {
-          const trans = t.tag_translations.find((tr: { lang: string; name: string }) => tr.lang === lang);
-          if (trans) name = trans.name;
-          else if (t.tag_translations.length > 0) name = t.tag_translations[0].name;
-        }
-        return { slug, name };
-      }).sort((a, b) => a.name.localeCompare(b.name));
-    } else {
-        translatedTags = dynamicTagSlugs.map(slug => ({ slug, name: slug })).sort((a, b) => a.name.localeCompare(b.name));
-    }
-  }
+  // 2. Fetch news publications using typed DAL
+  const publications = await getPublicationCards({
+    type: PUBLICATION_TYPES.NEWS,
+    tagSlugs: temasArray.length > 0 ? temasArray : undefined,
+    searchQuery: q,
+    limit: 60,
+    lang,
+  });
 
-  // 2. Obtener las noticias aplicando los filtros
-  let query = supabase
-    .from('articulos')
-    .select(`id, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, slug, imagen_url, tipo, tematicas, creado_en, actualizado_en, perfiles ( nombre )`)
-    .eq('estado', ARTICLE_STATES.PUBLISHED)
-    .eq('tipo', 'noticia')
-    .order('actualizado_en', { ascending: false });
-
-  if (q) {
-    query = query.or(`titulo_gl.ilike.%${q}%,titulo_es.ilike.%${q}%,contenido_gl.ilike.%${q}%,contenido_es.ilike.%${q}%`);
-  }
-  if (temasArray.length > 0) {
-    query = query.contains('tematicas', temasArray);
-  }
-
-  const { data: articulos, error } = await query;
+  const pageTitle = (dict.nav as Record<string, string>)?.noticias || (lang === 'es' ? 'Noticias' : 'Novas');
 
   return (
     <>
@@ -89,31 +46,23 @@ export default async function NoticiasPage({
               Cerna Pensamento
             </span>
             <h1 className="font-serif text-5xl md:text-7xl text-charcoal">
-              {(dict.nav as any).noticias || (lang === 'es' ? 'Noticias' : 'Novas')}
+              {pageTitle}
             </h1>
           </div>
 
           <Suspense fallback={<div className="h-32 flex items-center justify-center"><div className="animate-pulse w-full max-w-2xl h-12 bg-lines/50 rounded"></div></div>}>
-            <ArticlesFilterBar availableTags={translatedTags} dict={dict.articles} />
+            <ArticlesFilterBar availableTags={availableTags} dict={dict.articles} />
           </Suspense>
 
-          {error && (
-            <div className="text-center py-20 text-charcoal/50">
-              <p>{dict.articles.errorLoading} {error.message}</p>
-            </div>
-          )}
-
-          {!error && articulos && articulos.length === 0 && (
+          {publications.length === 0 ? (
             <div className="text-center py-32 border-t border-lines">
               <p className="font-serif text-2xl text-charcoal/50 mb-6">{dict.articles.noResults}</p>
               <Link href={`/${lang}/noticias`} className="px-6 py-3 border border-charcoal text-xs font-sans uppercase tracking-[0.2em] text-charcoal hover:bg-charcoal hover:text-parchment transition-colors">{dict.articles.clearFilters}</Link>
             </div>
-          )}
-
-          {!error && articulos && articulos.length > 0 && (
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16 border-t border-lines pt-16">
-              {articulos.map((articulo) => (
-                <ArticleCard key={articulo.id} articulo={articulo} lang={lang} dict={dict} />
+              {publications.map((publication) => (
+                <ArticleCard key={publication.id} articulo={publication} lang={lang} dict={dict} />
               ))}
             </div>
           )}
@@ -122,3 +71,4 @@ export default async function NoticiasPage({
     </>
   );
 }
+

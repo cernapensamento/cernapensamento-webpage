@@ -106,3 +106,30 @@ export async function setPublicationTags(
 
   return { success: !insertError, error: insertError };
 }
+
+/**
+ * Fetch publication IDs associated with one or more tag slugs.
+ */
+export async function getPublicationIdsByTagSlugs(
+  tagSlugs: string[],
+  client?: SupabaseClient
+): Promise<string[]> {
+  const supabase = await resolveClient(client);
+  if (!tagSlugs || tagSlugs.length === 0) return [];
+
+  const { data: tagRows, error: tagError } = await supabase
+    .from(DB_TABLES.TAGS)
+    .select(TAG_COLS.ID)
+    .in(TAG_COLS.SLUG, tagSlugs);
+
+  if (tagError || !tagRows || tagRows.length === 0) return [];
+  const tagIds = tagRows.map((t) => t.id);
+
+  const { data: pubTags, error: pubTagsError } = await supabase
+    .from(DB_TABLES.PUBLICATION_TAGS)
+    .select(PUBLICATION_TAG_COLS.PUBLICATION_ID)
+    .in(PUBLICATION_TAG_COLS.TAG_ID, tagIds);
+
+  if (pubTagsError || !pubTags || pubTags.length === 0) return [];
+  return Array.from(new Set(pubTags.map((pt) => pt.publication_id)));
+}
