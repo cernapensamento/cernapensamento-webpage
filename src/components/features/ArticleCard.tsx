@@ -168,56 +168,137 @@ export default function ArticleCard({
   }
 
   // ==========================================
-  // VARIANT: LEAD / SPOTLIGHT (MOSAIC)
+  // VARIANT: LEAD / SPOTLIGHT (HORIZONTAL HERO)
   // ==========================================
   if (effectiveVariant === 'lead') {
-    return (
-      <article className={`group flex flex-col md:flex-row gap-6 md:gap-10 border border-lines bg-surface p-6 sm:p-8 h-full transition-all duration-300 hover:border-gold/60 hover:shadow-md ${className}`}>
-        <Link href={href} className="md:w-1/2 aspect-[16/10] md:aspect-auto relative overflow-hidden bg-lines/40 block shrink-0">
-          {coverUrl && (
-            <Image
-              src={coverUrl}
-              alt={titulo}
-              fill
-              priority={priority}
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            />
-          )}
-        </Link>
+    const byLabel = (dict?.mosaic as Record<string, string>)?.by || (dict as Record<string, string>)?.by || (lang === 'es' ? 'Por' : 'Por');
+    const readLabel = (dict?.mosaic as Record<string, string>)?.readArticle || (dict as Record<string, string>)?.readArticle || (lang === 'es' ? 'Leer artículo' : 'Ler artigo');
 
-        <div className="md:w-1/2 flex flex-col justify-between py-2">
-          <div>
-            <div className="flex items-center justify-between gap-3 mb-3">
+    if (!hasCover || !coverUrl) {
+      return (
+        <article className={`group relative bg-surface border border-lines p-8 sm:p-12 md:p-16 flex flex-col justify-between transition-all duration-300 hover:border-gold/60 hover:shadow-md overflow-hidden ${className}`}>
+          <span 
+            aria-hidden="true" 
+            className="absolute -right-6 -bottom-10 text-[180px] md:text-[240px] font-serif text-charcoal/[0.04] dark:text-parchment/[0.04] select-none pointer-events-none transition-transform duration-500 group-hover:scale-105"
+          >
+            §
+          </span>
+
+          <div className="relative z-10 max-w-4xl">
+            <div className="flex items-center gap-4 mb-5">
               <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
                 {typeLabel}
               </span>
               {formattedDate && (
-                <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
-                  {formattedDate}
-                </time>
+                <>
+                  <span className="text-charcoal/30 select-none">•</span>
+                  <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
+                    {formattedDate}
+                  </time>
+                </>
               )}
             </div>
 
-            <Link href={href}>
-              <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-tight mb-4">
+            <Link href={href} className="block">
+              <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-charcoal group-hover:text-gold transition-colors duration-300 font-bold leading-[1.12] mb-6">
                 {titulo}
               </h3>
             </Link>
 
             {excerpt && (
-              <p className="font-sans text-base sm:text-lg text-charcoal/75 leading-relaxed line-clamp-4 mb-6">
+              <p className="font-sans text-lg sm:text-xl text-charcoal/80 leading-relaxed max-w-3xl mb-8">
                 {excerpt}
               </p>
             )}
           </div>
 
-          <div className="pt-4 border-t border-lines flex items-center justify-between">
-            <span className="text-xs font-bold text-charcoal uppercase tracking-wider">
-              Por {authorName}
-            </span>
-            <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/70 group-hover:text-gold group-hover:translate-x-1 transition-all flex items-center gap-1">
-              <span>Ler artigo</span>
+          <div className="pt-6 border-t border-lines flex items-center justify-between relative z-10 mt-6">
+            <div className="flex items-center gap-3.5">
+              {authorAvatar ? (
+                <div className="w-10 h-10 rounded-full overflow-hidden relative shrink-0 border border-lines">
+                  <Image src={authorAvatar} alt={authorName} fill className="object-cover" sizes="40px" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-lines/60 flex items-center justify-center text-sm font-serif text-charcoal/70 shrink-0">
+                  {authorName.charAt(0)}
+                </div>
+              )}
+              <span className="text-xs font-bold text-charcoal uppercase tracking-wider">
+                {byLabel} {authorName}
+              </span>
+            </div>
+
+            <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/80 group-hover:text-gold group-hover:translate-x-1 transition-all flex items-center gap-1.5">
+              <span>{readLabel}</span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </article>
+      );
+    }
+
+    return (
+      <article className={`group flex flex-col lg:flex-row gap-8 lg:gap-12 border border-lines bg-surface p-6 sm:p-9 lg:p-10 h-full transition-all duration-300 hover:border-gold/60 hover:shadow-md ${className}`}>
+        {/* Cinematic Landscape Cover */}
+        <Link href={href} className="lg:w-3/5 aspect-[16/10] sm:aspect-[16/9] lg:aspect-auto lg:min-h-[400px] relative overflow-hidden bg-lines/40 block shrink-0">
+          <Image
+            src={coverUrl}
+            alt={titulo}
+            fill
+            priority={priority}
+            sizes="(max-width: 1024px) 100vw, 60vw"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          />
+        </Link>
+
+        {/* Text & Metadata Container */}
+        <div className="lg:w-2/5 flex flex-col justify-between py-1">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
+                {typeLabel}
+              </span>
+              {formattedDate && (
+                <>
+                  <span className="text-charcoal/30 select-none">•</span>
+                  <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
+                    {formattedDate}
+                  </time>
+                </>
+              )}
+            </div>
+
+            <Link href={href} className="block">
+              <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-[40px] text-charcoal group-hover:text-gold transition-colors duration-300 font-bold leading-[1.18] mb-5">
+                {titulo}
+              </h3>
+            </Link>
+
+            {excerpt && (
+              <p className="font-sans text-base sm:text-lg text-charcoal/75 leading-relaxed line-clamp-4 lg:line-clamp-5 mb-8">
+                {excerpt}
+              </p>
+            )}
+          </div>
+
+          <div className="pt-5 border-t border-lines flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {authorAvatar ? (
+                <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0 border border-lines">
+                  <Image src={authorAvatar} alt={authorName} fill className="object-cover" sizes="32px" />
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-lines/60 flex items-center justify-center text-xs font-serif text-charcoal/70 shrink-0">
+                  {authorName.charAt(0)}
+                </div>
+              )}
+              <span className="text-xs font-bold text-charcoal uppercase tracking-wider">
+                {byLabel} {authorName}
+              </span>
+            </div>
+
+            <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/70 group-hover:text-gold group-hover:translate-x-1 transition-all flex items-center gap-1.5">
+              <span>{readLabel}</span>
               <span aria-hidden="true">→</span>
             </Link>
           </div>
