@@ -57,6 +57,9 @@ export async function proxy(request: NextRequest) {
     '/_next',
     '/favicon.ico',
     '/images',
+    '/llms.txt',
+    '/robots.txt',
+    '/sitemap.xml',
   ].some((path) => pathname.startsWith(path));
 
   // Legacy article slug redirects (301 Moved Permanently)
