@@ -11,7 +11,27 @@
     "login": "Acceder",
     "logout": "Pechar Sesión",
     "asociacion": "A Asociación",
-    "noticias": "Novas"
+    "noticias": "Novas",
+    "publicaciones": "Publicacións",
+    "todasPublicaciones": "TODAS AS PUBLICACIÓNS",
+    "conoceAsociacion": "COÑECE A ASOCIACIÓN",
+    "todosAutores": "TODOS OS AUTORES",
+    "artigosOpinion": "Artigos de Opinión",
+    "artigosDesc": "Columnas semanais e análise de actualidade.",
+    "ensaiosFilosoficos": "Ensaios Filosóficos",
+    "ensaiosDesc": "Monográficos extensos sobre economía, política e sociedade.",
+    "coleccionNarrativa": "Colección Narrativa",
+    "narrativaDesc": "Prosa contemporánea e ficción editorial.",
+    "coleccionPoesia": "Colección Poesía",
+    "poesiaDesc": "Creación poética e lírica.",
+    "proxectoManifesto": "O Proxecto e Manifesto",
+    "proxectoDesc": "Principios fundacionais e ideario de Cerna.",
+    "estatutosSociais": "Estatutos Sociais",
+    "estatutosDesc": "Normativa interna e marco xurídico da asociación.",
+    "coleccionsEditoriais": "Coleccións Editoriais",
+    "coleccionsDesc": "As catro ramas de publicación do noso selo.",
+    "verTodoArquivo": "Ver todo o arquivo →",
+    "noticiasYAvisos": "Novas e Avisos"
   },
   "footer": {
     "rights": "Todos os dereitos reservados.",
@@ -36,7 +56,44 @@
       "Historia",
       "Crítica Social"
     ],
-    "exploreButton": "Explorar o arquivo de artigos"
+    "exploreButton": "Explorar o arquivo de artigos",
+    "items": [
+      {
+        "id": "01",
+        "title": "Economía",
+        "desc": "Teoría do valor, Escola Austríaca, política monetaria, comercio e mercados libres."
+      },
+      {
+        "id": "02",
+        "title": "Filosofía",
+        "desc": "Ética, epistemoloxía, filosofía política clásica e historia das ideas morais."
+      },
+      {
+        "id": "03",
+        "title": "Literatura e Poesía",
+        "desc": "Creación poética contemporánea, ficción en prosa, ensaio lírico e crítica de textos."
+      },
+      {
+        "id": "04",
+        "title": "Dereito e Xustiza",
+        "desc": "Marco institucional, estado de dereito, separación de poderes e liberdades individuais."
+      },
+      {
+        "id": "05",
+        "title": "Ciencia e Divulgación",
+        "desc": "Metodoloxía empírica, evolución tecnolóxica, teoría da información e progreso humano."
+      },
+      {
+        "id": "06",
+        "title": "Historia",
+        "desc": "Historia de Galicia, evolución institucional europea e fitos do pensamento político."
+      },
+      {
+        "id": "07",
+        "title": "Crítica Social",
+        "desc": "Análise da esfera pública, educación, tendencias culturais e debate cívico aberto."
+      }
+    ]
   },
   "articles": {
     "tag": "Arquivo Histórico",
@@ -60,10 +117,13 @@
     "publishedArticles": "Artigos publicados"
   },
   "contact": {
-    "tag": "Contacto",
-    "title": "Falemos",
-    "description": "Tes algunha proposta, dúbida ou desexas colaborar con {site_name}? Encantaríanos escoitar as túas ideas. Escríbenos directamente á nosa caixa de correo e poñerémonos en contacto contigo.",
-    "button": "CORREO"
+    "tag": "Contacto & Colaboración",
+    "title": "Falemos de ideas, pensamento e futuro",
+    "description": "Cerna é unha revista e asociación independente dedicada ao ensaio rigoroso, a filosofía política e a economía. Envía a túa proposta de publicación ou asóciate para participar nos nosos ciclos.",
+    "button": "ENVÍA A TÚA PROPOSTA",
+    "emailLabel": "ou escríbenos directamente a",
+    "badge": "Compromiso de resposta en 48h · Envíos avaliados polo Consello Editorial",
+    "email": "contacto@cernapensamento.org"
   },
   "authorPage": {
     "articlesBy": "Artigos de",
@@ -115,7 +175,26 @@
     "paragraph1": "CERNA nace da convicción de que as mellores ideas xorden lonxe do ruído e da urxencia que caracterizan boa parte do debate público actual. Deste xeito, aspiramos a crear un espazo de diálogo e reflexión afastado da demagoxia e a polarización.",
     "paragraph2": "Formamos un grupo de autores que se resisten a encaixar a realidade nunha soa disciplina. Filosofía, economía, dereito, ciencia, literatura e cultura conviven nas nosas páxinas coa mesma naturalidade con que se cruzan na vida cotiá, porque estamos convencidos de que comprender o mundo esixe mirar máis alá dos límites estreitos dunha especialización illada.",
     "paragraph3": "Escribimos dende a liberdade individual e a responsabilidade que a acompaña, coa honestidade intelectual e o rigor como únicas fronteiras. Máis que unha asociación, CERNA quere ser un espazo de encontro: unha comunidade de pensamento irrestricto, coa única limitación do respecto polo pensamento alleo.",
-    "button": "O Noso Proxecto Editorial"
+    "button": "O Noso Proxecto Editorial",
+    "pullQuote": "A difusión do pensamento crítico e a análise multidisciplinar como compromiso coa liberdade intelectual.",
+    "pillars": [
+      {
+        "num": "01",
+        "title": "Independencia Radical",
+        "desc": "Sen ataduras partidistas nin subvencións que condicionen o criterio."
+      },
+      {
+        "num": "02",
+        "title": "Rigor Dialéctico",
+        "desc": "Ensaios argumentados e debate sosegado fronte á urxencia do titular."
+      },
+      {
+        "num": "03",
+        "title": "Diálogo Aberto",
+        "desc": "Comunidade de autores diversos unidos pola honestidade intelectual."
+      }
+    ],
+    "secondaryButton": "Consultar os Estatutos Sociais"
   },
   "documentTypes": {
     "article": "Artigo",
@@ -388,5 +467,40 @@
     "pendingArticles": "Artigos Pendentes de Aprobación",
     "review": "Revisar",
     "author": "Autor:"
+  },
+  "faq": {
+    "tag": "PREGUNTAS FRECUENTES",
+    "title": "Dúbidas e Preguntas Habituais",
+    "description": "Todo o que precisas saber sobre a nosa publicación, o proxecto asociativo e a participación aberta.",
+    "items": [
+      {
+        "question": "Que é Cerna Pensamento?",
+        "answer": "Cerna Pensamento é unha revista dixital de pensamento crítico, filosofía política, economía e creación literaria, así como unha asociación cultural sen ánimo de lucro fundada en Galicia. O proxecto nace co propósito de xerar un espazo de debate sereno e rigoroso en lingua galega e castelá, afastado do ruído conxuntural e comprometido coa liberdade intelectual e a calidade editorial."
+      },
+      {
+        "question": "Quen pode publicar?",
+        "answer": "A nosa tribuna está aberta a calquera autor, investigador ou creador cuxa proposta cumpra cos criterios de calidade, rigor dialéctico e honestidade intelectual establecidos polo Consello Editorial. Aceptamos artigos de opinión, ensaios monográficos, prosa narrativa e creación poética. Podes remitir o teu manuscrito ou proposta a través da nosa sección de contacto ou escribindo a contacto@cernapensamento.org."
+      },
+      {
+        "question": "Que tipo de organización é Cerna?",
+        "answer": "Cerna Pensamento é unha organización de natureza asociativa, independente e sen ánimo de lucro, constituída formalmente ao abeiro da Lei orgánica 1/2002 reguladora do dereito de asociación. Finánciase mediante as achegas dos seus membros e mantén total independencia de partidos políticos, institucións gobernamentais ou grupos de presión."
+      },
+      {
+        "question": "Onde se atopa localizada a asociación?",
+        "answer": "A asociación establece a súa sede e domicilio social en Cambados (provincia de Pontevedra, Galicia). Desenvolve a súa actividade tanto no territorio galego mediante encontros presenciais, ciclos de conferencias e coloquios do programa Ágora Cerna, como a escala internacional a través da súa edición dixital aberta."
+      }
+    ],
+    "moreQuestions": "Tes outra dúbida ou proposta para o Consello Editorial?",
+    "contactUs": "Escríbenos a contacto@cernapensamento.org"
+  },
+  "mosaic": {
+    "noArticles": "Non hai publicacións dispoñibles neste momento.",
+    "pinnedTitle": "Artigos de Referencia",
+    "pinnedSubtitle": "Fixados por redacción",
+    "recentTitle": "Máis Publicacións Recentes",
+    "viewAll": "Ver todo o arquivo",
+    "exploreAll": "Explorar o Arquivo Completo",
+    "readArticle": "Ler artigo",
+    "by": "Por"
   }
 }
