@@ -5,7 +5,7 @@ import AssociationAndNewsSection from '@/components/sections/AssociationAndNewsS
 import ColumnistsSection from '@/components/sections/ColumnistsSection';
 import AboutUsSection from '@/components/sections/AboutUsSection';
 import ThemesSection from '@/components/sections/ThemesSection';
-import ContactSection from '@/components/sections/ContactSection';
+import FAQSection from '@/components/sections/FAQSection';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
@@ -39,7 +39,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </RevealOnScroll>
 
       <RevealOnScroll delayMs={50}>
-        <ContactSection dict={dict.contact} />
+        <FAQSection dict={dict.faq} lang={lang} />
       </RevealOnScroll>
     </>
   );

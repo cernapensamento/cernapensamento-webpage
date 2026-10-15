@@ -19,21 +19,28 @@ export default async function SiteFooter() {
       <footer className="w-full mt-auto bg-[#0a0a0a] text-[#ffffff] border-t border-lines/30">
         
         {/* ==================================================== */}
-        {/* UPPER CTA SECTION (OSIX STYLE) */}
+        {/* UPPER CTA SECTION (OSIX STYLE COMBINED CONTACT BANNER) */}
         {/* ==================================================== */}
         <div className="w-full border-b border-[#ffffff15] py-16 sm:py-24 px-5 md:px-16">
           <div className="max-w-[1120px] mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
             
             {/* Left Headline & Description */}
             <div className="max-w-2xl">
+              <span className="text-xs font-bold text-gold uppercase tracking-[0.2em] block mb-3">
+                {dict.contact?.tag}
+              </span>
               <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#ffffff] font-bold tracking-tight leading-tight mb-4">
-                {isEs ? 'Hablemos de ideas, pensamiento y futuro' : 'Falemos de ideas, pensamento e futuro'}
+                {dict.contact?.title}
               </h2>
-              <p className="font-sans text-base sm:text-lg text-[#a3a3a3] leading-relaxed max-w-xl">
-                {isEs
-                  ? 'Cerna es una revista y asociación independiente dedicada al ensayo riguroso, la filosofía política y la economía. Envía tu propuesta de publicación o asóciate para participar en nuestros ciclos.'
-                  : 'Cerna é unha revista e asociación independente dedicada ao ensaio rigoroso, a filosofía política e a economía. Envía a túa proposta de publicación ou asóciate para participar nos nosos ciclos.'}
+              <p className="font-sans text-base sm:text-lg text-[#a3a3a3] leading-relaxed max-w-xl mb-4">
+                {dict.contact?.description}
               </p>
+              {dict.contact?.badge && (
+                <div className="flex items-center gap-2 text-xs font-mono text-[#a3a3a3]/80">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold inline-block" />
+                  <span>{dict.contact.badge}</span>
+                </div>
+              )}
             </div>
 
             {/* Right Action Button & Secondary Contact */}
@@ -42,14 +49,14 @@ export default async function SiteFooter() {
                 href={`/${lang}/contacto`}
                 className="btn-filled-white text-xs tracking-[0.15em] font-bold"
               >
-                <span>{isEs ? 'CUÉNTANOS TU CASO' : 'ENVÍA A TÚA PROPOSTA'}</span>
+                <span>{dict.contact?.button}</span>
                 <span aria-hidden="true">→</span>
               </Link>
               <a
-                href="mailto:contacto@cernapensamento.org"
+                href={`mailto:${dict.contact?.email || 'contacto@cernapensamento.org'}`}
                 className="text-xs text-[#a3a3a3] hover:text-[#ffffff] underline underline-offset-4 transition-colors font-sans"
               >
-                {isEs ? 'o escríbenos a contacto@cernapensamento.org' : 'ou escríbenos a contacto@cernapensamento.org'}
+                {dict.contact?.emailLabel ? `${dict.contact.emailLabel} ${dict.contact?.email || 'contacto@cernapensamento.org'}` : `contacto@cernapensamento.org`}
               </a>
             </div>
 

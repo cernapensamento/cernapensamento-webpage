@@ -31,7 +31,7 @@ export default function PublicNavBar() {
   // Mobile accordion state
   const [mobileExpanded, setMobileExpanded] = useState<Record<string, boolean>>({});
 
-  // Reset open menus when pathname changes without effect
+  // Reset open menus when pathname changes
   const [prevPathname, setPrevPathname] = useState(pathname);
   if (prevPathname !== pathname) {
     setPrevPathname(pathname);
@@ -72,44 +72,44 @@ export default function PublicNavBar() {
     setMobileExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  // Dropdown Content
+  // Dropdown Content from Dictionary
   const publicacionsItems: DropdownItem[] = [
     {
-      title: isEs ? 'Artículos de Opinión' : 'Artigos de Opinión',
-      desc: isEs ? 'Columnas semanales y análisis de actualidad.' : 'Columnas semanais e análise de actualidade.',
+      title: dict.nav?.artigosOpinion || (isEs ? 'Artículos de Opinión' : 'Artigos de Opinión'),
+      desc: dict.nav?.artigosDesc || (isEs ? 'Columnas semanales y análisis de actualidad.' : 'Columnas semanais e análise de actualidade.'),
       href: `/${lang}/articulos?tipo=artigo`,
     },
     {
-      title: isEs ? 'Ensayos Filosóficos' : 'Ensaios Filosóficos',
-      desc: isEs ? 'Monografías extensas sobre economía, política y sociedad.' : 'Monográficos extensos sobre economía, política e sociedade.',
+      title: dict.nav?.ensaiosFilosoficos || (isEs ? 'Ensayos Filosóficos' : 'Ensaios Filosóficos'),
+      desc: dict.nav?.ensaiosDesc || (isEs ? 'Monografías extensas sobre economía, política y sociedad.' : 'Monográficos extensos sobre economía, política e sociedade.'),
       href: `/${lang}/articulos?tipo=ensaio`,
     },
     {
-      title: isEs ? 'Colección Narrativa' : 'Colección Narrativa',
-      desc: isEs ? 'Prosa contemporánea y ficción editorial.' : 'Prosa contemporánea e ficción editorial.',
+      title: dict.nav?.coleccionNarrativa || (isEs ? 'Colección Narrativa' : 'Colección Narrativa'),
+      desc: dict.nav?.narrativaDesc || (isEs ? 'Prosa contemporánea y ficción editorial.' : 'Prosa contemporánea e ficción editorial.'),
       href: `/${lang}/proyecto-editorial/coleccion-narrativa`,
     },
     {
-      title: isEs ? 'Colección Poesía' : 'Colección Poesía',
-      desc: isEs ? 'Creación poética y lírica.' : 'Creación poética e lírica.',
+      title: dict.nav?.coleccionPoesia || (isEs ? 'Colección Poesía' : 'Colección Poesía'),
+      desc: dict.nav?.poesiaDesc || (isEs ? 'Creación poética y lírica.' : 'Creación poética e lírica.'),
       href: `/${lang}/proyecto-editorial/coleccion-poesia`,
     },
   ];
 
   const asociacionItems: DropdownItem[] = [
     {
-      title: isEs ? 'El Proyecto y Manifiesto' : 'O Proxecto e Manifesto',
-      desc: isEs ? 'Principios fundacionales e ideario de Cerna.' : 'Principios fundacionais e ideario de Cerna.',
+      title: dict.nav?.proxectoManifesto || (isEs ? 'El Proyecto y Manifiesto' : 'O Proxecto e Manifesto'),
+      desc: dict.nav?.proxectoDesc || (isEs ? 'Principios fundacionales e ideario de Cerna.' : 'Principios fundacionais e ideario de Cerna.'),
       href: `/${lang}/asociacion`,
     },
     {
-      title: isEs ? 'Estatutos Sociales' : 'Estatutos Sociais',
-      desc: isEs ? 'Normativa interna y marco jurídico de la asociación.' : 'Normativa interna e marco xurídico da asociación.',
+      title: dict.nav?.estatutosSociais || (isEs ? 'Estatutos Sociales' : 'Estatutos Sociais'),
+      desc: dict.nav?.estatutosDesc || (isEs ? 'Normativa interna y marco jurídico de la asociación.' : 'Normativa interna e marco xurídico da asociación.'),
       href: `/${lang}/asociacion/estatutos`,
     },
     {
-      title: isEs ? 'Colecciones Editoriales' : 'Coleccións Editoriais',
-      desc: isEs ? 'Las cuatro ramas de publicación de nuestro sello.' : 'As catro ramas de publicación do noso selo.',
+      title: dict.nav?.coleccionsEditoriais || (isEs ? 'Colecciones Editoriales' : 'Coleccións Editoriais'),
+      desc: dict.nav?.coleccionsDesc || (isEs ? 'Las cuatro ramas de publicación de nuestro sello.' : 'As catro ramas de publicación do noso selo.'),
       href: `/${lang}/asociacion`,
     },
   ];
@@ -166,27 +166,42 @@ export default function PublicNavBar() {
         </div>
 
         {/* ==================================================== */}
-        {/* DESKTOP NAVIGATION (OSIX STYLE WITH DROPDOWNS) */}
+        {/* DESKTOP NAVIGATION (DROPDOWNS WITH DIRECT LINKS) */}
         {/* ==================================================== */}
         <div className="hidden lg:flex items-center gap-1 xl:gap-2 h-full">
           
-          {/* 1. Publicacións Dropdown */}
-          <div className="relative h-full flex items-center">
-            <button
-              type="button"
-              onClick={() => toggleDropdown('publicacions')}
-              className={`h-full px-3.5 xl:px-4 flex items-center gap-1.5 text-sm font-semibold tracking-wide transition-colors ${
-                activeDropdown === 'publicacions'
-                  ? 'text-charcoal border-b-2 border-charcoal font-bold'
-                  : 'text-charcoal/80 hover:text-charcoal'
-              }`}
-              aria-expanded={activeDropdown === 'publicacions'}
-            >
-              <span>{isEs ? 'Publicaciones' : 'Publicacións'}</span>
-              <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${activeDropdown === 'publicacions' ? 'rotate-180' : ''}`}>
-                expand_more
-              </span>
-            </button>
+          {/* 1. Publicacións: Direct Link to /articulos + Dropdown Toggle */}
+          <div 
+            className="relative h-full flex items-center"
+            onMouseEnter={() => setActiveDropdown('publicacions')}
+            onMouseLeave={() => setActiveDropdown(null)}
+          >
+            <div className={`h-full flex items-center transition-colors ${
+              activeDropdown === 'publicacions'
+                ? 'text-charcoal border-b-2 border-charcoal font-bold'
+                : 'text-charcoal/80 hover:text-charcoal'
+            }`}>
+              <Link
+                href={`/${lang}/articulos`}
+                className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
+              >
+                {dict.nav?.publicaciones || (isEs ? 'Publicaciones' : 'Publicacións')}
+              </Link>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleDropdown('publicacions');
+                }}
+                className="h-full pr-3 text-charcoal/60 hover:text-charcoal flex items-center"
+                aria-label={dict.nav?.publicaciones}
+                aria-expanded={activeDropdown === 'publicacions'}
+              >
+                <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${activeDropdown === 'publicacions' ? 'rotate-180' : ''}`}>
+                  expand_more
+                </span>
+              </button>
+            </div>
 
             {activeDropdown === 'publicacions' && (
               <div className="absolute top-full left-0 w-[380px] bg-parchment border border-lines shadow-2xl z-50 animate-appear-instant">
@@ -196,17 +211,17 @@ export default function PublicNavBar() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setActiveDropdown(null)}
-                      className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group flex items-start justify-between"
+                      className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group/item flex items-start justify-between"
                     >
                       <div>
-                        <span className="font-sans font-bold text-sm text-charcoal group-hover:text-gold transition-colors block">
+                        <span className="font-sans font-bold text-sm text-charcoal group-hover/item:text-gold transition-colors block">
                           {item.title}
                         </span>
                         <span className="font-sans text-xs text-charcoal/65 block mt-0.5 leading-relaxed">
                           {item.desc}
                         </span>
                       </div>
-                      <span className="text-charcoal/40 group-hover:text-gold group-hover:translate-x-1 transition-all text-xs pt-0.5">
+                      <span className="text-charcoal/40 group-hover/item:text-gold group-hover/item:translate-x-1 transition-all text-xs pt-0.5" aria-hidden="true">
                         →
                       </span>
                     </Link>
@@ -217,7 +232,7 @@ export default function PublicNavBar() {
                       onClick={() => setActiveDropdown(null)}
                       className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
                     >
-                      <span>{isEs ? 'TODAS LAS PUBLICACIONES' : 'TODAS AS PUBLICACIÓNS'}</span>
+                      <span>{dict.nav?.todasPublicaciones || (isEs ? 'TODAS LAS PUBLICACIONES' : 'TODAS AS PUBLICACIÓNS')}</span>
                       <span aria-hidden="true">→</span>
                     </Link>
                   </div>
@@ -226,23 +241,38 @@ export default function PublicNavBar() {
             )}
           </div>
 
-          {/* 2. Asociación Dropdown */}
-          <div className="relative h-full flex items-center">
-            <button
-              type="button"
-              onClick={() => toggleDropdown('asociacion')}
-              className={`h-full px-3.5 xl:px-4 flex items-center gap-1.5 text-sm font-semibold tracking-wide transition-colors ${
-                activeDropdown === 'asociacion'
-                  ? 'text-charcoal border-b-2 border-charcoal font-bold'
-                  : 'text-charcoal/80 hover:text-charcoal'
-              }`}
-              aria-expanded={activeDropdown === 'asociacion'}
-            >
-              <span>{isEs ? 'Asociación' : 'A Asociación'}</span>
-              <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${activeDropdown === 'asociacion' ? 'rotate-180' : ''}`}>
-                expand_more
-              </span>
-            </button>
+          {/* 2. Asociación: Direct Link to /asociacion + Dropdown Toggle */}
+          <div 
+            className="relative h-full flex items-center"
+            onMouseEnter={() => setActiveDropdown('asociacion')}
+            onMouseLeave={() => setActiveDropdown(null)}
+          >
+            <div className={`h-full flex items-center transition-colors ${
+              activeDropdown === 'asociacion'
+                ? 'text-charcoal border-b-2 border-charcoal font-bold'
+                : 'text-charcoal/80 hover:text-charcoal'
+            }`}>
+              <Link
+                href={`/${lang}/asociacion`}
+                className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
+              >
+                {dict.nav?.asociacion || (isEs ? 'Asociación' : 'A Asociación')}
+              </Link>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleDropdown('asociacion');
+                }}
+                className="h-full pr-3 text-charcoal/60 hover:text-charcoal flex items-center"
+                aria-label={dict.nav?.asociacion}
+                aria-expanded={activeDropdown === 'asociacion'}
+              >
+                <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${activeDropdown === 'asociacion' ? 'rotate-180' : ''}`}>
+                  expand_more
+                </span>
+              </button>
+            </div>
 
             {activeDropdown === 'asociacion' && (
               <div className="absolute top-full left-0 w-[380px] bg-parchment border border-lines shadow-2xl z-50 animate-appear-instant">
@@ -252,17 +282,17 @@ export default function PublicNavBar() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setActiveDropdown(null)}
-                      className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group flex items-start justify-between"
+                      className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group/item flex items-start justify-between"
                     >
                       <div>
-                        <span className="font-sans font-bold text-sm text-charcoal group-hover:text-gold transition-colors block">
+                        <span className="font-sans font-bold text-sm text-charcoal group-hover/item:text-gold transition-colors block">
                           {item.title}
                         </span>
                         <span className="font-sans text-xs text-charcoal/65 block mt-0.5 leading-relaxed">
                           {item.desc}
                         </span>
                       </div>
-                      <span className="text-charcoal/40 group-hover:text-gold group-hover:translate-x-1 transition-all text-xs pt-0.5">
+                      <span className="text-charcoal/40 group-hover/item:text-gold group-hover/item:translate-x-1 transition-all text-xs pt-0.5" aria-hidden="true">
                         →
                       </span>
                     </Link>
@@ -273,7 +303,7 @@ export default function PublicNavBar() {
                       onClick={() => setActiveDropdown(null)}
                       className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
                     >
-                      <span>{isEs ? 'CONOCE LA ASOCIACIÓN' : 'COÑECE A ASOCIACIÓN'}</span>
+                      <span>{dict.nav?.conoceAsociacion || (isEs ? 'CONOCE LA ASOCIACIÓN' : 'COÑECE A ASOCIACIÓN')}</span>
                       <span aria-hidden="true">→</span>
                     </Link>
                   </div>
@@ -283,22 +313,37 @@ export default function PublicNavBar() {
           </div>
 
           {/* 3. Autores Dropdown */}
-          <div className="relative h-full flex items-center">
-            <button
-              type="button"
-              onClick={() => toggleDropdown('autores')}
-              className={`h-full px-3.5 xl:px-4 flex items-center gap-1.5 text-sm font-semibold tracking-wide transition-colors ${
-                activeDropdown === 'autores'
-                  ? 'text-charcoal border-b-2 border-charcoal font-bold'
-                  : 'text-charcoal/80 hover:text-charcoal'
-              }`}
-              aria-expanded={activeDropdown === 'autores'}
-            >
-              <span>{isEs ? 'Autores' : 'Autores'}</span>
-              <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${activeDropdown === 'autores' ? 'rotate-180' : ''}`}>
-                expand_more
-              </span>
-            </button>
+          <div 
+            className="relative h-full flex items-center"
+            onMouseEnter={() => setActiveDropdown('autores')}
+            onMouseLeave={() => setActiveDropdown(null)}
+          >
+            <div className={`h-full flex items-center transition-colors ${
+              activeDropdown === 'autores'
+                ? 'text-charcoal border-b-2 border-charcoal font-bold'
+                : 'text-charcoal/80 hover:text-charcoal'
+            }`}>
+              <Link
+                href={`/${lang}#autores`}
+                className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
+              >
+                {dict.nav?.autores || (isEs ? 'Autores' : 'Autores')}
+              </Link>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleDropdown('autores');
+                }}
+                className="h-full pr-3 text-charcoal/60 hover:text-charcoal flex items-center"
+                aria-label={dict.nav?.autores}
+                aria-expanded={activeDropdown === 'autores'}
+              >
+                <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${activeDropdown === 'autores' ? 'rotate-180' : ''}`}>
+                  expand_more
+                </span>
+              </button>
+            </div>
 
             {activeDropdown === 'autores' && (
               <div className="absolute top-full left-0 w-[360px] bg-parchment border border-lines shadow-2xl z-50 animate-appear-instant">
@@ -308,17 +353,17 @@ export default function PublicNavBar() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setActiveDropdown(null)}
-                      className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group flex items-start justify-between"
+                      className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group/item flex items-start justify-between"
                     >
                       <div>
-                        <span className="font-sans font-bold text-sm text-charcoal group-hover:text-gold transition-colors block">
+                        <span className="font-sans font-bold text-sm text-charcoal group-hover/item:text-gold transition-colors block">
                           {item.title}
                         </span>
                         <span className="font-sans text-xs text-charcoal/65 block mt-0.5 leading-relaxed">
                           {item.desc}
                         </span>
                       </div>
-                      <span className="text-charcoal/40 group-hover:text-gold group-hover:translate-x-1 transition-all text-xs pt-0.5">
+                      <span className="text-charcoal/40 group-hover/item:text-gold group-hover/item:translate-x-1 transition-all text-xs pt-0.5" aria-hidden="true">
                         →
                       </span>
                     </Link>
@@ -329,7 +374,7 @@ export default function PublicNavBar() {
                       onClick={() => setActiveDropdown(null)}
                       className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
                     >
-                      <span>{isEs ? 'TODOS LOS AUTORES' : 'TODOS OS AUTORES'}</span>
+                      <span>{dict.nav?.todosAutores || (isEs ? 'TODOS LOS AUTORES' : 'TODOS OS AUTORES')}</span>
                       <span aria-hidden="true">→</span>
                     </Link>
                   </div>
@@ -343,13 +388,13 @@ export default function PublicNavBar() {
             href={`/${lang}/noticias`}
             className="h-full px-3.5 xl:px-4 flex items-center text-sm font-semibold tracking-wide text-charcoal/80 hover:text-charcoal transition-colors"
           >
-            {isEs ? 'Noticias' : 'Novas'}
+            {dict.nav?.noticias || (isEs ? 'Noticias' : 'Novas')}
           </Link>
 
         </div>
 
         {/* ==================================================== */}
-        {/* RIGHT CONTROLS: LANG, THEME, USER & OSIX CTA */}
+        {/* RIGHT CONTROLS: LANG, THEME, USER */}
         {/* ==================================================== */}
         <div className="hidden lg:flex items-center gap-3">
           
@@ -364,7 +409,7 @@ export default function PublicNavBar() {
             <Link
               href={`/${lang}/escritorio`}
               className="w-10 h-10 border border-lines bg-parchment hover:bg-lines flex items-center justify-center transition-colors relative overflow-hidden"
-              title={dict.nav.escritorio}
+              title={dict.nav?.escritorio}
             >
               {userProfile?.avatar_url ? (
                 <Image className="object-cover" alt="Perfil" src={userProfile.avatar_url} fill sizes="40px" />
@@ -376,20 +421,11 @@ export default function PublicNavBar() {
             <Link
               href={`/${lang}/login`}
               className="w-10 h-10 border border-lines bg-parchment text-charcoal hover:bg-lines flex items-center justify-center transition-colors"
-              title={dict.nav.login}
+              title={dict.nav?.login}
             >
               <span className="material-symbols-outlined text-[20px]">person</span>
             </Link>
           )}
-
-          {/* OSIX-STYLE SHARP CTA BUTTON */}
-          <Link
-            href={`/${lang}/contacto`}
-            className="btn-primary ml-1"
-          >
-            <span>{isEs ? 'CONTACTO' : 'CONTACTO'}</span>
-            <span aria-hidden="true">→</span>
-          </Link>
         </div>
 
         {/* ==================================================== */}
@@ -421,18 +457,27 @@ export default function PublicNavBar() {
         <div className="lg:hidden fixed inset-x-0 top-18 bottom-0 bg-parchment z-50 overflow-y-auto border-t border-lines animate-appear-instant flex flex-col justify-between p-6">
           <div className="flex flex-col gap-6">
             
-            {/* 1. Publicacións Accordion */}
+            {/* 1. Publicacións: Direct Link + Accordion Chevron */}
             <div className="border-b border-lines pb-4">
-              <button
-                type="button"
-                onClick={() => toggleMobileAccordion('publicacions')}
-                className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2"
-              >
-                <span>{isEs ? 'Publicaciones' : 'Publicacións'}</span>
-                <span className={`material-symbols-outlined transition-transform ${mobileExpanded['publicacions'] ? 'rotate-180 text-gold' : ''}`}>
-                  expand_more
-                </span>
-              </button>
+              <div className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2">
+                <Link
+                  href={`/${lang}/articulos`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-gold transition-colors"
+                >
+                  {dict.nav?.publicaciones || (isEs ? 'Publicaciones' : 'Publicacións')}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => toggleMobileAccordion('publicacions')}
+                  className="p-1 text-charcoal/70"
+                  aria-label="Expandir"
+                >
+                  <span className={`material-symbols-outlined transition-transform ${mobileExpanded['publicacions'] ? 'rotate-180 text-gold' : ''}`}>
+                    expand_more
+                  </span>
+                </button>
+              </div>
               {mobileExpanded['publicacions'] && (
                 <div className="flex flex-col gap-3 pl-3 pt-3 border-l-2 border-gold/40 mt-2">
                   {publicacionsItems.map((item) => (
@@ -450,24 +495,33 @@ export default function PublicNavBar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
                   >
-                    {isEs ? 'Ver todo el archivo →' : 'Ver todo o arquivo →'}
+                    {dict.nav?.verTodoArquivo || (isEs ? 'Ver todo el archivo →' : 'Ver todo o arquivo →')}
                   </Link>
                 </div>
               )}
             </div>
 
-            {/* 2. Asociación Accordion */}
+            {/* 2. Asociación: Direct Link + Accordion Chevron */}
             <div className="border-b border-lines pb-4">
-              <button
-                type="button"
-                onClick={() => toggleMobileAccordion('asociacion')}
-                className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2"
-              >
-                <span>{isEs ? 'Asociación' : 'A Asociación'}</span>
-                <span className={`material-symbols-outlined transition-transform ${mobileExpanded['asociacion'] ? 'rotate-180 text-gold' : ''}`}>
-                  expand_more
-                </span>
-              </button>
+              <div className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2">
+                <Link
+                  href={`/${lang}/asociacion`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-gold transition-colors"
+                >
+                  {dict.nav?.asociacion || (isEs ? 'Asociación' : 'A Asociación')}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => toggleMobileAccordion('asociacion')}
+                  className="p-1 text-charcoal/70"
+                  aria-label="Expandir"
+                >
+                  <span className={`material-symbols-outlined transition-transform ${mobileExpanded['asociacion'] ? 'rotate-180 text-gold' : ''}`}>
+                    expand_more
+                  </span>
+                </button>
+              </div>
               {mobileExpanded['asociacion'] && (
                 <div className="flex flex-col gap-3 pl-3 pt-3 border-l-2 border-gold/40 mt-2">
                   {asociacionItems.map((item) => (
@@ -485,24 +539,33 @@ export default function PublicNavBar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
                   >
-                    {isEs ? 'Conoce la Asociación →' : 'Coñece a Asociación →'}
+                    {dict.nav?.conoceAsociacion ? `${dict.nav.conoceAsociacion} →` : (isEs ? 'Conoce la Asociación →' : 'Coñece a Asociación →')}
                   </Link>
                 </div>
               )}
             </div>
 
-            {/* 3. Autores Accordion */}
+            {/* 3. Autores: Direct Link + Accordion Chevron */}
             <div className="border-b border-lines pb-4">
-              <button
-                type="button"
-                onClick={() => toggleMobileAccordion('autores')}
-                className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2"
-              >
-                <span>{isEs ? 'Autores' : 'Autores'}</span>
-                <span className={`material-symbols-outlined transition-transform ${mobileExpanded['autores'] ? 'rotate-180 text-gold' : ''}`}>
-                  expand_more
-                </span>
-              </button>
+              <div className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2">
+                <Link
+                  href={`/${lang}#autores`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-gold transition-colors"
+                >
+                  {dict.nav?.autores || (isEs ? 'Autores' : 'Autores')}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => toggleMobileAccordion('autores')}
+                  className="p-1 text-charcoal/70"
+                  aria-label="Expandir"
+                >
+                  <span className={`material-symbols-outlined transition-transform ${mobileExpanded['autores'] ? 'rotate-180 text-gold' : ''}`}>
+                    expand_more
+                  </span>
+                </button>
+              </div>
               {mobileExpanded['autores'] && (
                 <div className="flex flex-col gap-3 pl-3 pt-3 border-l-2 border-gold/40 mt-2">
                   {autoresItems.map((item) => (
@@ -520,7 +583,7 @@ export default function PublicNavBar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
                   >
-                    {isEs ? 'Todos los autores →' : 'Todos os autores →'}
+                    {dict.nav?.todosAutores ? `${dict.nav.todosAutores} →` : (isEs ? 'Todos los autores →' : 'Todos os autores →')}
                   </Link>
                 </div>
               )}
@@ -533,7 +596,7 @@ export default function PublicNavBar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-xl font-serif font-bold text-charcoal hover:text-gold py-2 block"
               >
-                {isEs ? 'Noticias y Avisos' : 'Novas e Avisos'}
+                {dict.nav?.noticiasYAvisos || (isEs ? 'Noticias y Avisos' : 'Novas e Avisos')}
               </Link>
             </div>
 
@@ -544,23 +607,11 @@ export default function PublicNavBar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-xl font-serif font-bold text-charcoal hover:text-gold py-2 flex items-center justify-between"
               >
-                <span>{user ? dict.nav.escritorio : dict.nav.login}</span>
-                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                <span>{user ? dict.nav?.escritorio : dict.nav?.login}</span>
+                <span className="material-symbols-outlined text-sm" aria-hidden="true">arrow_forward</span>
               </Link>
             </div>
 
-          </div>
-
-          {/* Bottom Full-Width CTA */}
-          <div className="pt-8 pb-4">
-            <Link
-              href={`/${lang}/contacto`}
-              onClick={() => setMobileMenuOpen(false)}
-              className="btn-primary w-full text-center justify-center py-4 text-sm tracking-[0.16em]"
-            >
-              <span>{isEs ? 'CONTACTO' : 'CONTACTO'}</span>
-              <span aria-hidden="true">→</span>
-            </Link>
           </div>
 
         </div>
