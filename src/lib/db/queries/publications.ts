@@ -65,6 +65,11 @@ async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient>
   return await createServerClient();
 }
 
+function cleanImageUrl(url?: string | null): string | null {
+  if (!url) return null;
+  return url.replace('pzupxjsprmuudmvhzpxu.supabase.co', 'srbrnpbtfmilohkicpbb.supabase.co');
+}
+
 /**
  * Normalizes raw PostgREST publication_tags join into a clean TagItem array.
  */
@@ -134,6 +139,49 @@ export async function getPublicationBySlug(
     .single();
 
   if (error || !data) {
+    if (error?.code === 'PGRST205') {
+      // Schema fallback to articulos table
+      const legacyCol = isUUID ? 'id' : 'slug';
+      const { data: legacyData, error: legacyError } = await supabase
+        .from('articulos')
+        .select(`
+          id, slug, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, contenido_gl, contenido_es,
+          imagen_url, tipo, estado, fijado, idioma_original, creado_en, actualizado_en, autor_id,
+          perfiles:autor_id (id, nombre, slug, avatar_url, biografia)
+        `)
+        .eq(legacyCol, slugOrId)
+        .single();
+
+      if (legacyError || !legacyData) {
+        return null;
+      }
+
+      const pAuthor = (legacyData.perfiles as unknown as { id?: string; nombre?: string; slug?: string; avatar_url?: string; biografia?: string }) || {};
+
+
+      return {
+        id: legacyData.id,
+        slug: legacyData.slug,
+        title: { gl: legacyData.titulo_gl || '', es: legacyData.titulo_es || '' },
+        subtitle: legacyData.subtitulo_gl || legacyData.subtitulo_es ? { gl: legacyData.subtitulo_gl || '', es: legacyData.subtitulo_es || '' } : null,
+        content: { gl: legacyData.contenido_gl || '', es: legacyData.contenido_es || '' },
+        cover_image_url: cleanImageUrl(legacyData.imagen_url),
+        type: (legacyData.tipo === 'ensaio' ? 'essay' : legacyData.tipo === 'noticia' ? 'news' : 'article') as PublicationType,
+        status: (legacyData.estado === 'publicado' ? 'published' : 'draft') as PublicationStatus,
+        original_language: legacyData.idioma_original || 'gl',
+        is_pinned: legacyData.fijado ?? false,
+        created_at: legacyData.creado_en,
+        updated_at: legacyData.actualizado_en,
+        author: {
+          id: pAuthor.id || legacyData.autor_id,
+          full_name: pAuthor.nombre || 'Anónimo',
+          slug: pAuthor.slug || null,
+          avatar_url: pAuthor.avatar_url || null,
+          bio: pAuthor.biografia ? { gl: pAuthor.biografia, es: pAuthor.biografia } : null,
+        },
+        tags: [],
+      };
+    }
     return null;
   }
 
@@ -253,6 +301,65 @@ export async function getPublicationCards(
 
   const { data, error } = await query;
   if (error || !data) {
+    if (error?.code === 'PGRST205') {
+      let legQuery = supabase
+        .from('articulos')
+        .select(`
+          id, slug, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, imagen_url, tipo, estado, fijado, creado_en, actualizado_en, autor_id,
+          perfiles:autor_id (id, nombre, slug, avatar_url)
+        `)
+        .order('creado_en', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (status) {
+        legQuery = legQuery.eq('estado', status === 'published' ? 'publicado' : status);
+      }
+      if (options?.type) {
+        const legType = options.type === 'essay' ? 'ensaio' : options.type === 'news' ? 'noticia' : 'artigo';
+        legQuery = legQuery.eq('tipo', legType);
+      }
+      if (options?.authorId) {
+        legQuery = legQuery.eq('autor_id', options.authorId);
+      }
+      if (options?.isPinned !== undefined) {
+        legQuery = legQuery.eq('fijado', options.isPinned);
+      }
+      if (options?.searchQuery) {
+        const q = options.searchQuery.trim();
+        if (q) {
+          legQuery = legQuery.or(`titulo_gl.ilike.%${q}%,titulo_es.ilike.%${q}%,subtitulo_gl.ilike.%${q}%,subtitulo_es.ilike.%${q}%`);
+        }
+      }
+
+      const { data: legData, error: legErr } = await legQuery;
+      if (legErr || !legData) {
+        console.error('Error fetching legacy articles:', legErr);
+        return [];
+      }
+
+      return legData.map((row) => {
+        const pAuthor = (row.perfiles as unknown as { id?: string; nombre?: string; slug?: string; avatar_url?: string }) || {};
+        return {
+          id: row.id,
+          slug: row.slug,
+          title: { gl: row.titulo_gl || '', es: row.titulo_es || '' },
+          subtitle: row.subtitulo_gl || row.subtitulo_es ? { gl: row.subtitulo_gl || '', es: row.subtitulo_es || '' } : null,
+          cover_image_url: cleanImageUrl(row.imagen_url),
+          type: (row.tipo === 'ensaio' ? 'essay' : row.tipo === 'noticia' ? 'news' : 'article') as PublicationType,
+          status: (row.estado === 'publicado' ? 'published' : 'draft') as PublicationStatus,
+          is_pinned: row.fijado ?? false,
+          created_at: row.creado_en,
+          updated_at: row.actualizado_en,
+          author: {
+            id: pAuthor.id || row.autor_id,
+            full_name: pAuthor.nombre || 'Anónimo',
+            slug: pAuthor.slug || null,
+            avatar_url: pAuthor.avatar_url || null,
+          },
+          tags: [],
+        };
+      });
+    }
     console.error('Error fetching publication cards:', error);
     return [];
   }
@@ -264,7 +371,7 @@ export async function getPublicationCards(
     slug: row.slug,
     title: row.title,
     subtitle: row.subtitle,
-    cover_image_url: row.cover_image_url,
+    cover_image_url: cleanImageUrl(row.cover_image_url),
     type: row.type,
     status: row.status,
     is_pinned: row.is_pinned ?? false,
