@@ -111,18 +111,36 @@ export default function ArticlesMosaicSection({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {pinnedItems.map((pinned) => (
+            {pinnedItems.length === 1 ? (
+              <div className="w-full">
                 <ArticleCard
-                  key={pinned.id}
-                  articulo={pinned}
+                  articulo={pinnedItems[0]}
                   lang={lang}
                   dict={dict}
-                  variant="auto"
-                  className="bg-parchment p-5 border border-lines/80 shadow-sm"
+                  variant="lead"
+                  className="bg-parchment p-6 sm:p-8 border border-lines/80 shadow-sm"
                 />
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className={`grid gap-6 ${
+                pinnedItems.length === 2
+                  ? 'grid-cols-1 md:grid-cols-2'
+                  : pinnedItems.length === 3
+                    ? 'grid-cols-1 md:grid-cols-3'
+                    : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+              }`}>
+                {pinnedItems.map((pinned) => (
+                  <ArticleCard
+                    key={pinned.id}
+                    articulo={pinned}
+                    lang={lang}
+                    dict={dict}
+                    variant="auto"
+                    className="bg-parchment p-5 border border-lines/80 shadow-sm"
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </RevealOnScroll>
       )}

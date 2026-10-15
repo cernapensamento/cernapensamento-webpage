@@ -38,9 +38,9 @@ export default function AssociationAndNewsSection({ lang }: AssociationAndNewsSe
             <div className="bg-parchment border border-lines p-8 sm:p-10 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-lg relative overflow-hidden group">
               <span 
                 aria-hidden="true" 
-                className="absolute -right-4 -bottom-6 text-9xl font-serif text-charcoal/[0.03] dark:text-parchment/[0.04] select-none pointer-events-none"
+                className="absolute -right-3 -bottom-8 text-8xl sm:text-9xl font-serif text-charcoal/[0.04] dark:text-parchment/[0.04] select-none pointer-events-none font-bold"
               >
-                🏛
+                § I
               </span>
 
               <div className="relative z-10">
@@ -104,9 +104,9 @@ export default function AssociationAndNewsSection({ lang }: AssociationAndNewsSe
             <div className="bg-parchment border border-lines p-8 sm:p-10 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-lg relative overflow-hidden group">
               <span 
                 aria-hidden="true" 
-                className="absolute -right-4 -bottom-6 text-9xl font-serif text-charcoal/[0.03] dark:text-parchment/[0.04] select-none pointer-events-none"
+                className="absolute -right-3 -bottom-8 text-8xl sm:text-9xl font-serif text-charcoal/[0.04] dark:text-parchment/[0.04] select-none pointer-events-none font-bold"
               >
-                📰
+                § II
               </span>
 
               <div className="relative z-10">
