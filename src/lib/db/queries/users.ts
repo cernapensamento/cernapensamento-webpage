@@ -10,12 +10,39 @@ import type {
   UserRow,
   ColumnistItem,
   AuthorProfileDetail,
+  LocalizedString,
 } from '../types';
 import { getPublicationCards } from './publications';
 
 async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient> {
   if (provided) return provided;
   return await createServerClient();
+}
+
+function parseBio(rawBio: unknown): LocalizedString | null {
+  if (!rawBio) return null;
+  if (typeof rawBio === 'object' && rawBio !== null) {
+    const b = rawBio as Record<string, unknown>;
+    const glStr = typeof b.gl === 'string' ? b.gl : (typeof b.es === 'string' ? b.es : '');
+    const esStr = typeof b.es === 'string' ? b.es : (typeof b.gl === 'string' ? b.gl : '');
+    return { gl: glStr, es: esStr };
+  }
+  if (typeof rawBio === 'string') {
+    return { gl: rawBio, es: rawBio };
+  }
+  return null;
+}
+
+function mapLegacyProfile(row: Record<string, unknown>): UserRow {
+  return {
+    id: (row.id as string) || '',
+    full_name: (row.nombre as string) || 'Anónimo',
+    slug: (row.slug as string) || null,
+    bio: parseBio(row.bio),
+    avatar_url: (row.avatar_url as string) || null,
+    role: (row.rol === 'escritor' ? USER_ROLES.FOUNDER : row.rol === 'admin' ? USER_ROLES.ADMIN : USER_ROLES.MEMBER),
+    newsletter_subscribed: Boolean(row.recibir_newsletter),
+  };
 }
 
 /**
@@ -34,6 +61,16 @@ export async function getUserById(
     .single();
 
   if (error || !data) {
+    if (error?.code === 'PGRST205') {
+      const { data: legData, error: legErr } = await supabase
+        .from('perfiles')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (!legErr && legData) {
+        return mapLegacyProfile(legData as Record<string, unknown>);
+      }
+    }
     return null;
   }
 
@@ -56,6 +93,16 @@ export async function getUserBySlug(
     .single();
 
   if (error || !data) {
+    if (error?.code === 'PGRST205') {
+      const { data: legData, error: legErr } = await supabase
+        .from('perfiles')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+      if (!legErr && legData) {
+        return mapLegacyProfile(legData as Record<string, unknown>);
+      }
+    }
     return null;
   }
 
@@ -85,6 +132,25 @@ export async function getColumnists(
     .order(USER_COLS.FULL_NAME, { ascending: true });
 
   if (error || !data) {
+    if (error?.code === 'PGRST205') {
+      const { data: legData, error: legErr } = await supabase
+        .from('perfiles')
+        .select('id, nombre, slug, bio, avatar_url, rol')
+        .in('rol', ['escritor', 'admin', 'fundador'])
+        .not('slug', 'is', null)
+        .order('nombre', { ascending: true });
+
+      if (!legErr && legData) {
+        return legData.map((row) => ({
+          id: row.id,
+          full_name: row.nombre || 'Anónimo',
+          slug: row.slug || null,
+          bio: parseBio(row.bio),
+          avatar_url: row.avatar_url || null,
+          role: row.rol === 'admin' ? USER_ROLES.ADMIN : USER_ROLES.FOUNDER,
+        })) as ColumnistItem[];
+      }
+    }
     console.error('Error fetching columnists:', error);
     return [];
   }
