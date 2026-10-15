@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { SITE_NAME } from '@/lib/constants';
 import { headers } from 'next/headers';
 import { getDictionary } from '@/dictionaries';
@@ -11,59 +12,213 @@ export default async function SiteFooter() {
   const lang = (headersList.get('x-locale') as Locale) || 'gl';
   const dict = await getDictionary(lang);
   const currentYear = new Date().getFullYear();
+  const isEs = lang === 'es';
 
   return (
     <FooterVisibilityWrapper>
-      <footer className="bg-surface border-t border-lines w-full mt-auto">
-      <div className="w-full py-16 px-5 md:px-16 flex flex-col items-center gap-8 max-w-[1120px] mx-auto">
+      <footer className="w-full mt-auto bg-[#0a0a0a] text-[#ffffff] border-t border-lines/30">
         
-        {/* Brand & Tagline */}
-        <div className="flex flex-col items-center text-center gap-3">
-          <Link 
-            className="font-serif text-3xl md:text-4xl text-charcoal hover:opacity-80 transition-opacity" 
-            href={`/${lang}`}
-          >
-            {SITE_NAME}
-          </Link>
-          <p className="text-sm md:text-base font-sans text-charcoal/70 max-w-md">
-            Discurso intelectual e filosófico.
-          </p>
-        </div>
+        {/* ==================================================== */}
+        {/* UPPER CTA SECTION (OSIX STYLE) */}
+        {/* ==================================================== */}
+        <div className="w-full border-b border-[#ffffff15] py-16 sm:py-24 px-5 md:px-16">
+          <div className="max-w-[1120px] mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
+            
+            {/* Left Headline & Description */}
+            <div className="max-w-2xl">
+              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#ffffff] font-bold tracking-tight leading-tight mb-4">
+                {isEs ? 'Hablemos de ideas, pensamiento y futuro' : 'Falemos de ideas, pensamento e futuro'}
+              </h2>
+              <p className="font-sans text-base sm:text-lg text-[#a3a3a3] leading-relaxed max-w-xl">
+                {isEs
+                  ? 'Cerna es una revista y asociación independiente dedicada al ensayo riguroso, la filosofía política y la economía. Envía tu propuesta de publicación o asóciate para participar en nuestros ciclos.'
+                  : 'Cerna é unha revista e asociación independente dedicada ao ensaio rigoroso, a filosofía política e a economía. Envía a túa proposta de publicación ou asóciate para participar nos nosos ciclos.'}
+              </p>
+            </div>
 
-        {/* Navigation */}
-        <nav 
-          aria-label="Footer Navigation" 
-          className="flex flex-wrap justify-center gap-x-8 gap-y-4 w-full max-w-2xl"
-        >
-          <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}`}>Inicio</Link>
-          <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/asociacion`}>{dict.footer.links.asociacion}</Link>
-          <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
-          <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/asociacion/estatutos`}>{dict.footer.links.estatutos}</Link>
-          <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/noticias`}>{dict.nav.noticias}</Link>
-          <Link className="font-sans text-sm font-medium text-charcoal/80 hover:text-gold transition-colors duration-200" href={`/${lang}/contacto`}>{dict.nav.contactar}</Link>
-        </nav>
+            {/* Right Action Button & Secondary Contact */}
+            <div className="flex flex-col items-start lg:items-end gap-3 shrink-0">
+              <Link
+                href={`/${lang}/contacto`}
+                className="btn-filled-white text-xs tracking-[0.15em] font-bold"
+              >
+                <span>{isEs ? 'CUÉNTANOS TU CASO' : 'ENVÍA A TÚA PROPOSTA'}</span>
+                <span aria-hidden="true">→</span>
+              </Link>
+              <a
+                href="mailto:contacto@cernapensamento.org"
+                className="text-xs text-[#a3a3a3] hover:text-[#ffffff] underline underline-offset-4 transition-colors font-sans"
+              >
+                {isEs ? 'o escríbenos a contacto@cernapensamento.org' : 'ou escríbenos a contacto@cernapensamento.org'}
+              </a>
+            </div>
 
-        {/* Social Icons */}
-        <SocialLinks className="flex items-center justify-center gap-5 mt-2" itemClassName="bg-surface hover:shadow-sm" />
-
-        {/* Divider */}
-        <div className="w-full h-px bg-lines/50 max-w-3xl my-2"></div>
-
-        {/* Copyright & Credits */}
-        <div className="flex flex-col items-center text-center gap-3">
-          <p className="text-xs md:text-sm font-semibold text-charcoal/60">
-            © {currentYear} {SITE_NAME}. {dict.footer.rights}
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-charcoal/50">
-            <span>Portal Web desenvolvido por Pablo Araújo</span>
-            <span aria-hidden="true">•</span>
-            <a href="https://github.com/Pabl0125" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors focus-visible:outline-gold">GitHub</a>
-            <span aria-hidden="true">•</span>
-            <a href="mailto:contacto@cernapensamento.org" className="hover:text-gold transition-colors focus-visible:outline-gold">Contacto</a>
           </div>
         </div>
 
-      </div>
+        {/* ==================================================== */}
+        {/* LOWER FOOTER: 4 COLUMNS */}
+        {/* ==================================================== */}
+        <div className="w-full py-16 sm:py-20 px-5 md:px-16">
+          <div className="max-w-[1120px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
+            
+            {/* Column 1: Brand & Contact (4 cols) */}
+            <div className="lg:col-span-5 flex flex-col gap-6">
+              <Link href={`/${lang}`} className="inline-block hover:opacity-80 transition-opacity">
+                <Image
+                  src="/images/logo/cernablack.png"
+                  alt={SITE_NAME}
+                  width={220}
+                  height={55}
+                  className="h-10 w-auto object-contain brightness-0 invert"
+                />
+              </Link>
+
+              <p className="font-sans text-sm text-[#a3a3a3] leading-relaxed max-w-sm">
+                {isEs
+                  ? 'Revista digital de pensamiento, filosofía política, economía y cultura. Un proyecto editorial independiente comprometido con el debate riguroso y la libertad de pensamiento en Galicia.'
+                  : 'Revista dixital de pensamento, filosofía política, economía e cultura. Un proxecto editorial independente comprometido co debate rigoroso e a liberdade de pensamento en Galicia.'}
+              </p>
+
+              {/* Direct details */}
+              <div className="flex flex-col gap-2.5 text-xs text-[#a3a3a3] font-sans">
+                <a 
+                  href="mailto:contacto@cernapensamento.org" 
+                  className="flex items-center gap-2.5 hover:text-[#ffffff] transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-gold">mail</span>
+                  <span>contacto@cernapensamento.org</span>
+                </a>
+                <div className="flex items-center gap-2.5">
+                  <span className="material-symbols-outlined text-[16px] text-gold">location_on</span>
+                  <span>Galicia, España</span>
+                </div>
+              </div>
+
+              {/* Social links */}
+              <SocialLinks 
+                className="flex items-center gap-4 mt-2" 
+                itemClassName="bg-[#1a1a1a] text-[#ffffff] hover:bg-gold hover:text-black border border-[#ffffff15]" 
+              />
+            </div>
+
+            {/* Column 2: Publicacións (2-3 cols) */}
+            <div className="lg:col-span-2 lg:col-start-7 flex flex-col gap-4">
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#ffffff] font-sans">
+                {isEs ? 'PUBLICACIONES' : 'PUBLICACIÓNS'}
+              </span>
+              <ul className="flex flex-col gap-2.5 text-sm text-[#a3a3a3] font-sans">
+                <li>
+                  <Link href={`/${lang}/articulos?tipo=artigo`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Artículos de Opinión' : 'Artigos de Opinión'}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/${lang}/articulos?tipo=ensaio`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Ensayos Filosóficos' : 'Ensaios Filosóficos'}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/${lang}/proyecto-editorial/coleccion-narrativa`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Colección Narrativa' : 'Colección Narrativa'}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/${lang}/proyecto-editorial/coleccion-poesia`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Colección Poesía' : 'Colección Poesía'}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/${lang}/articulos`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Archivo General' : 'Arquivo Xeral'}
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Asociación (2 cols) */}
+            <div className="lg:col-span-2 flex flex-col gap-4">
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#ffffff] font-sans">
+                {isEs ? 'ASOCIACIÓN' : 'ASOCIACIÓN'}
+              </span>
+              <ul className="flex flex-col gap-2.5 text-sm text-[#a3a3a3] font-sans">
+                <li>
+                  <Link href={`/${lang}/asociacion`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'El Proyecto' : 'O Proxecto'}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/${lang}/asociacion/estatutos`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Estatutos' : 'Estatutos'}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/${lang}/noticias`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Noticias y Avisos' : 'Novas e Avisos'}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/${lang}/contacto`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Asociarse' : 'Asociarse'}
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 4: Cerna / Institucional (2 cols) */}
+            <div className="lg:col-span-2 flex flex-col gap-4">
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#ffffff] font-sans">
+                CERNA
+              </span>
+              <ul className="flex flex-col gap-2.5 text-sm text-[#a3a3a3] font-sans">
+                <li>
+                  <Link href={`/${lang}#autores`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Autores y Firmas' : 'Autores e Firmas'}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/${lang}/contacto`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Contacto' : 'Contacto'}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/${lang}/escritorio`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Escritorio de Autor' : 'Escritorio de Autor'}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/${lang}/login`} className="hover:text-[#ffffff] transition-colors">
+                    {isEs ? 'Iniciar Sesión' : 'Iniciar Sesión'}
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ==================================================== */}
+        {/* BOTTOM LEGAL BAR */}
+        {/* ==================================================== */}
+        <div className="w-full border-t border-[#ffffff15] py-8 px-5 md:px-16 text-xs text-[#a3a3a3]">
+          <div className="max-w-[1120px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>
+              © {currentYear} {SITE_NAME}. {dict.footer.rights}
+            </p>
+            <div className="flex flex-wrap items-center gap-6">
+              <Link href={`/${lang}/asociacion/estatutos`} className="hover:text-[#ffffff] transition-colors">
+                {isEs ? 'Privacidad' : 'Privacidade'}
+              </Link>
+              <Link href={`/${lang}/asociacion/estatutos`} className="hover:text-[#ffffff] transition-colors">
+                {dict.footer.links.estatutos}
+              </Link>
+              <a href="/llms.txt" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors font-mono">
+                llms.txt
+              </a>
+            </div>
+          </div>
+        </div>
+
       </footer>
     </FooterVisibilityWrapper>
   );
