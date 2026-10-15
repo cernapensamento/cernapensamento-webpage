@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Libre_Caslon_Text, Source_Sans_3 } from "next/font/google";
+import { Libre_Caslon_Text, Source_Sans_3, Plus_Jakarta_Sans } from "next/font/google";
 import "../globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import SiteFooter from '@/components/layout/SiteFooter';
@@ -13,6 +13,12 @@ const libreCaslon = Libre_Caslon_Text({
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
   variable: "--font-source-sans",
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 import { SITE_NAME } from "@/lib/constants";
@@ -38,7 +44,7 @@ export default async function RootLayout({
   return (
     <html
       lang={lang || "es"}
-      className={`${libreCaslon.variable} ${sourceSans.variable} antialiased`}
+      className={`${libreCaslon.variable} ${sourceSans.variable} ${plusJakarta.variable} antialiased`}
       suppressHydrationWarning
     >
       <head>

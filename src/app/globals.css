@@ -22,8 +22,10 @@
   --color-lines: var(--dynamic-lines);
   --color-surface: var(--dynamic-surface);
 
-  --font-serif: var(--font-libre-caslon), serif;
-  --font-sans: var(--font-source-sans), sans-serif;
+  --font-serif: var(--font-libre-caslon), Georgia, serif;
+  --font-sans: var(--font-plus-jakarta), var(--font-source-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: var(--font-source-sans), sans-serif;
+  --font-heading: var(--font-plus-jakarta), sans-serif;
 }
 
 :root {
@@ -115,3 +117,117 @@ input[type="submit"]:disabled {
   background-color: var(--color-gold);
   color: var(--color-parchment);
 }
+
+/* OSIX-inspired precise buttons (0px border-radius) */
+.btn-primary {
+  background-color: var(--color-charcoal);
+  color: var(--color-parchment);
+  border-radius: 0px !important;
+  padding: 12px 24px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-charcoal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-gold);
+  border-color: var(--color-gold);
+  color: #ffffff;
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--color-charcoal);
+  border-radius: 0px !important;
+  padding: 11px 24px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1.5px solid var(--color-charcoal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  background-color: var(--color-charcoal);
+  color: var(--color-parchment);
+}
+
+.btn-filled-white {
+  background-color: #ffffff;
+  color: #000000;
+  border-radius: 0px !important;
+  padding: 12px 24px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-filled-white:hover {
+  background-color: var(--color-gold);
+  border-color: var(--color-gold);
+  color: #ffffff;
+}
+
+/* Smooth reveal animation system */
+@keyframes smoothFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-appear-instant {
+  animation: smoothFadeInUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.reveal-init {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-shown {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-init,
+  .animate-appear-instant {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+

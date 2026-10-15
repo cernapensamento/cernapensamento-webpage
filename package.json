@@ -25,6 +25,7 @@
     "@types/katex": "^0.16.8",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
+    "boneyard-js": "^1.10.0",
     "gray-matter": "^4.0.3",
     "katex": "^0.16.21",
     "negotiator": "^1.0.0",
