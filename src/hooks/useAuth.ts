@@ -3,10 +3,14 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
+import type { UserRole } from '@/lib/db/types';
 
-type Profile = {
+export type Profile = {
+  role: UserRole;
+  avatar_url: string | null;
+  // Backwards compatibility alias
   rol: string;
-  avatar_url: string;
 } | null;
 
 export function useAuth() {
@@ -18,6 +22,27 @@ export function useAuth() {
     let isMounted = true;
     const supabase = createClient();
 
+    async function fetchUserProfile(userId: string, jwtRole?: string) {
+      try {
+        const { data } = await supabase
+          .from(DB_TABLES.USERS)
+          .select(`${USER_COLS.ROLE}, ${USER_COLS.AVATAR_URL}`)
+          .eq(USER_COLS.ID, userId)
+          .single();
+
+        if (isMounted && data) {
+          const role = (data.role || jwtRole || 'reader') as UserRole;
+          setProfile({
+            role,
+            avatar_url: data.avatar_url,
+            rol: role,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+      }
+    }
+
     async function loadSession() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -25,11 +50,8 @@ export function useAuth() {
         
         if (session?.user) {
           setUser(session.user);
-          // Don't await here to avoid deadlock
-          supabase.from('perfiles').select('rol, avatar_url').eq('id', session.user.id).single()
-            .then(({ data }) => {
-              if (isMounted) setProfile(data);
-            });
+          const jwtRole = session.user.app_metadata?.user_role as string | undefined;
+          fetchUserProfile(session.user.id, jwtRole);
         }
       } catch (error) {
         console.error('Error loading session:', error);
@@ -46,12 +68,10 @@ export function useAuth() {
       
       if (session?.user) {
         setUser(session.user);
-        // Defer the fetch to avoid lock deadlocks
+        const jwtRole = session.user.app_metadata?.user_role as string | undefined;
+        // Defer fetch to avoid deadlock
         setTimeout(() => {
-          supabase.from('perfiles').select('rol, avatar_url').eq('id', session.user.id).single()
-            .then(({ data }) => {
-              if (isMounted) setProfile(data);
-            });
+          fetchUserProfile(session.user.id, jwtRole);
         }, 0);
       } else {
         setUser(null);
@@ -63,10 +83,8 @@ export function useAuth() {
     const handleProfileUpdated = () => {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
-          supabase.from('perfiles').select('rol, avatar_url').eq('id', session.user.id).single()
-            .then(({ data }) => {
-              if (isMounted) setProfile(data);
-            });
+          const jwtRole = session.user.app_metadata?.user_role as string | undefined;
+          fetchUserProfile(session.user.id, jwtRole);
         }
       });
     };

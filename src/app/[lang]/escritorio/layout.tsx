@@ -15,7 +15,7 @@ export default async function EscritorioLayout({
   }
 
   return (
-    <EscritorioShell role={profile?.rol}>
+    <EscritorioShell role={profile?.role || profile?.rol}>
       {children}
     </EscritorioShell>
   );

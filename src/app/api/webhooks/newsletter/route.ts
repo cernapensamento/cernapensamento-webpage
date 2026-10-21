@@ -1,9 +1,15 @@
-import { ARTICLE_STATES } from '@/lib/constants';
+import { PUBLICATION_STATUSES } from '@/lib/db/schema';
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+interface SubscriberRecord {
+  email: string;
+  full_name?: string;
+  nombre?: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +17,7 @@ export async function POST(request: NextRequest) {
     if (!WEBHOOK_SECRET) {
       throw new Error('WEBHOOK_SECRET is not set in environment variables');
     }
+
     // 1. Verificar el secreto del webhook de forma segura
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -20,14 +27,14 @@ export async function POST(request: NextRequest) {
     
     let isValid = false;
     try {
-        const { timingSafeEqual } = await import('crypto');
-        const secretBuf = Buffer.from(WEBHOOK_SECRET || '');
-        const tokenBuf = Buffer.from(token);
-        if (secretBuf.length === tokenBuf.length) {
-            isValid = timingSafeEqual(secretBuf, tokenBuf);
-        }
+      const { timingSafeEqual } = await import('crypto');
+      const secretBuf = Buffer.from(WEBHOOK_SECRET || '');
+      const tokenBuf = Buffer.from(token);
+      if (secretBuf.length === tokenBuf.length) {
+        isValid = timingSafeEqual(secretBuf, tokenBuf);
+      }
     } catch {
-        isValid = false;
+      isValid = false;
     }
     
     if (!isValid) {
@@ -36,17 +43,20 @@ export async function POST(request: NextRequest) {
 
     const payload = await request.json();
     
-    // 2. Verificar que sea una publicación nueva o un cambio a "publicado"
-    const isInsert = payload.type === 'INSERT' && payload.record.estado === ARTICLE_STATES.PUBLISHED;
+    // 2. Verificar que sea una publicación nueva o un cambio a "published"
+    const currentStatus = payload.record?.status || payload.record?.estado;
+    const oldStatus = payload.old_record?.status || payload.old_record?.estado;
+
+    const isInsert = payload.type === 'INSERT' && currentStatus === PUBLICATION_STATUSES.PUBLISHED;
     const isUpdate = payload.type === 'UPDATE' && 
-                     payload.old_record.estado === ARTICLE_STATES.DRAFT && 
-                     payload.record.estado === ARTICLE_STATES.PUBLISHED;
+                     oldStatus === PUBLICATION_STATUSES.DRAFT && 
+                     currentStatus === PUBLICATION_STATUSES.PUBLISHED;
 
     if (!isInsert && !isUpdate) {
       return NextResponse.json({ message: 'No es un evento de publicación, ignorado.' }, { status: 200 });
     }
 
-    const articulo = payload.record;
+    const publication = payload.record;
 
     // 3. Conectar a Supabase usando Anon Key (la función RPC es Security Definer)
     const supabase = createClient(
@@ -64,19 +74,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Sin suscriptores o error' }, { status: 200 });
     }
 
+    // Extraer título y subtítulo soportando JSONB nuevo y columnas antiguas
+    const title = publication.title?.es || publication.title?.gl || publication.titulo_es || publication.titulo_gl || 'Nueva publicación';
+    const subtitle = publication.subtitle?.es || publication.subtitle?.gl || publication.subtitulo_es || publication.subtitulo_gl || '';
+
     // 5. Enviar el correo masivo con Resend
-    // Usamos Batch Emails para mayor eficiencia y no exceder límites de la API de Resend
-    const emailsToSend = suscriptores.map((sub: { email: string, nombre: string }) => ({
-      from: 'Cerna <boletin@cernapensamento.org>', // REEMPLAZAR POR TU DOMINIO VERIFICADO EN RESEND
+    const subList = suscriptores as SubscriberRecord[];
+    const emailsToSend = subList.map((sub) => ({
+      from: 'Cerna <boletin@cernapensamento.org>',
       to: [sub.email],
-      subject: `Nuevo artículo: ${articulo.titulo_es || articulo.titulo_gl}`,
+      subject: `Nueva publicación: ${title}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1c1c1c;">
-          <h1 style="font-size: 24px; font-weight: normal; margin-bottom: 8px;">${articulo.titulo_es || articulo.titulo_gl}</h1>
-          <p style="font-size: 16px; color: #666; margin-bottom: 24px;">${articulo.subtitulo_es || articulo.subtitulo_gl || ''}</p>
+          <h1 style="font-size: 24px; font-weight: normal; margin-bottom: 8px;">${title}</h1>
+          <p style="font-size: 16px; color: #666; margin-bottom: 24px;">${subtitle}</p>
           <div style="margin: 32px 0;">
-            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/articulo/${articulo.slug || articulo.id}" style="background-color: #1a1a1a; color: #fbf9f8; padding: 12px 24px; text-decoration: none; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
-              Leer el artículo completo
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/articulo/${publication.slug || publication.id}" style="background-color: #1a1a1a; color: #fbf9f8; padding: 12px 24px; text-decoration: none; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: inline-block;">
+              Leer la publicación completa
             </a>
           </div>
           <p style="font-size: 12px; color: #999; margin-top: 48px;">
@@ -87,8 +101,6 @@ export async function POST(request: NextRequest) {
       `
     }));
 
-    // Enviamos en lotes si hay muchos, pero para empezar podemos enviarlos de golpe
-    // (Resend soporta hasta 100 correos por llamada a batch)
     const { data: resendData, error: resendError } = await resend.batch.send(emailsToSend.slice(0, 100));
 
     if (resendError) {

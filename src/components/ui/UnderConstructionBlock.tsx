@@ -3,7 +3,12 @@ import React from 'react';
 interface UnderConstructionBlockProps {
   title?: string;
   text?: string;
-  dict: any;
+  dict: {
+    wip: {
+      title: string;
+      default_text: string;
+    };
+  };
 }
 
 export default function UnderConstructionBlock({ title, text, dict }: UnderConstructionBlockProps) {

@@ -1,6 +1,6 @@
-import { createClient } from '@/utils/supabase/server';
+import { getPublicationBySlug } from '@/lib/db/queries/publications';
 import { getAuthenticatedUser } from '@/utils/auth';
-import { ARTICLE_STATES } from '@/lib/constants';
+import { PUBLICATION_STATUSES } from '@/lib/db/schema';
 import ReviewActionBar from '@/components/escritorio/ReviewActionBar';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -20,25 +20,21 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props) {
-  const [{ slug, lang }, supabase] = await Promise.all([params, createClient()]);
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
+  const { slug, lang } = await params;
+  const publication = await getPublicationBySlug(slug, { lang });
 
-  const { data: articulo } = await supabase
-    .from('articulos')
-    .select('*, perfiles(nombre)')
-    .eq(isUUID ? 'id' : 'slug', slug)
-    .single();
-
-  if (!articulo) {
+  if (!publication) {
     return { title: 'Artículo no encontrado' };
   }
 
-  const titulo = lang === 'es' ? articulo.titulo_es : articulo.titulo_gl;
-  const subtitulo = lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl;
+  const titulo = publication.title[lang] || publication.title.gl || publication.title.es;
+  const subtitulo = publication.subtitle
+    ? (publication.subtitle[lang] || publication.subtitle.gl || publication.subtitle.es)
+    : null;
 
   return {
     title: titulo,
-    description: subtitulo || `Un artículo de ${articulo.perfiles?.nombre}`,
+    description: subtitulo || `Un artículo de ${publication.author.full_name}`,
   };
 }
 
@@ -52,151 +48,120 @@ export default async function ArticuloPage({
   const { lang, slug } = await params;
   const dict = await getDictionary(lang as Locale);
   
-  const supabase = await createClient();
-  const { profile } = await getAuthenticatedUser();
+  const publication = await getPublicationBySlug(slug, { lang });
 
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
-
-  const { data: articulo, error } = await supabase
-    .from('articulos')
-    .select('*, perfiles(nombre, avatar_url, bio, slug)')
-    .eq(isUUID ? 'id' : 'slug', slug)
-    .single();
-
-  if (error || !articulo) {
+  if (!publication) {
     notFound();
   }
 
-  const titulo = (lang === 'es' ? articulo.titulo_es : articulo.titulo_gl) || articulo.titulo_gl || articulo.titulo_es;
-  const subtitulo = (lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl) || articulo.subtitulo_gl || articulo.subtitulo_es;
-  const contenido = (lang === 'es' ? articulo.contenido_es : articulo.contenido_gl) || articulo.contenido_gl || articulo.contenido_es || '';
-  const isEnsaio = articulo.tipo?.toLowerCase() === 'ensaio';
+  const { profile } = await getAuthenticatedUser();
 
-  const fecha = new Date(articulo.creado_en).toLocaleDateString(lang === 'es' ? 'es-ES' : 'gl-ES', {
+  const titulo = publication.title[lang] || publication.title.gl || publication.title.es;
+  const subtitulo = publication.subtitle
+    ? (publication.subtitle[lang] || publication.subtitle.gl || publication.subtitle.es)
+    : null;
+  const contenido = publication.content[lang] || publication.content.gl || publication.content.es || '';
+  const isEnsaio = publication.type === 'essay';
+
+  const fecha = new Date(publication.created_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'gl-ES', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   });
 
-  const translatedTags: Record<string, string> = {};
-  if (articulo.tematicas && articulo.tematicas.length > 0) {
-    const { data: tagTrans } = await supabase
-      .from('tags')
-      .select('slug, tag_translations(lang, name)')
-      .in('slug', articulo.tematicas);
-    if (tagTrans) {
-      tagTrans.forEach(t => {
-        const trans = t.tag_translations?.find((tr: { lang: string; name: string }) => tr.lang === lang);
-        if (trans) {
-          translatedTags[t.slug] = trans.name;
-        }
-      });
-    }
-  }
+  const authorBio = publication.author.bio
+    ? (typeof publication.author.bio === 'object'
+        ? (publication.author.bio[lang] || publication.author.bio.gl || publication.author.bio.es || '')
+        : String(publication.author.bio))
+    : '';
+
+  const authorBioFinal = (publication.author.slug && dict.authors && (dict.authors as Record<string, string>)[publication.author.slug]) || authorBio;
+
+  const typeLabel = dict.documentTypes?.[publication.type] || publication.type;
 
   return (
     <>
       <main className="flex-grow flex flex-col items-center w-full pb-30">
         <header className="w-full max-w-3xl px-5 md:px-0 pt-24 pb-12 mx-auto text-center relative">
           <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">
-            {(dict as any).documentTypes?.[articulo.tipo?.toLowerCase() || ''] || articulo.tipo || 'Artigo'}
+            {typeLabel}
           </span>
           <h1 className="font-serif text-4xl md:text-6xl text-charcoal mb-6 max-w-4xl mx-auto leading-tight">
             {titulo}
           </h1>
           {subtitulo && (
-              <p className="font-serif text-xl md:text-2xl text-charcoal/60 italic max-w-3xl mx-auto mb-6">
-                {subtitulo}
-              </p>
+            <p className="font-serif text-xl md:text-2xl text-charcoal/60 italic max-w-3xl mx-auto mb-6">
+              {subtitulo}
+            </p>
           )}
-          {articulo.tematicas && articulo.tematicas.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-3 mt-6">
-              {articulo.tematicas.map((t: string) => (
-                <span key={t} className="px-4 py-1.5 border border-lines text-charcoal text-[10px] uppercase tracking-[0.2em]">{translatedTags[t] || t}</span>
-              ))}
-            </div>
-          )}
-          <div className="flex flex-col items-center justify-center gap-3 mt-10">
-            <div className="flex items-center justify-center gap-4 text-sm font-semibold text-charcoal/70">
-              <span className="text-charcoal border-b border-lines pb-1 uppercase tracking-widest">
-                {articulo.perfiles?.nombre || 'Autor Desconocido'}
-              </span>
-              <span className="font-serif text-lines">—</span>
-              <time className="uppercase tracking-widest">{fecha}</time>
-            </div>
-            {articulo.idioma_original && articulo.idioma_original !== lang && (
-              <div className="text-[10px] text-charcoal/60 uppercase tracking-[0.15em]">
-                {lang === 'es' ? 'Idioma original:' : 'Idioma orixinal:'}{' '}
-                <Link href={`/${articulo.idioma_original}/articulo/${articulo.slug || slug}`} className="text-gold font-bold hover:underline transition-all">
-                  {articulo.idioma_original.toUpperCase()}
-                </Link>
-              </div>
-            )}
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal/40 mt-8 border-y border-lines py-3">
+            <span>{publication.author.full_name}</span>
+            <span>•</span>
+            <time dateTime={publication.created_at}>{fecha}</time>
           </div>
-
         </header>
 
-        {articulo.imagen_url && (
-          <div className="w-full max-w-6xl px-5 mx-auto mb-16">
-            <Image 
-              className="w-full h-auto" 
-              alt={titulo} 
-              src={articulo.imagen_url} 
-              width={1200} 
-              height={800} 
-              priority 
-              sizes="(max-width: 1152px) 100vw, 1152px" 
-            />
+        {publication.cover_image_url && (
+          <div className="w-full max-w-5xl px-5 md:px-0 mb-16 mx-auto">
+            <div className="relative w-full aspect-video md:aspect-[21/9] overflow-hidden bg-lines/30">
+              <Image
+                src={publication.cover_image_url}
+                alt={titulo}
+                fill
+                priority
+                className="object-cover"
+                sizes="(max-width: 1200px) 100vw, 1200px"
+              />
+            </div>
           </div>
         )}
 
-        <ArticleScrollManager className="w-full">
-          <article className={`w-full max-w-2xl px-5 md:px-0 mx-auto font-sans text-xl text-charcoal leading-relaxed flex flex-col gap-2 break-words [overflow-wrap:anywhere] min-w-0 ${isEnsaio ? 'text-justify' : ''}`}>
-          <div 
-            className={`prose prose-lg max-w-none text-charcoal break-words [overflow-wrap:anywhere]
-                        ${isEnsaio ? '[&>p]:text-justify [&_p]:[text-align:justify] [&_p]:[text-justify:inter-word]' : ''}
-                        [&>p]:mb-6 [&>p]:leading-relaxed
-                        [&_h1]:font-serif [&_h1]:font-bold [&_h1]:text-4xl [&_h1]:md:text-5xl [&_h1]:text-charcoal [&_h1]:mt-12 [&_h1]:mb-6 [&_h1]:tracking-tight [&_h1]:leading-tight [&_h1]:scroll-mt-36
-                        [&_h2]:font-serif [&_h2]:font-bold [&_h2]:text-3xl [&_h2]:md:text-4xl [&_h2]:text-charcoal/90 [&_h2]:mt-10 [&_h2]:mb-6 [&_h2]:tracking-tight [&_h2]:leading-snug [&_h2]:scroll-mt-36
-                        [&_h3]:font-serif [&_h3]:font-bold [&_h3]:text-2xl [&_h3]:md:text-3xl [&_h3]:text-charcoal/80 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:tracking-tight [&_h3]:leading-snug [&_h3]:scroll-mt-36
-                        [&>blockquote]:border-l-4 [&>blockquote]:border-gold [&>blockquote]:pl-6 [&>blockquote]:font-serif [&>blockquote]:text-2xl [&>blockquote]:italic [&>blockquote]:text-charcoal/80 [&>blockquote]:my-10
-                        [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4
-                        [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4
-                        [&_li]:my-1.5 [&_li>p]:my-0.5
-                        [&>figure]:my-10 [&>figure]:mx-0 [&>figure]:w-full [&>figure>img]:w-full [&>figure>img]:h-auto [&>figure>img]:border [&>figure>img]:border-lines
-                        [&_figure_figcaption]:mt-4 [&_figure_figcaption]:text-base [&_figure_figcaption]:text-charcoal/60 [&_figure_figcaption]:italic [&_figure_figcaption]:text-center
-                        [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 [&_a]:break-all [&_a]:[overflow-wrap:anywhere] hover:[&_a]:text-gold/80
-                        [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_.katex-display]:overflow-x-auto [&_.katex-display]:overflow-y-hidden [&_.katex-display]:max-w-full [&_.katex-display]:py-2 [&_.katex]:text-charcoal
-                        [&_[data-type='article-index']]:border-l-4 [&_[data-type='article-index']]:border-gold [&_[data-type='article-index']]:!px-8 [&_[data-type='article-index']]:!py-6 [&_[data-type='article-index']]:bg-surface [&_[data-type='article-index']]:mb-10 [&_[data-type='article-index']]:rounded-r
-                        [&_[data-type='article-index']_.index-label]:text-xs [&_[data-type='article-index']_.index-label]:font-semibold [&_[data-type='article-index']_.index-label]:uppercase [&_[data-type='article-index']_.index-label]:tracking-widest [&_[data-type='article-index']_.index-label]:text-charcoal/50 [&_[data-type='article-index']_.index-label]:mb-3
-                        [&_[data-type='article-index']_ul]:!list-none [&_[data-type='article-index']_ul]:!pl-0 [&_[data-type='article-index']_ul]:!my-0
-                        [&_[data-type='article-index']_li]:!py-0.5 [&_[data-type='article-index']_li]:!my-0
-                        [&_[data-type='article-index']_a:hover]:underline`}
-            dangerouslySetInnerHTML={{ 
-              __html: sanitizeHtml(renderHeadingAnchors(renderMathInHtml(contenido)), { 
-                allowedTags: sanitizeHtml.defaults.allowedTags.concat([
-                  'img', 'h1', 'h2', 'h3', 'iframe', 'div', 'figure', 'figcaption',
-                  'table', 'thead', 'tbody', 'tr', 'th', 'td', 'colgroup', 'col',
-                  'span', 'math', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'msup',
-                  'msub', 'mfrac', 'msqrt', 'mover', 'munder', 'munderover',
-                  'mroot', 'mstyle', 'msubsup', 'mpadded', 'mspace', 'mphantom', 'menclose',
-                  'mtable', 'mtr', 'mtd', 'mtext', 'annotation', 'svg', 'path', 'line', 'rect',
-                  'nav', 'p',
-                ]),
-                allowedAttributes: {
+        <ArticleScrollManager>
+          <article className="w-full max-w-prose px-5 md:px-0 mx-auto">
+            {publication.tags && publication.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-8">
+                {publication.tags.map((tag) => (
+                  <Link
+                    key={tag.slug}
+                    href={`/${lang}/articulos?tema=${tag.slug}`}
+                    className="text-xs font-semibold uppercase tracking-wider text-charcoal/60 bg-lines/40 hover:bg-gold hover:text-parchment px-3 py-1 rounded-full transition-colors"
+                  >
+                    #{tag.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            <div 
+              className={`prose prose-lg prose-charcoal max-w-none font-serif leading-relaxed article-content text-charcoal/90 ${isEnsaio ? 'text-justify [text-align-last:left] hyphenate' : ''}`}
+              dangerouslySetInnerHTML={{ 
+                __html: sanitizeHtml(renderHeadingAnchors(renderMathInHtml(contenido)), {
+                  allowedTags: [
+                    ...sanitizeHtml.defaults.allowedTags,
+                    'img', 'iframe', 'figure', 'figcaption',
+                    'span', 'div', 'hr', 'mark', 'code', 'pre', 'blockquote',
+                    'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'colgroup', 'col',
+                    'math', 'semantics', 'mrow', 'mi', 'mn', 'mo', 'ms', 'mspace', 'mtext',
+                    'mfrac', 'msqrt', 'mroot', 'msub', 'msup', 'msubsup', 'munder', 'mover',
+                    'munderover', 'mtable', 'mtr', 'mtd', 'mpadded', 'mphantom', 'annotation',
+                    'svg', 'path', 'line', 'nav'
+                  ],
+                  allowedAttributes: {
                     ...sanitizeHtml.defaults.allowedAttributes,
+                    '*': ['class', 'style', 'id', 'data-type', 'data-items', 'data-colwidth'],
+                    img: ['src', 'alt', 'title', 'width', 'height', 'loading', 'class', 'style'],
+                    iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'class', 'style'],
                     figure: ['class', 'style'],
                     figcaption: ['class', 'style'],
-                    img: ['src', 'srcset', 'alt', 'title', 'width', 'height', 'loading', 'class', 'style'],
-                    iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'title'],
-                    div: ['data-youtube-video', 'class', 'style', 'data-type', 'data-latex', 'role'],
-                    span: ['class', 'style', 'aria-hidden', 'data-type', 'data-latex', 'id'],
+                    div: ['class', 'style'],
+                    span: ['class', 'style', 'aria-hidden'],
                     table: ['class', 'style'],
-                    th: ['style', 'colspan', 'rowspan', 'colwidth'],
-                    td: ['style', 'colspan', 'rowspan', 'colwidth'],
-                    col: ['style', 'width'],
-                    math: ['xmlns', 'display', 'alttext'],
-                    mstyle: ['displaystyle', 'scriptlevel', 'mathsize', 'mathcolor', 'mathbackground'],
+                    th: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
+                    td: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
+                    col: ['style', 'class'],
+                    colgroup: ['style', 'class'],
+                    math: ['xmlns', 'display'],
+                    mfrac: ['linethickness'],
                     mspace: ['width', 'height', 'depth'],
                     mpadded: ['width', 'height', 'depth', 'lspace', 'voffset'],
                     mo: ['fence', 'separator', 'stretchy', 'symmetric', 'largeop', 'movablelimits', 'accent', 'lspace', 'rspace'],
@@ -212,104 +177,112 @@ export default async function ArticuloPage({
                     h1: ['id', 'style', 'class'],
                     h2: ['id', 'style', 'class'],
                     h3: ['id', 'style', 'class'],
-                },
-                allowedSchemes: ['http', 'https', 'mailto', 'data', 'blob'],
-                allowedStyles: {
+                  },
+                  allowedSchemes: ['http', 'https', 'mailto', 'data', 'blob'],
+                  allowedStyles: {
                     '*': {
-                        'scroll-margin-top': [/./],
-                        'height': [/./],
-                        'width': [/./],
-                        'min-width': [/./],
-                        'max-width': [/./],
-                        'top': [/./],
-                        'bottom': [/./],
-                        'left': [/./],
-                        'right': [/./],
-                        'vertical-align': [/./],
-                        'position': [/./],
-                        'overflow': [/./],
-                        'font-size': [/./],
-                        'background-color': [/./],
-                        'text-align': [/./],
-                        'font-weight': [/./],
-                        'font-family': [/./],
-                        'font-variant-numeric': [/./],
-                        'letter-spacing': [/./],
-                        'text-transform': [/./],
-                        'text-decoration': [/./],
-                        'color': [/./],
-                        'opacity': [/./],
-                        'display': [/./],
-                        'flex-direction': [/./],
-                        'align-items': [/./],
-                        'gap': [/./],
-                        'padding': [/./],
-                        'padding-top': [/./],
-                        'padding-bottom': [/./],
-                        'padding-left': [/./],
-                        'padding-right': [/./],
-                        'margin': [/./],
-                        'margin-top': [/./],
-                        'margin-bottom': [/./],
-                        'margin-left': [/./],
-                        'margin-right': [/./],
-                        'border': [/./],
-                        'border-top': [/./],
-                        'border-bottom': [/./],
-                        'border-left': [/./],
-                        'border-right': [/./],
-                        'border-width': [/./],
-                        'border-top-width': [/./],
-                        'border-bottom-width': [/./],
-                        'border-left-width': [/./],
-                        'border-right-width': [/./],
-                        'border-color': [/./],
-                        'border-style': [/./],
-                        'border-radius': [/./],
-                        'flex-shrink': [/./],
-                        'line-height': [/./],
-                        'list-style': [/./],
-                        'transition': [/./],
+                      'scroll-margin-top': [/./],
+                      'height': [/./],
+                      'width': [/./],
+                      'min-width': [/./],
+                      'max-width': [/./],
+                      'top': [/./],
+                      'bottom': [/./],
+                      'left': [/./],
+                      'right': [/./],
+                      'vertical-align': [/./],
+                      'position': [/./],
+                      'overflow': [/./],
+                      'font-size': [/./],
+                      'background-color': [/./],
+                      'text-align': [/./],
+                      'font-weight': [/./],
+                      'font-family': [/./],
+                      'font-variant-numeric': [/./],
+                      'letter-spacing': [/./],
+                      'text-transform': [/./],
+                      'text-decoration': [/./],
+                      'color': [/./],
+                      'opacity': [/./],
+                      'display': [/./],
+                      'flex-direction': [/./],
+                      'align-items': [/./],
+                      'gap': [/./],
+                      'padding': [/./],
+                      'padding-top': [/./],
+                      'padding-bottom': [/./],
+                      'padding-left': [/./],
+                      'padding-right': [/./],
+                      'margin': [/./],
+                      'margin-top': [/./],
+                      'margin-bottom': [/./],
+                      'margin-left': [/./],
+                      'margin-right': [/./],
+                      'border': [/./],
+                      'border-top': [/./],
+                      'border-bottom': [/./],
+                      'border-left': [/./],
+                      'border-right': [/./],
+                      'border-width': [/./],
+                      'border-top-width': [/./],
+                      'border-bottom-width': [/./],
+                      'border-left-width': [/./],
+                      'border-right-width': [/./],
+                      'border-color': [/./],
+                      'border-style': [/./],
+                      'border-radius': [/./],
+                      'flex-shrink': [/./],
+                      'line-height': [/./],
+                      'list-style': [/./],
+                      'transition': [/./],
                     },
-                },
-                allowedIframeHostnames: ['www.youtube.com', 'www.youtube-nocookie.com', 'youtu.be']
-              }) 
-            }}
-          />
+                  },
+                  allowedIframeHostnames: ['www.youtube.com', 'www.youtube-nocookie.com', 'youtu.be']
+                }) 
+              }}
+            />
 
-          <div className="mt-20 pt-8 border-t border-lines flex flex-col md:flex-row items-start gap-6">
-            <Link 
-              href={`/autor/${articulo.perfiles?.slug || articulo.autor_id}`} 
-              className="w-16 h-16 rounded-full overflow-hidden border border-lines relative block shrink-0"
-              aria-hidden="true"
-              tabIndex={-1}
-            >
-              <Image className="object-cover transition-all duration-700" alt="" src={articulo.perfiles?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="64px"/>
-            </Link>
-            <div>
-              <h3 id="author-heading" className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">{dict.article.aboutAuthor}</h3>
-              <p className="font-sans text-lg text-charcoal/80">
-                <Link 
-                  href={`/${lang}/autor/${articulo.perfiles?.slug || articulo.autor_id}`} 
-                  className="hover:text-gold transition-colors font-serif font-bold text-charcoal"
-                  aria-describedby="author-heading"
-                >
-                  {articulo.perfiles?.nombre || dict.article.unknownAuthor}
-                </Link> {dict.article.contributorOf} {SITE_NAME}.
-              </p>
-              {((articulo.perfiles?.slug && dict.authors && (dict.authors as Record<string, string>)[articulo.perfiles.slug]) || articulo.perfiles?.bio) && (
-                <p className="font-sans text-base text-charcoal/70 mt-3 leading-relaxed max-w-2xl">
-                  {(articulo.perfiles?.slug && dict.authors && (dict.authors as Record<string, string>)[articulo.perfiles.slug]) || articulo.perfiles?.bio}
+            <div className="mt-20 pt-8 border-t border-lines flex flex-col md:flex-row items-start gap-6">
+              <Link 
+                href={`/${lang}/autor/${publication.author.slug || publication.author.id}`} 
+                className="w-16 h-16 rounded-full overflow-hidden border border-lines relative block shrink-0"
+                aria-hidden="true"
+                tabIndex={-1}
+              >
+                <Image
+                  className="object-cover transition-all duration-700"
+                  alt=""
+                  src={publication.author.avatar_url || DEFAULT_AVATAR_URL}
+                  fill
+                  sizes="64px"
+                />
+              </Link>
+              <div>
+                <h3 id="author-heading" className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">
+                  {dict.article.aboutAuthor}
+                </h3>
+                <p className="font-sans text-lg text-charcoal/80">
+                  <Link 
+                    href={`/${lang}/autor/${publication.author.slug || publication.author.id}`} 
+                    className="hover:text-gold transition-colors font-serif font-bold text-charcoal"
+                    aria-describedby="author-heading"
+                  >
+                    {publication.author.full_name || dict.article.unknownAuthor}
+                  </Link> {dict.article.contributorOf} {SITE_NAME}.
                 </p>
-              )}
+                {authorBioFinal && (
+                  <p className="font-sans text-base text-charcoal/70 mt-3 leading-relaxed max-w-2xl">
+                    {authorBioFinal}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
 
-          <CommentsSection articuloId={articulo.id} />
-        </article>
+            <CommentsSection publicationId={publication.id} />
+          </article>
         </ArticleScrollManager>
-        {articulo.estado === ARTICLE_STATES.PENDING && profile && ['admin', 'escritor'].includes(profile.rol) && (
-          <ReviewActionBar articuloId={articulo.id} />
+        {publication.status === PUBLICATION_STATUSES.IN_REVIEW && profile && ['admin', 'founder', 'escritor'].includes(profile.role) && (
+          <ReviewActionBar articuloId={publication.id} />
         )}
       </main>
     </>

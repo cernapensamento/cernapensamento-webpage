@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import Image from 'next/image';
+import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
 import PasswordForm from '@/components/forms/PasswordForm';
@@ -9,24 +10,35 @@ import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 import { handleSignOut } from '@/actions/auth';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
+import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
+import type { UserRow } from '@/lib/db/types';
 
-export default function ProfileDashboard({ profile, user }: { profile: any, user: any }) {
-  const [nombre, setNombre] = useState(profile?.nombre || '');
-  const [bio, setBio] = useState(profile?.bio || '');
+export interface ProfileDashboardProps {
+  profile: (UserRow & { rol?: string; nombre?: string; recibir_newsletter?: boolean }) | null;
+  user: User;
+}
+
+export default function ProfileDashboard({ profile, user }: ProfileDashboardProps) {
+  const params = useParams();
+  const lang = (params?.lang as string) || 'es';
+  const dict = lang === 'es' ? esDict : glDict;
+  const dashDict = dict.dashboard;
+
+  const currentBio = typeof profile?.bio === 'object' && profile?.bio !== null
+    ? (profile.bio[lang as 'gl' | 'es'] || profile.bio.gl || profile.bio.es || '')
+    : (typeof profile?.bio === 'string' ? profile.bio : '');
+
+  const [nombre, setNombre] = useState(profile?.full_name || profile?.nombre || '');
+  const [bio, setBio] = useState(currentBio);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
-  const [recibirNewsletter, setRecibirNewsletter] = useState(profile?.recibir_newsletter ?? true);
+  const [recibirNewsletter, setRecibirNewsletter] = useState(profile?.newsletter_subscribed ?? profile?.recibir_newsletter ?? true);
   const [loading, setLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
   
   const isEmailAuth = user?.app_metadata?.providers?.includes('email');
-  
   const router = useRouter();
-  const params = useParams();
-  const lang = (params?.lang as string) || 'es';
-  const dict = lang === 'es' ? esDict : glDict;
-  const dashDict = dict.dashboard;
   const supabase = createClient();
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -35,10 +47,19 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
     setMessage('');
 
     try {
+      const bioPayload = typeof profile?.bio === 'object' && profile?.bio !== null
+        ? { ...profile.bio, [lang]: bio }
+        : { gl: bio, es: bio };
+
       const { error } = await supabase
-        .from('perfiles')
-        .update({ nombre, bio, avatar_url: avatarUrl, recibir_newsletter: recibirNewsletter })
-        .eq('id', profile?.id || user?.id);
+        .from(DB_TABLES.USERS)
+        .update({
+          [USER_COLS.FULL_NAME]: nombre,
+          [USER_COLS.BIO]: bioPayload,
+          [USER_COLS.AVATAR_URL]: avatarUrl,
+          [USER_COLS.NEWSLETTER_SUBSCRIBED]: recibirNewsletter,
+        })
+        .eq(USER_COLS.ID, profile?.id || user?.id);
 
       if (error) throw error;
       setMessage(dashDict.profileSaved);
@@ -100,9 +121,9 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
 
       // Auto-save to DB immediately so refresh doesn't lose the new image
       const { error: updateError } = await supabase
-        .from('perfiles')
-        .update({ avatar_url: urlData.publicUrl })
-        .eq('id', profile?.id || user?.id);
+        .from(DB_TABLES.USERS)
+        .update({ [USER_COLS.AVATAR_URL]: urlData.publicUrl })
+        .eq(USER_COLS.ID, profile?.id || user?.id);
       if (updateError) {
         console.error('Error al guardar avatar en DB:', updateError.message);
       } else {
@@ -154,7 +175,23 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
           <div>
             <h3 className="font-serif text-2xl sm:text-3xl text-charcoal mb-1">{nombre || dashDict.personalData}</h3>
             <p className="font-sans text-[10px] sm:text-xs text-gold uppercase tracking-[0.2em] font-bold">
-              {profile?.rol === 'admin' ? dashDict.admin : profile?.rol === 'escritor' ? dashDict.writer : profile?.rol === 'invitado' ? dashDict.guest : dashDict.reader}
+              {(() => {
+                const role = profile?.role || profile?.rol;
+                switch (role) {
+                  case 'admin':
+                    return dashDict.admin;
+                  case 'founder':
+                  case 'escritor':
+                    return dashDict.founder || dashDict.writer;
+                  case 'member':
+                    return dashDict.member || 'Membro';
+                  case 'guest':
+                  case 'invitado':
+                    return dashDict.guest;
+                  default:
+                    return dashDict.reader;
+                }
+              })()}
             </p>
           </div>
         </div>
@@ -218,7 +255,6 @@ export default function ProfileDashboard({ profile, user }: { profile: any, user
               </label>
             </div>
           </form>
-
 
           {/* Password Form */}
           {isEmailAuth && (

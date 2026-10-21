@@ -28,14 +28,16 @@ export async function GET(request: NextRequest) {
       // Check user profile for role
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        const jwtRole = user.app_metadata?.user_role;
         const { data: profile } = await supabase
-          .from('perfiles')
-          .select('rol')
+          .from('users')
+          .select('role')
           .eq('id', user.id)
           .single()
         
-        const rol = profile?.rol
-        const redirectPath = (rol === 'escritor' || rol === 'admin') ? '/escritorio' : '/escritorio/perfil'
+        const role = jwtRole || profile?.role;
+        const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || role === 'escritor';
+        const redirectPath = canAccessDesk ? '/escritorio' : '/escritorio/perfil'
         return NextResponse.redirect(`${origin}${redirectPath}`)
       }
 

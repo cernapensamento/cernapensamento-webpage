@@ -31,18 +31,20 @@ export const ArticleIndex = Node.create({
         parseHTML: (element) => {
           try {
             const raw = JSON.parse(element.getAttribute('data-items') || '[]');
-            return raw.map((item: any) => {
+            return raw.map((item: Record<string, unknown>) => {
               if (Array.isArray(item.path)) {
-                return item as IndexItem;
+                return item as unknown as IndexItem;
               }
               // Migration for legacy structural format
               const numStr = typeof item.num === 'string' ? item.num : '';
               const parts = numStr.split('.').filter(Boolean).map(Number);
+              const text = typeof item.text === 'string' ? item.text : '';
+              const slug = typeof item.slug === 'string' ? item.slug : '';
               return {
                 path: parts.length > 0 ? parts : [1],
-                text: item.text || '',
-                slug: item.slug || '',
-              } as IndexItem;
+                text,
+                slug,
+              } as unknown as IndexItem;
             });
           } catch {
             return [];
