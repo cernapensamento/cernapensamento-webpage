@@ -1,26 +1,66 @@
 import React from 'react';
-import { SITE_NAME } from '@/lib/constants';
+import Link from 'next/link';
 
-export default function ContactSection({ dict }: { dict: { tag?: string; title?: string; description: string; button?: string } }) {
+export interface ContactDict {
+  tag?: string;
+  title?: string;
+  description?: string;
+  button?: string;
+  emailLabel?: string;
+  email?: string;
+}
+
+interface ContactSectionProps {
+  lang: string;
+  dict?: ContactDict;
+}
+
+export default function ContactSection({ lang, dict }: ContactSectionProps) {
+  if (!dict) return null;
+
   return (
-    <section className="w-full py-24 bg-parchment border-t border-lines relative overflow-hidden">
-      
-      <div className="max-w-[800px] mx-auto px-5 md:px-16 text-center flex flex-col items-center">
-        <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-4">{dict.tag}</span>
-        <h2 className="font-serif text-4xl md:text-5xl text-charcoal mb-8">{dict.title}</h2>
+    <section 
+      aria-label="Contacto e colaboración"
+      className="w-full bg-surface border-t border-lines py-16 sm:py-24 px-5 md:px-16 transition-colors"
+    >
+      <div className="max-w-[1120px] mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
         
-        <p className="font-sans text-lg text-charcoal/80 leading-relaxed mb-12 max-w-2xl">
-          {dict.description.replace('{site_name}', SITE_NAME)}
-        </p>
+        {/* Left Headline & Description */}
+        <div className="max-w-2xl">
+          {dict.tag && (
+            <span className="text-xs font-bold text-gold uppercase tracking-[0.2em] block mb-3">
+              {dict.tag}
+            </span>
+          )}
+          {dict.title && (
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-charcoal font-bold tracking-tight leading-tight mb-4">
+              {dict.title}
+            </h2>
+          )}
+          {dict.description && (
+            <p className="font-sans text-base sm:text-lg text-charcoal/75 leading-relaxed max-w-xl">
+              {dict.description}
+            </p>
+          )}
+        </div>
 
-        <a 
-          href="mailto:contacto@cernapensamento.org" 
-          className="group relative inline-flex items-center justify-center gap-4 px-8 py-5 bg-charcoal text-parchment font-sans text-sm md:text-base uppercase tracking-[0.2em] transition-all duration-500 hover:bg-gold hover:text-charcoal shadow-[0_10px_40px_rgba(0,0,0,0.2)] hover:-translate-y-1 w-full sm:w-auto"
-        >
-          <span className="material-symbols-outlined text-[24px] transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110">mail</span>
-          <span>{dict.button}</span>
-        </a>
-        
+        {/* Right Action Button & Secondary Contact */}
+        <div className="flex flex-col items-start lg:items-end gap-3 shrink-0">
+          <Link
+            href={`/${lang}/contacto`}
+            className="btn-primary text-xs tracking-[0.15em] font-bold"
+          >
+            <span>{dict.button}</span>
+            <span aria-hidden="true">→</span>
+          </Link>
+          <a
+            href={`mailto:${dict.email || 'contacto@cernapensamento.org'}`}
+            className="text-xs text-charcoal/65 hover:text-charcoal underline underline-offset-4 transition-colors font-sans"
+          >
+            {dict.emailLabel ? `${dict.emailLabel} ${dict.email || 'contacto@cernapensamento.org'}` : 'contacto@cernapensamento.org'}
+          </a>
+        </div>
+
       </div>
     </section>
   );

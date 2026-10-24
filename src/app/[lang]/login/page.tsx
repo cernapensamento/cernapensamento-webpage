@@ -71,6 +71,23 @@ export default function LoginPage() {
     return null;
   });
 
+  const handleGoogleAuth = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : loginDict.googleAuthError);
+      setLoading(false);
+    }
+  }, [supabase, loginDict]);
+
   const handleIdTokenSuccess = useCallback(async (response: GoogleCredentialResponse) => {
     if (!response.credential) return;
     setLoading(true);
@@ -103,11 +120,17 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : '';
+      if (errorMsg.includes('Unacceptable audience') || errorMsg.toLowerCase().includes('audience')) {
+        console.warn('Google One-Tap audience mismatch. Falling back to standard Google OAuth...', err);
+        await handleGoogleAuth();
+        return;
+      }
       setError(err instanceof Error ? err.message : loginDict.googleAuthError);
     } finally {
       setLoading(false);
     }
-  }, [supabase, router, lang, loginDict]);
+  }, [supabase, router, lang, loginDict, handleGoogleAuth]);
 
   const initGoogleIdentity = useCallback(() => {
     if (typeof window === 'undefined' || !googleClientId || !window.google?.accounts?.id) return;
@@ -135,23 +158,6 @@ export default function LoginPage() {
   useEffect(() => {
     initGoogleIdentity();
   }, [initGoogleIdentity]);
-
-  const handleGoogleAuth = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) throw error;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : loginDict.googleAuthError);
-      setLoading(false);
-    }
-  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,7 +201,7 @@ export default function LoginPage() {
           router.refresh();
         }
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -204,6 +210,16 @@ export default function LoginPage() {
           }
         });
         if (error) throw error;
+
+        // Supabase returns an empty identities array if user already exists
+        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+          setError(loginDict.userAlreadyExists || (lang === 'gl' 
+            ? 'Este correo electrónico xa está rexistrado. Por favor, inicia sesión ou recupera o teu contrasinal.' 
+            : 'Este correo electrónico ya está registrado. Por favor, inicia sesión o recupera tu contraseña.'));
+          setLoading(false);
+          return;
+        }
+
         setError(null);
         setSuccessMessage(loginDict.signupSuccess);
         setIsLogin(true);

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
@@ -219,6 +220,14 @@ export default function ContactForm() {
                         <label htmlFor="guidelines" className="font-sans text-xs text-charcoal/80 cursor-pointer hover:text-charcoal select-none transition-colors">
                             {dict.agreement}
                         </label>
+                        <Link
+                            href={`/${routeLang}/privacidad`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1 inline-block font-sans text-[11px] text-gold underline decoration-gold/40 underline-offset-2 transition-colors hover:text-charcoal"
+                        >
+                            {dict.privacyLink}
+                        </Link>
                         {errors.guidelines && <span id="guidelines-error" role="alert" className="text-error text-xs mt-1 block">{errors.guidelines}</span>}
                     </div>
                 </div>

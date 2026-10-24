@@ -11,6 +11,7 @@ import { renderMathInHtml } from '@/lib/editor/renderMath';
 import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 import CommentsSection from '@/components/features/CommentsSection';
+import ArticleDownload from '@/components/features/ArticleDownload';
 import ArticleScrollManager from '@/components/features/ArticleScrollManager';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
@@ -279,6 +280,14 @@ export default async function ArticuloPage({
             </div>
 
             <CommentsSection publicationId={publication.id} />
+
+            <ArticleDownload
+              href={`/api/articulo/${publication.slug}/pdf?lang=${lang}`}
+              eyebrow={dict.article.download.eyebrow}
+              title={dict.article.download.title}
+              description={dict.article.download.description}
+              cta={dict.article.download.cta}
+            />
           </article>
         </ArticleScrollManager>
         {publication.status === PUBLICATION_STATUSES.IN_REVIEW && profile && ['admin', 'founder', 'escritor'].includes(profile.role) && (

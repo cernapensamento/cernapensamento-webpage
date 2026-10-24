@@ -108,12 +108,26 @@ cerna/
   Keep components as Server Components unless interactivity, state, event listeners, or browser APIs require `'use client'`.
 
 ### 4.2. Internationalization (i18n) Rules
+* **Mandatory i18n Standard via Dictionaries:**  
+  Cerna is a bilingual platform (`gl` default, `es`). **All public UI text, menu labels, button text, badges, placeholders, and link descriptions must be retrieved strictly from `src/dictionaries/gl.json` and `src/dictionaries/es.json`**. Never hardcode raw user-facing strings in TSX components or pages.
 * **Bilingual Parity:**  
-  Every public UI string must exist in both `src/dictionaries/gl.json` and `src/dictionaries/es.json`. Never hardcode raw strings in components.
+  Every dictionary key added to `src/dictionaries/gl.json` must exist with its translation in `src/dictionaries/es.json`. Regressions where a key exists only in one language break the UI and are strictly disallowed.
+* **No Hardcoded URLs / Enforce Dynamic Locale Prefixing:**  
+  **Never write hardcoded, unlocalized URLs** (e.g. `<Link href="/articulos">`, `<Link href="/contacto">`, or `router.push('/login')`).  
+  All internal links and programmatic redirects must strictly use the active locale prefix:
+  ```tsx
+  // ❌ FORBIDDEN:
+  <Link href="/articulos">Arquivo</Link>
+  <Link href="/gl/articulos">Arquivo</Link> // Hardcoded locale
+
+  // ✅ CORRECT:
+  <Link href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
+  <Link href={`/${lang}/articulo/${slug}`}>{title}</Link>
+  ```
 * **Database Multilingual Fields:**  
-  Publications and user profiles use unified JSONB fields: `title` (`{ gl, es }`), `subtitle` (`{ gl, es }`), `content` (`{ gl, es }`), and `bio` (`{ gl, es }`). Always supply both language variants.
-* **Path Prefixing:**  
-  All localized routes must begin with `/${lang}/` (`/gl` or `/es`). Use the helper `LanguageToggle` or construct internal links using `/${lang}/...`.
+  Publications and user profiles use unified JSONB fields: `title` (`{ gl, es }`), `subtitle` (`{ gl, es }`), `content` (`{ gl, es }`), and `bio` (`{ gl, es }`). Always supply and handle both language variants.
+* **Path Prefixing & Middleware Routing:**  
+  All public and private app routes live under `src/app/[lang]/`. The perimeter edge middleware (`src/proxy.ts`) enforces locale detection and redirection to `/${lang}/...`. Components must never bypass this structure.
 
 ### 4.3. Data Access Layer (DAL) & Supabase Guardrails
 * **Zero Magic Strings:**  
@@ -214,10 +228,60 @@ npm run build
 3. In Server Components, retrieve via `const dict = await getDictionary(lang);`.
 4. In Client Components, retrieve via `getDictionaryClient(lang)` or pass down from the parent Server Component.
 
-### Applying Database Changes
-1. Dump or synchronize schema changes via the Supabase CLI:
-   ```bash
-   npx supabase db dump --project-ref <project-ref> -f database/full_schema.sql
-   ```
-2. Update constants in `src/lib/db/schema.ts` and types in `src/lib/db/types.ts`.
-3. Update relevant DAL queries in `src/lib/db/queries/`.
+### Local Database Development & Migration Workflow (Supabase CLI)
+
+To protect production and staging databases, **all database changes must be developed and tested locally** using the Supabase CLI Docker stack before being promoted to remote environments.
+
+#### 1. Managing the Local Supabase Stack
+* **Start local stack:** `npm run db:start` (starts PostgreSQL, GoTrue Auth, Storage, Studio, and Inbucket).
+* **Stop local stack:** `npm run db:stop`.
+* **Reset local database:** `npm run db:reset` (wipes local DB, applies all `supabase/migrations/` in sequence, and runs `supabase/seed.sql`).
+* **Check local status & keys:** `npm run db:status`.
+
+#### 2. Local Environment Endpoints
+* **API URL:** `http://127.0.0.1:54321`
+* **Local Studio Dashboard:** `http://127.0.0.1:54323`
+* **Local Inbucket (Email Inbox):** `http://127.0.0.1:54324` (captures confirmation and password recovery emails locally).
+* **Local DB Port:** `54322`
+
+#### 3. Local Seed & Test Accounts
+Running `npm run db:reset` populates `supabase/seed.sql` with the public taxonomy, sample publications, storage bucket `imagenes-articulos`, and pre-configured test users (password for all: `Password123!`):
+* **Diego Araújo (Founder):** `diegoaraujo@cernapensamento.org`
+* **Héctor González (Founder):** `hectorgonzalez@cernapensamento.org`
+* **Denís Fernández (Founder):** `denisfernandez@cernapensamento.org`
+* **Anxo Pérez (Founder):** `anxoperez@cernapensamento.org`
+* **Admin:** `admin@cernapensamento.org`
+* **Guest Author:** `lucia.vazquez@cerna.org`
+* **Member:** `martino.rodriguez@cerna.org`
+* **Reader:** `lector@cerna.org`
+
+#### 4. Applying Schema Changes (Local → Remote)
+1. **Create an incremental migration:**
+   * Either create an empty migration file:
+     ```bash
+     npx supabase migration new <descriptive_name>
+     ```
+   * Or apply changes in Local Studio (`http://127.0.0.1:54323`) and auto-generate the SQL diff:
+     ```bash
+     npx supabase db diff -f <descriptive_name>
+     ```
+2. **Verify locally:**
+   * Run `npm run db:reset` to ensure the new migration applies cleanly on an empty database alongside `supabase/seed.sql`.
+3. **Synchronize Codebase DAL:**
+   * Update schema constants in `src/lib/db/schema.ts` (`DB_TABLES`, column names, enums).
+   * Update row types and models in `src/lib/db/types.ts` (or run `npx supabase gen types typescript --local`).
+   * Update DAL queries in `src/lib/db/queries/`.
+   * Run `npm run lint` and `npm run build` to catch type or query regressions.
+4. **Deploy Migrations to Remote / Production:**
+   * Link to the remote project once:
+     ```bash
+     npx supabase link --project-ref <remote-project-ref>
+     ```
+   * Push pending migrations:
+     ```bash
+     npx supabase db push
+     ```
+   * Update the canonical schema dump:
+     ```bash
+     npx supabase db dump --local -f database/full_schema.sql
+     ```

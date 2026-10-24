@@ -11,7 +11,27 @@
     "login": "Acceder",
     "logout": "Cerrar Sesión",
     "asociacion": "La Asociación",
-    "noticias": "Noticias"
+    "noticias": "Noticias",
+    "publicaciones": "Publicaciones",
+    "todasPublicaciones": "TODAS LAS PUBLICACIONES",
+    "conoceAsociacion": "CONOCE LA ASOCIACIÓN",
+    "todosAutores": "TODOS LOS AUTORES",
+    "artigosOpinion": "Artículos de Opinión",
+    "artigosDesc": "Columnas semanales y análisis de actualidad.",
+    "ensaiosFilosoficos": "Ensayos Filosóficos",
+    "ensaiosDesc": "Monografías extensas sobre economía, política y sociedad.",
+    "coleccionNarrativa": "Colección Narrativa",
+    "narrativaDesc": "Prosa contemporánea y ficción editorial.",
+    "coleccionPoesia": "Colección Poesía",
+    "poesiaDesc": "Creación poética y lírica.",
+    "proxectoManifesto": "El Proyecto y Manifiesto",
+    "proxectoDesc": "Principios fundacionales e ideario de Cerna.",
+    "estatutosSociais": "Estatutos Sociales",
+    "estatutosDesc": "Normativa interna y marco jurídico de la asociación.",
+    "coleccionsEditoriais": "Colecciones Editoriales",
+    "coleccionsDesc": "Las cuatro ramas de publicación de nuestro sello.",
+    "verTodoArquivo": "Ver todo el archivo →",
+    "noticiasYAvisos": "Noticias y Avisos"
   },
   "footer": {
     "rights": "Todos los derechos reservados.",
@@ -20,7 +40,34 @@
       "privacidad": "Política de Privacidad",
       "contacto": "Contacto",
       "asociacion": "La Asociación"
-    }
+    },
+    "brandDescription": "Revista digital de pensamiento, filosofía política, economía y cultura. Un proyecto editorial independiente comprometido con el debate riguroso y la libertad de pensamiento en Galicia.",
+    "location": "Galicia, España",
+    "columns": {
+      "publications": {
+        "title": "PUBLICACIONES",
+        "opinion": "Artículos de Opinión",
+        "essays": "Ensayos Filosóficos",
+        "narrative": "Colección Narrativa",
+        "poetry": "Colección Poesía",
+        "generalArchive": "Archivo General"
+      },
+      "association": {
+        "title": "ASOCIACIÓN",
+        "project": "El Proyecto",
+        "statutes": "Estatutos",
+        "news": "Noticias y Avisos",
+        "join": "Asociarse"
+      },
+      "cerna": {
+        "title": "CERNA",
+        "authors": "Autores y Firmas",
+        "contact": "Contacto",
+        "authorDesk": "Escritorio de Autor",
+        "login": "Iniciar Sesión"
+      }
+    },
+    "privacy": "Privacidad"
   },
   "common": {
     "readMore": "Leer más",
@@ -34,7 +81,27 @@
     "paragraph1": "CERNA nace de la convicción de que las mejores ideas surgen lejos del ruido y la urgencia que caracterizan buena parte del debate público actual. De este modo, aspiramos a crear un espacio de diálogo y reflexión alejado de la demagogia y la polarización.",
     "paragraph2": "Formamos un grupo de autores que se resisten a encajar la realidad en una sola disciplina. Filosofía, economía, derecho, ciencia, literatura y cultura conviven en nuestras páginas con la misma naturalidad con que se cruzan en la vida cotidiana, porque estamos convencidos de que comprender el mundo exige mirar más allá de los límites estrechos de una especialización aislada.",
     "paragraph3": "Escribimos desde la libertad individual y la responsabilidad que la acompaña, con la honestidad intelectual y el rigor como únicas fronteras. Más que una asociación, CERNA quiere ser un espacio de encuentro: una comunidad de pensamiento irrestricto, con la única limitación del respeto por el pensamiento ajeno.",
-    "button": "Nuestro Proyecto Editorial"
+    "button": "Nuestro Proyecto Editorial",
+    "pullQuote": "La difusión del pensamiento crítico y el análisis multidisciplinar como compromiso con la libertad intelectual.",
+    "pillars": [
+      {
+        "num": "01",
+        "title": "Independencia Radical",
+        "desc": "Sin ataduras partidistas ni subvenciones que condicionen el criterio."
+      },
+      {
+        "num": "02",
+        "title": "Rigor Dialéctico",
+        "desc": "Ensayos argumentados y debate sosegado frente a la urgencia del titular."
+      },
+      {
+        "num": "03",
+        "title": "Diálogo Abierto",
+        "desc": "Comunidad de autores diversos unidos por la honestidad intelectual."
+      }
+    ],
+    "secondaryButton": "Consultar los Estatutos Sociales",
+    "legalFramework": "Marco Jurídico & Ideología"
   },
   "documentTypes": {
     "article": "Artículo",
@@ -64,7 +131,47 @@
       "Historia",
       "Crítica Social"
     ],
-    "exploreButton": "Explorar el archivo de artículos"
+    "exploreButton": "Explorar el archivo de artículos",
+    "items": [
+      {
+        "id": "01",
+        "title": "Economía",
+        "desc": "Teoría del valor, Escuela Austríaca, política monetaria, comercio y mercados libres."
+      },
+      {
+        "id": "02",
+        "title": "Filosofía",
+        "desc": "Ética, epistemología, filosofía política clásica e historia de las ideas morales."
+      },
+      {
+        "id": "03",
+        "title": "Literatura y Poesía",
+        "desc": "Creación poética contemporánea, ficción en prosa, ensayo lírico y crítica de textos."
+      },
+      {
+        "id": "04",
+        "title": "Derecho y Justicia",
+        "desc": "Marco institucional, estado de derecho, separación de poderes y libertades individuales."
+      },
+      {
+        "id": "05",
+        "title": "Ciencia y Divulgación",
+        "desc": "Metodología empírica, evolución tecnológica, teoría de la información y progreso humano."
+      },
+      {
+        "id": "06",
+        "title": "Historia",
+        "desc": "Historia de Galicia, evolución institucional europea e hitos del pensamiento político."
+      },
+      {
+        "id": "07",
+        "title": "Crítica Social",
+        "desc": "Análisis de la esfera pública, educación, tendencias culturales y debate cívico abierto."
+      }
+    ],
+    "cardAction": "Ver publicaciones",
+    "searchPrompt": "¿Buscas un texto o autor en específico? Utiliza el buscador y los filtros temáticos en el archivo.",
+    "continuousScroll": "Desplazamiento continuo"
   },
   "articles": {
     "tag": "Archivo Histórico",
@@ -80,18 +187,31 @@
   "article": {
     "aboutAuthor": "Sobre el autor",
     "contributorOf": "es un contribuyente de",
-    "unknownAuthor": "Autor Desconocido"
+    "unknownAuthor": "Autor Desconocido",
+    "download": {
+      "eyebrow": "Copia impresa",
+      "title": "Lleva este texto contigo",
+      "description": "Genera una copia en PDF del artículo para leerlo sin conexión o guardarlo en tu archivo personal.",
+      "cta": "Descargar PDF"
+    }
   },
   "columnists": {
     "tag": "Nuestro Equipo",
     "title": "Columnistas de",
-    "publishedArticles": "Artículos publicados"
+    "publishedArticles": "Artículos publicados",
+    "emailLabel": "Correo",
+    "instagramLabel": "Instagram",
+    "founderBadge": "Miembro Fundador",
+    "viewAllAuthors": "Ver todos los autores"
   },
   "contact": {
-    "tag": "Contacto",
-    "title": "Hablemos",
-    "description": "¿Tienes alguna propuesta, duda o deseas colaborar con {site_name}? Nos encantaría escuchar tus ideas. Escríbenos directamente a nuestro correo y nos pondremos en contacto contigo.",
-    "button": "CORREO"
+    "tag": "Contacto y Colaboración",
+    "title": "Hablemos de ideas, pensamiento y futuro",
+    "description": "Cerna es un espacio de discusión abierto donde siempre buscamos nuevas voces y nuevas perspectivas. Puedes solicitar publicar artículos o vincularte a nosotros formando parte de la asociación. Envíanos tus propuestas y dudas, estaremos encantados de atenderlas.",
+    "button": "ENVÍA TU PROPUESTA",
+    "emailLabel": "o escríbenos directamente a",
+    "badge": "Compromiso de respuesta en 48h · Envíos evaluados por el Consejo Editorial",
+    "email": "contacto@cernapensamento.org"
   },
   "authorPage": {
     "articlesBy": "Artículos de",
@@ -123,6 +243,10 @@
     "publicationPlural": "publicaciones",
     "textSingular": "texto",
     "textPlural": "textos",
+    "breadcrumbsAria": "Migas de pan",
+    "typeFilterAria": "Filtro por tipo de publicación",
+    "featuredCoverAlt": "Portada del artículo destacado",
+    "thumbnailAlt": "Miniatura del artículo",
     "defaultMetaDescription": "Textos y ensayos de {name} en {site}."
   },
   "authors": {
@@ -147,6 +271,7 @@
     "noAccount": "¿No tienes cuenta? Solicita acceso",
     "alreadyAccount": "¿Ya tienes cuenta? Inicia sesión",
     "passError": "La contraseña debe tener al menos 6 caracteres.",
+    "userAlreadyExists": "Este correo electrónico ya está registrado. Por favor, inicia sesión o recupera tu contraseña.",
     "signupSuccess": "Registro exitoso. Por favor, revisa tu correo electrónico para confirmar tu cuenta.",
     "invalidToken": "El enlace de confirmación es inválido o ha expirado. Si ya te registraste, intenta iniciar sesión de nuevo para recibir otro enlace.",
     "googleAuthError": "Ha ocurrido un error durante la autenticación con Google.",
@@ -275,7 +400,8 @@
     "fileUpload": "Subir Archivo (PDF Opcional)",
     "selectFile": "Seleccionar Archivo",
     "uploadDesc": "PDF hasta 3.5MB",
-    "agreement": "He leído y acepto la política de privacidad y condiciones de envío.",
+    "agreement": "Declaro que el contenido es original e inédito y acepto la política de privacidad y las condiciones de envío.",
+    "privacyLink": "Consultar la política de privacidad",
     "errorSize": "El archivo excede los 3.5MB permitidos.",
     "errorType": "Solo se permiten archivos PDF.",
     "subjects": {
@@ -288,6 +414,51 @@
   "contactoPage": {
     "title": "Contacto",
     "description": "¿Tienes alguna duda, sugerencia o quieres ponerte en contacto con el equipo editorial? Escríbenos y te responderemos lo antes posible."
+  },
+  "privacyPage": {
+    "eyebrow": "Asociación Cerna Pensamento",
+    "title": "Política de Privacidad",
+    "metaDescription": "Información sobre el tratamiento de los datos personales y los derechos de las personas usuarias de Cerna Pensamento.",
+    "lastUpdatedLabel": "Última actualización",
+    "lastUpdated": "22 de octubre de 2026",
+    "contactNote": "Para ejercer tus derechos o formular cualquier consulta, escribe a"
+  },
+  "autoresPage": {
+    "eyebrow": "Directorio de autores",
+    "home": "Inicio",
+    "breadcrumbs": "Ruta de navegación",
+    "portraitOf": "Retrato de",
+    "title": "Las voces de Cerna",
+    "description": "Escritores, ensayistas y colaboradores que ya han publicado en nuestras páginas. Un mapa de las voces que construyen el pensamiento de Cerna.",
+    "metaDescription": "Directorio de los autores y autoras que han publicado en Cerna Pensamento. Consulta sus perfiles, publicaciones y líneas de pensamiento.",
+    "searchPlaceholder": "Buscar por nombre o biografía...",
+    "allTypes": "Todos los géneros",
+    "typeFilterLabel": "Género",
+    "sortLabel": "Ordenar por",
+    "sortRecent": "Actividad reciente",
+    "sortName": "Nombre",
+    "sortWorks": "Más publicaciones",
+    "authorCountSingular": "autor publicado",
+    "authorCountPlural": "autores publicados",
+    "publicationCountSingular": "publicación en el archivo",
+    "publicationCountPlural": "publicaciones en el archivo",
+    "publicationSingular": "publicación",
+    "publicationPlural": "publicaciones",
+    "showing": "Mostrando {shown} de {total}",
+    "latestWork": "Última publicación",
+    "viewProfile": "Ver perfil",
+    "noResults": "No encontramos autores con esos criterios.",
+    "clearFilters": "Limpiar filtros",
+    "resultsLabel": "Autores",
+    "collaborateEyebrow": "Publica en Cerna",
+    "collaborateTitle": "¿Tienes una idea que merece ser leída?",
+    "collaborateDescription": "Cerna está abierta a nuevas voces y perspectivas. Si escribes ensayo, artículo, narrativa o poesía, puedes enviarnos tu propuesta.",
+    "collaborateCta": "Enviar una propuesta",
+    "roles": {
+      "founder": "Fundador",
+      "editorialBoard": "Consejo",
+      "contributor": "Colaborador"
+    }
   },
   "editorial": {
     "hub": {
@@ -387,5 +558,146 @@
     "pendingArticles": "Artículos Pendientes de Aprobación",
     "review": "Revisar",
     "author": "Autor:"
+  },
+  "faq": {
+    "tag": "PREGUNTAS FRECUENTES",
+    "title": "Dudas y Preguntas Frecuentes",
+    "description": "Todo lo que necesitas saber sobre nuestra publicación, el proyecto asociativo y la participación abierta.",
+    "items": [
+      {
+        "question": "¿Qué es Cerna Pensamento?",
+        "answer": "Cerna Pensamento es una revista digital de pensamiento crítico, filosofía política, economía y creación literaria, así como una asociación cultural sin ánimo de lucro fundada en Galicia. El proyecto nace con el propósito de generar un espacio de debate sereno y riguroso en lengua gallega y castellana, alejado del ruido coyuntural y comprometido con la libertad intelectual y la calidad editorial."
+      },
+      {
+        "question": "¿Quién puede publicar?",
+        "answer": "Nuestra tribuna está abierta a cualquier autor, investigador o creador cuya propuesta cumpla con los criterios de calidad, rigor dialéctico y honestidad intelectual establecidos por el Consejo Editorial. Aceptamos artículos de opinión, ensayos monográficos, prosa narrativa y creación poética. Puedes remitir tu manuscrito o propuesta a través de nuestra sección de contacto o escribiendo a contacto@cernapensamento.org."
+      },
+      {
+        "question": "¿Qué tipo de organización es Cerna?",
+        "answer": "Cerna Pensamento es una organización de naturaleza asociativa, independiente y sin ánimo de lucro, constituida formalmente al amparo de la Ley Orgánica 1/2002 reguladora del derecho de asociación. Se financia mediante las aportaciones de sus miembros y mantiene total independencia de partidos políticos, instituciones gubernamentales o grupos de presión."
+      },
+      {
+        "question": "¿Dónde se encuentra localizada la asociación?",
+        "answer": "La asociación establece su sede y domicilio social en Cambados (provincia de Pontevedra, Galicia). Desarrolla su actividad tanto en el territorio gallego mediante encuentros presenciales, ciclos de conferencias y coloquios del programa Ágora Cerna, como a escala internacional a través de su edición digital abierta."
+      }
+    ],
+    "moreQuestions": "¿Tienes otra duda o propuesta para el Consejo Editorial?",
+    "contactUs": "Escríbenos a contacto@cernapensamento.org",
+    "statutesLink": "Estatutos Sociales →"
+  },
+  "mosaic": {
+    "noArticles": "No hay publicaciones disponibles en este momento.",
+    "pinnedTitle": "Artículos de Referencia",
+    "pinnedSubtitle": "Fijados por redacción",
+    "recentTitle": "Más Publicaciones Recientes",
+    "viewAll": "Ver todo el archivo",
+    "exploreAll": "Explorar el Archivo Completo",
+    "readArticle": "Leer artículo",
+    "by": "Por"
+  },
+  "associationAndNews": {
+    "badge": "Institución y Actualidad",
+    "title": "Asociación y Cuaderno de Noticias",
+    "description": "Un proyecto independiente comprometido con la difusión de toda clase de ideas mediante el ensayo riguroso.",
+    "associationCard": {
+      "tag": "La Asociación Cerna",
+      "title": "Pensamiento libre, diálogo y sociedad civil",
+      "description": "Constituida legalmente en Galicia, Cerna Pensamento articula una comunidad de escritores, investigadores y ciudadanos que defienden el rigor intelectual, la libertad individual y el debate sin tutelas ideológicas.",
+      "manifestoLink": "Manifiesto y principios fundacionales",
+      "statutesLink": "Estatutos oficiales de la asociación",
+      "collectionsLink": "Estructura y colecciones editoriales",
+      "button": "Conoce la Asociación"
+    },
+    "newsCard": {
+      "tag": "Cuaderno de Noticias",
+      "title": "Convocatorias, eventos y vida editorial",
+      "description": "Sigue el pulso de nuestras publicaciones, presentaciones de libros, colaboraciones académicas y comunicados institucionales en nuestro canal de noticias y actualidad.",
+      "previews": [
+        {
+          "category": "Editorial",
+          "title": "Apertura de la convocatoria de ensayos para el nuevo ciclo editorial"
+        },
+        {
+          "category": "Publicación",
+          "title": "Disponibles las cuatro colecciones: Ensayo, Poesía, Narrativa y Opinión"
+        },
+        {
+          "category": "Asociación",
+          "title": "Publicación del manifiesto y bases de afiliación para socios colaboradores"
+        }
+      ],
+      "button": "Ver todas las Noticias"
+    }
+  },
+  "hero": {
+    "tag": "Revista y Asociación",
+    "headlinePrefix": "Pensamiento libre,",
+    "headlineHighlight": "ideas y debate",
+    "description": "Cerna es una asociación, revista digital y comunidad independiente dedicada a promocionar las ideas y el debate en torno a la filosofía, la economía, las ciencias sociales y el pensamiento crítico. Un espacio de reflexión sosegada donde compartir opiniones, contrastarlas y avanzar con la palabra",
+    "primaryCta": "Conoce la Asociación",
+    "secondaryCta": "Explorar Publicaciones",
+    "manifestoLink": "Leer el Manifiesto Fundacional",
+    "exploreCta": "Explorar Publicaciones"
+  },
+  "errors": {
+    "404": {
+      "title": "Página Extraviada",
+      "description": "El documento que buscas no existe en nuestros archivos o ha sido retirado.",
+      "actionText": "Retornar a la Portada"
+    },
+    "500": {
+      "title": "Error de Sistema",
+      "description": "Ha ocurrido un error inesperado. Nuestros editores han sido notificados.",
+      "actionText": "Reintentar"
+    },
+    "403": {
+      "title": "Acceso Denegado",
+      "description": "No tienes permiso para acceder a este documento.",
+      "actionText": "Volver al Inicio"
+    },
+    "401": {
+      "title": "Identidad Requerida",
+      "description": "Debes iniciar sesión para acceder a estos archivos.",
+      "actionText": "Identificarse"
+    },
+    "400": {
+      "title": "Petición Inválida",
+      "description": "La solicitud enviada no puede ser procesada.",
+      "actionText": "Volver al Inicio"
+    }
+  },
+  "newsletter": {
+    "email": {
+      "brand": "CERNA PENSAMENTO",
+      "subjectPrefix": "Nueva publicación en Cerna: ",
+      "defaultTitle": "Nueva publicación",
+      "defaultBadge": "NUEVA PUBLICACIÓN",
+      "byline": "Por",
+      "readButton": "Leer la publicación completa",
+      "footerNote": "Recibes este correo porque te suscribiste a las notificaciones editoriales de Cerna Pensamento.",
+      "managePreferences": "Preferencias del perfil",
+      "unsubscribe": "Darse de baja",
+      "types": {
+        "article": "ARTÍCULO",
+        "essay": "ENSAYO",
+        "poetry": "POESÍA",
+        "narrativa": "NARRATIVA",
+        "narrative": "NARRATIVA",
+        "review": "RESEÑA"
+      }
+    },
+    "unsubscribePage": {
+      "brand": "Cerna Pensamento",
+      "successTitle": "Suscripción cancelada — Cerna Pensamento",
+      "successHeading": "Suscripción cancelada",
+      "successMessage": "Se ha cancelado tu suscripción a nuestro boletín para la dirección {email}. No recibirás más notificaciones de nuevas publicaciones.",
+      "errorTitle": "Error al cancelar la suscripción — Cerna Pensamento",
+      "errorHeading": "Enlace no válido",
+      "errorMessage": "El enlace de cancelación de suscripción no es válido o ha caducado.",
+      "dbErrorMessage": "Error en la base de datos al tramitar la baja.",
+      "internalErrorMessage": "Error interno al tramitar la baja.",
+      "returnHome": "Volver a la portada",
+      "manageProfile": "Gestionar preferencias en el perfil"
+    }
   }
 }

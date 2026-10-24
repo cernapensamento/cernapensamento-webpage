@@ -87,7 +87,7 @@ export default function CommentsSection({
   }, [targetId, fetchComments]);
 
   return (
-    <section className="w-full border-t border-lines pt-12 mt-8">
+    <section data-print="hide" className="w-full border-t border-lines pt-12 mt-8">
       <h3 className="font-serif text-2xl text-charcoal mb-8">Comentarios ({comentarios?.length || 0})</h3>
       
       <div className="flex flex-col gap-8 mb-12">
