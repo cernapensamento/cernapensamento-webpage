@@ -100,6 +100,14 @@ export default async function ArticuloPage({
             <span>•</span>
             <time dateTime={publication.created_at}>{fecha}</time>
           </div>
+          {publication.original_language && publication.original_language !== lang && (
+            <div className="text-[10px] text-charcoal/60 uppercase tracking-[0.15em] mt-3">
+              {lang === 'es' ? 'Idioma original:' : 'Idioma orixinal:'}{' '}
+              <Link href={`/${publication.original_language}/articulo/${publication.slug}`} className="text-gold font-bold hover:underline transition-all">
+                {publication.original_language.toUpperCase()}
+              </Link>
+            </div>
+          )}
         </header>
 
         {publication.cover_image_url && (
@@ -117,8 +125,8 @@ export default async function ArticuloPage({
           </div>
         )}
 
-        <ArticleScrollManager>
-          <article className="w-full max-w-prose px-5 md:px-0 mx-auto">
+        <ArticleScrollManager className="w-full">
+          <article className="w-full max-w-2xl px-5 md:px-0 mx-auto min-w-0">
             {publication.tags && publication.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-8">
                 {publication.tags.map((tag) => (
@@ -134,7 +142,7 @@ export default async function ArticuloPage({
             )}
 
             <div 
-              className={`prose prose-lg prose-charcoal max-w-none font-serif leading-relaxed article-content text-charcoal/90 ${isEnsaio ? 'text-justify [text-align-last:left] hyphenate' : ''}`}
+              className={`article-content ${isEnsaio ? 'article-content-essay' : ''}`}
               dangerouslySetInnerHTML={{ 
                 __html: sanitizeHtml(renderHeadingAnchors(renderMathInHtml(contenido)), {
                   allowedTags: [
@@ -145,23 +153,25 @@ export default async function ArticuloPage({
                     'math', 'semantics', 'mrow', 'mi', 'mn', 'mo', 'ms', 'mspace', 'mtext',
                     'mfrac', 'msqrt', 'mroot', 'msub', 'msup', 'msubsup', 'munder', 'mover',
                     'munderover', 'mtable', 'mtr', 'mtd', 'mpadded', 'mphantom', 'annotation',
-                    'svg', 'path', 'line', 'nav'
+                    'svg', 'path', 'line', 'nav', 'u', 's', 'sub', 'sup',
+                    'rect', 'mstyle', 'menclose'
                   ],
                   allowedAttributes: {
                     ...sanitizeHtml.defaults.allowedAttributes,
                     '*': ['class', 'style', 'id', 'data-type', 'data-items', 'data-colwidth'],
-                    img: ['src', 'alt', 'title', 'width', 'height', 'loading', 'class', 'style'],
-                    iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'class', 'style'],
+                    img: ['src', 'srcset', 'alt', 'title', 'width', 'height', 'loading', 'class', 'style'],
+                    iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'class', 'style', 'title'],
                     figure: ['class', 'style'],
                     figcaption: ['class', 'style'],
-                    div: ['class', 'style'],
-                    span: ['class', 'style', 'aria-hidden'],
+                    div: ['class', 'style', 'data-youtube-video', 'role', 'data-latex'],
+                    span: ['class', 'style', 'aria-hidden', 'data-latex', 'id'],
                     table: ['class', 'style'],
                     th: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
                     td: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
-                    col: ['style', 'class'],
+                    col: ['style', 'class', 'width'],
                     colgroup: ['style', 'class'],
-                    math: ['xmlns', 'display'],
+                    math: ['xmlns', 'display', 'alttext'],
+                    mstyle: ['displaystyle', 'scriptlevel', 'mathsize', 'mathcolor', 'mathbackground'],
                     mfrac: ['linethickness'],
                     mspace: ['width', 'height', 'depth'],
                     mpadded: ['width', 'height', 'depth', 'lspace', 'voffset'],
@@ -170,11 +180,14 @@ export default async function ArticuloPage({
                     svg: ['xmlns', 'width', 'height', 'viewBox', 'style', 'preserveAspectRatio'],
                     path: ['d'],
                     line: ['x1', 'x2', 'y1', 'y2', 'stroke', 'stroke-width'],
+                    rect: ['x', 'y', 'width', 'height', 'fill', 'stroke'],
                     nav: ['data-type', 'data-items', 'lang', 'class', 'style', 'aria-label'],
                     p: ['class', 'style'],
-                    ul: ['style'],
-                    li: ['style'],
-                    a: [...(sanitizeHtml.defaults.allowedAttributes['a'] ?? ['href']), 'style', 'class'],
+                    ul: ['style', 'class'],
+                    ol: ['style', 'class'],
+                    li: ['style', 'class'],
+                    a: [...(sanitizeHtml.defaults.allowedAttributes['a'] ?? ['href']), 'style', 'class', 'target', 'rel'],
+                    u: ['style', 'class'],
                     h1: ['id', 'style', 'class'],
                     h2: ['id', 'style', 'class'],
                     h3: ['id', 'style', 'class'],
