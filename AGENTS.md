@@ -189,12 +189,13 @@ Every agent working on this codebase must strictly adhere to the following 5-sta
 
 ### Stage 1: Isolated Git Worktree Creation
 * **Never work directly on `development` or `main`**:
-  Always create an isolated Git worktree on a separate branch branched off `development`:
+  Always create an isolated Git worktree inside the dedicated, ignored `.worktrees/` directory on a separate branch branched off `development`:
   ```bash
-  git worktree add ../cerna-<branch-name> -b <branch-name> development
-  cd ../cerna-<branch-name>
+  git worktree add .worktrees/<branch-name> -b <branch-name> development
+  cd .worktrees/<branch-name>
   ```
 * All code editing, dependency installations, and local testing must take place strictly inside this dedicated worktree directory.
+* The `.worktrees/` directory is git-ignored and excluded from TypeScript to avoid language server conflicts or watcher pollution.
 
 ### Stage 2: Surgical Implementation & Local Verification
 * **Plan before executing**: Review existing components, DAL queries in `src/lib/db/`, and codemaps in `docs/CODEMAPS/` before introducing new abstractions.
@@ -232,7 +233,7 @@ Every agent working on this codebase must strictly adhere to the following 5-sta
 
 ### Stage 5: Merge into Development & Worktree Cleanup
 * Once all micro-commits have been created on the feature branch:
-* Switch back to the primary repository folder and checkout `development`:
+* Switch back to the primary repository root folder and checkout `development`:
   ```bash
   cd /home/pablo/Projects/Cerna
   git checkout development
@@ -244,7 +245,7 @@ Every agent working on this codebase must strictly adhere to the following 5-sta
   ```
 * Remove the temporary worktree and clean up the local feature branch:
   ```bash
-  git worktree remove ../cerna-<branch-name>
+  git worktree remove .worktrees/<branch-name>
   git branch -d <branch-name>
   ```
 * For major production releases or client-facing milestones from `development` to `main`, adhere to [`docs/RELEASE_PROTOCOL.md`](docs/RELEASE_PROTOCOL.md).
