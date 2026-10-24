@@ -14,31 +14,31 @@ export default function RevealOnScroll({
   children,
   className = '',
   delayMs = 0,
-  threshold = 0.02,
+  threshold = 0.05,
   as: Component = 'div',
 }: RevealOnScrollProps) {
-  const [isVisible, setIsVisible] = useState(
-    () => typeof window !== 'undefined' && typeof IntersectionObserver === 'undefined'
-  );
+  const [isVisible, setIsVisible] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return typeof IntersectionObserver === 'undefined' ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
   const elementRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const el = elementRef.current;
     if (!el) return;
 
-    if (typeof IntersectionObserver === 'undefined') {
+    if (
+      typeof IntersectionObserver === 'undefined' ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
       return;
     }
 
-    // Safety fallback: reveal after 1.5s in case observer didn't trigger in background tab/screenshot
-    const fallbackTimer = setTimeout(() => {
-      setIsVisible(true);
-    }, 1500);
-
+    // Trigger strictly as the user scrolls into the viewport
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          clearTimeout(fallbackTimer);
           if (delayMs > 0) {
             const timer = setTimeout(() => {
               setIsVisible(true);
@@ -52,14 +52,14 @@ export default function RevealOnScroll({
       },
       {
         threshold,
-        rootMargin: '120px 0px 0px 0px',
+        // Negative bottom margin ensures the element animates strictly as the user scrolls it into view
+        rootMargin: '0px 0px -60px 0px',
       }
     );
 
     observer.observe(el);
 
     return () => {
-      clearTimeout(fallbackTimer);
       observer.disconnect();
     };
   }, [delayMs, threshold]);
