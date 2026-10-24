@@ -46,6 +46,9 @@ next-env.d.ts
 .agent/
 tsconfig.tsbuildinfo
 
+# git worktrees
+.worktrees/
+
 # Sentry Config File
 .env.sentry-build-plugin
 
