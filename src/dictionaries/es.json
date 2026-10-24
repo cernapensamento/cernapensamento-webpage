@@ -557,7 +557,15 @@
   "escritorio": {
     "pendingArticles": "Artículos Pendientes de Aprobación",
     "review": "Revisar",
-    "author": "Autor:"
+    "author": "Autor:",
+    "storage": {
+      "invalidFormat": "Solo se permiten imágenes JPG, PNG o WebP.",
+      "fileTooLarge": "La imagen supera el límite máximo de {max} MB.",
+      "uploadError": "Error al subir la imagen: {error}",
+      "uploadWait": "Por favor, espera a que terminen de subirse las imágenes.",
+      "captionPrompt": "Opcional: Añade una leyenda o pie de foto para esta imagen:",
+      "sessionRequired": "Debes iniciar sesión para subir imágenes."
+    }
   },
   "faq": {
     "tag": "PREGUNTAS FRECUENTES",
