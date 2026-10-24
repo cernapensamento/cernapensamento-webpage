@@ -1,7 +1,7 @@
 # Database & Storage Codemap — Cerna Pensamento
 
 **Última actualización:** 2026-09-17  
-**Puntos de entrada:** `database/schema_global_actualizado.sql`, `src/utils/supabase/`
+**Puntos de entrada:** `database/schema_global_actualizado.sql`, `src/lib/supabase/`
 
 ---
 

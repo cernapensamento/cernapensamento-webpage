@@ -3,7 +3,7 @@
  * Optimized aggregates for multi-section layouts (e.g. Homepage).
  */
 
-import { createClient as createServerClient } from '@/utils/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   PublicationCardItem,

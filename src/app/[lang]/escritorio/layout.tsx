@@ -1,5 +1,5 @@
 import React from 'react';
-import { getAuthenticatedUser } from '@/utils/auth';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import EscritorioShell from '@/components/escritorio/EscritorioShell';
 

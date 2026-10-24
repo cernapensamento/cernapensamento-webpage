@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { DB_TABLES, COMMENT_COLS } from '@/lib/db/schema';
 
 export default function CommentForm({

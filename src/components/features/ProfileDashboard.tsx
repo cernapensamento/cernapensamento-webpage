@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import type { User } from '@supabase/supabase-js';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
 import PasswordForm from '@/components/forms/PasswordForm';
 import { DEFAULT_AVATAR_URL } from '@/lib/constants';

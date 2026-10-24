@@ -3,7 +3,7 @@
  * Typed queries for user discussions and feedback on publications.
  */
 
-import { createClient as createServerClient } from '@/utils/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
 import { DB_TABLES, COMMENT_COLS, USER_COLS } from '../schema';
 import type { CommentItem, CommentRow } from '../types';

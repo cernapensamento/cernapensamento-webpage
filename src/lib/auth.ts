@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
 import type { UserRow, UserRole } from '@/lib/db/types';
 

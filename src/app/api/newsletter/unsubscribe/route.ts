@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getDictionary } from '@/dictionaries';
 import { renderUnsubscribeHtml } from '@/lib/email/newsletter-template';
-import { verifyUnsubscribeToken, getSiteBaseUrl } from '@/utils/newsletter';
+import { verifyUnsubscribeToken, getSiteBaseUrl } from '@/lib/email/newsletter';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
 import ArticleEditor, { ArticleData, EditorAction } from '@/components/escritorio/ArticleEditor';
 import {

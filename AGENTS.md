@@ -71,14 +71,18 @@ cerna/
 │   │   └── ui/                   # Shared UI primitives (SocialLinks, ThemeToggle, LanguageToggle)
 │   ├── dictionaries/             # Canonical i18n JSONs: gl.json (default), es.json
 │   ├── hooks/                    # React hooks (useAuth, useLocale)
-│   ├── lib/                      # Editor extensions, KaTeX renderer, constants, columnist metadata
-│   │   └── db/                   # Strongly-Typed Data Access Layer (DAL)
-│   │       ├── schema.ts         # Constants: DB_TABLES, column names, enums
-│   │       ├── types.ts          # Table rows, aggregates, and view interfaces
-│   │       ├── queries/          # Modular typed query modules (publications, users, comments, tags)
-│   │       └── index.ts          # Barrel export for lib/db
-│   ├── proxy.ts                  # Perimeter Edge middleware (i18n, rate limiting, auth gating)
-│   └── utils/                    # Supabase SSR clients (server.ts, client.ts) and auth helpers
+│   ├── lib/                      # Unified library: Supabase clients, auth, DAL, editor, email, PDF
+│   │   ├── auth.ts               # Authenticated user & role resolver
+│   │   ├── supabase/             # Supabase SSR clients (server.ts, client.ts)
+│   │   ├── db/                   # Strongly-Typed Data Access Layer (DAL)
+│   │   │   ├── schema.ts         # Constants: DB_TABLES, column names, enums
+│   │   │   ├── types.ts          # Table rows, aggregates, and view interfaces
+│   │   │   ├── queries/          # Modular typed query modules (publications, users, comments, tags)
+│   │   │   └── index.ts          # Barrel export for lib/db
+│   │   ├── editor/               # TipTap extensions and KaTeX renderers
+│   │   ├── email/                # Newsletter email templates and token utilities
+│   │   └── pdf/                  # Article PDF export generator
+│   └── proxy.ts                  # Perimeter Edge middleware (i18n, rate limiting, auth gating)
 ├── database/                     # PostgreSQL schema definitions
 │   └── full_schema.sql           # Complete canonical database schema dump (tables, RLS, functions)
 ├── docs/                         # Architecture codemaps and operational protocols

@@ -1,5 +1,5 @@
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
-import { getAuthenticatedUser } from '@/utils/auth';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { PUBLICATION_STATUSES } from '@/lib/db/schema';
 import ReviewActionBar from '@/components/escritorio/ReviewActionBar';
 import Link from 'next/link';

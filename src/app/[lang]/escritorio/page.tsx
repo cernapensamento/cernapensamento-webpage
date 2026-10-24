@@ -1,9 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getAuthenticatedUser } from '@/utils/auth';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
 import {

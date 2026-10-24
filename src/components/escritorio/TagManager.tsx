@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { DB_TABLES, TAG_COLS, TAG_TRANSLATION_COLS } from '@/lib/db/schema';
 
 interface TagManagerProps {
