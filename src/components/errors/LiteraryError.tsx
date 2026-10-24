@@ -1,10 +1,12 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useLocale } from '@/hooks/useLocale';
 import { getDictionaryClient } from '@/dictionaries/client';
+import { ERROR_CODES, type ErrorCode } from '@/lib/constants';
 
-export type ErrorCode = '400' | '401' | '403' | '404' | '500';
+export { ERROR_CODES, type ErrorCode };
 
 interface ErrorContent {
   title: string;
@@ -28,16 +30,20 @@ export function LiteraryError({
   const lang = useLocale();
   const globalDict = getDictionaryClient(lang);
   
-  const dictErrors = globalDict.errors as Record<ErrorCode, ErrorContent> | undefined;
-  const content: ErrorContent = customDict || dictErrors?.[code] || {
-    title: code === '404' 
-      ? (lang === 'es' ? 'Página Extraviada' : 'Páxina Extraviada')
-      : (lang === 'es' ? 'Error' : 'Erro'),
-    description: lang === 'es' 
-      ? 'Ha ocurrido un error inesperado en nuestros servidores.'
-      : 'Ocorreu un erro inesperado nos nosos servidores.',
-    actionText: lang === 'es' ? 'Volver al Inicio' : 'Volver ao Inicio',
-  };
+  const dictErrors = globalDict.errors as Record<ErrorCode, ErrorContent>;
+  const content: ErrorContent = customDict || dictErrors[code] || dictErrors[ERROR_CODES.SERVER_ERROR];
+
+  const resolvedHref = React.useMemo(() => {
+    if (!actionHref) return undefined;
+    if (actionHref.startsWith('http://') || actionHref.startsWith('https://')) {
+      return actionHref;
+    }
+    const cleanPath = actionHref.startsWith('/') ? actionHref : `/${actionHref}`;
+    if (cleanPath === `/${lang}` || cleanPath.startsWith(`/${lang}/`)) {
+      return cleanPath;
+    }
+    return cleanPath === '/' ? `/${lang}` : `/${lang}${cleanPath}`;
+  }, [actionHref, lang]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-parchment text-charcoal font-sans w-full">
@@ -65,13 +71,13 @@ export function LiteraryError({
           {content.description}
         </p>
         
-        {actionHref ? (
-          <a
-            href={actionHref}
+        {resolvedHref ? (
+          <Link
+            href={resolvedHref}
             className="group inline-block px-8 py-4 bg-charcoal text-parchment font-sans text-xs font-semibold uppercase tracking-widest hover:bg-gold hover:text-charcoal transition-colors duration-300"
           >
             {content.actionText}
-          </a>
+          </Link>
         ) : onAction ? (
           <button
             type="button"

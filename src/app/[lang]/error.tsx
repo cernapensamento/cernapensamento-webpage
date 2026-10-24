@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { LiteraryError } from '@/components/errors/LiteraryError';
+import { ERROR_CODES } from '@/lib/constants';
 
 export default function Error({
   error,
@@ -17,6 +18,6 @@ export default function Error({
   }, [error]);
 
   return (
-    <LiteraryError code="500" onAction={() => reset()} />
+    <LiteraryError code={ERROR_CODES.SERVER_ERROR} onAction={() => reset()} />
   );
 }
