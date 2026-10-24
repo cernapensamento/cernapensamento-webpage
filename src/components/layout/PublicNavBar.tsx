@@ -281,7 +281,7 @@ export default function PublicNavBar() {
                 <div className="p-2 flex flex-col">
                   {asociacionItems.map((item) => (
                     <Link
-                      key={item.href}
+                      key={item.title}
                       href={item.href}
                       onClick={() => setActiveDropdown(null)}
                       className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group/item flex items-start justify-between"
@@ -528,7 +528,7 @@ export default function PublicNavBar() {
                 <div className="flex flex-col gap-3 pl-3 pt-3 border-l-2 border-gold/40 mt-2">
                   {asociacionItems.map((item) => (
                     <Link
-                      key={item.href}
+                      key={item.title}
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-sm font-sans font-medium text-charcoal/80 hover:text-gold py-1"
