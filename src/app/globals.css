@@ -246,7 +246,7 @@ input[type="submit"]:disabled {
 .animate-marquee-infinite {
   display: flex;
   width: max-content;
-  animation: marqueeScroll 45s linear infinite;
+  animation: marqueeScroll 70s linear infinite;
   will-change: transform;
 }
 
@@ -281,13 +281,13 @@ input[type="submit"]:disabled {
 
 /* Paragraph spacing & line heights */
 .article-content p {
-  margin-bottom: 1.5rem;
-  line-height: 1.8;
+  margin-bottom: 1.15rem;
+  line-height: 1.75;
 }
 
 /* Preserve intentional empty paragraphs inserted for vertical spacing */
 .article-content p:empty {
-  min-height: 1.5rem;
+  min-height: 1.15rem;
 }
 
 /* Essay auto-justification (unless overridden by writer's text-align style) */
@@ -425,7 +425,6 @@ input[type="submit"]:disabled {
   max-width: 100%;
   height: auto;
   display: block;
-  border: 1px solid var(--color-lines);
 }
 
 .article-content figcaption {
