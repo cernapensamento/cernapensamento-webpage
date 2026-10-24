@@ -209,6 +209,19 @@ input[type="submit"]:disabled {
   animation: smoothFadeInUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+@keyframes smoothFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: smoothFadeIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 .reveal-init {
   opacity: 0;
   transform: translateY(22px);
@@ -221,13 +234,103 @@ input[type="submit"]:disabled {
   transform: translateY(0);
 }
 
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-infinite {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 45s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-infinite:hover {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal-init,
-  .animate-appear-instant {
+  .animate-appear-instant,
+  .animate-fade-in,
+  .animate-marquee-infinite {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* ============================================================
+   Print — clean editorial copy for the article PDF export
+   ============================================================ */
+@media print {
+  @page {
+    margin: 20mm 22mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  [data-print='hide'],
+  footer {
+    display: none !important;
+  }
+
+  main,
+  main > header,
+  article {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main,
+  main * {
+    color: #111111 !important;
+    background: transparent !important;
+  }
+
+  .article-content {
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #111111 !important;
+    orphans: 3;
+    widows: 3;
+  }
+
+  .article-content a {
+    color: #111111 !important;
+    text-decoration: none !important;
+  }
+
+  .article-content img,
+  .article-content figure,
+  .article-content table,
+  .article-content blockquote,
+  .article-content pre {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .article-content img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .article-content h1,
+  .article-content h2,
+  .article-content h3 {
+    break-after: avoid;
+    page-break-after: avoid;
   }
 }
 

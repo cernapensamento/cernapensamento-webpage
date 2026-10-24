@@ -2,31 +2,57 @@ import React from 'react';
 import Link from 'next/link';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 
-interface AssociationAndNewsSectionProps {
-  lang: string;
+export interface AssociationAndNewsDict {
+  badge: string;
+  title: string;
+  description: string;
+  associationCard: {
+    tag: string;
+    title: string;
+    description: string;
+    manifestoLink: string;
+    statutesLink: string;
+    collectionsLink: string;
+    button: string;
+  };
+  newsCard: {
+    tag: string;
+    title: string;
+    description: string;
+    previews: Array<{
+      category: string;
+      title: string;
+    }>;
+    button: string;
+  };
 }
 
-export default function AssociationAndNewsSection({ lang }: AssociationAndNewsSectionProps) {
-  const isEs = lang === 'es';
+interface AssociationAndNewsSectionProps {
+  lang: string;
+  dict?: AssociationAndNewsDict;
+}
+
+export default function AssociationAndNewsSection({ lang, dict }: AssociationAndNewsSectionProps) {
+  if (!dict) return null;
+
+  const { badge, title, description, associationCard: assoc, newsCard: news } = dict;
 
   return (
-    <section className="w-full border-t border-lines py-20 md:py-28 bg-surface/70">
+    <section className="w-full border-t border-lines py-20 md:py-28 bg-parchment">
       <div className="max-w-[1120px] mx-auto px-5 md:px-16 flex flex-col gap-16">
         
         {/* Section Header */}
         <RevealOnScroll className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-lines">
           <div>
             <span className="text-xs font-bold text-gold uppercase tracking-[0.2em] block mb-3">
-              {isEs ? 'Institución y Actualidad' : 'Institución e Actualidade'}
+              {badge}
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-charcoal leading-tight">
-              {isEs ? 'Asociación y Cuaderno de Noticias' : 'A Asociación e Caderno de Novas'}
+              {title}
             </h2>
           </div>
           <p className="font-sans text-sm md:text-base text-charcoal/70 max-w-md">
-            {isEs
-              ? 'Un proyecto civil independiente comprometido con la difusión de las ideas de la libertad, el ensayo riguroso y la cultura en Galicia.'
-              : 'Un proxecto civil independente comprometido coa difusión das ideas da liberdade, o ensaio rigoroso e a cultura en Galicia.'}
+            {description}
           </p>
         </RevealOnScroll>
 
@@ -35,7 +61,7 @@ export default function AssociationAndNewsSection({ lang }: AssociationAndNewsSe
           
           {/* Card 1: Asociación */}
           <RevealOnScroll delayMs={50} className="h-full">
-            <div className="bg-parchment border border-lines p-8 sm:p-10 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-lg relative overflow-hidden group">
+            <div className="bg-surface border border-lines p-8 sm:p-10 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-lg relative overflow-hidden group">
               <span 
                 aria-hidden="true" 
                 className="absolute -right-3 -bottom-8 text-8xl sm:text-9xl font-serif text-charcoal/[0.04] dark:text-parchment/[0.04] select-none pointer-events-none font-bold"
@@ -47,18 +73,16 @@ export default function AssociationAndNewsSection({ lang }: AssociationAndNewsSe
                 <div className="flex items-center gap-2 mb-4">
                   <span className="w-2 h-2 bg-gold inline-block" />
                   <span className="text-[11px] font-bold text-gold uppercase tracking-[0.2em]">
-                    {isEs ? 'La Asociación Cerna' : 'A Asociación Cerna'}
+                    {assoc.tag}
                   </span>
                 </div>
 
                 <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl text-charcoal mb-4 leading-snug">
-                  {isEs ? 'Pensamiento libre, diálogo y sociedad civil' : 'Pensamento libre, diálogo e sociedade civil'}
+                  {assoc.title}
                 </h3>
 
                 <p className="font-sans text-base text-charcoal/75 leading-relaxed mb-8">
-                  {isEs
-                    ? 'Constituida legalmente en Galicia, Cerna Pensamento articula una comunidad de escritores, investigadores y ciudadanos que defienden el rigor intelectual, la libertad individual y el debate sin tutelas ideológicas.'
-                    : 'Constituída legalmente en Galicia, Cerna Pensamento artella unha comunidade de escritores, investigadores e cidadáns que defenden o rigor intelectual, a liberdade individual e o debate sen tutelas ideolóxicas.'}
+                  {assoc.description}
                 </p>
 
                 {/* Sub-links */}
@@ -67,21 +91,21 @@ export default function AssociationAndNewsSection({ lang }: AssociationAndNewsSe
                     href={`/${lang}/asociacion`}
                     className="flex items-center justify-between py-2 text-sm text-charcoal/80 hover:text-gold transition-colors font-sans border-b border-lines/40 group/sub"
                   >
-                    <span>{isEs ? 'Manifiesto y principios fundacionales' : 'Manifesto e principios fundacionais'}</span>
+                    <span>{assoc.manifestoLink}</span>
                     <span className="text-xs transition-transform group-hover/sub:translate-x-1">→</span>
                   </Link>
                   <Link 
                     href={`/${lang}/asociacion/estatutos`}
                     className="flex items-center justify-between py-2 text-sm text-charcoal/80 hover:text-gold transition-colors font-sans border-b border-lines/40 group/sub"
                   >
-                    <span>{isEs ? 'Estatutos oficiales de la asociación' : 'Estatutos oficiais da asociación'}</span>
+                    <span>{assoc.statutesLink}</span>
                     <span className="text-xs transition-transform group-hover/sub:translate-x-1">→</span>
                   </Link>
                   <Link 
                     href={`/${lang}/asociacion`}
                     className="flex items-center justify-between py-2 text-sm text-charcoal/80 hover:text-gold transition-colors font-sans group/sub"
                   >
-                    <span>{isEs ? 'Estructura y colecciones editoriales' : 'Estrutura e coleccións editoriais'}</span>
+                    <span>{assoc.collectionsLink}</span>
                     <span className="text-xs transition-transform group-hover/sub:translate-x-1">→</span>
                   </Link>
                 </div>
@@ -92,7 +116,7 @@ export default function AssociationAndNewsSection({ lang }: AssociationAndNewsSe
                   href={`/${lang}/asociacion`}
                   className="btn-primary w-full sm:w-auto"
                 >
-                  <span>{isEs ? 'Conoce la Asociación' : 'Coñece a Asociación'}</span>
+                  <span>{assoc.button}</span>
                   <span aria-hidden="true">→</span>
                 </Link>
               </div>
@@ -101,7 +125,7 @@ export default function AssociationAndNewsSection({ lang }: AssociationAndNewsSe
 
           {/* Card 2: Noticias */}
           <RevealOnScroll delayMs={150} className="h-full">
-            <div className="bg-parchment border border-lines p-8 sm:p-10 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-lg relative overflow-hidden group">
+            <div className="bg-surface border border-lines p-8 sm:p-10 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-lg relative overflow-hidden group">
               <span 
                 aria-hidden="true" 
                 className="absolute -right-3 -bottom-8 text-8xl sm:text-9xl font-serif text-charcoal/[0.04] dark:text-parchment/[0.04] select-none pointer-events-none font-bold"
@@ -113,46 +137,30 @@ export default function AssociationAndNewsSection({ lang }: AssociationAndNewsSe
                 <div className="flex items-center gap-2 mb-4">
                   <span className="w-2 h-2 bg-charcoal inline-block" />
                   <span className="text-[11px] font-bold text-gold uppercase tracking-[0.2em]">
-                    {isEs ? 'Cuaderno de Noticias' : 'Caderno de Novas'}
+                    {news.tag}
                   </span>
                 </div>
 
                 <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl text-charcoal mb-4 leading-snug">
-                  {isEs ? 'Convocatorias, eventos y vida editorial' : 'Convocatorias, eventos e vida editorial'}
+                  {news.title}
                 </h3>
 
                 <p className="font-sans text-base text-charcoal/75 leading-relaxed mb-8">
-                  {isEs
-                    ? 'Sigue el pulso de nuestras publicaciones, presentaciones de libros, colaboraciones académicas y comunicados institucionales en nuestro canal de noticias y actualidad.'
-                    : 'Segue o pulso das nosas publicacións, presentacións de libros, colaboracións académicas e comunicados institucionais na nosa canle de novas e actualidade.'}
+                  {news.description}
                 </p>
 
                 {/* News Highlights preview */}
                 <div className="flex flex-col gap-3 pt-4 border-t border-lines/70 mb-8">
-                  <div className="py-2 border-b border-lines/40">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gold block mb-1">
-                      {isEs ? 'Editorial' : 'Editorial'}
-                    </span>
-                    <p className="text-sm text-charcoal/90 font-medium">
-                      {isEs ? 'Apertura de la convocatoria de ensayos para el nuevo ciclo editorial' : 'Apertura da convocatoria de ensaios para o novo ciclo editorial'}
-                    </p>
-                  </div>
-                  <div className="py-2 border-b border-lines/40">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gold block mb-1">
-                      {isEs ? 'Publicación' : 'Publicación'}
-                    </span>
-                    <p className="text-sm text-charcoal/90 font-medium">
-                      {isEs ? 'Disponibles las cuatro colecciones: Ensayo, Poesía, Narrativa y Opinión' : 'Dispoñibles as catro coleccións: Ensaio, Poesía, Narrativa e Opinión'}
-                    </p>
-                  </div>
-                  <div className="py-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gold block mb-1">
-                      {isEs ? 'Asociación' : 'Asociación'}
-                    </span>
-                    <p className="text-sm text-charcoal/90 font-medium">
-                      {isEs ? 'Publicación del manifiesto y bases de afiliación para socios colaboradores' : 'Publicación do manifesto e bases de afiliación para socios colaboradores'}
-                    </p>
-                  </div>
+                  {news.previews.map((item, idx) => (
+                    <div key={idx} className={`py-2 ${idx < news.previews.length - 1 ? 'border-b border-lines/40' : ''}`}>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gold block mb-1">
+                        {item.category}
+                      </span>
+                      <p className="text-sm text-charcoal/90 font-medium">
+                        {item.title}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -161,7 +169,7 @@ export default function AssociationAndNewsSection({ lang }: AssociationAndNewsSe
                   href={`/${lang}/noticias`}
                   className="btn-outline w-full sm:w-auto"
                 >
-                  <span>{isEs ? 'Ver todas las Noticias' : 'Ver todas as Novas'}</span>
+                  <span>{news.button}</span>
                   <span aria-hidden="true">→</span>
                 </Link>
               </div>

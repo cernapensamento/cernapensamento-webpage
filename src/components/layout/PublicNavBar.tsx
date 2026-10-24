@@ -138,8 +138,8 @@ export default function PublicNavBar() {
   ];
 
   return (
-    <header className="bg-parchment/95 backdrop-blur-md border-b border-lines w-full sticky top-0 z-50">
-      <nav ref={navRef} className="w-full max-w-[1280px] mx-auto px-5 md:px-12 h-18 md:h-20 flex items-center justify-between relative">
+    <header data-print="hide" className="bg-parchment dark:bg-[#121212] border-b border-lines w-full sticky top-0 z-[100]">
+      <nav ref={navRef} className="w-full max-w-[1280px] mx-auto px-5 md:px-12 h-16 md:h-20 flex items-center justify-between relative">
         
         {/* ==================================================== */}
         {/* LEFT: BRAND LOGO */}
@@ -147,20 +147,22 @@ export default function PublicNavBar() {
         <div className="flex items-center gap-6">
           <Link href={`/${lang}`} className="flex items-center hover:opacity-85 transition-opacity py-2" aria-label={SITE_NAME}>
             <Image
-              src="/images/logo/cernawhite.png"
+              src="/images/logo/screen.webp"
               alt={SITE_NAME}
-              width={260}
-              height={65}
-              className="h-9 md:h-11 w-auto object-contain block dark:hidden"
+              width={48}
+              height={48}
+              className="h-9 w-9 md:h-11 md:w-11 object-contain block dark:hidden"
               priority
+              unoptimized
             />
             <Image
-              src="/images/logo/cernablack.png"
+              src="/images/logo/screen_black.webp"
               alt={SITE_NAME}
-              width={260}
-              height={65}
-              className="h-9 md:h-11 w-auto object-contain hidden dark:block"
+              width={48}
+              height={48}
+              className="h-9 w-9 md:h-11 md:w-11 object-contain hidden dark:block"
               priority
+              unoptimized
             />
           </Link>
         </div>
@@ -324,7 +326,7 @@ export default function PublicNavBar() {
                 : 'text-charcoal/80 hover:text-charcoal'
             }`}>
               <Link
-                href={`/${lang}#autores`}
+                href={`/${lang}/autores`}
                 className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
               >
                 {dict.nav?.autores || (isEs ? 'Autores' : 'Autores')}
@@ -370,7 +372,7 @@ export default function PublicNavBar() {
                   ))}
                   <div className="pt-2 px-3 pb-2 border-t border-lines mt-1">
                     <Link
-                      href={`/${lang}#autores`}
+                      href={`/${lang}/autores`}
                       onClick={() => setActiveDropdown(null)}
                       className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
                     >
@@ -454,7 +456,7 @@ export default function PublicNavBar() {
       {/* MOBILE RESPONSIVE DRAWER / ACCORDIONS */}
       {/* ==================================================== */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-18 bottom-0 bg-parchment z-50 overflow-y-auto border-t border-lines animate-appear-instant flex flex-col justify-between p-6">
+        <div className="lg:hidden absolute top-full left-0 right-0 h-[calc(100dvh-4rem)] md:h-[calc(100dvh-5rem)] bg-parchment dark:bg-[#121212] z-[999] overflow-y-auto border-t border-lines flex flex-col justify-between p-6 shadow-2xl">
           <div className="flex flex-col gap-6">
             
             {/* 1. Publicacións: Direct Link + Accordion Chevron */}
@@ -549,7 +551,7 @@ export default function PublicNavBar() {
             <div className="border-b border-lines pb-4">
               <div className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2">
                 <Link
-                  href={`/${lang}#autores`}
+                  href={`/${lang}/autores`}
                   onClick={() => setMobileMenuOpen(false)}
                   className="hover:text-gold transition-colors"
                 >
@@ -579,7 +581,7 @@ export default function PublicNavBar() {
                     </Link>
                   ))}
                   <Link
-                    href={`/${lang}#autores`}
+                    href={`/${lang}/autores`}
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
                   >

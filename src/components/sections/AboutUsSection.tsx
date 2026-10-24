@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface AboutUsSectionProps {
   lang: string;
@@ -13,6 +14,7 @@ interface AboutUsSectionProps {
     pullQuote?: string;
     pillars?: Array<{ num: string; title: string; desc: string }>;
     secondaryButton?: string;
+    legalFramework?: string;
   };
 }
 
@@ -22,7 +24,7 @@ export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
   return (
     <section 
       aria-labelledby="about-heading"
-      className="w-full py-20 sm:py-28 bg-parchment border-t border-lines relative overflow-hidden"
+      className="w-full py-20 sm:py-28 bg-surface border-t border-lines relative overflow-hidden"
     >
       {/* Decorative literary watermark */}
       <span 
@@ -55,7 +57,7 @@ export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
               </h2>
 
               {dict.pullQuote && (
-                <div className="border-l-2 border-gold/70 pl-6 py-2 my-8 bg-surface/50">
+                <div className="border-l-2 border-gold/70 pl-6 py-2 my-8 bg-parchment/60">
                   <p className="font-serif italic text-lg sm:text-xl text-charcoal/90 leading-relaxed">
                     &ldquo;{dict.pullQuote}&rdquo;
                   </p>
@@ -96,10 +98,29 @@ export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
           </div>
 
           {/* RIGHT COLUMN: The Editorial Prose & Drop-Cap (7 cols) */}
-          <div className="lg:col-span-7 bg-surface border border-lines p-8 sm:p-12 relative flex flex-col justify-between">
+          <div className="lg:col-span-7 bg-parchment border border-lines p-8 sm:p-12 relative flex flex-col justify-between shadow-sm">
             <div className="space-y-6 font-sans text-base sm:text-lg text-charcoal/85 leading-relaxed">
-              <p className="first-letter:float-left first-letter:font-serif first-letter:text-6xl sm:first-letter:text-7xl first-letter:text-gold first-letter:mr-3.5 first-letter:mt-1 first-letter:leading-[0.8] first-letter:font-normal">
-                {dict.paragraph1}
+              <p>
+                <span className="float-left mr-4 mt-1 relative w-16 h-16 sm:w-20 sm:h-20 inline-block select-none shrink-0">
+                  <Image
+                    src="/images/logo/screen.webp"
+                    alt="Cerna"
+                    fill
+                    className="object-contain block dark:hidden drop-shadow-sm"
+                    unoptimized
+                  />
+                  <Image
+                    src="/images/logo/screen_black.webp"
+                    alt="Cerna"
+                    fill
+                    className="object-contain hidden dark:block drop-shadow-sm"
+                    unoptimized
+                  />
+                </span>
+                <span className="font-serif font-bold tracking-wider text-charcoal text-lg sm:text-xl">CERNA</span>
+                {dict.paragraph1.startsWith('CERNA') 
+                  ? dict.paragraph1.slice(5) 
+                  : dict.paragraph1}
               </p>
               <p>
                 {dict.paragraph2}
@@ -112,7 +133,7 @@ export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
             {dict.secondaryButton && (
               <div className="mt-10 pt-6 border-t border-lines flex items-center justify-between">
                 <span className="text-xs uppercase font-mono tracking-widest text-charcoal/50">
-                  Marco Xurídico & Ideoloxía
+                  {dict.legalFramework}
                 </span>
                 <Link
                   href={`/${lang}/asociacion/estatutos`}

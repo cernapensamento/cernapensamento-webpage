@@ -40,7 +40,7 @@ export interface ArticleCardProps {
   articulo: ArticleCardData;
   lang: string;
   dict?: { documentTypes?: Record<string, string>; readArticle?: string; [key: string]: unknown };
-  variant?: 'auto' | 'standard' | 'lead' | 'textOnly' | 'compact';
+  variant?: 'auto' | 'standard' | 'lead' | 'textOnly' | 'compact' | 'pinned';
   className?: string;
   priority?: boolean;
 }
@@ -104,7 +104,7 @@ export default function ArticleCard({
   // ==========================================
   if (effectiveVariant === 'textOnly' || !hasCover) {
     return (
-      <article className={`group relative bg-surface border border-lines p-7 sm:p-9 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-md overflow-hidden ${className}`}>
+      <article className={`group relative bg-transparent border border-lines p-7 sm:p-9 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-md overflow-hidden ${className}`}>
         {/* Subtle decorative background watermark */}
         <span 
           aria-hidden="true" 
@@ -176,7 +176,7 @@ export default function ArticleCard({
 
     if (!hasCover || !coverUrl) {
       return (
-        <article className={`group relative bg-surface border border-lines p-8 sm:p-12 md:p-16 flex flex-col justify-between transition-all duration-300 hover:border-gold/60 hover:shadow-md overflow-hidden ${className}`}>
+        <article className={`group relative bg-transparent border border-lines p-8 sm:p-12 md:p-16 flex flex-col justify-between transition-all duration-300 hover:border-gold/60 hover:shadow-md overflow-hidden ${className}`}>
           <span 
             aria-hidden="true" 
             className="absolute -right-6 -bottom-10 text-[180px] md:text-[240px] font-serif text-charcoal/[0.04] dark:text-parchment/[0.04] select-none pointer-events-none transition-transform duration-500 group-hover:scale-105"
@@ -238,7 +238,7 @@ export default function ArticleCard({
     }
 
     return (
-      <article className={`group flex flex-col lg:flex-row gap-8 lg:gap-12 border border-lines bg-surface p-6 sm:p-9 lg:p-10 h-full transition-all duration-300 hover:border-gold/60 hover:shadow-md ${className}`}>
+      <article className={`group flex flex-col lg:flex-row gap-8 lg:gap-12 border border-lines bg-transparent p-6 sm:p-9 lg:p-10 h-full transition-all duration-300 hover:border-gold/60 hover:shadow-md ${className}`}>
         {/* Cinematic Landscape Cover */}
         <Link href={href} className="lg:w-3/5 aspect-[16/10] sm:aspect-[16/9] lg:aspect-auto lg:min-h-[400px] relative overflow-hidden bg-lines/40 block shrink-0">
           <Image
@@ -308,6 +308,86 @@ export default function ArticleCard({
   }
 
   // ==========================================
+  // VARIANT: PINNED EDITORIAL CARD
+  // ==========================================
+  if (effectiveVariant === 'pinned') {
+    const byLabel = (dict?.mosaic as Record<string, string>)?.by || (dict as Record<string, string>)?.by || (lang === 'es' ? 'Por' : 'Por');
+    const readLabel = (dict?.mosaic as Record<string, string>)?.readArticle || (dict as Record<string, string>)?.readArticle || (lang === 'es' ? 'Leer artículo' : 'Ler artigo');
+
+    return (
+      <article className={`group flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-md ${className}`}>
+        <div>
+          {/* Cover image if available */}
+          {hasCover && coverUrl && (
+            <Link href={href} className="w-full aspect-[16/9] relative overflow-hidden bg-lines/30 mb-6 block">
+              <Image
+                src={coverUrl}
+                alt={titulo}
+                fill
+                priority={priority}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              />
+            </Link>
+          )}
+
+          {/* Header metadata */}
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
+              {typeLabel}
+            </span>
+            {formattedDate && (
+              <>
+                <span className="text-charcoal/30 select-none">•</span>
+                <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
+                  {formattedDate}
+                </time>
+              </>
+            )}
+          </div>
+
+          {/* Headline */}
+          <Link href={href} className="block">
+            <h3 className="font-serif text-2xl sm:text-3xl text-charcoal group-hover:text-gold transition-colors duration-300 font-bold leading-snug mb-3">
+              {titulo}
+            </h3>
+          </Link>
+
+          {/* Excerpt */}
+          {excerpt && (
+            <p className="font-sans text-base text-charcoal/75 leading-relaxed line-clamp-3 mb-6">
+              {excerpt}
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="pt-5 border-t border-lines flex flex-wrap items-center justify-between gap-3 mt-auto">
+          <div className="flex items-center gap-3">
+            {authorAvatar ? (
+              <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0 border border-lines">
+                <Image src={authorAvatar} alt={authorName} fill className="object-cover" sizes="32px" />
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-lines/60 flex items-center justify-center text-xs font-serif text-charcoal/70 shrink-0">
+                {authorName.charAt(0)}
+              </div>
+            )}
+            <span className="text-xs font-bold text-charcoal uppercase tracking-wider">
+              {byLabel} {authorName}
+            </span>
+          </div>
+
+          <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/70 group-hover:text-gold group-hover:translate-x-1 transition-all flex items-center gap-1.5 shrink-0">
+            <span>{readLabel}</span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+      </article>
+    );
+  }
+
+  // ==========================================
   // VARIANT: COMPACT (HORIZONTAL / LIST ITEM)
   // ==========================================
   if (effectiveVariant === 'compact') {
@@ -351,7 +431,7 @@ export default function ArticleCard({
   // VARIANT: STANDARD (WITH COVER)
   // ==========================================
   return (
-    <article className={`group flex flex-col h-full bg-parchment transition-all duration-300 ${className}`}>
+    <article className={`group flex flex-col h-full bg-transparent transition-all duration-300 ${className}`}>
       {/* Cover Image Container */}
       <Link href={href} className="w-full aspect-[16/10] relative mb-4 overflow-hidden bg-lines/30 block">
         {coverUrl ? (

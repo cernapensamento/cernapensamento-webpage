@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 
@@ -15,116 +17,109 @@ interface ThemesSectionProps {
     description: string;
     list: string[];
     exploreButton: string;
+    continuousScroll?: string;
     items?: ThemeDossierItem[];
+    cardAction?: string;
+    searchPrompt?: string;
   };
 }
 
 export default function ThemesSection({ lang, dict }: ThemesSectionProps) {
   if (!dict) return null;
 
-  const items = dict.items || dict.list.map((tema, idx) => ({
+  const baseItems: ThemeDossierItem[] = dict.items || dict.list.map((tema, idx) => ({
     id: String(idx + 1).padStart(2, '0'),
     title: tema,
-    desc: lang === 'es' 
-      ? 'Análisis profundo, ensayos monográficos y perspectivas de actualidad en esta disciplina.'
-      : 'Análise profunda, ensaios monográficos e perspectivas de actualidade nesta disciplina.',
+    desc: dict.description,
   }));
+
+  // Duplicate items for continuous seamless loop
+  const infiniteItems = [...baseItems, ...baseItems];
 
   return (
     <section 
       aria-labelledby="themes-heading"
-      className="w-full py-20 sm:py-28 bg-surface border-t border-lines relative overflow-hidden"
+      className="w-full py-16 sm:py-20 bg-parchment border-t border-lines relative overflow-hidden"
     >
-      {/* Decorative literary watermark */}
-      <span 
-        aria-hidden="true" 
-        className="absolute -right-12 -top-12 text-[220px] md:text-[280px] font-serif text-charcoal/[0.03] dark:text-parchment/[0.03] select-none pointer-events-none leading-none"
-      >
-        ✦
-      </span>
-
       <div className="max-w-[1120px] mx-auto px-5 md:px-16 relative z-10">
         
         {/* Upper Section Header */}
-        <div className="max-w-2xl mb-14 md:mb-18">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-6 h-[2px] bg-gold" aria-hidden="true" />
-            <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
-              {dict.tag}
-            </span>
-          </div>
-
-          <h2 
-            id="themes-heading"
-            className="font-serif text-3xl sm:text-4xl md:text-5xl text-charcoal font-bold tracking-tight leading-tight mb-5"
-          >
-            {dict.title}
-          </h2>
-
-          <p className="font-sans text-base sm:text-lg text-charcoal/70 leading-relaxed">
-            {dict.description}
-          </p>
-        </div>
-
-        {/* Thematic Dossiers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {items.map((item) => (
-            <Link
-              key={item.id}
-              href={`/${lang}/articulos?tema=${encodeURIComponent(item.title)}`}
-              className="group bg-parchment border border-lines p-7 sm:p-8 flex flex-col justify-between hover:border-gold/60 hover:shadow-sm transition-all duration-300 relative overflow-hidden"
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 pb-6 border-b border-lines">
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="w-5 h-[2px] bg-gold" aria-hidden="true" />
+              <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
+                {dict.tag}
+              </span>
+            </div>
+            <h2 
+              id="themes-heading"
+              className="font-serif text-3xl sm:text-4xl text-charcoal font-bold tracking-tight leading-tight"
             >
-              {/* Top metadata row */}
+              {dict.title}
+            </h2>
+          </div>
+        </div>
+      </div>
+
+      {/* ==================================================== */}
+      {/* INFINITE SMOOTH AUTOPLAY CAROUSEL */}
+      {/* ==================================================== */}
+      <div className="relative w-full overflow-hidden group">
+        {/* Left & Right gradient edge fades for smooth entry/exit */}
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 sm:w-16 md:w-24 bg-gradient-to-r from-parchment to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 sm:w-16 md:w-24 bg-gradient-to-l from-parchment to-transparent z-10" />
+
+        <div className="animate-marquee-infinite flex gap-4 py-2 px-4">
+          {infiniteItems.map((item, index) => (
+            <Link
+              key={`${item.id}-${index}`}
+              href={`/${lang}/articulos?tema=${encodeURIComponent(item.title)}`}
+              className="group/card shrink-0 w-[240px] sm:w-[280px] bg-surface border border-lines p-5 flex flex-col justify-between hover:border-gold hover:shadow-md transition-all duration-300 relative select-none"
+            >
               <div>
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <span className="font-mono text-xs font-bold text-gold tracking-widest select-none">
-                    {item.id}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-mono text-xs font-bold text-gold tracking-widest">
+                    #{item.id}
                   </span>
-                  <span className="text-charcoal/30 group-hover:text-gold group-hover:translate-x-1 transition-all text-sm" aria-hidden="true">
+                  <span className="text-charcoal/40 group-hover/card:text-gold group-hover/card:translate-x-1 transition-all text-xs" aria-hidden="true">
                     →
                   </span>
                 </div>
-
-                {/* Theme Title */}
-                <h3 className="font-serif text-2xl text-charcoal group-hover:text-gold transition-colors font-semibold leading-snug mb-3">
+                
+                <h3 className="font-serif text-lg sm:text-xl text-charcoal font-bold group-hover/card:text-gold transition-colors leading-snug mb-2">
                   {item.title}
                 </h3>
 
-                {/* Scope Description */}
-                <p className="font-sans text-xs sm:text-sm text-charcoal/70 leading-relaxed">
+                <p className="font-sans text-xs text-charcoal/70 line-clamp-2 leading-relaxed">
                   {item.desc}
                 </p>
               </div>
 
-              {/* Bottom Card Footer */}
-              <div className="pt-6 mt-6 border-t border-lines/50 flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-charcoal/50 group-hover:text-charcoal transition-colors">
-                  {lang === 'es' ? 'Ver publicaciones' : 'Ver publicacións'}
-                </span>
-                <span className="text-xs font-bold text-gold">
-                  §
-                </span>
-              </div>
+              {dict.cardAction && (
+                <div className="pt-3 mt-4 border-t border-lines/50 flex items-center justify-between text-[11px] font-sans font-semibold text-charcoal/60 group-hover/card:text-gold transition-colors">
+                  <span>{dict.cardAction}</span>
+                  <span>§</span>
+                </div>
+              )}
             </Link>
           ))}
         </div>
+      </div>
 
-        {/* Bottom CTA to Full Archive */}
-        <div className="mt-16 pt-10 border-t border-lines flex flex-col sm:flex-row items-center justify-between gap-6">
-          <span className="font-sans text-xs sm:text-sm text-charcoal/60 text-center sm:text-left">
-            {lang === 'es' 
-              ? '¿Buscas un texto o autor en específico? Utiliza el buscador y los filtros temáticos en el archivo.' 
-              : 'Buscas un texto ou autor en específico? Emprega o buscador e os filtros temáticos no arquivo.'}
-          </span>
+      <div className="max-w-[1120px] mx-auto px-5 md:px-16 relative z-10">
+        {/* Bottom Archive CTA Link */}
+        <div className="mt-8 pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-sans text-charcoal/65">
+          {dict.searchPrompt && (
+            <span>{dict.searchPrompt}</span>
+          )}
           <Link 
             href={`/${lang}/articulos`} 
-            className="btn-outline text-xs tracking-[0.2em] shrink-0"
+            className="font-bold text-charcoal hover:text-gold uppercase tracking-wider underline underline-offset-4 shrink-0 transition-colors"
           >
-            <span>{dict.exploreButton}</span>
-            <span aria-hidden="true">→</span>
+            {dict.exploreButton} →
           </Link>
         </div>
-
       </div>
     </section>
   );

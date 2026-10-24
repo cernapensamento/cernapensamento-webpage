@@ -42,7 +42,7 @@ export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArt
     <section className="border-t border-lines pt-12">
       <div className="flex items-center gap-3 mb-8">
         <span className="material-symbols-outlined text-gold" data-icon="push_pin">push_pin</span>
-        <h2 className="font-serif text-2xl md:text-3xl text-charcoal">{lang === 'es' ? 'Artículos Fijados' : 'Artigos Fixados'}</h2>
+        <h2 className="font-serif text-2xl md:text-3xl text-charcoal">{((dict?.mosaic as Record<string, string>)?.pinnedTitle) || (dict?.pinnedTitle as string) || (dict?.title as string) || (lang === 'es' ? 'Artículos Fijados' : 'Artigos Fixados')}</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {articulos.map((articulo) => {

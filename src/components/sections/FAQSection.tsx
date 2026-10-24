@@ -15,6 +15,7 @@ export interface FAQDict {
   items: FAQItem[];
   moreQuestions?: string;
   contactUs?: string;
+  statutesLink?: string;
 }
 
 interface FAQSectionProps {
@@ -37,7 +38,7 @@ export default function FAQSection({ dict, lang }: FAQSectionProps) {
   return (
     <section 
       aria-labelledby="faq-heading"
-      className="w-full py-20 sm:py-28 bg-surface border-t border-lines relative overflow-hidden"
+      className="w-full py-20 sm:py-28 bg-parchment border-t border-lines relative overflow-hidden"
     >
       {/* Decorative literary watermark */}
       <span 
@@ -146,7 +147,7 @@ export default function FAQSection({ dict, lang }: FAQSectionProps) {
                 href={`/${lang}/asociacion/estatutos`}
                 className="font-bold text-charcoal/70 hover:text-gold uppercase tracking-wider transition-colors"
               >
-                {lang === 'es' ? 'Estatutos Sociales →' : 'Estatutos Sociais →'}
+                {dict.statutesLink}
               </Link>
             </div>
           </div>

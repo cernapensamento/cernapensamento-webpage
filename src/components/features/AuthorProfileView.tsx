@@ -93,6 +93,10 @@ interface AuthorProfileViewProps {
       publicationPlural?: string;
       textSingular?: string;
       textPlural?: string;
+      breadcrumbsAria?: string;
+      typeFilterAria?: string;
+      featuredCoverAlt?: string;
+      thumbnailAlt?: string;
       [key: string]: unknown;
     };
     documentTypes?: Record<string, string>;
@@ -189,7 +193,6 @@ export default function AuthorProfileView({
 
   // Dictionary strings
   const tAll = dict.authorPage?.allWorks || 'Todos';
-  const tReadingTime = dict.authorPage?.readingTime || 'min de lectura';
   const tReadFull = dict.authorPage?.readFullText || 'Ler texto completo';
   const tLatest = dict.authorPage?.latestWork || 'Última publicación';
   const tArchive = dict.authorPage?.archive || 'Arquivo de publicacións';
@@ -207,6 +210,10 @@ export default function AuthorProfileView({
   const tPubPlural = dict.authorPage?.publicationPlural || 'publicacións';
   const tTextSingular = dict.authorPage?.textSingular || 'texto';
   const tTextPlural = dict.authorPage?.textPlural || 'textos';
+  const tBreadcrumbsAria = dict.authorPage?.breadcrumbsAria || 'Ruta de navegación';
+  const tTypeFilterAria = dict.authorPage?.typeFilterAria || 'Filtro por tipo de publicación';
+  const tFeaturedCoverAlt = dict.authorPage?.featuredCoverAlt || 'Portada do artigo destacado';
+  const tThumbnailAlt = dict.authorPage?.thumbnailAlt || 'Miniatura do artigo';
 
   const getTypeLabel = (rawType?: string) => {
     if (!rawType) return dict.documentTypes?.artigo || 'Artigo';
@@ -233,12 +240,12 @@ export default function AuthorProfileView({
         <div className="max-w-[1160px] mx-auto px-5 sm:px-8 md:px-12">
           
           {/* Top Editorial Breadcrumbs */}
-          <nav aria-label="Migas de pan" className="flex items-center gap-2 text-xs font-sans text-charcoal/50 mb-8">
+          <nav aria-label={tBreadcrumbsAria} className="flex items-center gap-2 text-xs font-sans text-charcoal/50 mb-8">
             <Link href={`/${lang}`} className="hover:text-gold transition-colors">
               {tHome}
             </Link>
             <span className="text-charcoal/30 text-[10px]">/</span>
-            <Link href={`/${lang}#autores`} className="hover:text-gold transition-colors">
+            <Link href={`/${lang}/autores`} className="hover:text-gold transition-colors">
               {tAuthors}
             </Link>
             <span className="text-charcoal/30 text-[10px]">/</span>
@@ -373,7 +380,7 @@ export default function AuthorProfileView({
             {(hasMultipleTypes || selectedTopic) && (
               <div className="border-b border-lines">
                 <div className="flex flex-wrap items-center justify-between gap-4 -mb-px">
-                  <nav className="flex flex-wrap items-center gap-4 sm:gap-8" aria-label="Filtro por tipo de publicación">
+                  <nav className="flex flex-wrap items-center gap-4 sm:gap-8" aria-label={tTypeFilterAria}>
                     <button
                       type="button"
                       onClick={() => setSelectedType('all')}
@@ -461,11 +468,10 @@ export default function AuthorProfileView({
                   const subtitulo = featuredArticle.subtitle
                     ? (featuredArticle.subtitle[lang] || featuredArticle.subtitle.gl || featuredArticle.subtitle.es || null)
                     : (lang === 'es' ? featuredArticle.subtitulo_es : featuredArticle.subtitulo_gl) || featuredArticle.subtitulo_gl || featuredArticle.subtitulo_es || null;
-                  const dateStr = featuredArticle.updated_at || featuredArticle.created_at || featuredArticle.actualizado_en || featuredArticle.creado_en;
+                  const dateStr = featuredArticle.created_at || featuredArticle.creado_en || featuredArticle.updated_at || featuredArticle.actualizado_en;
                   const imageUrl = featuredArticle.cover_image_url || featuredArticle.imagen_url;
                   const articleTopics = featuredArticle.tags ? featuredArticle.tags.map((t) => t.slug) : (featuredArticle.tematicas || []);
                   const rawType = featuredArticle.type || featuredArticle.tipo || 'article';
-                  const readingMins = 4;
 
                   return (
                     <article className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center bg-surface/40 border border-lines p-6 md:p-10 rounded-2xl group transition-all duration-500 hover:border-gold/50 hover:shadow-md">
@@ -477,7 +483,7 @@ export default function AuthorProfileView({
                         {imageUrl ? (
                           <Image
                             src={imageUrl}
-                            alt={titulo || 'Portada do artigo destacado'}
+                            alt={titulo || tFeaturedCoverAlt}
                             fill
                             sizes="(max-width: 1024px) 100vw, 50vw"
                             className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
@@ -501,10 +507,6 @@ export default function AuthorProfileView({
                                 {formatDate(dateStr, lang)}
                               </time>
                             )}
-                            <span className="text-xs text-charcoal/40">•</span>
-                            <span className="text-xs text-charcoal/60 font-sans">
-                              {readingMins} {tReadingTime}
-                            </span>
                           </div>
 
                           <Link href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}>
@@ -571,11 +573,10 @@ export default function AuthorProfileView({
                     const subtitulo = articulo.subtitle
                       ? (articulo.subtitle[lang] || articulo.subtitle.gl || articulo.subtitle.es || null)
                       : (lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl) || articulo.subtitulo_gl || articulo.subtitulo_es || null;
-                    const dateStr = articulo.updated_at || articulo.created_at || articulo.actualizado_en || articulo.creado_en;
+                    const dateStr = articulo.created_at || articulo.creado_en || articulo.updated_at || articulo.actualizado_en;
                     const imageUrl = articulo.cover_image_url || articulo.imagen_url;
                     const articleTopics = articulo.tags ? articulo.tags.map((t) => t.slug) : (articulo.tematicas || []);
                     const rawType = articulo.type || articulo.tipo || 'article';
-                    const readingMins = 4;
 
                     return (
                       <article
@@ -592,7 +593,7 @@ export default function AuthorProfileView({
                           >
                             <Image
                               src={imageUrl}
-                              alt={titulo || 'Miniatura do artigo'}
+                              alt={titulo || tThumbnailAlt}
                               fill
                               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                               className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -603,9 +604,6 @@ export default function AuthorProfileView({
                         <div className="flex items-center justify-between gap-2 mb-3">
                           <span className="text-xs font-semibold text-gold uppercase tracking-widest">
                             {getTypeLabel(rawType)}
-                          </span>
-                          <span className="text-[11px] text-charcoal/50 font-sans">
-                            {readingMins} {tReadingTime}
                           </span>
                         </div>
 
