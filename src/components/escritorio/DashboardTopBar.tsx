@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { SITE_NAME, DEFAULT_AVATAR_URL } from '@/lib/constants';
+import { USER_ROLES } from '@/lib/db/schema';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
@@ -15,24 +16,24 @@ interface DashboardTopBarProps {
 
 export default function DashboardTopBar({ avatarUrl, role }: DashboardTopBarProps) {
   const params = useParams();
-  const lang = (params?.lang as string) || 'es';
+  const lang = (params?.lang as string) || 'gl';
   const dict = lang === 'es' ? esDict : glDict;
   const dashDict = dict.dashboard;
 
-  const rolTexto = role === 'admin'
+  const rolTexto = role === USER_ROLES.ADMIN
     ? dashDict.admin
-    : (role === 'founder' || role === 'escritor')
+    : (role === USER_ROLES.FOUNDER || role === 'escritor')
     ? (dashDict.founder || dashDict.writer)
-    : (role === 'member')
+    : (role === USER_ROLES.MEMBER)
     ? (dashDict.member || dashDict.writer)
-    : (role === 'guest' || role === 'invitado')
+    : (role === USER_ROLES.GUEST || role === 'invitado')
     ? dashDict.guest
     : dashDict.reader;
 
   return (
     <header className="w-full sticky top-0 bg-surface flex justify-between items-center h-16 z-40 border-b border-lines px-5 md:px-16 shrink-0">
       <div className="flex items-center gap-8">
-        <Link href="/" className="flex items-center justify-center hover:opacity-80 transition-opacity">
+        <Link href={`/${lang}`} className="flex items-center justify-center hover:opacity-80 transition-opacity">
           <Image 
             src="/images/logo/cernawhite.png" 
             alt={SITE_NAME} 

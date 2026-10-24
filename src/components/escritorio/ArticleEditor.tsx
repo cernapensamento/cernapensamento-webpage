@@ -24,7 +24,7 @@ import glDict from '@/dictionaries/gl.json';
 import { createClient } from '@/lib/supabase/client';
 import TagManager from '@/components/escritorio/TagManager';
 import type { LocalizedString } from '@/lib/db/types';
-import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
+import { DB_TABLES, USER_COLS, USER_ROLES, PUBLICATION_STATUSES, PUBLICATION_TYPES } from '@/lib/db/schema';
 import {
   uploadStorageImage,
   removeStorageImages,
@@ -65,7 +65,7 @@ export interface ArticleData {
     idioma_original?: string;
 }
 
-export type EditorAction = 'draft' | 'publish' | 'submit_approval' | 'approve' | 'reject' | 'revoke_approval';
+export type EditorAction = typeof PUBLICATION_STATUSES.DRAFT | 'publish' | 'submit_approval' | 'approve' | 'reject' | 'revoke_approval';
 
 interface ArticleEditorProps {
     initialData?: ArticleData;
@@ -75,9 +75,9 @@ interface ArticleEditorProps {
     userRole?: string;
 }
 
-export default function ArticleEditor({ mode = 'create', initialData, onSave, isPublishing , userRole = 'usuario'}: ArticleEditorProps) {
+export default function ArticleEditor({ mode = 'create', initialData, onSave, isPublishing , userRole = USER_ROLES.READER}: ArticleEditorProps) {
     const params = useParams();
-    const routeLang = (params?.lang as string) || 'es';
+    const routeLang = (params?.lang as string) || 'gl';
     const dict = routeLang === 'gl' ? glDict.articleEditor : esDict.articleEditor;
     const storageDict = routeLang === 'gl' ? glDict.escritorio.storage : esDict.escritorio.storage;
 
@@ -102,7 +102,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     }, [activeLang]);
 
     const initialType = initialData?.type || initialData?.tipo;
-    const [tipo, setTipo] = useState(initialType || 'article');
+    const [tipo, setTipo] = useState(initialType || PUBLICATION_TYPES.ARTICLE);
     const [coverImageUrl, setCoverImageUrl] = useState(initialData?.cover_image_url || initialData?.imagen_url || '');
     const [tematicas, setTematicas] = useState<string[]>(initialData?.tags || initialData?.tematicas || []);
         const [showPreview, setShowPreview] = useState(false);
@@ -747,9 +747,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         <div className="flex items-center gap-2 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
                             <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50 italic hidden xl:block shrink-0"></span>
                             {(() => {
-                                const isDirectPublisher = userRole === 'admin' || userRole === 'founder' || userRole === 'escritor';
-                                const isPending = initialData?.status === 'in_review' || initialData?.estado === ARTICLE_STATES.PENDING;
-                                const isPublished = initialData?.status === 'published' || initialData?.estado === ARTICLE_STATES.PUBLISHED;
+                                const isDirectPublisher = userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.FOUNDER || userRole === 'escritor';
+                                const isPending = initialData?.status === PUBLICATION_STATUSES.IN_REVIEW || initialData?.estado === ARTICLE_STATES.PENDING;
+                                const isPublished = initialData?.status === PUBLICATION_STATUSES.PUBLISHED || initialData?.estado === ARTICLE_STATES.PUBLISHED;
                                 const canApprove = isDirectPublisher;
                                 const isReviewRole = !isDirectPublisher;
 
@@ -779,14 +779,14 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                 return (
                                     <>
                                         {mode === 'edit' && isPublished ? (
-                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('draft')}>
-                                                <span className="hidden sm:inline">Despublicar</span>
-                                                <span className="sm:hidden">Despublicar</span>
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(PUBLICATION_STATUSES.DRAFT)}>
+                                                <span className="hidden sm:inline">{dict.unpublish || 'Despublicar'}</span>
+                                                <span className="sm:hidden">{dict.unpublish || 'Despublicar'}</span>
                                             </button>
                                         ) : (
-                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('draft')}>
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(PUBLICATION_STATUSES.DRAFT)}>
                                                 <span className="hidden sm:inline">{dict.saveDraft || 'Guardar Borrador'}</span>
-                                                <span className="sm:hidden">Borrador</span>
+                                                <span className="sm:hidden">{dict.saveDraft ? dict.saveDraft.replace('Guardar ', '') : 'Borrador'}</span>
                                             </button>
                                         )}
                                         <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => {
@@ -998,7 +998,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
 
                         <article className="w-full max-w-2xl px-5 md:px-0 mx-auto min-w-0">
                             <div 
-                                className={`article-content ${(tipo?.toLowerCase() === 'ensaio' || tipo?.toLowerCase() === 'essay') ? 'article-content-essay' : ''}`}
+                                className={`article-content ${(tipo?.toLowerCase() === 'ensaio' || tipo?.toLowerCase() === PUBLICATION_TYPES.ESSAY) ? 'article-content-essay' : ''}`}
                                 dangerouslySetInnerHTML={{ __html: renderHeadingAnchors(renderMathInHtml(activeLang === 'gl' ? contenidoGl : contenidoEs)) }}
                             />
                         </article>
@@ -1008,9 +1008,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                     <NextImage className="object-cover" alt="Avatar del Autor" src={authorProfile?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="48px"/>
                                 </div>
                                 <div>
-                                    <h3 className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2" id="preview-author-heading">Sobre el autor</h3>
+                                    <h3 className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2" id="preview-author-heading">{dict.aboutTheAuthor || 'Sobre o autor'}</h3>
                                     <p className="font-sans text-lg text-charcoal/80">
-                                        <strong>{authorProfile?.nombre || 'Autor del Artículo'}</strong> {authorProfile?.bio || 'es un columnista y colaborador activo.'}
+                                        <strong>{authorProfile?.nombre || dict.defaultAuthorName || 'Autor do Artigo'}</strong> {authorProfile?.bio || dict.defaultBio || 'é un columnista e colaborador activo.'}
                                     </p>
                                 </div>
                             </div>

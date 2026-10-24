@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
+import { USER_ROLES } from '@/lib/db/schema';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -12,10 +13,10 @@ interface MobileBottomNavProps {
 export default function MobileBottomNav({ role }: MobileBottomNavProps) {
   const pathname = usePathname();
   const params = useParams();
-  const lang = (params?.lang as string) || 'es';
+  const lang = (params?.lang as string) || 'gl';
   const dict = lang === 'es' ? esDict : glDict;
   const dashDict = dict.dashboard;
-  const isWriter = ['founder', 'member', 'guest', 'admin', 'escritor', 'invitado'].includes(role || '');
+  const isWriter = ([USER_ROLES.FOUNDER, USER_ROLES.MEMBER, USER_ROLES.GUEST, USER_ROLES.ADMIN] as string[]).includes(role || '') || ['escritor', 'invitado'].includes(role || '');
 
   const isCurrentRoute = (route: string) => {
     if (route === '/') {
@@ -33,7 +34,7 @@ export default function MobileBottomNav({ role }: MobileBottomNavProps) {
             : 'text-charcoal/50 hover:text-charcoal hover:bg-lines/10 border-t-2 border-transparent'
         }`}
         href={`/${lang}`}
-        aria-label="Volver al Inicio"
+        aria-label={dashDict.backToHome}
       >
         <span className="material-symbols-outlined text-[20px]" data-icon="home" style={{ fontFamily: 'Material Symbols Outlined' }}>home</span>
         <span className={`text-[9px] uppercase tracking-wider ${isCurrentRoute('/') ? 'font-semibold' : ''}`}>{dashDict.backToHome.split(' ')[0]}</span>
