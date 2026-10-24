@@ -4,19 +4,32 @@
 
 Cerna es una plataforma editorial bilingüe (gallego/castellano) construida como una revista literaria y de pensamiento moderno. Permite a sus escritores redactar, maquetar con fórmulas y tablas, y publicar artículos, ensayos, columnas, reportajes y poesía; y a sus lectores consumir contenido con navegación fluida, comentar y recibir boletines informativos.
 
+> [!IMPORTANT]
+> ### 🤖 Protocolo Obligatorio para Agentes de IA y Desarrolladores
+> Antes de planificar, refactorizar o ejecutar cualquier cambio en este repositorio, **es mandatorio consultar la documentación técnica**:
+> 1. **[`AGENTS.md`](AGENTS.md)**: Manual operativo indispensable con las invariantes críticas del proyecto:
+>    * Convenciones asíncronas de **Next.js 16 App Router & React 19** (`await params`, `await cookies()`).
+>    * **Estándar bilingüe estricto (i18n)**: Prohibición absoluta de URLs o textos hardcodeados; uso mandatorio de diccionarios (`src/dictionaries/{gl,es}.json`) y prefijado dinámico `/${lang}/...`.
+>    * **Data Access Layer (DAL)** tipado con *Zero Magic Strings* (`src/lib/db/`).
+>    * **Flujo de desarrollo local aislado con Supabase CLI** (`npm run db:start`, `npm run db:reset`).
+> 2. **Mapas de Código en [`docs/CODEMAPS/`](docs/CODEMAPS/INDEX.md)**: Planos arquitectónicos de cada subsistema (frontend, backend, editor, base de datos).
+> 
+> *No introduzcas abstracciones nuevas ni mutaciones de base de datos sin revisar primero estos documentos.*
+
 ---
 
 ## Índice
 
-1. [Arquitectura del Sistema](#arquitectura-del-sistema)
-2. [Stack Tecnológico](#stack-tecnológico)
-3. [Estructura del Proyecto](#estructura-del-proyecto)
-4. [Módulos y Características Clave](#módulos-y-características-clave)
-5. [Editor de Contenidos (TipTap Suite)](#editor-de-contenidos-tiptap-suite)
-6. [Seguridad y Rendimiento](#seguridad-y-rendimiento)
-7. [Desarrollo Local](#desarrollo-local)
-8. [Mapas de Código (Codemaps)](#mapas-de-código-codemaps)
-9. [Despliegue](#despliegue)
+1. [Guía para Agentes de IA y Documentación](#-protocolo-obligatorio-para-agentes-de-ia-y-desarrolladores)
+2. [Arquitectura del Sistema](#arquitectura-del-sistema)
+3. [Stack Tecnológico](#stack-tecnológico)
+4. [Estructura del Proyecto](#estructura-del-proyecto)
+5. [Módulos y Características Clave](#módulos-y-características-clave)
+6. [Editor de Contenidos (TipTap Suite)](#editor-de-contenidos-tiptap-suite)
+7. [Seguridad y Rendimiento](#seguridad-y-rendimiento)
+8. [Desarrollo Local](#desarrollo-local)
+9. [Mapas de Código (Codemaps)](#mapas-de-código-codemaps)
+10. [Despliegue](#despliegue)
 
 ---
 
@@ -114,7 +127,11 @@ graph TB
 ```
 cerna/
 ├── database/
-│   └── schema_global_actualizado.sql    # Esquema SQL completo de Supabase
+│   └── full_schema.sql                  # Esquema DDL canónico de la base de datos
+├── supabase/                            # Entorno de desarrollo local aislado (Docker)
+│   ├── config.toml                      # Puertos locales (54321 API, 54323 Studio)
+│   ├── seed.sql                         # Datos de prueba (fundadores, tags, artículos)
+│   └── migrations/                      # Migraciones versionadas en orden cronológico
 ├── docs/
 │   ├── CODEMAPS/                        # Mapas arquitectónicos modulares
 │   │   ├── INDEX.md                     # Índice de arquitectura
@@ -250,6 +267,10 @@ La aplicación estará disponible en `http://localhost:3000`.
 | `npm run build` | Compila la aplicación para producción |
 | `npm run start` | Inicia el servidor de producción |
 | `npm run lint` | Ejecuta el análisis estático de código con ESLint |
+| `npm run db:start` | Inicia la base de datos local aislada con Supabase CLI (Docker) |
+| `npm run db:stop` | Pausa los contenedores locales de Supabase |
+| `npm run db:reset` | Reinicia la base de datos local, aplica migraciones y recarga datos de prueba (`seed.sql`) |
+| `npm run db:status` | Muestra URLs y claves locales de Supabase (Studio, API, Inbucket) |
 
 ---
 
