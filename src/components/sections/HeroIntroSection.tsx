@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
+import HeroAnimatedLogo from './HeroAnimatedLogo';
 
 export interface HeroDict {
   headlinePrefix: string;
@@ -33,15 +33,15 @@ export default function HeroIntroSection({ lang, dict }: HeroIntroSectionProps) 
       </span>
 
       <div className="max-w-[1120px] mx-auto px-5 md:px-16 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 lg:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-12 items-center">
           
           {/* ==================================================== */}
           {/* EDITORIAL HEADLINE, ACCENT & DESCRIPTION (LEFT ON LG, BOTTOM ON VERTICAL) */}
           {/* ==================================================== */}
-          <div className="order-2 lg:order-1 lg:col-span-7 flex flex-col justify-center">
+          <div className="order-2 lg:order-1 lg:col-span-5 flex flex-col justify-center">
             <RevealOnScroll delayMs={100}>
               {/* Headline with golden accent detail */}
-              <h1 className="font-serif text-3xl sm:text-5xl lg:text-[58px] text-charcoal font-bold tracking-tight leading-[1.14] mb-4 sm:mb-6">
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-[52px] text-charcoal font-bold tracking-tight leading-[1.14] mb-4 sm:mb-6">
                 <span>{headlinePrefix}</span>
                 <br />
                 <span className="text-gold italic font-normal underline decoration-gold/30 underline-offset-8">
@@ -58,38 +58,23 @@ export default function HeroIntroSection({ lang, dict }: HeroIntroSectionProps) 
               <div className="pt-1 sm:pt-2">
                 <Link
                   href={`/${lang}/articulos`}
-                  className="btn-primary text-xs tracking-[0.16em]"
+                  className="btn-primary text-xs tracking-[0.16em] group inline-flex items-center gap-2"
                 >
                   <span>{exploreCta}</span>
-                  <span aria-hidden="true">→</span>
+                  <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+                    arrow_forward
+                  </span>
                 </Link>
               </div>
             </RevealOnScroll>
           </div>
 
           {/* ==================================================== */}
-          {/* CERNA LOGO (TOP ON VERTICAL, RIGHT ON LG) */}
+          {/* CERNA ANIMATED LOGO EMBLEM (TOP ON VERTICAL, RIGHT ON LG) */}
           {/* ==================================================== */}
-          <div className="order-1 lg:order-2 lg:col-span-5 flex justify-center lg:justify-end items-center">
+          <div className="order-1 lg:order-2 lg:col-span-7 flex justify-center lg:justify-end items-center">
             <RevealOnScroll delayMs={50} className="w-full flex justify-center lg:justify-end">
-              <div className="relative w-full max-w-[320px] sm:max-w-[400px] md:max-w-[460px] lg:max-w-[500px] h-32 sm:h-44 md:h-56 lg:h-64 flex items-center justify-center transition-transform duration-700 hover:scale-[1.02]">
-                <Image
-                  src="/images/logo/cernawhite.webp"
-                  alt="Cerna Pensamento"
-                  fill
-                  className="object-contain block dark:hidden drop-shadow-sm"
-                  priority
-                  unoptimized
-                />
-                <Image
-                  src="/images/logo/cernablack.webp"
-                  alt="Cerna Pensamento"
-                  fill
-                  className="object-contain hidden dark:block drop-shadow-sm"
-                  priority
-                  unoptimized
-                />
-              </div>
+              <HeroAnimatedLogo className="w-full max-w-[560px] sm:max-w-[700px] md:max-w-[820px] lg:max-w-[960px] aspect-[92/34] transition-transform duration-700 hover:scale-[1.01]" />
             </RevealOnScroll>
           </div>
 

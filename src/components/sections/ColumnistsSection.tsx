@@ -328,8 +328,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
             href={`/${lang}/autores`}
             className="group inline-flex items-center gap-3 border border-lines bg-parchment px-6 py-3.5 font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-charcoal transition-all duration-300 hover:border-gold hover:text-gold"
           >
-            {dict.columnists.viewAllAuthors ||
-              (lang === 'es' ? 'Ver todos los autores' : 'Ver todos os autores')}
+            {dict.columnists.viewAllAuthors}
             <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1">
               arrow_forward
             </span>
