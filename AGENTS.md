@@ -183,32 +183,71 @@ Always use semantic CSS variables via Tailwind classes to ensure dark mode works
 
 ---
 
-## 5. Agent Behavioral Protocol (How to Work on This Codebase)
+## 5. Agent Behavioral Protocol & Git Lifecycle (Mandatory)
 
-When tasked with fixing bugs, implementing features, or refactoring code in Cerna:
+Every agent working on this codebase must strictly adhere to the following 5-stage lifecycle for all tasks (features, bugfixes, refactoring, database changes, etc.):
 
-### 1. Plan Before Executing
-* Review existing components, DAL queries in `src/lib/db/`, and codemaps in `docs/CODEMAPS/` before introducing new abstractions.
-* If making multi-file modifications, formulate a clear, sequential plan.
+### Stage 1: Isolated Git Worktree Creation
+* **Never work directly on `development` or `main`**:
+  Always create an isolated Git worktree on a separate branch branched off `development`:
+  ```bash
+  git worktree add ../cerna-<branch-name> -b <branch-name> development
+  cd ../cerna-<branch-name>
+  ```
+* All code editing, dependency installations, and local testing must take place strictly inside this dedicated worktree directory.
 
-### 2. Surgical, High-Cohesion Edits
-* Keep changes minimal and focused. Do not reformat unrelated code, reorder imports gratuitously, or remove existing comments and docstrings.
-* Maintain immutability: return new objects or arrays instead of mutating state in React components.
-
-### 3. Verify TypeScript & Linting
-* After code modifications, always verify with:
+### Stage 2: Surgical Implementation & Local Verification
+* **Plan before executing**: Review existing components, DAL queries in `src/lib/db/`, and codemaps in `docs/CODEMAPS/` before introducing new abstractions.
+* **Surgical, high-cohesion edits**: Keep changes minimal, focused, and immutable. Do not reformat unrelated code, reorder imports gratuitously, or remove existing comments and docstrings.
+* **Verify locally**: Always ensure the build and linter pass cleanly before presenting changes:
   ```bash
   npm run lint
   npm run build
   ```
-* Address any type errors (`@typescript-eslint/no-explicit-any`), unused variables, or React hook warnings immediately.
+  If touching database migrations, seed data, or schemas, also verify local DB reset:
+  ```bash
+  npm run db:reset
+  ```
 
-### 4. Branching & Git Guidelines
-* **Integration Branch:** The active integration branch is **`development`**. Production is on **`main`**.
-* **Atomic Commits:** Follow Conventional Commits (`feat:`, `fix:`, `refactor:`, `style:`, `chore:`, `docs:`).
-* **Never Run Massive Adds:** Do not run `git add .` or `git commit -am`. Add individual files per atomic commit.
-* **Remote Push & Release Protocol:**  
-  Push changes to `development` for ongoing work. When preparing a production release or client-facing milestone, adhere to [`docs/RELEASE_PROTOCOL.md`](docs/RELEASE_PROTOCOL.md).
+### Stage 3: Review Gating — Strict Zero Premature Commits
+* **CRITICAL RULE — ZERO COMMITS WITHOUT EXPLICIT APPROVAL**:
+  Under no circumstances may an agent run `git commit` autonomously during development.
+* All changes must remain unstaged or staged in the working tree for user review.
+* Present a concise, structured summary of modifications, files affected, and verification test results to the user.
+* Request explicit approval from the user before proceeding to commit. Wait for the user's explicit confirmation (e.g., "approve", "go ahead and commit").
+
+### Stage 4: Granular Micro-Commits
+* Once (and only once) the user explicitly approves:
+* Break the work down into **small, atomic micro-commits** organized by logical unit or file.
+* **NEVER run blanket commits**: `git add .` or `git commit -am "..."` are strictly forbidden.
+* Stage files individually:
+  ```bash
+  git add <specific-file-1>
+  git commit -m "feat(scope): concise description"
+
+  git add <specific-file-2>
+  git commit -m "style(scope): concise description"
+  ```
+* Adhere strictly to Conventional Commits format (`feat:`, `fix:`, `refactor:`, `style:`, `test:`, `docs:`, `chore:`).
+
+### Stage 5: Merge into Development & Worktree Cleanup
+* Once all micro-commits have been created on the feature branch:
+* Switch back to the primary repository folder and checkout `development`:
+  ```bash
+  cd /home/pablo/Projects/Cerna
+  git checkout development
+  git merge <branch-name> --no-ff -m "merge: merge <branch-name> into development"
+  ```
+* Push `development` to remote so Vercel can automatically trigger and deploy the preview:
+  ```bash
+  git push origin development
+  ```
+* Remove the temporary worktree and clean up the local feature branch:
+  ```bash
+  git worktree remove ../cerna-<branch-name>
+  git branch -d <branch-name>
+  ```
+* For major production releases or client-facing milestones from `development` to `main`, adhere to [`docs/RELEASE_PROTOCOL.md`](docs/RELEASE_PROTOCOL.md).
 
 ---
 
