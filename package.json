@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:status": "supabase status"
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.8.13",
@@ -26,15 +30,19 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "boneyard-js": "^1.10.0",
+    "domhandler": "^6.0.1",
     "gray-matter": "^4.0.3",
+    "htmlparser2": "^12.0.0",
     "katex": "^0.16.21",
     "negotiator": "^1.0.0",
     "next": "16.2.9",
+    "pdf-lib": "^1.17.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
     "resend": "^6.17.2",
-    "sanitize-html": "^2.17.5"
+    "sanitize-html": "^2.17.5",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
@@ -46,6 +54,7 @@
     "@types/sanitize-html": "^2.16.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "supabase": "^2.121.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
