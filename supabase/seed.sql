@@ -643,3 +643,1159 @@ INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('6c0a87f5-5
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('b9874c24-9c1f-44a3-a3bd-06bd50e007d9', '3d45ab72-d296-4383-9353-419c919c88c3') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('b9874c24-9c1f-44a3-a3bd-06bd50e007d9', '75ba508a-ba57-431f-9148-d4eba15753f6') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('b9874c24-9c1f-44a3-a3bd-06bd50e007d9', '04f29944-c8e9-4a24-b4fc-ae1092e444d1') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+
+-- ============================================================================
+-- 6. Additional Mock Authors & Fake Users
+-- 4 new authors to establish 10 total authors on the platform
+-- 10 fake reader users with 1 comment each in random articles
+-- ============================================================================
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'iria.miguens@cerna.org',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'member'),
+  jsonb_build_object('full_name', 'Iria Miguéns'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1',
+  'Iria Miguéns',
+  'iria-miguens',
+  'member'::public.user_role,
+  NULL,
+  '{"gl": "Doutora en Filosofía Moral pola USC. Investiga sobre ética cívica, deliberación democrática e pensamento republicano clásico.", "es": "Doctora en Filosofía Moral por la USC. Investiga sobre ética cívica, deliberación democrática y pensamiento republicano clásico."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'a2a2a2a2-a2a2-a2a2-a2a2-a2a2a2a2a2a2',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'brais.castro@cerna.org',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'member'),
+  jsonb_build_object('full_name', 'Brais Castro'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'a2a2a2a2-a2a2-a2a2-a2a2-a2a2a2a2a2a2',
+  'Brais Castro',
+  'brais-castro',
+  'member'::public.user_role,
+  NULL,
+  '{"gl": "Graduado en Ciencias Políticas e da Administración. Especialista en teoría dos xogos aplicada á economía política e modelos de orde espontáneo.", "es": "Graduado en Ciencias Políticas y de la Administración. Especialista en teoría de juegos aplicada a la economía política y modelos de orden espontáneo."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'a3a3a3a3-a3a3-a3a3-a3a3-a3a3a3a3a3a3',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'carla.souto@cerna.org',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'member'),
+  jsonb_build_object('full_name', 'Carla Souto'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'a3a3a3a3-a3a3-a3a3-a3a3-a3a3a3a3a3a3',
+  'Carla Souto',
+  'carla-souto',
+  'member'::public.user_role,
+  NULL,
+  '{"gl": "Ensaísta e crítica literaria. Estuda a recepción do pensamento europeo de entreguerras na literatura galega contemporánea.", "es": "Ensayista y crítica literaria. Estudia la recepción del pensamiento europeo de entreguerras en la literatura gallega contemporánea."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'a4a4a4a4-a4a4-a4a4-a4a4-a4a4a4a4a4a4',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'xurxo.seoane@cerna.org',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'member'),
+  jsonb_build_object('full_name', 'Xurxo Seoane'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'a4a4a4a4-a4a4-a4a4-a4a4-a4a4a4a4a4a4',
+  'Xurxo Seoane',
+  'xurxo-seoane',
+  'member'::public.user_role,
+  NULL,
+  '{"gl": "Historiador e investigador social centrado na historia económica de Galicia e na evolución institucional dos séculos XIX e XX.", "es": "Historiador e investigador social centrado en la historia económica de Galicia y en la evolución institucional de los siglos XIX y XX."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'b1b1b1b1-0001-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'anton.rivas@example.com',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('full_name', 'Antón Rivas'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'b1b1b1b1-0001-0000-0000-000000000001',
+  'Antón Rivas',
+  'anton-rivas',
+  'reader'::public.user_role,
+  NULL,
+  '{"gl": "Lector asiduo de ensaios de filosofía e economía política.", "es": "Lector asiduo de ensayos de filosofía y economía política."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'b1b1b1b1-0002-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'sabela.lourenzo@example.com',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('full_name', 'Sabela Lourenzo'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'b1b1b1b1-0002-0000-0000-000000000002',
+  'Sabela Lourenzo',
+  'sabela-lourenzo',
+  'reader'::public.user_role,
+  NULL,
+  '{"gl": "Estudante de Filoloxía con interese na creación literaria e no debate cultural.", "es": "Estudiante de Filología con interés en la creación literaria y el debate cultural."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'b1b1b1b1-0003-0000-0000-000000000003',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'roi.mendez@example.com',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('full_name', 'Roi Méndez'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'b1b1b1b1-0003-0000-0000-000000000003',
+  'Roi Méndez',
+  'roi-mendez',
+  'reader'::public.user_role,
+  NULL,
+  '{"gl": "Interesado na teoría económica, na liberdade individual e na historia de Galicia.", "es": "Interesado en la teoría económica, la libertad individual y la historia de Galicia."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'b1b1b1b1-0004-0000-0000-000000000004',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'uxia.taboada@example.com',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('full_name', 'Uxía Taboada'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'b1b1b1b1-0004-0000-0000-000000000004',
+  'Uxía Taboada',
+  'uxia-taboada',
+  'reader'::public.user_role,
+  NULL,
+  '{"gl": "Lectora entusiasta de poesía, ensaio humanístico e pensamento contemporáneo.", "es": "Lectora entusiasta de poesía, ensayo humanístico y pensamiento contemporáneo."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'b1b1b1b1-0005-0000-0000-000000000005',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'xabier.freire@example.com',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('full_name', 'Xabier Freire'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'b1b1b1b1-0005-0000-0000-000000000005',
+  'Xabier Freire',
+  'xabier-freire',
+  'reader'::public.user_role,
+  NULL,
+  '{"gl": "Enxeñeiro de software afeccionado á epistemoloxía e á filosofía da ciencia.", "es": "Ingeniero de software aficionado a la epistemología y a la filosofía de la ciencia."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'b1b1b1b1-0006-0000-0000-000000000006',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'noa.dominguez@example.com',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('full_name', 'Noa Domínguez'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'b1b1b1b1-0006-0000-0000-000000000006',
+  'Noa Domínguez',
+  'noa-dominguez',
+  'reader'::public.user_role,
+  NULL,
+  '{"gl": "Investigadora xurídica interesada nas liberdades civís e no dereito constitucional.", "es": "Investigadora jurídica interesada en las libertades civiles y el derecho constitucional."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'b1b1b1b1-0007-0000-0000-000000000007',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'breogan.civeira@example.com',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('full_name', 'Breogán Civeira'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'b1b1b1b1-0007-0000-0000-000000000007',
+  'Breogán Civeira',
+  'breogan-civeira',
+  'reader'::public.user_role,
+  NULL,
+  '{"gl": "Mestre de historia e seguidor dos debates sobre tradición e modernidade en Cerna.", "es": "Maestro de historia y seguidor de los debates sobre tradición y modernidad en Cerna."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'b1b1b1b1-0008-0000-0000-000000000008',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'alba.carballo@example.com',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('full_name', 'Alba Carballo'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'b1b1b1b1-0008-0000-0000-000000000008',
+  'Alba Carballo',
+  'alba-carballo',
+  'reader'::public.user_role,
+  NULL,
+  '{"gl": "Socióloga e lectora interesada nas dinámicas comunitarias e no espazo público.", "es": "Socióloga y lectora interesada en las dinámicas comunitarias y el espacio público."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'b1b1b1b1-0009-0000-0000-000000000009',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'mateo.salgado@example.com',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('full_name', 'Mateo Salgado'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'b1b1b1b1-0009-0000-0000-000000000009',
+  'Mateo Salgado',
+  'mateo-salgado',
+  'reader'::public.user_role,
+  NULL,
+  '{"gl": "Estudante de Matemáticas e afeccionado á lóxica formal e á filosofía analítica.", "es": "Estudiante de Matemáticas y aficionado a la lógica formal y a la filosofía analítica."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_token, recovery_token, email_change_token_new, email_change, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) VALUES (
+  'b1b1b1b1-0010-0000-0000-000000000010',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'catuxa.prado@example.com',
+  extensions.crypt('Password123!', extensions.gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('full_name', 'Catuxa Prado'),
+  now(),
+  now()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  raw_app_meta_data = EXCLUDED.raw_app_meta_data;
+
+INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+VALUES (
+  'b1b1b1b1-0010-0000-0000-000000000010',
+  'Catuxa Prado',
+  'catuxa-prado',
+  'reader'::public.user_role,
+  NULL,
+  '{"gl": "Arquitecta e divulgadora do patrimonio urbano e a historia da arte galega.", "es": "Arquitecta y divulgadora del patrimonio urbano y la historia del arte gallego."}'::jsonb,
+  true
+) ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  role = EXCLUDED.role,
+  avatar_url = EXCLUDED.avatar_url,
+  bio = EXCLUDED.bio;
+
+-- ============================================================================
+-- 7. Additional Mock Topic Tags and Tag Translations (20 New Topics)
+-- ============================================================================
+
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0001-0000-0000-000000000001', 'etica', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0001-0000-0000-000000000001', 'es', 'Ética') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0001-0000-0000-000000000001', 'gl', 'Ética') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0002-0000-0000-000000000002', 'estetica', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0002-0000-0000-000000000002', 'es', 'Estética') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0002-0000-0000-000000000002', 'gl', 'Estética') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0003-0000-0000-000000000003', 'epistemoloxia', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0003-0000-0000-000000000003', 'es', 'Epistemología') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0003-0000-0000-000000000003', 'gl', 'Epistemoloxía') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0004-0000-0000-000000000004', 'socioloxia', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0004-0000-0000-000000000004', 'es', 'Sociología') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0004-0000-0000-000000000004', 'gl', 'Socioloxía') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0005-0000-0000-000000000005', 'dereito', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0005-0000-0000-000000000005', 'es', 'Derecho') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0005-0000-0000-000000000005', 'gl', 'Dereito') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0006-0000-0000-000000000006', 'antropoloxia', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0006-0000-0000-000000000006', 'es', 'Antropología') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0006-0000-0000-000000000006', 'gl', 'Antropoloxía') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0007-0000-0000-000000000007', 'educacion', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0007-0000-0000-000000000007', 'es', 'Educación') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0007-0000-0000-000000000007', 'gl', 'Educación') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0008-0000-0000-000000000008', 'tecnoloxia', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0008-0000-0000-000000000008', 'es', 'Tecnología') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0008-0000-0000-000000000008', 'gl', 'Tecnoloxía') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0009-0000-0000-000000000009', 'ecoloxia', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0009-0000-0000-000000000009', 'es', 'Ecología') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0009-0000-0000-000000000009', 'gl', 'Ecoloxía') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0010-0000-0000-000000000010', 'literatura', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0010-0000-0000-000000000010', 'es', 'Literatura') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0010-0000-0000-000000000010', 'gl', 'Literatura') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0011-0000-0000-000000000011', 'poesia', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0011-0000-0000-000000000011', 'es', 'Poesía') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0011-0000-0000-000000000011', 'gl', 'Poesía') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0012-0000-0000-000000000012', 'filosofia-moral', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0012-0000-0000-000000000012', 'es', 'Filosofía moral') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0012-0000-0000-000000000012', 'gl', 'Filosofía moral') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0013-0000-0000-000000000013', 'orde-espontaneo', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0013-0000-0000-000000000013', 'es', 'Orden espontáneo') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0013-0000-0000-000000000013', 'gl', 'Orde espontáneo') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0014-0000-0000-000000000014', 'pensamento-critico', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0014-0000-0000-000000000014', 'es', 'Pensamiento crítico') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0014-0000-0000-000000000014', 'gl', 'Pensamento crítico') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0015-0000-0000-000000000015', 'institucions', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0015-0000-0000-000000000015', 'es', 'Instituciones') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0015-0000-0000-000000000015', 'gl', 'Institucións') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0016-0000-0000-000000000016', 'humanismo', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0016-0000-0000-000000000016', 'es', 'Humanismo') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0016-0000-0000-000000000016', 'gl', 'Humanismo') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0017-0000-0000-000000000017', 'xeopolitica', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0017-0000-0000-000000000017', 'es', 'Geopolítica') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0017-0000-0000-000000000017', 'gl', 'Xeopolítica') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0018-0000-0000-000000000018', 'antiguidade-clasica', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0018-0000-0000-000000000018', 'es', 'Antigüedad clásica') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0018-0000-0000-000000000018', 'gl', 'Antigüidade clásica') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0019-0000-0000-000000000019', 'ilustracion', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0019-0000-0000-000000000019', 'es', 'Ilustración') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0019-0000-0000-000000000019', 'gl', 'Ilustración') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tags (id, slug, created_at) VALUES ('c1000001-0020-0000-0000-000000000020', 'comunidade', now()) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0020-0000-0000-000000000020', 'es', 'Comunidad') ON CONFLICT (tag_id, lang) DO NOTHING;
+INSERT INTO public.tag_translations (tag_id, lang, name) VALUES ('c1000001-0020-0000-0000-000000000020', 'gl', 'Comunidade') ON CONFLICT (tag_id, lang) DO NOTHING;
+
+-- ============================================================================
+-- 8. Additional Mock Publications (20 New Articles with Images - 10 Authors)
+-- ============================================================================
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0001-0000-0000-000000000001',
+  'a-sociedade-aberta-e-os-seus-desafios',
+  'https://upload.wikimedia.org/wikipedia/commons/4/43/Karl_Popper.jpg',
+  'published'::public.publication_status,
+  'article'::public.publication_type,
+  'gl',
+  false,
+  'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
+  '{"gl": "A sociedade aberta e os seus desafíos", "es": "La sociedad abierta y sus desafíos"}'::jsonb,
+  '{"gl": "Reflexións arredor da vixencia do pensamento de Karl Popper", "es": "Reflexiones en torno a la vigencia del pensamiento de Karl Popper"}'::jsonb,
+  '{"gl": "<p>A defensa da sociedade aberta esixe unha vixilancia constante fronte a calquera tentación de impoñer receitas definitivas para o benestar colectivo. No canto de buscar deseños utópicos dirixidos dende arriba, a fortaleza dunha comunidade libre reside na súa capacidade para ensaiar solucións parciais, recoñecer os seus erros e manter aberta a posibilidade permanente da crítica e da corrección institucional.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG/1280px-Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG\" alt=\"O Pensador de Rodin\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">O Pensador de Auguste Rodin: símbolo do espírito crítico da sociedade aberta.</figcaption></figure>", "es": "<p>La defensa de la sociedad abierta exige una vigilancia constante frente a cualquier tentación de imponer recetas definitivas para el bienestar colectivo. En lugar de buscar diseños utópicos dirigidos desde arriba, la fortaleza de una comunidad libre reside en su capacidad para ensayar soluciones parciales, reconocer sus errores y mantener abierta la posibilidad permanente de la crítica y de la corrección institucional.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG/1280px-Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG\" alt=\"El Pensador de Rodin\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">El Pensador de Auguste Rodin: símbolo del espíritu crítico de la sociedad abierta.</figcaption></figure>"}'::jsonb,
+  now() - interval '28 days',
+  now() - interval '28 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0002-0000-0000-000000000002',
+  'o-calculo-economico-e-a-coordinacion-social',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Adam_Smith_The_Muir_portrait.jpg/1280px-Adam_Smith_The_Muir_portrait.jpg',
+  'published'::public.publication_status,
+  'essay'::public.publication_type,
+  'es',
+  false,
+  'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
+  '{"gl": "O cálculo económico e a coordinación social", "es": "El cálculo económico y la coordinación social"}'::jsonb,
+  '{"gl": "Por que a información dispersa fai inviable a planificación central", "es": "Por qué la información dispersa hace inviable la planificación central"}'::jsonb,
+  '{"gl": "<p>O prezo non é un simple número arbitrario, senón un mecanismo extraordinario de transmisión de coñecemento disperso entre millóns de axentes con plans heteroxéneos. Cando se intervén ou se distorsiona esta rede de sinais espontáneos, non só se prexudica a eficiencia produtiva, senón que se desarticula a capacidade da sociedade civil para coordinar os seus recursos sen subordinarse ao ditado dunha autoridade central.</p>", "es": "<p>El precio no es un simple número arbitrario, sino un mecanismo extraordinario de transmisión de conocimiento disperso entre millones de agentes con planes heterogéneos. Cuando se interviene o distorsiona esta red de señales espontáneas, no solo se perjudica la eficiencia productiva, sino que se desarticula la capacidad de la sociedad civil para coordinar sus recursos sin subordinarse al dictado de una autoridad central.</p>"}'::jsonb,
+  now() - interval '26 days',
+  now() - interval '26 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0003-0000-0000-000000000003',
+  'a-beleza-oculta-dos-sistemas-complexos',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/Ephesus_Celsus_Library_Fa%C3%A7ade.jpg/1280px-Ephesus_Celsus_Library_Fa%C3%A7ade.jpg',
+  'published'::public.publication_status,
+  'article'::public.publication_type,
+  'gl',
+  false,
+  'd2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2',
+  '{"gl": "A beleza oculta dos sistemas complexos", "es": "La belleza oculta de los sistemas complejos"}'::jsonb,
+  '{"gl": "Unha ollada física e matemática aos fenómenos emerxentes", "es": "Una mirada física y matemática a los fenómenos emergentes"}'::jsonb,
+  '{"gl": "<p>Dende as bandadas de paxaros que debuxan espirais no ceo ata as redes neuronais e os mercados locais, os fenómenos complexos revélannos que o todo é cualitativamente superior á suma das súas partes illadas. Comprender as leis matemáticas da autoorganización permítenos apreciar que a harmonía non require un director omnisciente, senón regras sinxelas de interacción libre entre elementos individuais.</p>", "es": "<p>Desde las bandadas de aves que dibujan espirales en el cielo hasta las redes neuronales y los mercados locales, los fenómenos complejos nos revelan que el todo es cualitativamente superior a la suma de sus partes aisladas. Comprender las leyes matemáticas de la autoorganización nos permite apreciar que la armonía no requiere de un director omnisciente, sino de reglas sencillas de interacción libre entre elementos individuales.</p>"}'::jsonb,
+  now() - interval '25 days',
+  now() - interval '25 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0004-0000-0000-000000000004',
+  'entropia-tempo-e-a-frecha-da-historia',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6a/Foro_Romano_Musei_Capitolini_Roma.jpg/1280px-Foro_Romano_Musei_Capitolini_Roma.jpg',
+  'published'::public.publication_status,
+  'essay'::public.publication_type,
+  'es',
+  false,
+  'd2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2',
+  '{"gl": "Entropía, tempo e a frecha da historia", "es": "Entropía, tiempo y la flecha de la historia"}'::jsonb,
+  '{"gl": "A termodinámica como metáfora do cambio civilizatorio", "es": "La termodinámica como metáfora del cambio civilizatorio"}'::jsonb,
+  '{"gl": "<p>A segunda lei da termodinámica ensínanos que a enerxía tende inevitablemente cara á dispersión a menos que exista un traballo consciente e orientado para manter a estrutura e a orde. No eido das civilizacións ocorre exactamente o mesmo: a cultura e as institucións libres non se conservan por inercia, senón polo esforzo deliberado e cotián de cada xeración por protexer o legado que lle foi confiado.</p>", "es": "<p>La segunda ley de la termodinámica nos enseña que la energía tiende inevitablemente hacia la dispersión a menos que exista un trabajo consciente y orientado para mantener la estructura y el orden. En el ámbito de las civilizaciones ocurre exactamente lo mismo: la cultura y las instituciones libres no se conservan por inercia, sino por el esfuerzo deliberado y cotidiano de cada generación por proteger el legado que le fue confiado.</p>"}'::jsonb,
+  now() - interval '23 days',
+  now() - interval '23 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0005-0000-0000-000000000005',
+  'seguridade-xuridica-e-iniciativa-xuvenil',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/Santiago_Cathedral_2021_-_west_panorama.jpg/1280px-Santiago_Cathedral_2021_-_west_panorama.jpg',
+  'published'::public.publication_status,
+  'article'::public.publication_type,
+  'gl',
+  false,
+  'd3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3',
+  '{"gl": "Seguridade xurídica e iniciativa xuvenil", "es": "Seguridad jurídica e iniciativa juvenil"}'::jsonb,
+  '{"gl": "O impacto da hiperregulación no futuro dos mozos profesionais", "es": "El impacto de la hiperregulación en el futuro de los jóvenes profesionales"}'::jsonb,
+  '{"gl": "<p>Cando un mozo decide emprender, investigar ou crear un proxecto asociativo en Galicia, atópase a miúdo cun labirinto burocrático que penaliza a audacia e premia o conformismo corporativo. A verdadeira seguridade xurídica non consiste en multiplicar normas e decretos exhaustivos, senón en garantir regras xerais, previsibles e transparentes que permitan desenvolver o talento sen ter que pedir permiso constante á administración.</p>", "es": "<p>Cuando un joven decide emprender, investigar o crear un proyecto asociativo en Galicia, se encuentra a menudo con un laberinto burocrático que penaliza la audacia y premia el conformismo corporativo. La verdadera seguridad jurídica no consiste en multiplicar normas y decretos exhaustivos, sino en garantizar reglas generales, previsibles y transparentes que permitan desarrollar el talento sin tener que pedir permiso constante a la administración.</p>"}'::jsonb,
+  now() - interval '22 days',
+  now() - interval '22 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0006-0000-0000-000000000006',
+  'o-valor-dos-contratos-e-a-confianza-social',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/Bust_of_Cicero_%281st-cent._BC%29_-_Palazzo_Nuovo_-_Musei_Capitolini_-_Rome_2016.jpg/1280px-Bust_of_Cicero_%281st-cent._BC%29_-_Palazzo_Nuovo_-_Musei_Capitolini_-_Rome_2016.jpg',
+  'published'::public.publication_status,
+  'essay'::public.publication_type,
+  'es',
+  false,
+  'd3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3',
+  '{"gl": "O valor dos contratos e a confianza social", "es": "El valor de los contratos y la confianza social"}'::jsonb,
+  '{"gl": "Bases institucionais para unha convivencia cooperativa", "es": "Bases institucionales para una convivencia cooperativa"}'::jsonb,
+  '{"gl": "<p>O dereito dos contratos non naceu como unha imposición coercitiva do poder público, senón como o refinamento secular de acordos voluntarios dirixidos a reducir a incerteza e consolidar a palabra dada. Alí onde o cumprimento dos pactos é firme e respectado, o tecido social faise resistente e próspero; onde se normaliza o incumprimento discrecional, esvaécese a base mesma de calquera convivencia libre.</p>", "es": "<p>El derecho de los contratos no nació como una imposición coercitiva del poder público, sino como el refinamiento secular de acuerdos voluntarios dirigidos a reducir la incertidumbre y consolidar la palabra dada. Allí donde el cumplimiento de los pactos es firme y respetado, el tejido social se hace resistente y próspero; donde se normaliza el incumplimiento discrecional, se desvanece la base misma de cualquier convivencia libre.</p>"}'::jsonb,
+  now() - interval '20 days',
+  now() - interval '20 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0007-0000-0000-000000000007',
+  'a-palabra-poetica-como-resistencia',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/Biblioth%C3%A8que_de_l%27Assembl%C3%A9e_Nationale_%28Lunon%29.jpg/1280px-Biblioth%C3%A8que_de_l%27Assembl%C3%A9e_Nationale_%28Lunon%29.jpg',
+  'published'::public.publication_status,
+  'essay'::public.publication_type,
+  'gl',
+  false,
+  'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4',
+  '{"gl": "A palabra poética como resistencia", "es": "La palabra poética como resistencia"}'::jsonb,
+  '{"gl": "A linguaxe fronte ao baleiro e a aceleración contemporánea", "es": "El lenguaje frente al vacío y la aceleración contemporánea"}'::jsonb,
+  '{"gl": "<p>Nunha época asediada pola saturación de mensaxes efémeras e o ruído da comunicación dixital, a poesía eríxese nun acto radical de lentitude e escoita profunda. Rescatar a densidade simbólica de cada vocábulo non é un pasatempo arqueolóxico, senón o medio polo cal o ser humano preserva a capacidade de conmoverse ante o misterio do mundo e protexer a súa intimidade fronte á uniformización técnica.</p>", "es": "<p>En una época asediada por la saturación de mensajes efímeros y el ruido de la comunicación digital, la poesía se erige en un acto radical de lentitud y escucha profunda. Rescatar la densidad simbólica de cada vocablo no es un pasatiempo arqueológico, sino el medio por el cual el ser humano preserva la capacidad de conmoverse ante el misterio del mundo y proteger su intimidad frente a la uniformización técnica.</p>"}'::jsonb,
+  now() - interval '19 days',
+  now() - interval '19 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0008-0000-0000-000000000008',
+  'rosalia-de-castro-e-o-pensamento-do-desarraigo',
+  'https://upload.wikimedia.org/wikipedia/commons/5/51/Rosal%C3%ADa_Castro_de_Murgu%C3%ADa_por_Luis_Sellier.jpg',
+  'published'::public.publication_status,
+  'article'::public.publication_type,
+  'gl',
+  false,
+  'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4',
+  '{"gl": "Rosalía de Castro e o pensamento do desarraigo", "es": "Rosalía de Castro y el pensamiento del desarraigo"}'::jsonb,
+  '{"gl": "Unha relectura existencial alén do folclorismo", "es": "Una relectura existencial más allá del folclorismo"}'::jsonb,
+  '{"gl": "<p>A obra de Rosalía de Castro contén unha reflexión metafísica sobre a soidade, a dor e a fenda ontolóxica da emigración que supera con fartura calquera redución costumista. Ao escoitar a súa voz desprovista de adornos tópicos, atopámonos cunha pensadora lúcida e desgarrada que soubo elevar a saudade galega a unha categoría filosófica de alcance universal.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Pontevedra_13_Praza_da_le%C3%B1a_modified.jpg/1280px-Pontevedra_13_Praza_da_le%C3%B1a_modified.jpg\" alt=\"Praza da Leña en Pontevedra\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">A paisaxe urbana galega que acompañou a escrita rosaliana.</figcaption></figure>", "es": "<p>La obra de Rosalía de Castro encierra una reflexión metafísica sobre la soledad, el dolor y la grieta ontológica de la emigración que supera con creces cualquier reducción costumbrista. Al escuchar su voz desprovista de adornos tópicos, nos encontramos ante una pensadora lúcida y desgarrada que supo elevar la saudade gallega a una categoría filosófica de alcance universal.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Pontevedra_13_Praza_da_le%C3%B1a_modified.jpg/1280px-Pontevedra_13_Praza_da_le%C3%B1a_modified.jpg\" alt=\"Plaza de la Leña en Pontevedra\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">El paisaje urbano gallego que acompañó la escritura rosaliana.</figcaption></figure>"}'::jsonb,
+  now() - interval '17 days',
+  now() - interval '17 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0009-0000-0000-000000000009',
+  'a-vulnerabilidade-compartida-e-a-xustiza',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/Plato_Silanion_Musei_Capitolini_MC1377.png/1280px-Plato_Silanion_Musei_Capitolini_MC1377.png',
+  'published'::public.publication_status,
+  'essay'::public.publication_type,
+  'gl',
+  false,
+  'e1e1e1e1-e1e1-e1e1-e1e1-e1e1e1e1e1e1',
+  '{"gl": "A vulnerabilidade compartida e a xustiza", "es": "La vulnerabilidad compartida y la justicia"}'::jsonb,
+  '{"gl": "Por que o coidado mutuo é unha esixencia ética incontornable", "es": "Por qué el cuidado mutuo es una exigencia ética ineludible"}'::jsonb,
+  '{"gl": "<p>A ilusión da autosuficiencia absoluta adóitanos cegar ante o feito fundamental de que toda traxectoria humana depende, nas súas etapas máis decisivas, do coidado e da atención allea. Unha teoría da xustiza que aspire a ser verdadeiramente humana debe situar a nosa común vulnerabilidade corporal e afectiva no centro da deliberación sobre o que nos debemos os uns aos outros.</p>", "es": "<p>La ilusión de la autosuficiencia absoluta nos suele cegar ante el hecho fundamental de que toda trayectoria humana depende, en sus etapas más decisivas, del cuidado y de la atención ajena. Una teoría de la justicia que aspire a ser verdaderamente humana debe situar nuestra común vulnerabilidad corporal y afectiva en el centro de la deliberación sobre lo que nos debemos unos a otros.</p>"}'::jsonb,
+  now() - interval '16 days',
+  now() - interval '16 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0010-0000-0000-000000000010',
+  'o-dialogo-como-practica-da-humildade',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ae/Aristotle_Altemps_Inv8575.jpg/1280px-Aristotle_Altemps_Inv8575.jpg',
+  'published'::public.publication_status,
+  'article'::public.publication_type,
+  'es',
+  false,
+  'a3a3a3a3-a3a3-a3a3-a3a3-a3a3a3a3a3a3',
+  '{"gl": "O diálogo como práctica da humildade", "es": "El diálogo como práctica de la humildad"}'::jsonb,
+  '{"gl": "Como aprender a discrepar sen destruír a esfera común", "es": "Cómo aprender a discrepar sin destruir la esfera común"}'::jsonb,
+  '{"gl": "<p>Discutir con honestidade non significa vencer verbalmente ao contrincante mediante retórica incendiaria, senón concederlle a posibilidade sincera de ter parte de razón. Na medida en que aprendemos a soster conversas onde esteamos dispostos a matizar as nosas certezas previas, salvagardamos o espazo cívico fronte ao monólogo estéril e á polarización tribal.</p>", "es": "<p>Discutir con honestidad no significa vencer verbalmente al contrincante mediante retórica incendiaria, sino concederle la posibilidad sincera de tener parte de razón. En la medida en que aprendemos a sostener conversaciones donde estemos dispuestos a matizar nuestras certezas previas, salvaguardamos el espacio cívico frente al monólogo estéril y a la polarización tribal.</p>"}'::jsonb,
+  now() - interval '14 days',
+  now() - interval '14 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0011-0000-0000-000000000011',
+  'os-montes-vecinais-e-a-propiedade-comunitaria',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Nobel_Prize_2009-Press_Conference_KVA-30.jpg/1280px-Nobel_Prize_2009-Press_Conference_KVA-30.jpg',
+  'published'::public.publication_status,
+  'essay'::public.publication_type,
+  'gl',
+  false,
+  'e2e2e2e2-e2e2-e2e2-e2e2-e2e2e2e2e2e2',
+  '{"gl": "Os montes veciñais e a propiedade comunitaria", "es": "Los montes vecinales y la propiedad comunitaria"}'::jsonb,
+  '{"gl": "A lección de Elinor Ostrom aplicada ao agro galego", "es": "La lección de Elinor Ostrom aplicada al medio rural gallego"}'::jsonb,
+  '{"gl": "<p>Durante décadas asumiuse o dogma de que os recursos colectivos só podían ser xestionados ou polo Estado ou mediante privatización individual estrita, ignorando a rica tradición xurídica dos bens comúns. O caso dos montes veciñais en man común en Galicia demostra que as comunidades locais son quen de deseñar acordos consuetudinarios sostibles e eficientes cando se respecta a súa autonomía reguladora.</p>", "es": "<p>Durante décadas se asumió el dogma de que los recursos colectivos solo podían gestionarse o por el Estado o mediante privatización individual estricta, ignorando la rica tradición jurídica de los bienes comunes. El caso de los montes vecinales en mano común en Galicia demuestra que las comunidades locales son capaces de diseñar acuerdos consuetudinarios sostenibles y eficientes cuando se respeta su autonomía reguladora.</p>"}'::jsonb,
+  now() - interval '13 days',
+  now() - interval '13 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0012-0000-0000-000000000012',
+  'a-cidade-a-escala-humana',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/67/Roman_bridge%2C_Ourense_%28Spain%29.jpg/1280px-Roman_bridge%2C_Ourense_%28Spain%29.jpg',
+  'published'::public.publication_status,
+  'article'::public.publication_type,
+  'gl',
+  false,
+  'e2e2e2e2-e2e2-e2e2-e2e2-e2e2e2e2e2e2',
+  '{"gl": "A cidade á escala humana", "es": "La ciudad a escala humana"}'::jsonb,
+  '{"gl": "Urbanismo, peonalización e calidade de vida colectiva", "es": "Urbanismo, peatonalización y calidad de vida colectiva"}'::jsonb,
+  '{"gl": "<p>A rúa non é un mero corredor de tráfico vehicular para acelerar desprazamentos, senón o lugar primordial do encontro cívico, da mirada veciñal e da vida cotiá. Cando as políticas urbanas devólvenlle o protagonismo ao camiñante e fomentan a mixtura de usos comerciais e residenciais, as vilas e cidades recuperan o pulso comunitario que o funcionalismo abstracto tiña case extinguido.</p>", "es": "<p>La calle no es un mero pasillo de tráfico vehicular para acelerar desplazamientos, sino el lugar primordial del encuentro cívico, de la mirada vecinal y de la vida cotidiana. Cuando las políticas urbanas devuelven el protagonismo al peatón y fomentan la mezcla de usos comerciales y residenciales, las villas y ciudades recuperan el pulso comunitario que el funcionalismo abstracto casi había extinguido.</p>"}'::jsonb,
+  now() - interval '11 days',
+  now() - interval '11 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0013-0000-0000-000000000013',
+  'as-virtudes-civicas-no-seculo-xxi',
+  'https://upload.wikimedia.org/wikipedia/commons/d/da/The_Parthenon_in_Athens.jpg',
+  'published'::public.publication_status,
+  'essay'::public.publication_type,
+  'gl',
+  false,
+  'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1',
+  '{"gl": "As virtudes cívicas no século XXI", "es": "Las virtudes cívicas en el siglo XXI"}'::jsonb,
+  '{"gl": "Por que a liberdade require compromiso moral e non só garantías legais", "es": "Por qué la libertad requiere compromiso moral y no solo garantías legales"}'::jsonb,
+  '{"gl": "<p>Ningunha constitución nin sistema de dereitos formais pode subsistir por moito tempo se os seus cidadáns perden o sentido da responsabilidade persoal e o aprecio polas virtudes públicas. A verdadeira liberdade non medra no baleiro ético nin no desdén pola sorte común, senón no exercicio diario da temperanza, da veracidade no discurso e da coraxe para defender a dignidade das persoas.</p>", "es": "<p>Ninguna constitución ni sistema de derechos formales puede subsistir por mucho tiempo si sus ciudadanos pierden el sentido de la responsabilidad personal y el aprecio por las virtudes públicas. La verdadera libertad no florece en el vacío ético ni en el desdén por la suerte común, sino en el ejercicio diario de la templanza, de la veracidad en el discurso y del coraje para defender la dignidad de las personas.</p>"}'::jsonb,
+  now() - interval '10 days',
+  now() - interval '10 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0014-0000-0000-000000000014',
+  'o-republicanismo-clasico-e-a-liberdade-sen-dominacion',
+  'https://upload.wikimedia.org/wikipedia/commons/9/99/John_Stuart_Mill_by_London_Stereoscopic_Company%2C_c1870.jpg',
+  'published'::public.publication_status,
+  'article'::public.publication_type,
+  'es',
+  false,
+  'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1',
+  '{"gl": "O republicanismo clásico e a liberdade sen dominación", "es": "El republicanismo clásico y la libertad sin dominación"}'::jsonb,
+  '{"gl": "De Cicerón a Quentin Skinner: a defensa da non arbitrariedade", "es": "De Cicerón a Quentin Skinner: la defensa de la no arbitrariedad"}'::jsonb,
+  '{"gl": "<p>Para a tradición republicana clásica, non ser escravo non significa unicamente que o amo non nos estea golpeando hoxe, senón non depender da vontade arbitraria de ninguén para poder levar adiante a propia vida. Esta concepción robusta da non dominación ofrece ferramentas teóricas indispensables para avaliar os perigos de concentración de poder, sexa este de natureza política ou monopolística privada.</p>", "es": "<p>Para la tradición republicana clásica, no ser esclavo no significa únicamente que el amo no nos esté golpeando hoy, sino no depender de la voluntad arbitraria de nadie para poder llevar adelante la propia vida. Esta concepción robusta de la no dominación ofrece herramientas teóricas indispensables para evaluar los peligros de concentración de poder, sea este de naturaleza política o monopolística privada.</p>"}'::jsonb,
+  now() - interval '8 days',
+  now() - interval '8 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0015-0000-0000-000000000015',
+  'cooperacion-evolutiva-e-estratexias-resilientes',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/David_Hume_Ramsay.jpg/1280px-David_Hume_Ramsay.jpg',
+  'published'::public.publication_status,
+  'essay'::public.publication_type,
+  'gl',
+  false,
+  'a2a2a2a2-a2a2-a2a2-a2a2-a2a2a2a2a2a2',
+  '{"gl": "Cooperación evolutiva e estratexias resilientes", "es": "Cooperación evolutiva y estrategias resilientes"}'::jsonb,
+  '{"gl": "Como a confianza se constrúe na interacción reiterada", "es": "Cómo la confianza se construye en la interacción reiterada"}'::jsonb,
+  '{"gl": "<p>A teoría de xogos demostrou que a cooperación espontánea entre individuos egoístas non require un leviatán que vixíe cada movemento, senón a expectativa críbel de interaccións futuras repetidas. Cando as institucións garanten a transparencia e a reciprocidade, a colaboración convértese na estratexia dominante, reducindo drasticamente os custos de fricción e desconfianza colectiva.</p>", "es": "<p>La teoría de juegos ha demostrado que la cooperación espontánea entre individuos egoístas no requiere de un leviatán que vigile cada movimiento, sino de la expectativa creíble de interacciones futuras repetidas. Cuando las instituciones garantizan la transparencia y la reciprocidad, la colaboración se convierte en la estrategia dominante, reduciendo drásticamente los costes de fricción y desconfianza colectiva.</p>"}'::jsonb,
+  now() - interval '7 days',
+  now() - interval '7 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0016-0000-0000-000000000016',
+  'incentivos-perversos-na-politica-publica',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Casa_Consistorial_de_la_Ciudad_de_Lugo_edited.jpg/1280px-Casa_Consistorial_de_la_Ciudad_de_Lugo_edited.jpg',
+  'published'::public.publication_status,
+  'article'::public.publication_type,
+  'es',
+  false,
+  'a2a2a2a2-a2a2-a2a2-a2a2-a2a2a2a2a2a2',
+  '{"gl": "Incentivos perversos na política pública", "es": "Incentivos perversos en la política pública"}'::jsonb,
+  '{"gl": "A lei das consecuencias non desexadas na toma de decisións", "es": "La ley de las consecuencias no deseadas en la toma de decisiones"}'::jsonb,
+  '{"gl": "<p>Xulgar unha política pública exclusivamente polas boas intencións declaradas polos seus promotores é o camiño máis curto cara ao fracaso e a frustración cidadá. Toda intervención lexislativa altera a matriz de incentivos reais sobre o terreo, xerando a miúdo efectos perversos contrarios ao propósito inicial que poderían terse anticipado cunha análise económica máis rigorosa.</p>", "es": "<p>Juzgar una política pública exclusivamente por las buenas intenciones declaradas por sus promotores es el camino más corto hacia el fracaso y la frustración ciudadana. Toda intervención legislativa altera la matriz de incentivos reales sobre el terreno, generando a menudo efectos perversos contrarios al propósito inicial que se habrían podido anticipar con un análisis económico más riguroso.</p>"}'::jsonb,
+  now() - interval '5 days',
+  now() - interval '5 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0017-0000-0000-000000000017',
+  'a-novela-europea-e-o-desencanto-do-mundo',
+  'https://upload.wikimedia.org/wikipedia/commons/9/95/Thomas_Mann_1929.jpg',
+  'published'::public.publication_status,
+  'essay'::public.publication_type,
+  'gl',
+  false,
+  'a3a3a3a3-a3a3-a3a3-a3a3-a3a3a3a3a3a3',
+  '{"gl": "A novela europea e o desencanto do mundo", "es": "La novela europea y el desencanto del mundo"}'::jsonb,
+  '{"gl": "A procura de sentido nas narrativas de comezos do século XX", "es": "La búsqueda de sentido en las narrativas de comienzos del siglo XX"}'::jsonb,
+  '{"gl": "<p>De Thomas Mann a Virginia Woolf ou Castelao, os grandes narradores de entreguerras diagnosticaron con precisión implacable a perda das certezas metafísicas tradicionais ante a modernidade industrial. A gran novela europea naceu precisamente desa perplexidade, converténdose nun laboratorio moral imprescindible onde o individuo explora a súa fraxilidade sen o refuxio de dogmas inquebrantables.</p>", "es": "<p>De Thomas Mann a Virginia Woolf o Castelao, los grandes narradores de entreguerras diagnosticaron con precisión implacable la pérdida de las certezas metafísicas tradicionales ante la modernidad industrial. La gran novela europea nació precisamente de esa perplejidad, convirtiéndose en un laboratorio moral imprescindible donde el individuo explora su fragilidad sin el refugio de dogmas inquebrantables.</p>"}'::jsonb,
+  now() - interval '4 days',
+  now() - interval '4 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0018-0000-0000-000000000018',
+  'o-ensaio-como-forma-de-hospitalidade-intelectual',
+  'https://upload.wikimedia.org/wikipedia/commons/5/5a/Portrait_of_Michel_de_Montaigne%2C_circa_unknown.jpg',
+  'published'::public.publication_status,
+  'article'::public.publication_type,
+  'es',
+  false,
+  'a3a3a3a3-a3a3-a3a3-a3a3-a3a3a3a3a3a3',
+  '{"gl": "O ensaio como forma de hospitalidade intelectual", "es": "El ensayo como forma de hospitalidad intelectual"}'::jsonb,
+  '{"gl": "De Montaigne a nós: pensar en voz alta sen dogmatismos", "es": "De Montaigne a nosotros: pensar en voz alta sin dogmatismos"}'::jsonb,
+  '{"gl": "<p>A diferenza do tratado escolástico ou do panfleto propagandístico, o ensaio asume dende o seu nacemento a súa condición provisional e a súa vocación conversacional. Ensañar é tentar, pesarse a un mesmo fronte ao mundo e convidar o lector a percorrer un itinerario reflexivo onde o valor reside no proceso mesmo de indagación e non na imposición dunha conclusión pechada.</p>", "es": "<p>A diferencia del tratado escolástico o del panfleto propagandístico, el ensayo asume desde su nacimiento su condición provisional y su vocación conversacional. Ensayar es tentar, pesarse a uno mismo frente al mundo e invitar al lector a recorrer un itinerario reflexivo donde el valor reside en el proceso mismo de indagación y no en la imposición de una conclusión cerrada.</p>"}'::jsonb,
+  now() - interval '3 days',
+  now() - interval '3 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0019-0000-0000-000000000019',
+  'o-porto-da-coruna-e-as-rutas-do-atlantico',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/Torre_de_H%C3%A9rcules_2023.jpg/1280px-Torre_de_H%C3%A9rcules_2023.jpg',
+  'published'::public.publication_status,
+  'essay'::public.publication_type,
+  'gl',
+  false,
+  'a4a4a4a4-a4a4-a4a4-a4a4-a4a4a4a4a4a4',
+  '{"gl": "O porto da Coruña e as rutas do Atlántico", "es": "El puerto de A Coruña y las rutas del Atlántico"}'::jsonb,
+  '{"gl": "Comercio marítimo, ilustración e apertura exterior no século XVIII", "es": "Comercio marítimo, ilustración y apertura exterior en el siglo XVIII"}'::jsonb,
+  '{"gl": "<p>A apertura do porto da Coruña ao comercio directo coas colonias americanas a finais do século XVIII supuxo un verdadeiro catalizador de modernización mercantil e renovación das ideas en Galicia. Aquela puxante burguesía ilustrada demostrou que o progreso económico galego estivo sempre estreitamente vencellado á súa proxección atlántica e á súa capacidade para competir nos mercados internacionais.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Ayuntamiento%2C_La_Coru%C3%B1a%2C_Espa%C3%B1a%2C_2015-09-25%2C_DD_44.jpg/1280px-Ayuntamiento%2C_La_Coru%C3%B1a%2C_Espa%C3%B1a%2C_2015-09-25%2C_DD_44.jpg\" alt=\"Praza de María Pita na Coruña\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">A Coruña: praza de María Pita e a tradición marítimo-comercial galega.</figcaption></figure>", "es": "<p>La apertura del puerto de A Coruña al comercio directo con las colonias americanas a finales del siglo XVIII supuso un verdadero catalizador de modernización mercantil y renovación de las ideas en Galicia. Aquella pujante burguesía ilustrada demostró que el progreso económico gallego estuvo siempre estrechamente vinculado a su proyección atlántica y a su capacidad para competir en los mercados internacionales.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Ayuntamiento%2C_La_Coru%C3%B1a%2C_Espa%C3%B1a%2C_2015-09-25%2C_DD_44.jpg/1280px-Ayuntamiento%2C_La_Coru%C3%B1a%2C_Espa%C3%B1a%2C_2015-09-25%2C_DD_44.jpg\" alt=\"Plaza de María Pita en A Coruña\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">A Coruña: plaza de María Pita y la tradición marítimo-comercial gallega.</figcaption></figure>"}'::jsonb,
+  now() - interval '2 days',
+  now() - interval '2 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES (
+  'd1000001-0020-0000-0000-000000000020',
+  'as-raices-institucionais-do-atraso-e-do-crecemento',
+  'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Les_salons_au_XVIIIe_si%C3%A8cle_-_Histoire_Image.jpg/1280px-Les_salons_au_XVIIIe_si%C3%A8cle_-_Histoire_Image.jpg',
+  'published'::public.publication_status,
+  'article'::public.publication_type,
+  'es',
+  false,
+  'a4a4a4a4-a4a4-a4a4-a4a4-a4a4a4a4a4a4',
+  '{"gl": "As raíces institucionais do atraso e do crecemento", "es": "Las raíces institucionales del atraso y del crecimiento"}'::jsonb,
+  '{"gl": "A perspectiva histórica de Acemoglu e Robinson aplicada á Península Ibérica", "es": "La perspectiva histórica de Acemoglu y Robinson aplicada a la Península Ibérica"}'::jsonb,
+  '{"gl": "<p>A diferenza entre a prosperidade e o estancamento económico a longo prazo non se explica polo clima nin por trazos culturais inmutables, senón pola natureza extractiva ou inclusiva das institucións políticas e xurídicas. A historia económica da Península Ibérica ilustra con claridade como a concentración de privilexios freou a innovación tecnolóxica, mentres que a ampliación de dereitos xerou riqueza compartida.</p>", "es": "<p>La diferencia entre la prosperidad y el estancamiento económico a largo plazo no se explica por el clima ni por rasgos culturales inmutables, sino por la naturaleza extractiva o inclusiva de las instituciones políticas y jurídicas. La historia económica de la Península Ibérica ilustra con claridad cómo la concentración de privilegios frenó la innovación tecnológica, mientras que la ampliación de derechos generó riqueza compartida.</p>"}'::jsonb,
+  now() - interval '1 days',
+  now() - interval '1 days',
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================================
+-- 9. Additional Publication Tags Junction
+-- ============================================================================
+
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0001-0000-0000-000000000001', 'c1000001-0012-0000-0000-000000000012') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0001-0000-0000-000000000001', 'c1000001-0014-0000-0000-000000000014') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0001-0000-0000-000000000001', 'c1000001-0015-0000-0000-000000000015') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0002-0000-0000-000000000002', 'b1c84c1d-05ff-4988-bf22-0ed25a086df5') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0002-0000-0000-000000000002', 'c1000001-0013-0000-0000-000000000013') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0002-0000-0000-000000000002', 'c1000001-0015-0000-0000-000000000015') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0003-0000-0000-000000000003', '8ac5efa5-ea26-46b4-9ac1-e981941abdcc') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0003-0000-0000-000000000003', 'c1000001-0013-0000-0000-000000000013') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0003-0000-0000-000000000003', 'c1000001-0003-0000-0000-000000000003') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0004-0000-0000-000000000004', 'c1000001-0003-0000-0000-000000000003') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0004-0000-0000-000000000004', '6c891f3b-160d-4fb3-afc6-159cb21fde44') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0004-0000-0000-000000000004', '1b964c97-9c3c-417c-affc-1fe85bca1ede') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0005-0000-0000-000000000005', 'c1000001-0005-0000-0000-000000000005') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0005-0000-0000-000000000005', '3d45ab72-d296-4383-9353-419c919c88c3') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0005-0000-0000-000000000005', '8644aa14-00a0-4b60-a79d-4e1f14d574d1') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0006-0000-0000-000000000006', 'c1000001-0005-0000-0000-000000000005') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0006-0000-0000-000000000006', 'c1000001-0015-0000-0000-000000000015') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0006-0000-0000-000000000006', '6223c4ac-1798-4cbe-9694-b4986d12059e') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0007-0000-0000-000000000007', 'c1000001-0011-0000-0000-000000000011') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0007-0000-0000-000000000007', 'c1000001-0010-0000-0000-000000000010') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0007-0000-0000-000000000007', '1b964c97-9c3c-417c-affc-1fe85bca1ede') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0008-0000-0000-000000000008', 'c1000001-0010-0000-0000-000000000010') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0008-0000-0000-000000000008', '6cadd27f-d9bd-47bc-ba7f-9f7115236efa') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0008-0000-0000-000000000008', 'c1000001-0016-0000-0000-000000000016') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0009-0000-0000-000000000009', 'c1000001-0001-0000-0000-000000000001') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0009-0000-0000-000000000009', 'c1000001-0012-0000-0000-000000000012') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0009-0000-0000-000000000009', 'c1000001-0020-0000-0000-000000000020') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0010-0000-0000-000000000010', '1449e767-92a9-499f-9367-35c27b1953c3') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0010-0000-0000-000000000010', 'c1000001-0014-0000-0000-000000000014') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0010-0000-0000-000000000010', 'da12fd2c-ca75-41bb-9587-b06d7f4c59c5') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0011-0000-0000-000000000011', 'c1000001-0020-0000-0000-000000000020') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0011-0000-0000-000000000011', 'c1000001-0015-0000-0000-000000000015') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0011-0000-0000-000000000011', 'c1000001-0009-0000-0000-000000000009') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0012-0000-0000-000000000012', '6223c4ac-1798-4cbe-9694-b4986d12059e') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0012-0000-0000-000000000012', 'c1000001-0020-0000-0000-000000000020') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0012-0000-0000-000000000012', '8644aa14-00a0-4b60-a79d-4e1f14d574d1') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0013-0000-0000-000000000013', 'c1000001-0001-0000-0000-000000000001') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0013-0000-0000-000000000013', 'c1000001-0012-0000-0000-000000000012') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0013-0000-0000-000000000013', 'c1000001-0014-0000-0000-000000000014') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0014-0000-0000-000000000014', '6769db8e-55a0-4d74-b095-ba6e024a7d94') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0014-0000-0000-000000000014', 'c1000001-0018-0000-0000-000000000018') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0014-0000-0000-000000000014', 'c1000001-0012-0000-0000-000000000012') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0015-0000-0000-000000000015', '8aa21f34-2d09-4c01-a071-86d1f54a08e3') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0015-0000-0000-000000000015', 'c1000001-0013-0000-0000-000000000013') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0015-0000-0000-000000000015', 'c1000001-0004-0000-0000-000000000004') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0016-0000-0000-000000000016', '8644aa14-00a0-4b60-a79d-4e1f14d574d1') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0016-0000-0000-000000000016', 'b1c84c1d-05ff-4988-bf22-0ed25a086df5') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0016-0000-0000-000000000016', 'c1000001-0014-0000-0000-000000000014') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0017-0000-0000-000000000017', 'c1000001-0010-0000-0000-000000000010') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0017-0000-0000-000000000017', 'c1000001-0002-0000-0000-000000000002') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0017-0000-0000-000000000017', 'c1000001-0016-0000-0000-000000000016') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0018-0000-0000-000000000018', 'c1000001-0010-0000-0000-000000000010') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0018-0000-0000-000000000018', 'da4674a3-cfa8-4b4a-96cb-b1f8b2861e0d') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0018-0000-0000-000000000018', 'c1000001-0014-0000-0000-000000000014') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0019-0000-0000-000000000019', '6c891f3b-160d-4fb3-afc6-159cb21fde44') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0019-0000-0000-000000000019', 'c1000001-0019-0000-0000-000000000019') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0019-0000-0000-000000000019', 'b1c84c1d-05ff-4988-bf22-0ed25a086df5') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0020-0000-0000-000000000020', '6c891f3b-160d-4fb3-afc6-159cb21fde44') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0020-0000-0000-000000000020', 'c1000001-0015-0000-0000-000000000015') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0020-0000-0000-000000000020', 'c1000001-0017-0000-0000-000000000017') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+
+-- ============================================================================
+-- 10. Comments (10 Fake Users with 1 Comment each on Random Articles)
+-- ============================================================================
+
+INSERT INTO public.comments (
+  id, publication_id, author_id, content, updated_at
+) VALUES (
+  'e0000001-0001-0000-0000-000000000001',
+  '715b6a61-2aa8-4cc9-a06a-c86e5e485067',
+  'b1b1b1b1-0001-0000-0000-000000000001',
+  'Unha peza indispensable sobre a necesidade de escoitar antes de xulgar. Oxalá recuperemos máis espazos públicos con esta serenidade argumentativa.',
+  now() - interval '15 days'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.comments (
+  id, publication_id, author_id, content, updated_at
+) VALUES (
+  'e0000001-0002-0000-0000-000000000002',
+  '42e704a1-d965-4193-ac62-35ec9e20e8a0',
+  'b1b1b1b1-0002-0000-0000-000000000002',
+  'Fascinante reconstrución dos primeiros pasos de Otero Pedrayo en Madrid. A prosa traslada perfectamente a atmosfera do Ateneo da época.',
+  now() - interval '12 days'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.comments (
+  id, publication_id, author_id, content, updated_at
+) VALUES (
+  'e0000001-0003-0000-0000-000000000003',
+  '7c54c921-729d-4083-8c4c-7bcb2aa39aa9',
+  'b1b1b1b1-0003-0000-0000-000000000003',
+  'Excelente repaso histórico das falacias ludistas. A referencia ao capítulo de Henry Hazlitt é máis oportuna ca nunca ante os debates actuais sobre IA.',
+  now() - interval '11 days'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.comments (
+  id, publication_id, author_id, content, updated_at
+) VALUES (
+  'e0000001-0004-0000-0000-000000000004',
+  'adb0babf-900a-4460-8943-038e0babbb7c',
+  'b1b1b1b1-0004-0000-0000-000000000004',
+  'Moi boa aplicación da teoría de xogos ás interaccións sociais cotiás. O dilema do prisioneiro axuda moito a entender por que nos custa tanto dar o primeiro paso.',
+  now() - interval '9 days'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.comments (
+  id, publication_id, author_id, content, updated_at
+) VALUES (
+  'e0000001-0005-0000-0000-000000000005',
+  'b26715da-0edc-4979-aa95-aec97859fa07',
+  'b1b1b1b1-0005-0000-0000-000000000005',
+  'Unha análise económica rigorosa sobre o mercado da vivenda e as distorsións provocadas pola regulación urbanística. Moito que debater e reflexionar.',
+  now() - interval '8 days'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.comments (
+  id, publication_id, author_id, content, updated_at
+) VALUES (
+  'e0000001-0006-0000-0000-000000000006',
+  'd1000001-0001-0000-0000-000000000001',
+  'b1b1b1b1-0006-0000-0000-000000000006',
+  'A defensa do reformismo gradual popperiano segue sendo o mellor antídoto fronte aos dogmatismos ideolóxicos de calquera signo.',
+  now() - interval '6 days'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.comments (
+  id, publication_id, author_id, content, updated_at
+) VALUES (
+  'e0000001-0007-0000-0000-000000000007',
+  'd1000001-0007-0000-0000-000000000007',
+  'b1b1b1b1-0007-0000-0000-000000000007',
+  'Unha fermosa reflexión sobre a lentitude do verso fronte ao consumo acelerado de contidos dixitais. Un refuxio necesario.',
+  now() - interval '5 days'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.comments (
+  id, publication_id, author_id, content, updated_at
+) VALUES (
+  'e0000001-0008-0000-0000-000000000008',
+  'd1000001-0011-0000-0000-000000000011',
+  'b1b1b1b1-0008-0000-0000-000000000008',
+  'A conexión entre o traballo pioneiro de Elinor Ostrom e os nosos montes veciñais en man común está moi ben traída. Parabéns polo artigo.',
+  now() - interval '4 days'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.comments (
+  id, publication_id, author_id, content, updated_at
+) VALUES (
+  'e0000001-0009-0000-0000-000000000009',
+  'd1000001-0003-0000-0000-000000000003',
+  'b1b1b1b1-0009-0000-0000-000000000009',
+  'Brillante explicación dos fenómenos emerxentes. As matemáticas amosan como a sinxeleza das regras locais pode xerar estruturas de enorme sofisticación.',
+  now() - interval '2 days'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.comments (
+  id, publication_id, author_id, content, updated_at
+) VALUES (
+  'e0000001-0010-0000-0000-000000000010',
+  'd1000001-0019-0000-0000-000000000019',
+  'b1b1b1b1-0010-0000-0000-000000000010',
+  'Un recordatorio histórico esencial: Galicia nunca foi unha esquina illada, senón un nó marítimo de primeira orde conectado co mundo atlántico.',
+  now() - interval '1 days'
+) ON CONFLICT (id) DO NOTHING;
