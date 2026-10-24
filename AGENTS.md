@@ -81,7 +81,8 @@ cerna/
 │   │   │   └── index.ts          # Barrel export for lib/db
 │   │   ├── editor/               # TipTap extensions and KaTeX renderers
 │   │   ├── email/                # Newsletter email templates and token utilities
-│   │   └── pdf/                  # Article PDF export generator
+│   │   ├── pdf/                  # Article PDF export generator
+│   │   └── storage/              # Unified storage service, WebP compression & path helpers
 │   └── proxy.ts                  # Perimeter Edge middleware (i18n, rate limiting, auth gating)
 ├── database/                     # PostgreSQL schema definitions
 │   └── full_schema.sql           # Complete canonical database schema dump (tables, RLS, functions)
@@ -155,12 +156,14 @@ cerna/
 * **Decouple Auth from Public Reader SSR:**  
   Public article pages (`/articulo/[slug]`) must not call `getAuthenticatedUser()` / `cookies()` during initial server render. Doing so disables static caching/ISR and triggers dynamic SSR on every bot/crawler hit. Keep reader rendering cached (ISR `revalidate = 60` or on-demand revalidation) and handle user-specific review actions on the client.
 * **Storage Bucket Rules:**  
-  * Use the single public bucket: `imagenes-articulos`.
-  * Standard paths:
-    * Covers: `portadas/{userId}/{timestamp}.{ext}`
-    * In-article images: `contenido/{userId}/{timestamp}-{safeName}`
-    * Avatars: `avatares/{userId}/{timestamp}.{ext}`
-  * Client-side compression must be enforced before uploading images (max 1600px width, WebP/JPEG quality 80%) to avoid exhausting storage egress quotas.
+  * Use the primary public bucket: `media` (with `imagenes-articulos` recognized for legacy assets).
+  * Standard canonical paths (via `@/lib/storage`):
+    * Profile avatars: `profiles/{userId}/avatar-{timestamp}-{slug}.webp` (max 512x512)
+    * Article covers: `publications/covers/{userId}/cover-{timestamp}-{slug}.webp` (max 1600x1200)
+    * In-article images: `publications/inline/{userId}/{name}-{timestamp}-{slug}.webp` (max 1400x1400)
+    * Legacy compatibility: `avatares/`, `portadas/`, and `contenido/` remain recognized for deletion/cleanup.
+  * Client-side WebP compression and dimension limits must always be enforced via `uploadStorageImage()` before uploading to avoid exhausting bandwidth egress quotas.
+  * Orphan prevention: Article covers and inline images must be purged via `cleanupPublicationImages()` when a publication is deleted.
 
 ### 4.4. TipTap Editor & HTML Sanitization Pipeline
 * **Rendering Order:**  

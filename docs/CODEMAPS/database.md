@@ -102,13 +102,22 @@ Todas las tablas operan con RLS activo:
 
 ---
 
-## 4. Almacenamiento (Supabase Storage Buckets)
+## 4. Almacenamiento (Supabase Storage: `media`)
 
-### `avatars`
-- Almacena fotos de perfil de usuarios y columnistas.
-- Formatos permitidos: JPG, PNG, WEBP.
-- RLS: Lectura pública; subida permitida únicamente en la ruta `{user_id}/*`.
+Se utiliza el bucket público centralizado canónico (`media`, con soporte legado para `imagenes-articulos`) gestionado mediante el módulo `src/lib/storage/`:
 
-### `articulos`
-- Almacena imágenes de cabecera y fotos incrustadas dentro del contenido de los artículos.
-- RLS: Lectura pública; subida permitida a usuarios con roles `escritor`, `admin` o `invitado`.
+### Estructura Canónica de Directorios:
+- **`profiles/{userId}/avatar-{timestamp}-{slug}.webp`**: Avatares de usuario y columnistas (redimensionados a máx 512×512, compresión WebP 85%).
+- **`publications/covers/{userId}/cover-{timestamp}-{slug}.webp`**: Portadas de artículos (máx 1600×1200, WebP 82%).
+- **`publications/inline/{userId}/figure-{timestamp}-{slug}.webp`**: Imágenes incrustadas dentro del contenido (máx 1400×1400, WebP 82%).
+- *Compatibilidad histórica:* Las rutas legacy (`avatares/`, `portadas/`, `contenido/`) siguen siendo reconocidas por `extractStoragePathFromUrl` para limpieza y desvinculación.
+
+### Políticas RLS en `storage.objects`:
+- **`SELECT`**: Lectura pública para cualquier visitante.
+- **`INSERT` (Perfiles)**: Usuarios autenticados únicamente en su propia carpeta `profiles/{auth.uid()}/*`.
+- **`INSERT` (Publicaciones)**: Redactores (`guest`, `member`, `founder`, `admin`, `escritor`) en `publications/*`.
+- **`DELETE` / `UPDATE`**: Los usuarios pueden eliminar sus propios archivos; los roles `founder` y `admin` pueden gestionar y limpiar cualquier archivo del bucket.
+- **Limpieza Automática (Garbage Collection)**:
+  - Al reemplazar un avatar o portada, el archivo previo se elimina automáticamente.
+  - Al guardar un artículo, las imágenes inline removidas del editor se eliminan del storage.
+  - Al eliminar un artículo completo en el escritorio, su portada e imágenes incrustadas se purgan vía `cleanupPublicationImages()`.
