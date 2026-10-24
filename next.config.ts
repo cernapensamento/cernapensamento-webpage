@@ -1,7 +1,30 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { loadEnvConfig } from '@next/env';
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 
+const cwd = process.cwd();
+const isWorktree = cwd.includes(`${path.sep}.worktrees${path.sep}`);
+const repoRoot = isWorktree ? path.resolve(cwd, '../..') : cwd;
+
+if (isWorktree) {
+  const parentEnv = path.join(repoRoot, '.env.local');
+  const localEnv = path.join(cwd, '.env.local');
+  if (fs.existsSync(parentEnv) && !fs.existsSync(localEnv)) {
+    try {
+      fs.symlinkSync('../../.env.local', localEnv);
+    } catch {
+      // Ignore if symlink already exists
+    }
+  }
+  loadEnvConfig(repoRoot);
+}
+
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: repoRoot,
+  },
   images: {
     remotePatterns: [
       {
