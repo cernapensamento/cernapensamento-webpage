@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { LocalizedString } from '@/lib/db/types';
+import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 
 export interface ArticleCardData {
   id: string | number;
@@ -34,6 +37,7 @@ export interface ArticleCardData {
   } | null;
   cover_image_url?: string | null;
   imagen_url?: string | null;
+  tags?: Array<{ id?: string; name?: string; slug?: string }> | null;
 }
 
 export interface ArticleCardProps {
@@ -73,11 +77,22 @@ export default function ArticleCard({
   const excerpt = subtitulo || (rawContent ? rawContent.replace(/<[^>]*>/g, '').substring(0, 160).trim() + '...' : '');
 
   // Resolve article type
-  const typeKey = (articulo.type || articulo.tipo || 'article').toLowerCase();
-  const typeLabel = dict?.documentTypes?.[typeKey] || dict?.documentTypes?.[typeKey === 'article' ? 'artigo' : typeKey] || typeKey;
+  const typeKey = (articulo.type || articulo.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
+  const typeLabel = dict?.documentTypes?.[typeKey] || dict?.documentTypes?.[typeKey === PUBLICATION_TYPES.ARTICLE ? 'artigo' : typeKey] || typeKey;
+
+  // Resolve article tags / labels (supports 1, 2, 3, 4, 5 tags)
+  const validTags = articulo.tags && articulo.tags.length > 0
+    ? articulo.tags
+        .map((t) => t?.name?.trim())
+        .filter((n): n is string => Boolean(n && n.toLowerCase() !== PUBLICATION_TYPES.NEWS && n.toLowerCase() !== PUBLICATION_TYPES.ARTICLE))
+    : [];
+  const displayLabels = validTags.length > 0 ? validTags.map((n) => n.toUpperCase()) : [typeLabel.toUpperCase()];
+
+  // Fallback dictionary
+  const fallbackDict = lang === 'es' ? esDict : glDict;
 
   // Resolve author details
-  const authorName = articulo.author?.full_name || articulo.author?.nombre || articulo.perfiles?.nombre || 'Autor Descoñecido';
+  const authorName = articulo.author?.full_name || articulo.author?.nombre || articulo.perfiles?.nombre || (dict?.articles as Record<string, string>)?.unknownAuthor || fallbackDict.articles.unknownAuthor;
   const authorAvatar = articulo.author?.avatar_url || articulo.perfiles?.avatar_url || null;
 
   // Resolve date
@@ -115,10 +130,14 @@ export default function ArticleCard({
 
         <div className="relative z-10">
           {/* Category & Date Header */}
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <span className="text-[11px] font-bold text-gold uppercase tracking-[0.2em]">
-              {typeLabel}
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-2.5 mb-4">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {displayLabels.map((lbl) => (
+                <span key={lbl} className="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-2.5 py-1">
+                  {lbl}
+                </span>
+              ))}
+            </div>
             {formattedDate && (
               <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
                 {formattedDate}
@@ -158,9 +177,11 @@ export default function ArticleCard({
             </span>
           </div>
 
-          <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/60 group-hover:text-gold group-hover:translate-x-1 transition-all flex items-center gap-1">
+          <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/60 group-hover:text-gold transition-all flex items-center gap-1.5">
             <span>Ler</span>
-            <span aria-hidden="true">→</span>
+            <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+              arrow_forward
+            </span>
           </Link>
         </div>
       </article>
@@ -171,8 +192,8 @@ export default function ArticleCard({
   // VARIANT: LEAD / SPOTLIGHT (HORIZONTAL HERO)
   // ==========================================
   if (effectiveVariant === 'lead') {
-    const byLabel = (dict?.mosaic as Record<string, string>)?.by || (dict as Record<string, string>)?.by || (lang === 'es' ? 'Por' : 'Por');
-    const readLabel = (dict?.mosaic as Record<string, string>)?.readArticle || (dict as Record<string, string>)?.readArticle || (lang === 'es' ? 'Leer artículo' : 'Ler artigo');
+    const byLabel = (dict?.mosaic as Record<string, string>)?.by || (dict?.articles as Record<string, string>)?.by || (dict as Record<string, string>)?.by || 'Por';
+    const readLabel = (dict?.mosaic as Record<string, string>)?.readArticle || (dict?.articles as Record<string, string>)?.readArticle || fallbackDict.articles.readArticle;
 
     if (!hasCover || !coverUrl) {
       return (
@@ -185,34 +206,43 @@ export default function ArticleCard({
           </span>
 
           <div className="relative z-10 max-w-4xl">
-            <div className="flex items-center gap-4 mb-5">
-              <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
-                {typeLabel}
-              </span>
-              {formattedDate && (
-                <>
-                  <span className="text-charcoal/30 select-none">•</span>
-                  <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
-                    {formattedDate}
-                  </time>
-                </>
-              )}
-            </div>
+            {formattedDate && (
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-4 h-[1.5px] bg-gold" aria-hidden="true" />
+                <time dateTime={rawDate} className="text-xs font-mono uppercase tracking-wider text-charcoal/60 dark:text-white/60">
+                  {formattedDate}
+                </time>
+              </div>
+            )}
 
             <Link href={href} className="block">
-              <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-charcoal group-hover:text-gold transition-colors duration-300 font-bold leading-[1.12] mb-6">
+              <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-charcoal dark:text-white group-hover:text-gold transition-colors duration-300 font-bold leading-[1.12] mb-6">
                 {titulo}
               </h3>
             </Link>
 
             {excerpt && (
-              <p className="font-sans text-lg sm:text-xl text-charcoal/80 leading-relaxed max-w-3xl mb-8">
+              <p className="font-sans text-lg sm:text-xl text-charcoal/80 dark:text-white/80 leading-relaxed max-w-3xl mb-6">
                 {excerpt}
               </p>
             )}
+
+            {/* Labels appended below subtitle for the main spotlight article */}
+            {displayLabels.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-8">
+                {displayLabels.map((lbl) => (
+                  <span
+                    key={lbl}
+                    className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-3.5 py-1.5 group-hover:border-gold/60 transition-all"
+                  >
+                    {lbl}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="pt-6 border-t border-lines flex items-center justify-between relative z-10 mt-6">
+          <div className="pt-6 border-t border-lines dark:border-white/10 flex items-center justify-between relative z-10 mt-6">
             <div className="flex items-center gap-3.5">
               {authorAvatar ? (
                 <div className="w-10 h-10 rounded-full overflow-hidden relative shrink-0 border border-lines">
@@ -223,14 +253,16 @@ export default function ArticleCard({
                   {authorName.charAt(0)}
                 </div>
               )}
-              <span className="text-xs font-bold text-charcoal uppercase tracking-wider">
+              <span className="text-xs font-bold text-charcoal dark:text-white uppercase tracking-wider">
                 {byLabel} {authorName}
               </span>
             </div>
 
-            <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/80 group-hover:text-gold group-hover:translate-x-1 transition-all flex items-center gap-1.5">
+            <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/80 dark:text-white/80 group-hover:text-gold transition-all flex items-center gap-1.5">
               <span>{readLabel}</span>
-              <span aria-hidden="true">→</span>
+              <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+                arrow_forward
+              </span>
             </Link>
           </div>
         </article>
@@ -254,34 +286,43 @@ export default function ArticleCard({
         {/* Text & Metadata Container */}
         <div className="lg:w-2/5 flex flex-col justify-between py-1">
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
-                {typeLabel}
-              </span>
-              {formattedDate && (
-                <>
-                  <span className="text-charcoal/30 select-none">•</span>
-                  <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
-                    {formattedDate}
-                  </time>
-                </>
-              )}
-            </div>
+            {formattedDate && (
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-4 h-[1.5px] bg-gold" aria-hidden="true" />
+                <time dateTime={rawDate} className="text-xs font-mono uppercase tracking-wider text-charcoal/60 dark:text-white/60">
+                  {formattedDate}
+                </time>
+              </div>
+            )}
 
             <Link href={href} className="block">
-              <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-[40px] text-charcoal group-hover:text-gold transition-colors duration-300 font-bold leading-[1.18] mb-5">
+              <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-[40px] text-charcoal dark:text-white group-hover:text-gold transition-colors duration-300 font-bold leading-[1.18] mb-4">
                 {titulo}
               </h3>
             </Link>
 
             {excerpt && (
-              <p className="font-sans text-base sm:text-lg text-charcoal/75 leading-relaxed line-clamp-4 lg:line-clamp-5 mb-8">
+              <p className="font-sans text-base sm:text-lg text-charcoal/75 dark:text-white/75 leading-relaxed line-clamp-4 lg:line-clamp-5 mb-5">
                 {excerpt}
               </p>
             )}
+
+            {/* Labels appended below subtitle for the main spotlight article */}
+            {displayLabels.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                {displayLabels.map((lbl) => (
+                  <span
+                    key={lbl}
+                    className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-3.5 py-1.5 group-hover:border-gold/60 transition-all"
+                  >
+                    {lbl}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="pt-5 border-t border-lines flex items-center justify-between">
+          <div className="pt-5 border-t border-lines dark:border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-3">
               {authorAvatar ? (
                 <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0 border border-lines">
@@ -292,14 +333,16 @@ export default function ArticleCard({
                   {authorName.charAt(0)}
                 </div>
               )}
-              <span className="text-xs font-bold text-charcoal uppercase tracking-wider">
+              <span className="text-xs font-bold text-charcoal dark:text-white uppercase tracking-wider">
                 {byLabel} {authorName}
               </span>
             </div>
 
-            <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/70 group-hover:text-gold group-hover:translate-x-1 transition-all flex items-center gap-1.5">
+            <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/70 dark:text-white/75 group-hover:text-gold transition-all flex items-center gap-1.5">
               <span>{readLabel}</span>
-              <span aria-hidden="true">→</span>
+              <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+                arrow_forward
+              </span>
             </Link>
           </div>
         </div>
@@ -311,8 +354,8 @@ export default function ArticleCard({
   // VARIANT: PINNED EDITORIAL CARD
   // ==========================================
   if (effectiveVariant === 'pinned') {
-    const byLabel = (dict?.mosaic as Record<string, string>)?.by || (dict as Record<string, string>)?.by || (lang === 'es' ? 'Por' : 'Por');
-    const readLabel = (dict?.mosaic as Record<string, string>)?.readArticle || (dict as Record<string, string>)?.readArticle || (lang === 'es' ? 'Leer artículo' : 'Ler artigo');
+    const byLabel = (dict?.mosaic as Record<string, string>)?.by || (dict?.articles as Record<string, string>)?.by || (dict as Record<string, string>)?.by || 'Por';
+    const readLabel = (dict?.mosaic as Record<string, string>)?.readArticle || (dict?.articles as Record<string, string>)?.readArticle || fallbackDict.articles.readArticle;
 
     return (
       <article className={`group flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-md ${className}`}>
@@ -332,10 +375,14 @@ export default function ArticleCard({
           )}
 
           {/* Header metadata */}
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
-              {typeLabel}
-            </span>
+          <div className="flex flex-wrap items-center gap-2.5 mb-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {displayLabels.map((lbl) => (
+                <span key={lbl} className="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-2.5 py-1">
+                  {lbl}
+                </span>
+              ))}
+            </div>
             {formattedDate && (
               <>
                 <span className="text-charcoal/30 select-none">•</span>
@@ -378,9 +425,11 @@ export default function ArticleCard({
             </span>
           </div>
 
-          <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/70 group-hover:text-gold group-hover:translate-x-1 transition-all flex items-center gap-1.5 shrink-0">
+          <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/70 group-hover:text-gold transition-all flex items-center gap-1.5 shrink-0">
             <span>{readLabel}</span>
-            <span aria-hidden="true">→</span>
+            <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+              arrow_forward
+            </span>
           </Link>
         </div>
       </article>
@@ -451,10 +500,14 @@ export default function ArticleCard({
       </Link>
 
       {/* Meta Header */}
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-[11px] font-bold text-gold uppercase tracking-[0.18em]">
-          {typeLabel}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {displayLabels.map((lbl) => (
+            <span key={lbl} className="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-2.5 py-1">
+              {lbl}
+            </span>
+          ))}
+        </div>
         {formattedDate && (
           <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
             {formattedDate}
@@ -481,8 +534,10 @@ export default function ArticleCard({
         <span className="text-xs font-bold text-charcoal uppercase tracking-wider">
           {authorName}
         </span>
-        <span aria-hidden="true" className="text-xs text-charcoal/40 group-hover:text-gold group-hover:translate-x-1 transition-all">
-          →
+        <span aria-hidden="true" className="text-xs text-charcoal/40 group-hover:text-gold transition-all">
+          <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1">
+            arrow_forward
+          </span>
         </span>
       </div>
     </article>

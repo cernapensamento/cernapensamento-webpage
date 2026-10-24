@@ -5,8 +5,11 @@ import { createClient } from '@/lib/supabase/client';
 import CommentForm from '@/components/forms/CommentForm';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { DB_TABLES, COMMENT_COLS, USER_COLS } from '@/lib/db/schema';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 
 interface CommentAuthor {
   full_name?: string;
@@ -31,6 +34,11 @@ export default function CommentsSection({
   publicationId?: string;
 }) {
   const targetId = publicationId || articuloId || '';
+  const params = useParams();
+  const lang = (params?.lang as string) || 'gl';
+  const dict = lang === 'es' ? esDict : glDict;
+  const cDict = dict.comments;
+
   const { user } = useAuth();
   const [comentarios, setComentarios] = useState<CommentViewItem[]>([]);
   const loading = useRef(true);
@@ -62,7 +70,7 @@ export default function CommentsSection({
   }, [targetId, supabase]);
 
   const handleDelete = async (comentarioId: string) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este comentario?')) return;
+    if (!window.confirm(cDict.deleteConfirm || '¿Estás seguro de que queres eliminar este comentario?')) return;
 
     // Optimistic update
     setComentarios(prev => prev.filter(c => c.id !== comentarioId));
@@ -75,7 +83,7 @@ export default function CommentsSection({
 
     if (error || !data || data.length === 0) {
       console.error("Delete failed:", error || "No rows deleted (RLS blocked)");
-      alert('Error de permisos o sesión caducada al intentar borrar. Recarga la página.');
+      alert(cDict.deleteError || 'Erro de permisos ou sesión caducada ao tentar borrar. Recarga a páxina.');
       const timer = setTimeout(() => fetchComments(), 0);
       return () => clearTimeout(timer);
     }
@@ -88,11 +96,11 @@ export default function CommentsSection({
 
   return (
     <section data-print="hide" className="w-full border-t border-lines pt-12 mt-8">
-      <h3 className="font-serif text-2xl text-charcoal mb-8">Comentarios ({comentarios?.length || 0})</h3>
+      <h3 className="font-serif text-2xl text-charcoal mb-8">{cDict.title || 'Comentarios'} ({comentarios?.length || 0})</h3>
       
       <div className="flex flex-col gap-8 mb-12">
         {comentarios?.map((comentario) => {
-          const authorName = comentario.author?.full_name || comentario.author?.nombre || 'Usuario';
+          const authorName = comentario.author?.full_name || comentario.author?.nombre || cDict.unknownUser || 'Usuario';
           const avatarUrl = comentario.author?.avatar_url;
 
           return (
@@ -118,16 +126,16 @@ export default function CommentsSection({
                   <div className="flex items-baseline gap-3">
                     <span className="font-sans text-sm font-semibold text-charcoal">{authorName}</span>
                     <time className="font-sans text-[10px] uppercase tracking-widest text-charcoal/50">
-                      {new Date(comentario.updated_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}
+                      {new Date(comentario.updated_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'gl-ES', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}
                     </time>
                   </div>
                   {user && user.id === comentario.author_id && (
                     <button type="button" 
                       onClick={() => handleDelete(comentario.id)}
                       className="text-[10px] uppercase tracking-widest text-red-600/70 hover:text-red-600 transition-colors cursor-pointer"
-                      title="Eliminar comentario"
+                      title={cDict.delete || 'Eliminar'}
                     >
-                      Eliminar
+                      {cDict.delete || 'Eliminar'}
                     </button>
                   )}
                 </div>
@@ -139,23 +147,23 @@ export default function CommentsSection({
           );
         })}
         {(!comentarios || comentarios.length === 0) && (
-          <p className="font-sans text-sm text-charcoal/60 italic">Todavía no hay comentarios. Sé el primero en compartir tu reflexión.</p>
+          <p className="font-sans text-sm text-charcoal/60 italic">{cDict.empty}</p>
         )}
       </div>
 
       {user ? (
         comentarios?.some(c => c.author_id === user.id) ? (
           <div className="bg-surface border border-lines p-8 text-center mt-8">
-            <p className="font-sans text-sm text-charcoal/70">Ya has compartido tu reflexión en este artículo.</p>
+            <p className="font-sans text-sm text-charcoal/70">{cDict.alreadyCommented}</p>
           </div>
         ) : (
-          <CommentForm articuloId={targetId} onCommentAdded={fetchComments} />
+          <CommentForm articuloId={targetId} onCommentAdded={fetchComments} dict={cDict} />
         )
       ) : (
         <div className="bg-surface border border-lines p-8 text-center">
-          <p className="font-sans text-sm text-charcoal/70 mb-4">Debes iniciar sesión para unirte a la conversación.</p>
-          <Link href="/login" className="inline-block px-6 py-3 border border-charcoal text-charcoal hover:bg-charcoal hover:text-parchment font-sans text-[10px] uppercase tracking-[0.2em] transition-colors duration-300">
-            Iniciar sesión
+          <p className="font-sans text-sm text-charcoal/70 mb-4">{cDict.mustLogin}</p>
+          <Link href={`/${lang}/login`} className="inline-block px-6 py-3 border border-charcoal text-charcoal hover:bg-charcoal hover:text-parchment font-sans text-[10px] uppercase tracking-[0.2em] transition-colors duration-300">
+            {cDict.loginBtn}
           </Link>
         </div>
       )}
