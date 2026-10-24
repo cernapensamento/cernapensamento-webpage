@@ -193,6 +193,8 @@ Every agent working on this codebase must strictly adhere to the following 5-sta
   ```bash
   git worktree add .worktrees/<branch-name> -b <branch-name> development
   cd .worktrees/<branch-name>
+  ln -snf ../../.env.local .env.local
+  ln -snf ../../node_modules node_modules
   ```
 * All code editing, dependency installations, and local testing must take place strictly inside this dedicated worktree directory.
 * The `.worktrees/` directory is git-ignored and excluded from TypeScript to avoid language server conflicts or watcher pollution.
