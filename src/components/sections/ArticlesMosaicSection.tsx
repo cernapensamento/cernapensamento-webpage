@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import ArticleCard, { type ArticleCardData } from '@/components/features/ArticleCard';
+import RecentArticlesMosaicGrid from '@/components/features/RecentArticlesMosaicGrid';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 
 interface ArticlesMosaicSectionProps {
@@ -49,9 +50,10 @@ export default function ArticlesMosaicSection({
   const thirdArticle = articulos[2];
   const fourthArticle = articulos[3];
   const fifthArticle = articulos[4];
-  const remainingArticles = articulos.slice(5);
+  // Display 9 recent articles in an asymmetric editorial mosaic block
+  const displayedRecentArticles = articulos.slice(5, 14);
 
-  const pinnedItems = pinnedArticulos.filter(p => p.id !== leadArticle?.id);
+  const pinnedItems = pinnedArticulos;
 
   return (
     <section className="w-full flex flex-col gap-14 md:gap-18">
@@ -178,9 +180,9 @@ export default function ArticlesMosaicSection({
       )}
 
       {/* ==================================================== */}
-      {/* MOSAIC LEVEL 4: 3-COLUMN EDITORIAL MOSAIC GRID */}
+      {/* MOSAIC LEVEL 4: 3-COLUMN EDITORIAL MOSAIC GRID (MAX 9 RECENT ARTICLES) */}
       {/* ==================================================== */}
-      {remainingArticles.length > 0 && (
+      {displayedRecentArticles.length > 0 && (
         <div className="flex flex-col gap-10">
           <div className="flex items-center justify-between border-b border-lines pb-4">
             <h3 className="font-serif text-2xl md:text-3xl text-charcoal font-semibold">
@@ -188,37 +190,33 @@ export default function ArticlesMosaicSection({
             </h3>
             <Link
               href={`/${lang}/articulos`}
-              className="text-xs font-bold uppercase tracking-[0.2em] text-gold hover:text-charcoal transition-colors flex items-center gap-1"
+              className="text-xs font-bold uppercase tracking-[0.2em] text-gold hover:text-charcoal transition-colors flex items-center gap-1.5 group"
             >
               <span>{dict?.mosaic?.viewAll}</span>
-              <span aria-hidden="true">→</span>
+              <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+                arrow_forward
+              </span>
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {remainingArticles.map((art, idx) => (
-              <RevealOnScroll key={art.id} delayMs={(idx % 3) * 120} className="h-full">
-                <ArticleCard
-                  articulo={art}
-                  lang={lang}
-                  dict={dict}
-                  variant="auto"
-                  className="h-full"
-                />
-              </RevealOnScroll>
-            ))}
-          </div>
+          <RecentArticlesMosaicGrid
+            articulos={displayedRecentArticles}
+            lang={lang}
+            dict={dict}
+          />
         </div>
       )}
 
-      {/* Explore Archive CTA button */}
-      <RevealOnScroll delayMs={100} className="flex justify-center pt-6">
+      {/* Explore Archive CTA button — Prominent & Editorial */}
+      <RevealOnScroll delayMs={100} className="flex justify-center pt-8 pb-4">
         <Link
           href={`/${lang}/articulos`}
-          className="btn-outline text-xs tracking-[0.2em]"
+          className="inline-flex items-center justify-center gap-3.5 px-8 sm:px-12 py-4 sm:py-5 border-2 border-charcoal text-xs sm:text-sm font-bold uppercase tracking-[0.22em] text-charcoal bg-transparent hover:bg-charcoal hover:text-parchment dark:hover:text-parchment transition-all duration-300 shadow-sm hover:shadow-md group cursor-pointer"
         >
-          {dict?.mosaic?.exploreAll}
-          <span aria-hidden="true">→</span>
+          <span>{dict?.mosaic?.exploreAll}</span>
+          <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1 text-gold" aria-hidden="true">
+            arrow_forward
+          </span>
         </Link>
       </RevealOnScroll>
     </section>

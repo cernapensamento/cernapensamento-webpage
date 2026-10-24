@@ -31,7 +31,16 @@
     "coleccionsEditoriais": "Colecciones Editoriales",
     "coleccionsDesc": "Las cuatro ramas de publicación de nuestro sello.",
     "verTodoArquivo": "Ver todo el archivo →",
-    "noticiasYAvisos": "Noticias y Avisos"
+    "noticiasYAvisos": "Noticias y Avisos",
+    "closeMenu": "Cerrar menú",
+    "toggleMenu": "Abrir menú",
+    "contacto": "Contacto",
+    "founderBios": {
+      "diego": "Economía, teoría del valor y filosofía política.",
+      "anxo": "Pensamiento crítico, literatura y sociedad.",
+      "hector": "Teoría de juegos, ensayo y política.",
+      "denis": "Análisis institucional y cultural."
+    }
   },
   "footer": {
     "rights": "Todos los derechos reservados.",
@@ -39,6 +48,7 @@
       "estatutos": "Estatutos",
       "privacidad": "Política de Privacidad",
       "contacto": "Contacto",
+      "manifestoButton": "Leer nuestro Manifiesto",
       "asociacion": "La Asociación"
     },
     "brandDescription": "Revista digital de pensamiento, filosofía política, economía y cultura. Un proyecto editorial independiente comprometido con el debate riguroso y la libertad de pensamiento en Galicia.",
@@ -111,6 +121,8 @@
     "interview": "Entrevista",
     "poetry": "Poesía",
     "news": "Noticia",
+    "nova": "Noticia",
+    "noticia": "Noticia",
     "artigo": "Artículo",
     "ensaio": "Ensayo",
     "reportaxe": "Reportaje",
@@ -178,16 +190,24 @@
     "title": "Todas las Publicaciones",
     "searchPlaceholder": "Buscar por título o contenido...",
     "all": "Todos",
+    "by": "Por",
     "errorLoading": "Error cargando artículos:",
     "noResults": "No se encontraron artículos con esos filtros.",
     "clearFilters": "Limpiar filtros",
     "showFilters": "Mostrar Filtros",
-    "hideFilters": "Ocultar Filtros"
+    "hideFilters": "Ocultar Filtros",
+    "filterByType": "Tipo de publicación",
+    "filterByTopic": "Temática",
+    "loadMore": "Cargar más publicaciones",
+    "loadingMore": "Cargando publicaciones...",
+    "unknownAuthor": "Autor Desconocido",
+    "readArticle": "Leer artículo"
   },
   "article": {
     "aboutAuthor": "Sobre el autor",
-    "contributorOf": "es un contribuyente de",
+    "contributorOf": "es un colaborador de",
     "unknownAuthor": "Autor Desconocido",
+    "originalLanguage": "Idioma original:",
     "download": {
       "eyebrow": "Copia impresa",
       "title": "Lleva este texto contigo",
@@ -211,7 +231,13 @@
     "button": "ENVÍA TU PROPUESTA",
     "emailLabel": "o escríbenos directamente a",
     "badge": "Compromiso de respuesta en 48h · Envíos evaluados por el Consejo Editorial",
-    "email": "contacto@cernapensamento.org"
+    "email": "contacto@cernapensamento.org",
+    "editorialChannel": "Vía Editorial",
+    "proposalsTitle": "Propuestas de Artículos y Ensayos",
+    "proposalsDesc": "Envía tus borradores, colaboraciones o propuestas para ser evaluadas por el Consejo Editorial.",
+    "directChannel": "Canal Directo",
+    "directTitle": "Consultas Generales e Institucionales",
+    "directDesc": "Para cuestiones sobre la asociación, adhesiones, consultas estatutarias o prensa, puedes escribirnos directamente a nuestra dirección de correspondencia."
   },
   "authorPage": {
     "articlesBy": "Artículos de",
@@ -322,7 +348,37 @@
     "uploading": "Subiendo...",
     "saving": "Guardando...",
     "profileSaved": "Perfil guardado con éxito.",
-    "articleSaved": "Artículo guardado con éxito."
+    "articleSaved": "Artículo guardado con éxito.",
+    "collapseSidebar": "Plegar barra lateral",
+    "expandSidebar": "Desplegar barra lateral",
+    "logout": "Cerrar Sesión",
+    "deleteArticle": "Eliminar artículo",
+    "deleting": "Eliminando...",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar \"{title}\" por completo? Esta acción no se puede deshacer.",
+    "deleteError": "Error al eliminar",
+    "pinArticle": "Fijar en portada",
+    "unpinArticle": "Desfijar de la portada",
+    "pin": "Fijar",
+    "unpin": "Desfijar",
+    "pinLimitReached": "Deben retirarse publicaciones del tablón para liberar espacio (límite máximo de 8).",
+    "pinError": "Error al fijar/desfijar",
+    "reviewMode": "Modo Revisión: Pendiente de Aprobación",
+    "approvedSuccess": "¡Artículo aprobado y publicado!",
+    "rejectedSuccess": "Artículo rechazado y devuelto a borrador.",
+    "unpublish": "Despublicar",
+    "passwordForm": {
+      "button": "Cambiar Contraseña",
+      "modalTitle": "Actualizar Contraseña",
+      "newPassword": "Nueva Contraseña",
+      "confirmPassword": "Confirmar Nueva Contraseña",
+      "save": "Guardar Nueva Contraseña",
+      "updating": "Actualizando...",
+      "mismatch": "Las contraseñas no coinciden.",
+      "tooShort": "La contraseña debe tener al menos 6 caracteres.",
+      "success": "Contraseña actualizada con éxito.",
+      "close": "Cerrar"
+    }
   },
   "escritorioPage": {
     "welcome": "Bienvenido, ",
@@ -387,7 +443,43 @@
     "sendForApproval": "Enviar para Aprobación",
     "approveAndPublish": "Aprobar y Publicar",
     "reject": "Rechazar",
-    "revokeApproval": "Volver a Borrador"
+    "revokeApproval": "Volver a Borrador",
+    "aboutTheAuthor": "Sobre el autor",
+    "defaultBio": "es un columnista y colaborador activo.",
+    "defaultAuthorName": "Autor del Artículo",
+    "searchTagPlaceholder": "BUSCAR O AÑADIR ETIQUETA...",
+    "newTagTitle": "Nueva Etiqueta",
+    "newTagNotice": "Las etiquetas deben estar disponibles en ambos idiomas para la correcta traducción del sitio.",
+    "tagInSpanish": "En Castellano",
+    "tagInGalician": "En Galego",
+    "bothLangsRequired": "Debes completar ambos idiomas",
+    "createTagError": "Error al crear etiqueta: ",
+    "createTagBtn": "+ CREAR NUEVA ETIQUETA",
+    "tableControls": {
+      "table": "Tabla",
+      "noColor": "Sin color",
+      "gold": "Dorado",
+      "gray": "Gris",
+      "green": "Verde",
+      "red": "Rojo",
+      "toolbarLabel": "Controles de tabla",
+      "addColumn": "Añadir columna a la derecha",
+      "deleteColumn": "Eliminar columna",
+      "addRow": "Añadir fila abajo",
+      "deleteRow": "Eliminar fila",
+      "headerRow": "Cabecera",
+      "headerRowTitle": "Alternar fila de cabecera",
+      "mergeSplit": "Unir / Dividir",
+      "mergeSplitTitle": "Unir o dividir celdas",
+      "color": "Color:",
+      "deleteTable": "Eliminar tabla",
+      "deleteTableTitle": "Eliminar tabla completa"
+    },
+    "draftUpdated": "¡Borrador actualizado con éxito!",
+    "actionSuccess": "¡Acción realizada con éxito!",
+    "unexpectedError": "Ocurrió un error inesperado al guardar.",
+    "unpublish": "Despublicar",
+    "create": "Crear"
   },
   "contactForm": {
     "fullName": "Nombre Completo",
@@ -404,6 +496,15 @@
     "privacyLink": "Consultar la política de privacidad",
     "errorSize": "El archivo excede los 3.5MB permitidos.",
     "errorType": "Solo se permiten archivos PDF.",
+    "requiredName": "El nombre es obligatorio",
+    "requiredEmail": "El correo es obligatorio",
+    "requiredSubject": "Selecciona un asunto",
+    "requiredMessage": "El mensaje es obligatorio",
+    "requiredGuidelines": "Debes aceptar las condiciones",
+    "genericError": "Error al enviar el mensaje",
+    "successNote": "Agradecemos tu contacto. Nuestro Consejo Editorial revisará tu propuesta con atención.",
+    "sendAnother": "Enviar otro mensaje",
+    "removeFile": "Eliminar archivo",
     "subjects": {
       "placeholder": "Seleccione un asunto",
       "article": "Envío de Artículo",
@@ -412,8 +513,16 @@
     }
   },
   "contactoPage": {
-    "title": "Contacto",
-    "description": "¿Tienes alguna duda, sugerencia o quieres ponerte en contacto con el equipo editorial? Escríbenos y te responderemos lo antes posible."
+    "eyebrow": "Canal Institucional y Editorial",
+    "title": "Contacto y Colaboración",
+    "description": "¿Tienes alguna duda, sugerencia o quieres enviar una propuesta para el Consejo Editorial? Escríbenos a través de este formulario o directamente a nuestro correo oficial.",
+    "directEmailPrompt": "También puedes escribirnos directamente a nuestro correo oficial:",
+    "editorialDossierTitle": "Consejo Editorial",
+    "editorialDossierDesc": "Aceptamos artículos y ensayos inéditos sobre filosofía política, economía, ciencias sociales y crítica literaria. El Consejo Editorial valorará las aportaciones con rigor.",
+    "directEmailTitle": "Canal Directo",
+    "directEmailDesc": "Para consultas institucionales, adhesiones a la asociación o cuestiones generales:",
+    "addressTitle": "Sede Social",
+    "addressDesc": "Asociación Cerna Pensamento · Santiago de Compostela, Galicia"
   },
   "privacyPage": {
     "eyebrow": "Asociación Cerna Pensamento",
@@ -496,6 +605,17 @@
   },
   "asociacion": {
     "title": "La Asociación Cerna Pensamento",
+    "tag": "Asociación Cultural",
+    "navAriaLabel": "Secciones de la asociación",
+    "navManifesto": "§ I. Manifiesto & Ideario",
+    "navCollections": "§ II. Colecciones Editoriales",
+    "navActivities": "§ III. Actividades & Debate",
+    "navStatutes": "§ IV. Estatutos Sociales",
+    "sectionManifesto": "§ I. Manifiesto Fundacional",
+    "sectionCollections": "§ II. Publicaciones",
+    "sectionInitiatives": "§ III. Iniciativas",
+    "joinButton": "UNIRSE A LA ASOCIACIÓN",
+    "legalFramework": "Marco Jurídico & Ideología",
     "introParagraphs": [
       "La Asociación Cerna Pensamento es una entidad sin ánimo de lucro constituida el 28 de julio de 2026 en el Ayuntamiento de Cambados. Nace con un propósito firme: promover el pensamiento crítico y el diálogo como herramientas fundamentales para la convivencia y el desarrollo social, con especial foco en la juventud. Se trata de una iniciativa surgida en Galicia con vocación universal.",
       "Sus cuatro miembros fundadores —Denís Fernández Casal, Diego Araújo Rodríguez, Héctor González Prego y Anxo Pérez Prego—, tras iniciar su etapa universitaria, identificaron la necesidad de ofrecer a la juventud gallega un espacio de socialización y reflexión constructiva. Cerna Pensamento se constituye así como una estructura plural y accesible, diseñada para el análisis y el debate riguroso, al margen de la polarización política y de las dinámicas partidistas."
@@ -547,6 +667,11 @@
   },
   "noticias": {
     "title": "Noticias",
+    "eyebrow": "Comunicados y Crónica Institucional",
+    "pageTitle": "Noticias y Actualidad",
+    "pageDescription": "Archivo de notas de prensa, comunicados oficiales, actividades culturales y crónica de la Asociación Cerna Pensamento.",
+    "emptyMessage": "No hay noticias publicadas por el momento.",
+    "exploreButton": "Explorar artículos y ensayos",
     "searchTitle": "Buscar",
     "tagsTitle": "Etiquetas",
     "addTagPlaceholder": "AÑADIR ETIQUETA...",
@@ -707,5 +832,21 @@
       "returnHome": "Volver a la portada",
       "manageProfile": "Gestionar preferencias en el perfil"
     }
+  },
+  "comments": {
+    "title": "Comentarios",
+    "leaveComment": "Deja tu comentario",
+    "placeholder": "Escribe aquí tu reflexión sobre el artículo...",
+    "submitting": "Publicando...",
+    "submit": "Publicar comentario",
+    "alreadyCommented": "Ya has compartido tu reflexión en este artículo.",
+    "mustLogin": "Debes iniciar sesión para unirte a la conversación.",
+    "loginBtn": "Iniciar sesión",
+    "empty": "Todavía no hay comentarios. Sé el primero en compartir tu reflexión.",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar este comentario?",
+    "deleteError": "Error de permisos o sesión caducada al intentar borrar. Recarga la página.",
+    "postError": "Error al publicar el comentario.",
+    "unknownUser": "Usuario"
   }
 }

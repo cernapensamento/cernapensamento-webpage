@@ -1754,29 +1754,39 @@ INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0012-0000-0000-000000000012', 'c1000001-0020-0000-0000-000000000020') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0012-0000-0000-000000000012', '8644aa14-00a0-4b60-a79d-4e1f14d574d1') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0013-0000-0000-000000000013', 'c1000001-0001-0000-0000-000000000001') ON CONFLICT (publication_id, tag_id) DO NOTHING;
-INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0013-0000-0000-000000000013', 'c1000001-0012-0000-0000-000000000012') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0013-0000-0000-000000000013', 'c1000001-0014-0000-0000-000000000014') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0014-0000-0000-000000000014', '6769db8e-55a0-4d74-b095-ba6e024a7d94') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0014-0000-0000-000000000014', 'c1000001-0018-0000-0000-000000000018') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0014-0000-0000-000000000014', 'c1000001-0012-0000-0000-000000000012') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0014-0000-0000-000000000014', '6c891f3b-160d-4fb3-afc6-159cb21fde44') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0015-0000-0000-000000000015', '8aa21f34-2d09-4c01-a071-86d1f54a08e3') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0015-0000-0000-000000000015', 'c1000001-0013-0000-0000-000000000013') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0015-0000-0000-000000000015', 'c1000001-0004-0000-0000-000000000004') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0015-0000-0000-000000000015', '8ac5efa5-ea26-46b4-9ac1-e981941abdcc') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0015-0000-0000-000000000015', 'c1000001-0020-0000-0000-000000000020') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0016-0000-0000-000000000016', '8644aa14-00a0-4b60-a79d-4e1f14d574d1') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0016-0000-0000-000000000016', 'b1c84c1d-05ff-4988-bf22-0ed25a086df5') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0016-0000-0000-000000000016', 'c1000001-0015-0000-0000-000000000015') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0016-0000-0000-000000000016', 'c1000001-0014-0000-0000-000000000014') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0017-0000-0000-000000000017', 'c1000001-0010-0000-0000-000000000010') ON CONFLICT (publication_id, tag_id) DO NOTHING;
-INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0017-0000-0000-000000000017', 'c1000001-0002-0000-0000-000000000002') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0017-0000-0000-000000000017', 'c1000001-0016-0000-0000-000000000016') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0018-0000-0000-000000000018', 'c1000001-0010-0000-0000-000000000010') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0018-0000-0000-000000000018', 'da4674a3-cfa8-4b4a-96cb-b1f8b2861e0d') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0018-0000-0000-000000000018', 'c1000001-0014-0000-0000-000000000014') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0018-0000-0000-000000000018', '1449e767-92a9-499f-9367-35c27b1953c3') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0019-0000-0000-000000000019', '6c891f3b-160d-4fb3-afc6-159cb21fde44') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0019-0000-0000-000000000019', 'c1000001-0019-0000-0000-000000000019') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0019-0000-0000-000000000019', 'b1c84c1d-05ff-4988-bf22-0ed25a086df5') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0020-0000-0000-000000000020', '6c891f3b-160d-4fb3-afc6-159cb21fde44') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0020-0000-0000-000000000020', 'c1000001-0015-0000-0000-000000000015') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0020-0000-0000-000000000020', 'b1c84c1d-05ff-4988-bf22-0ed25a086df5') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0020-0000-0000-000000000020', 'c1000001-0017-0000-0000-000000000017') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('d1000001-0020-0000-0000-000000000020', '8644aa14-00a0-4b60-a79d-4e1f14d574d1') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'c1000001-0012-0000-0000-000000000012') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'c1000001-0010-0000-0000-000000000010') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'c1000001-0016-0000-0000-000000000016') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'c1000001-0014-0000-0000-000000000014') ON CONFLICT (publication_id, tag_id) DO NOTHING;
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES ('f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1', 'c1000001-0001-0000-0000-000000000001') ON CONFLICT (publication_id, tag_id) DO NOTHING;
 
 -- ============================================================================
 -- 10. Comments (10 Fake Users with 1 Comment each on Random Articles)
@@ -1881,3 +1891,194 @@ INSERT INTO public.comments (
   'Un recordatorio histórico esencial: Galicia nunca foi unha esquina illada, senón un nó marítimo de primeira orde conectado co mundo atlántico.',
   now() - interval '1 days'
 ) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================================
+-- 10. Mock News Publications (10 Institutional News for /noticias)
+-- ============================================================================
+
+INSERT INTO public.publications (
+  id, slug, cover_image_url, status, type, original_language, is_pinned, author_id, title, subtitle, content, created_at, updated_at, newsletter_sent_at
+) VALUES 
+(
+  'e1000001-0001-0000-0000-000000000001',
+  'cerna-presenta-o-seu-manifesto-editorial-en-compostela',
+  'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&w=1200&q=80',
+  'published'::public.publication_status,
+  'news'::public.publication_type,
+  'gl',
+  true,
+  'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
+  '{"gl": "Cerna presenta o seu manifesto editorial e proxecto institucional en Compostela", "es": "Cerna presenta su manifiesto editorial y proyecto institucional en Compostela"}'::jsonb,
+  '{"gl": "O acto inaugural reuniu a académicos, ensaístas e colaboradores comprometidos co debate crítico e a liberdade intelectual.", "es": "El acto inaugural reunió a académicos, ensayistas y colaboradores comprometidos con el debate crítico y la libertad intelectual."}'::jsonb,
+  '{"gl": "<p>A Asociación Cerna Pensamento celebrou este venres a presentación pública do seu manifesto fundacional en Santiago de Compostela. Nun encontro que congregou a diversas personalidades do mundo académico, xurídico e literario, os fundadores debullaron as liñas mestras dunha revista que nace co propósito de cultivar a reflexión sosegada lonxe do ruído mediático e da polarización inmediata.</p><p>O manifesto reivindica o valor do ensaio como ferramenta fundamental para comprender os dilemas morais, económicos e culturais da nosa época, avogando por unha mirada multidisciplinar e polo respecto escrupuloso polo pensamento alleo.</p>", "es": "<p>La Asociación Cerna Pensamento celebró este viernes la presentación pública de su manifiesto fundacional en Santiago de Compostela. En un encuentro que congregó a diversas personalidades del mundo académico, jurídico y literario, los fundadores desgranaron las líneas maestras de una revista que nace con el propósito de cultivar la reflexión sosegada lejos del ruido mediático y de la polarización inmediata.</p><p>El manifiesto reivindica el valor del ensayo como herramienta fundamental para comprender los dilemas morales, económicos y culturales de nuestra época, abogando por una mirada multidisciplinar y por el respeto escrupuloso por el pensamiento ajeno.</p>"}'::jsonb,
+  now() - interval '2 days',
+  now() - interval '2 days',
+  now()
+),
+(
+  'e1000001-0002-0000-0000-000000000002',
+  'convocatoria-aberta-artigos-ensaio-outono',
+  'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80',
+  'published'::public.publication_status,
+  'news'::public.publication_type,
+  'gl',
+  false,
+  'd2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2',
+  '{"gl": "Convocatoria aberta para o envío de artigos e ensaios: Número especial de outono", "es": "Convocatoria abierta para el envío de artículos y ensayos: Número especial de otoño"}'::jsonb,
+  '{"gl": "O comité editorial abre o prazo de recepción de colaboracións ata o 30 de novembro.", "es": "El comité editorial abre el plazo de recepción de colaboraciones hasta el 30 de noviembre."}'::jsonb,
+  '{"gl": "<p>Cerna Pensamento abre o período de recepción de propostas orixinais para a súa vindeira edición monográfica centrada na relación entre liberdade individual, progreso tecnolóxico e responsabilidade cívica. Autores noveis e consagrados poden achegar os seus textos a través do noso portal dixital.</p>", "es": "<p>Cerna Pensamento abre el periodo de recepción de propuestas originales para su próxima edición monográfica centrada en la relación entre libertad individual, progreso tecnológico y responsabilidad cívica. Autores noveles y consagrados pueden enviar sus textos a través de nuestro portal digital.</p>"}'::jsonb,
+  now() - interval '4 days',
+  now() - interval '4 days',
+  now()
+),
+(
+  'e1000001-0003-0000-0000-000000000003',
+  'coloquio-sobre-a-filosofia-politica-e-a-liberdade',
+  'https://images.unsplash.com/photo-1471107340929-a87cd0f5b5f3?auto=format&fit=crop&w=1200&q=80',
+  'published'::public.publication_status,
+  'news'::public.publication_type,
+  'gl',
+  false,
+  'd3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3',
+  '{"gl": "Coloquio sobre filosofía política e liberdade: Cerna reúne a pensadores en Vigo", "es": "Coloquio sobre filosofía política y libertad: Cerna reúne a pensadores en Vigo"}'::jsonb,
+  '{"gl": "Un debate aberto sobre os límites do poder estatal e a orde espontánea da sociedade.", "es": "Un debate abierto sobre los límites del poder estatal y el orden espontáneo de la sociedad."}'::jsonb,
+  '{"gl": "<p>A Escola de Filosofía e Economía de Cerna organizou un coloquio aberto na cidade de Vigo, explorando as achegas fundamentais da tradición clásica liberal e a súa aplicación aos dilemas contemporáneos da gobernanza global.</p>", "es": "<p>La Escuela de Filosofía y Economía de Cerna organizó un coloquio abierto en la ciudad de Vigo, explorando las aportaciones fundamentales de la tradición clásica liberal y su aplicación a los dilemas contemporáneos de la gobernanza global.</p>"}'::jsonb,
+  now() - interval '6 days',
+  now() - interval '6 days',
+  now()
+),
+(
+  'e1000001-0004-0000-0000-000000000004',
+  'nova-edicion-dixital-do-boletin-cerna',
+  'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80',
+  'published'::public.publication_status,
+  'news'::public.publication_type,
+  'gl',
+  false,
+  'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4',
+  '{"gl": "Publicada a nova edición do boletín dixital con análises exclusivas", "es": "Publicada la nueva edición del boletín digital con análisis exclusivos"}'::jsonb,
+  '{"gl": "Unha compilación mensual dos ensaios máis destacados dispoñible para socios e subscritores.", "es": "Una compilación mensual de los ensayos más destacados disponible para socios y suscriptores."}'::jsonb,
+  '{"gl": "<p>Xa está dispoñible o novo volume do boletín mensual de Cerna, que recolle análises en profundidade sobre economía austríaca, teoría xurídica e crítica poética, xunto con lecturas recomendadas polo consello editorial.</p>", "es": "<p>Ya está disponible el nuevo volumen del boletín mensual de Cerna, que recoge análisis en profundidad sobre economía austríaca, teoría jurídica y crítica poética, junto con lecturas recomendadas por el consejo editorial.</p>"}'::jsonb,
+  now() - interval '8 days',
+  now() - interval '8 days',
+  now()
+),
+(
+  'e1000001-0005-0000-0000-000000000005',
+  'acordo-de-colaboracion-con-asociacions-culturais-europeas',
+  'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=1200&q=80',
+  'published'::public.publication_status,
+  'news'::public.publication_type,
+  'gl',
+  false,
+  'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
+  '{"gl": "Acordo de colaboración con revistas culturais e asociacións de pensamento europeo", "es": "Acuerdo de colaboración con revistas culturales y asociaciones de pensamiento europeo"}'::jsonb,
+  '{"gl": "Cerna estende redes internacionais para a tradución e difusión cruzada de ensaios contemporáneos.", "es": "Cerna extiende redes internacionales para la traducción y difusión cruzada de ensayos contemporáneos."}'::jsonb,
+  '{"gl": "<p>Cerna Pensamento asinou un convenio de cooperación con diversos think tanks e revistas independentes de Portugal, Francia e Italia para fomentar a tradución e divulgación de estudos humanísticos e filosóficos.</p>", "es": "<p>Cerna Pensamento ha firmado un convenio de cooperación con diversos think tanks y revistas independientes de Portugal, Francia e Italia para fomentar la traducción y divulgación de estudios humanísticos y filosóficos.</p>"}'::jsonb,
+  now() - interval '11 days',
+  now() - interval '11 days',
+  now()
+),
+(
+  'e1000001-0006-0000-0000-000000000006',
+  'publicacion-dos-estatutos-sociais-e-codigo-de-etica-editorial',
+  'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=1200&q=80',
+  'published'::public.publication_status,
+  'news'::public.publication_type,
+  'gl',
+  false,
+  '89439c6c-d0f0-42ff-9734-f346dc023f68',
+  '{"gl": "Publicación dos estatutos sociais e código de ética editorial de Cerna", "es": "Publicación de los estatutos sociales y código de ética editorial de Cerna"}'::jsonb,
+  '{"gl": "Garantía de transparencia institucional, rigor intelectual e independencia editorial.", "es": "Garantía de transparencia institucional, rigor intelectual e independencia editorial."}'::jsonb,
+  '{"gl": "<p>A Xunta Directiva fixo públicos os estatutos rexistrados e a guía de integridade editorial que rexen a avaliación por pares das publicacións, garantindo a autonomía de criterio e a ausencia de subvencións condicionadas.</p>", "es": "<p>La Junta Directiva ha hecho públicos los estatutos registrados y la guía de integridad editorial que rigen la evaluación por pares de las publicaciones, garantizando la autonomía de criterio y la ausencia de subvenciones condicionadas.</p>"}'::jsonb,
+  now() - interval '14 days',
+  now() - interval '14 days',
+  now()
+),
+(
+  'e1000001-0007-0000-0000-000000000007',
+  'inauguracion-do-ciclo-de-seminarios-sobre-a-orde-espontanea',
+  'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=1200&q=80',
+  'published'::public.publication_status,
+  'news'::public.publication_type,
+  'gl',
+  false,
+  'd2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2',
+  '{"gl": "Inauguración do ciclo de seminarios sobre a orde espontánea e as institucións", "es": "Inauguración del ciclo de seminarios sobre el orden espontáneo y las instituciones"}'::jsonb,
+  '{"gl": "Sesións de estudo monográfico dedicadas ao pensamento de F.A. Hayek e Carl Menger.", "es": "Sesiones de estudio monográfico dedicadas al pensamiento de F.A. Hayek y Carl Menger."}'::jsonb,
+  '{"gl": "<p>Comeza o ciclo trimestral de seminarios en liña dirixido a investigadores novos. O programa abrangue a evolución do dereito consuetudinario, a teoría da orixe dos cartos e o funcionamento dos mercados libres.</p>", "es": "<p>Comienza el ciclo trimestral de seminarios en línea dirigido a jóvenes investigadores. El programa abarca la evolución del derecho consuetudinario, la teoría del origen del dinero y el funcionamiento de los mercados libres.</p>"}'::jsonb,
+  now() - interval '17 days',
+  now() - interval '17 days',
+  now()
+),
+(
+  'e1000001-0008-0000-0000-000000000008',
+  'lanzamento-do-novo-portal-web-e-lector-editorial',
+  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
+  'published'::public.publication_status,
+  'news'::public.publication_type,
+  'gl',
+  false,
+  'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4',
+  '{"gl": "Lanzamento do novo portal web de Cerna con tipografía editorial adaptativa", "es": "Lanzamiento del nuevo portal web de Cerna con tipografía editorial adaptativa"}'::jsonb,
+  '{"gl": "Melloras de accesibilidade, fórmulas matemáticas en KaTeX, exportación PDF e soporte bilingüe integral.", "es": "Mejoras de accesibilidad, fórmulas matemáticas en KaTeX, exportación PDF y soporte bilingüe integral."}'::jsonb,
+  '{"gl": "<p>A plataforma dixital de Cerna renova a súa interface cun deseño sobrio inspirado nas mellores publicacións literarias europeas, optimizado para lectores de pantalla e lectura descansada en modo escuro.</p>", "es": "<p>La plataforma digital de Cerna renueva su interfaz con un diseño sobrio inspirado en las mejores publicaciones literarias europeas, optimizado para lectores de pantalla y lectura descansada en modo oscuro.</p>"}'::jsonb,
+  now() - interval '20 days',
+  now() - interval '20 days',
+  now()
+),
+(
+  'e1000001-0009-0000-0000-000000000009',
+  'mesa-redonda-ciencia-etica-e-futuro-da-intelixencia-artificial',
+  'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=1200&q=80',
+  'published'::public.publication_status,
+  'news'::public.publication_type,
+  'gl',
+  false,
+  'd3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3',
+  '{"gl": "Mesa redonda: Ciencia, ética e o futuro da intelixencia artificial", "es": "Mesa redonda: Ciencia, ética y el futuro de la inteligencia artificial"}'::jsonb,
+  '{"gl": "Cerna debate os desafíos xurídicos e cognitivos do desenvolvemento tecnolóxico acelerado.", "es": "Cerna debate los desafíos jurídicos y cognitivos del desarrollo tecnológico acelerado."}'::jsonb,
+  '{"gl": "<p>Un panel de enxeñeiros, filósofos e analistas xurídicos debateu sobre as implicacións epistémicas da intelixencia artificial nos procesos de toma de decisións públicas e na creatividade humana.</p>", "es": "<p>Un panel de ingenieros, filósofos y analistas jurídicos debatió sobre las implicaciones epistémicas de la inteligencia artificial en los procesos de toma de decisiones públicas y en la creatividad humana.</p>"}'::jsonb,
+  now() - interval '23 days',
+  now() - interval '23 days',
+  now()
+),
+(
+  'e1000001-0010-0000-0000-000000000010',
+  'apertura-do-fondo-documental-e-hemeroteca-historica',
+  'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=1200&q=80',
+  'published'::public.publication_status,
+  'news'::public.publication_type,
+  'gl',
+  false,
+  'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
+  '{"gl": "Apertura do fondo documental e hemeroteca histórica da Asociación", "es": "Apertura del fondo documental y hemeroteca histórica de la Asociación"}'::jsonb,
+  '{"gl": "Máis de cincocentos títulos e ensaios clásicos dixitalizados ao servizo da comunidade investigadora.", "es": "Más de quinientos títulos y ensayos clásicos digitalizados al servicio de la comunidad investigadora."}'::jsonb,
+  '{"gl": "<p>A hemeroteca dixital de Cerna pon a disposición aberta ensaios descatalogados e correspondencia histórica de grandes pensadores que contribuíron ao avance da ciencia social e da literatura crítica en Galicia e no mundo.</p>", "es": "<p>La hemeroteca digital de Cerna pone a disposición abierta ensayos descatalogados y correspondencia histórica de grandes pensadores que contribuyeron al avance de la ciencia social y de la literatura crítica en Galicia y en el mundo.</p>"}'::jsonb,
+  now() - interval '26 days',
+  now() - interval '26 days',
+  now()
+)
+ON CONFLICT (id) DO UPDATE SET
+  slug = EXCLUDED.slug,
+  cover_image_url = EXCLUDED.cover_image_url,
+  status = EXCLUDED.status,
+  type = EXCLUDED.type,
+  title = EXCLUDED.title,
+  subtitle = EXCLUDED.subtitle,
+  content = EXCLUDED.content,
+  updated_at = now();
+
+-- Associate tags with mock news
+INSERT INTO public.publication_tags (publication_id, tag_id) VALUES
+  ('e1000001-0001-0000-0000-000000000001', 'c1000001-0020-0000-0000-000000000020'), -- comunidade
+  ('e1000001-0002-0000-0000-000000000002', 'c1000001-0010-0000-0000-000000000010'), -- literatura
+  ('e1000001-0003-0000-0000-000000000003', '6769db8e-55a0-4d74-b095-ba6e024a7d94'), -- filosofa-poltica
+  ('e1000001-0004-0000-0000-000000000004', 'b1c84c1d-05ff-4988-bf22-0ed25a086df5'), -- economia
+  ('e1000001-0005-0000-0000-000000000005', '1b964c97-9c3c-417c-affc-1fe85bca1ede'), -- cultura
+  ('e1000001-0006-0000-0000-000000000006', 'c1000001-0005-0000-0000-000000000005'), -- dereito
+  ('e1000001-0007-0000-0000-000000000007', 'c1000001-0013-0000-0000-000000000013'), -- orde-espontaneo
+  ('e1000001-0008-0000-0000-000000000008', 'c1000001-0008-0000-0000-000000000008'), -- tecnoloxia
+  ('e1000001-0009-0000-0000-000000000009', 'c1000001-0001-0000-0000-000000000001'), -- etica
+  ('e1000001-0010-0000-0000-000000000010', '6c891f3b-160d-4fb3-afc6-159cb21fde44')  -- historia
+ON CONFLICT DO NOTHING;

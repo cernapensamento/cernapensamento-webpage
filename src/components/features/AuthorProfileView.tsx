@@ -3,8 +3,10 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { Columnist } from '@/lib/columnists';
 import type { LocalizedString, TagItem } from '@/lib/db/types';
+import { PUBLICATION_TYPES } from '@/lib/db/schema';
 
 export interface ArticleData {
   id: string | number;
@@ -166,7 +168,7 @@ export default function AuthorProfileView({
   const typesSummary = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const art of allArticles) {
-      const t = (art.type || art.tipo || 'article').toLowerCase();
+      const t = (art.type || art.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
       counts[t] = (counts[t] || 0) + 1;
     }
     return counts;
@@ -177,7 +179,7 @@ export default function AuthorProfileView({
   // Filter articles by type AND selected topic
   const filteredArticles = useMemo(() => {
     return allArticles.filter((a) => {
-      const artType = (a.type || a.tipo || 'article').toLowerCase();
+      const artType = (a.type || a.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
       const matchesType = selectedType === 'all' || artType === selectedType;
       const aTopics = a.tags ? a.tags.map((t) => t.slug) : (Array.isArray(a.tematicas) ? a.tematicas : []);
       const matchesTopic = !selectedTopic || aTopics.includes(selectedTopic);
@@ -471,82 +473,86 @@ export default function AuthorProfileView({
                   const dateStr = featuredArticle.created_at || featuredArticle.creado_en || featuredArticle.updated_at || featuredArticle.actualizado_en;
                   const imageUrl = featuredArticle.cover_image_url || featuredArticle.imagen_url;
                   const articleTopics = featuredArticle.tags ? featuredArticle.tags.map((t) => t.slug) : (featuredArticle.tematicas || []);
-                  const rawType = featuredArticle.type || featuredArticle.tipo || 'article';
+                  const rawType = featuredArticle.type || featuredArticle.tipo || PUBLICATION_TYPES.ARTICLE;
 
                   return (
-                    <article className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center bg-surface/40 border border-lines p-6 md:p-10 rounded-2xl group transition-all duration-500 hover:border-gold/50 hover:shadow-md">
-                      <Link
-                        href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}
-                        className="lg:col-span-6 relative w-full h-[260px] sm:h-[340px] rounded-xl overflow-hidden bg-lines/40 block shrink-0"
-                        aria-label={titulo}
-                      >
-                        {imageUrl ? (
-                          <Image
-                            src={imageUrl}
-                            alt={titulo || tFeaturedCoverAlt}
-                            fill
-                            sizes="(max-width: 1024px) 100vw, 50vw"
-                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                            priority
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-lines/20 to-surface">
-                            <span className="text-7xl text-charcoal/15 font-serif select-none">§</span>
-                          </div>
-                        )}
-                      </Link>
+                    <RevealOnScroll delayMs={50}>
+                      <article className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center bg-surface/40 border border-lines p-6 md:p-10 rounded-2xl group transition-all duration-500 hover:border-gold/50 hover:shadow-md">
+                        <Link
+                          href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}
+                          className="lg:col-span-6 relative w-full h-[260px] sm:h-[340px] rounded-xl overflow-hidden bg-lines/40 block shrink-0"
+                          aria-label={titulo}
+                        >
+                          {imageUrl ? (
+                            <Image
+                              src={imageUrl}
+                              alt={titulo || tFeaturedCoverAlt}
+                              fill
+                              sizes="(max-width: 1024px) 100vw, 50vw"
+                              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                              priority
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-lines/20 to-surface">
+                              <span className="text-7xl text-charcoal/15 font-serif select-none">§</span>
+                            </div>
+                          )}
+                        </Link>
 
-                      <div className="lg:col-span-6 flex flex-col justify-between h-full">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-3 mb-4">
-                            <span className="px-2.5 py-1 text-[11px] font-semibold text-gold bg-gold/10 rounded uppercase tracking-widest">
-                              {getTypeLabel(rawType)}
-                            </span>
-                            {dateStr && (
-                              <time dateTime={dateStr} className="text-xs text-charcoal/60 font-sans">
-                                {formatDate(dateStr, lang)}
-                              </time>
+                        <div className="lg:col-span-6 flex flex-col justify-between h-full">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-3 mb-4">
+                              <span className="px-2.5 py-1 text-[11px] font-semibold text-gold bg-gold/10 rounded uppercase tracking-widest">
+                                {getTypeLabel(rawType)}
+                              </span>
+                              {dateStr && (
+                                <time dateTime={dateStr} className="text-xs text-charcoal/60 font-sans">
+                                  {formatDate(dateStr, lang)}
+                                </time>
+                              )}
+                            </div>
+
+                            <Link href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}>
+                              <h2 className="font-serif text-3xl sm:text-4xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-tight mb-4">
+                                {titulo}
+                              </h2>
+                            </Link>
+
+                            {subtitulo && (
+                              <p className="font-sans text-base sm:text-lg text-charcoal/80 line-clamp-3 md:line-clamp-4 leading-relaxed mb-6">
+                                {subtitulo}
+                              </p>
                             )}
                           </div>
 
-                          <Link href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}>
-                            <h2 className="font-serif text-3xl sm:text-4xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-tight mb-4">
-                              {titulo}
-                            </h2>
-                          </Link>
-
-                          {subtitulo && (
-                            <p className="font-sans text-base sm:text-lg text-charcoal/80 line-clamp-3 md:line-clamp-4 leading-relaxed mb-6">
-                              {subtitulo}
-                            </p>
-                          )}
+                          <div className="pt-6 border-t border-lines/60 flex flex-wrap items-center justify-between gap-4">
+                            {articleTopics && articleTopics.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {articleTopics.slice(0, 3).map((tag, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => handleTopicClick(tag)}
+                                    className="text-[11px] uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
+                                  >
+                                    #{getTopicDisplayName(tag)}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <Link
+                              href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}
+                              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal group-hover:text-gold transition-colors ml-auto group/btn"
+                            >
+                              <span>{tReadFull}</span>
+                              <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover/btn:translate-x-1" aria-hidden="true">
+                                arrow_forward
+                              </span>
+                            </Link>
+                          </div>
                         </div>
-
-                        <div className="pt-6 border-t border-lines/60 flex flex-wrap items-center justify-between gap-4">
-                          {articleTopics && articleTopics.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {articleTopics.slice(0, 3).map((tag, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => handleTopicClick(tag)}
-                                  className="text-[11px] uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
-                                >
-                                  #{getTopicDisplayName(tag)}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          <Link
-                            href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}
-                            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal group-hover:text-gold transition-colors ml-auto"
-                          >
-                            <span>{tReadFull}</span>
-                            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-                          </Link>
-                        </div>
-                      </div>
-                    </article>
+                      </article>
+                    </RevealOnScroll>
                   );
                 })()}
               </section>
@@ -566,7 +572,7 @@ export default function AuthorProfileView({
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {gridArticles.map((articulo) => {
+                  {gridArticles.map((articulo, idx) => {
                     const titulo = articulo.title
                       ? (articulo.title[lang] || articulo.title.gl || articulo.title.es || '')
                       : (lang === 'es' ? articulo.titulo_es : articulo.titulo_gl) || articulo.titulo_gl || articulo.titulo_es || '';
@@ -576,81 +582,84 @@ export default function AuthorProfileView({
                     const dateStr = articulo.created_at || articulo.creado_en || articulo.updated_at || articulo.actualizado_en;
                     const imageUrl = articulo.cover_image_url || articulo.imagen_url;
                     const articleTopics = articulo.tags ? articulo.tags.map((t) => t.slug) : (articulo.tematicas || []);
-                    const rawType = articulo.type || articulo.tipo || 'article';
+                    const rawType = articulo.type || articulo.tipo || PUBLICATION_TYPES.ARTICLE;
 
                     return (
-                      <article
-                        key={articulo.id}
-                        className="group flex flex-col bg-surface/30 hover:bg-surface/70 border border-lines hover:border-gold/50 rounded-xl p-6 transition-all duration-300 hover:shadow-sm h-full"
-                      >
-                        {/* Optional thumbnail preview */}
-                        {imageUrl && (
-                          <Link
-                            href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
-                            className="relative w-full h-44 rounded-lg overflow-hidden bg-lines/30 mb-5 block"
-                            aria-label={titulo}
-                            tabIndex={-1}
-                          >
-                            <Image
-                              src={imageUrl}
-                              alt={titulo || tThumbnailAlt}
-                              fill
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                              className="object-cover transition-transform duration-700 group-hover:scale-105"
-                            />
-                          </Link>
-                        )}
-
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <span className="text-xs font-semibold text-gold uppercase tracking-widest">
-                            {getTypeLabel(rawType)}
-                          </span>
-                        </div>
-
-                        <Link href={`/${lang}/articulo/${articulo.slug || articulo.id}`}>
-                          <h4 className="font-serif text-xl sm:text-2xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-snug mb-3 line-clamp-3">
-                            {titulo}
-                          </h4>
-                        </Link>
-
-                        {subtitulo && (
-                          <p className="font-sans text-sm sm:text-base text-charcoal/70 line-clamp-3 leading-relaxed mb-4">
-                            {subtitulo}
-                          </p>
-                        )}
-
-                        {/* Labels / Temáticas: beneath subtitle, above publication date */}
-                        {articleTopics && articleTopics.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-5">
-                            {articleTopics.map((tag, i) => (
-                              <button
-                                key={i}
-                                type="button"
-                                onClick={() => handleTopicClick(tag)}
-                                className="text-[11px] font-sans uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
-                              >
-                                #{getTopicDisplayName(tag)}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Time of publication in card footer */}
-                        <div className="mt-auto pt-4 border-t border-lines/60 flex items-center justify-between text-xs text-charcoal/60">
-                          {dateStr && (
-                            <time dateTime={dateStr} className="font-sans">
-                              {formatDate(dateStr, lang)}
-                            </time>
+                      <RevealOnScroll key={articulo.id} delayMs={(idx % 3) * 100} className="h-full">
+                        <article
+                          className="group flex flex-col bg-surface/30 hover:bg-surface/70 border border-lines hover:border-gold/50 rounded-xl p-6 transition-all duration-300 hover:shadow-sm h-full"
+                        >
+                          {/* Optional thumbnail preview */}
+                          {imageUrl && (
+                            <Link
+                              href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
+                              className="relative w-full h-44 rounded-lg overflow-hidden bg-lines/30 mb-5 block"
+                              aria-label={titulo}
+                              tabIndex={-1}
+                            >
+                              <Image
+                                src={imageUrl}
+                                alt={titulo || tThumbnailAlt}
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                              />
+                            </Link>
                           )}
-                          <Link
-                            href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
-                            className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wider text-charcoal/60 group-hover:text-gold transition-colors font-medium ml-auto"
-                          >
-                            <span>{tReadFull}</span>
-                            <span className="transition-transform duration-300 group-hover:translate-x-0.5">→</span>
+
+                          <div className="flex items-center justify-between gap-2 mb-3">
+                            <span className="text-xs font-semibold text-gold uppercase tracking-widest">
+                              {getTypeLabel(rawType)}
+                            </span>
+                          </div>
+
+                          <Link href={`/${lang}/articulo/${articulo.slug || articulo.id}`}>
+                            <h4 className="font-serif text-xl sm:text-2xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-snug mb-3 line-clamp-3">
+                              {titulo}
+                            </h4>
                           </Link>
-                        </div>
-                      </article>
+
+                          {subtitulo && (
+                            <p className="font-sans text-sm sm:text-base text-charcoal/70 line-clamp-3 leading-relaxed mb-4">
+                              {subtitulo}
+                            </p>
+                          )}
+
+                          {/* Labels / Temáticas: beneath subtitle, above publication date */}
+                          {articleTopics && articleTopics.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-5">
+                              {articleTopics.map((tag, i) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => handleTopicClick(tag)}
+                                  className="text-[11px] font-sans uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
+                                >
+                                  #{getTopicDisplayName(tag)}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Time of publication in card footer */}
+                          <div className="mt-auto pt-4 border-t border-lines/60 flex items-center justify-between text-xs text-charcoal/60">
+                            {dateStr && (
+                              <time dateTime={dateStr} className="font-sans">
+                                {formatDate(dateStr, lang)}
+                              </time>
+                            )}
+                            <Link
+                              href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
+                              className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-charcoal/60 group-hover:text-gold transition-colors font-medium ml-auto group/read"
+                            >
+                              <span>{tReadFull}</span>
+                              <span className="material-symbols-outlined text-sm transition-transform duration-300 group-hover/read:translate-x-1" aria-hidden="true">
+                                arrow_forward
+                              </span>
+                            </Link>
+                          </div>
+                        </article>
+                      </RevealOnScroll>
                     );
                   })}
                 </div>

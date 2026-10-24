@@ -10,7 +10,7 @@ import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 import { handleSignOut } from '@/actions/auth';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
-import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
+import { DB_TABLES, USER_COLS, USER_ROLES } from '@/lib/db/schema';
 import type { UserRow } from '@/lib/db/types';
 import { uploadStorageImage, STORAGE_CATEGORIES } from '@/lib/storage';
 
@@ -21,7 +21,7 @@ export interface ProfileDashboardProps {
 
 export default function ProfileDashboard({ profile, user }: ProfileDashboardProps) {
   const params = useParams();
-  const lang = (params?.lang as string) || 'es';
+  const lang = (params?.lang as string) || 'gl';
   const dict = lang === 'es' ? esDict : glDict;
   const dashDict = dict.dashboard;
 
@@ -169,14 +169,14 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
               {(() => {
                 const role = profile?.role || profile?.rol;
                 switch (role) {
-                  case 'admin':
+                  case USER_ROLES.ADMIN:
                     return dashDict.admin;
-                  case 'founder':
+                  case USER_ROLES.FOUNDER:
                   case 'escritor':
                     return dashDict.founder || dashDict.writer;
-                  case 'member':
+                  case USER_ROLES.MEMBER:
                     return dashDict.member || 'Membro';
-                  case 'guest':
+                  case USER_ROLES.GUEST:
                   case 'invitado':
                     return dashDict.guest;
                   default:
@@ -277,7 +277,7 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
             <form action={handleSignOut} className="w-full sm:w-auto">
               <button type="submit" className="flex items-center justify-center gap-3 py-3 px-4 bg-transparent border border-lines/50 text-charcoal/50 hover:bg-red-50/50 hover:text-red-500 hover:border-red-500/20 transition-all duration-300 group w-full cursor-pointer shrink-0 rounded-sm">
                 <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:-translate-x-1" data-icon="logout">logout</span>
-                <span className="font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300">{lang === 'es' ? 'Cerrar Sesión' : 'Pechar Sesión'}</span>
+                <span className="font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300">{dashDict.logout}</span>
               </button>
             </form>
           </div>

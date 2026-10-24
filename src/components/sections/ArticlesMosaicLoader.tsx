@@ -1,5 +1,5 @@
 import React from 'react';
-import { getPublicationCards } from '@/lib/db/queries/publications';
+import { getPublicationCards, getPinnedPublications } from '@/lib/db';
 import ArticlesMosaicSection from './ArticlesMosaicSection';
 
 interface ArticlesMosaicLoaderProps {
@@ -15,21 +15,18 @@ export default async function ArticlesMosaicLoader({
   lang,
   dict,
 }: ArticlesMosaicLoaderProps) {
-  // Fetch up to 24 publication cards sorted strictly by created_at DESC
-  const allArticles = await getPublicationCards({
-    limit: 24,
-    lang,
-  });
+  // 1. Explicitly fetch ALL pinned publications so they are guaranteed to appear on the layout
+  // 2. Fetch the most recent publications sorted by publication date
+  const [pinnedArticles, allArticles] = await Promise.all([
+    getPinnedPublications(20, undefined, lang),
+    getPublicationCards({
+      limit: 24,
+      lang,
+    }),
+  ]);
 
-  // Strict sorting by created_at descending (publication date)
-  const sortedArticles = [...allArticles].sort((a, b) => {
-    const timeA = new Date(a.created_at).getTime();
-    const timeB = new Date(b.created_at).getTime();
-    return timeB - timeA;
-  });
-
-  const pinnedArticles = sortedArticles.filter((a) => a.is_pinned);
-  const regularArticles = sortedArticles.filter((a) => !a.is_pinned);
+  const pinnedIds = new Set(pinnedArticles.map((p) => p.id));
+  const regularArticles = allArticles.filter((a) => !pinnedIds.has(a.id));
 
   return (
     <ArticlesMosaicSection

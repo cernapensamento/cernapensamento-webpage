@@ -11,12 +11,15 @@ import ContactSection from '@/components/sections/ContactSection';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
+import { getAllTagsWithTranslations } from '@/lib/db';
 
 export const revalidate = 60;
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = await getDictionary(lang as Locale);
+  const tags = await getAllTagsWithTranslations({ lang });
+  const themesTags = tags.slice(0, 12);
 
   return (
     <>
@@ -24,7 +27,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <HeroIntroSection lang={lang} dict={dict.hero} />
 
       {/* 2. ARTICLES MOSAIC SECTION (Grey / Dark-Grey: bg-surface) */}
-      <section aria-label="Publicacións recentes" className="flex-grow w-full bg-surface border-b border-lines py-16 sm:py-24">
+      <section aria-label={dict.mosaic?.recentTitle || dict.articles?.title} className="flex-grow w-full bg-surface border-b border-lines py-16 sm:py-24">
         <div className="max-w-[1120px] mx-auto px-5 md:px-16">
           <Suspense fallback={<ArticlesMosaicSkeleton />}>
             <ArticlesMosaicLoader lang={lang} dict={dict} />
@@ -36,13 +39,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <AssociationAndNewsSection lang={lang} dict={dict.associationAndNews} />
 
       {/* 4. ABOUT US SECTION (Grey / Dark-Grey: bg-surface) */}
-      <RevealOnScroll delayMs={50}>
-        <AboutUsSection lang={lang} dict={dict.about} />
-      </RevealOnScroll>
+      <AboutUsSection lang={lang} dict={dict.about} />
 
       {/* 5. THEMES CAROUSEL OF TAGS (White / Black: bg-parchment) */}
       <RevealOnScroll delayMs={50}>
-        <ThemesSection lang={lang} dict={dict.themes} />
+        <ThemesSection lang={lang} dict={dict.themes} tags={themesTags} />
       </RevealOnScroll>
 
       {/* 6. COLUMNISTS / AUTHORS SECTION (Grey / Dark-Grey: bg-surface) */}
@@ -56,9 +57,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </RevealOnScroll>
 
       {/* 8. CONTACT SECTION (Grey / Dark-Grey: bg-surface) */}
-      <RevealOnScroll delayMs={50}>
-        <ContactSection lang={lang} dict={dict.contact} />
-      </RevealOnScroll>
+      <ContactSection lang={lang} dict={dict.contact} />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
+import { USER_ROLES } from '@/lib/db/schema';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 import Image from 'next/image';
@@ -19,11 +20,11 @@ interface SideNavBarProps {
 export default function SideNavBar({ role, collapsed = false, onToggle }: SideNavBarProps) {
   const pathname = usePathname();
   const params = useParams();
-  const lang = (params?.lang as string) || 'es';
+  const lang = (params?.lang as string) || 'gl';
   const dict = lang === 'es' ? esDict : glDict;
   const dashDict = dict.dashboard;
 
-  const isWriter = ['founder', 'member', 'guest', 'admin', 'escritor', 'invitado'].includes(role || '');
+  const isWriter = ([USER_ROLES.FOUNDER, USER_ROLES.MEMBER, USER_ROLES.GUEST, USER_ROLES.ADMIN] as string[]).includes(role || '') || ['escritor', 'invitado'].includes(role || '');
 
   const isHome = pathname === '/' || pathname === `/${lang}`;
   const isArticles = pathname === `/${lang}/escritorio` || pathname === '/escritorio';
@@ -39,7 +40,7 @@ export default function SideNavBar({ role, collapsed = false, onToggle }: SideNa
       <div className={`flex flex-col h-full ${collapsed ? 'px-2 py-6' : 'px-8 py-10'}`}>
         {/* Header: Logo and Toggle */}
         <div className={`flex items-center ${collapsed ? 'flex-col gap-4 mb-8' : 'justify-between mb-12'}`}>
-          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity" title={SITE_NAME}>
+          <Link href={`/${lang}`} className="flex items-center hover:opacity-80 transition-opacity" title={SITE_NAME}>
             {collapsed ? (
               <span className="font-serif text-2xl font-bold text-gold" title={SITE_NAME}>
                 §
@@ -75,8 +76,8 @@ export default function SideNavBar({ role, collapsed = false, onToggle }: SideNa
                   ? 'w-full justify-center p-3 text-charcoal/60 hover:text-gold hover:bg-lines/30 border-l-2 border-transparent hover:border-gold'
                   : 'p-2 border border-lines/80 text-charcoal/60 hover:text-gold hover:border-gold hover:bg-gold/10'
               }`}
-              title={collapsed ? (lang === 'gl' ? 'Despregar barra lateral' : 'Desplegar barra lateral') : (lang === 'gl' ? 'Pregar barra lateral' : 'Plegar barra lateral')}
-              aria-label={collapsed ? 'Despregar barra lateral' : 'Plegar barra lateral'}
+              title={collapsed ? dashDict.expandSidebar : dashDict.collapseSidebar}
+              aria-label={collapsed ? dashDict.expandSidebar : dashDict.collapseSidebar}
             >
               <span className="material-symbols-outlined text-[20px] transition-transform duration-300 group-hover:scale-110" style={{ fontFamily: 'Material Symbols Outlined' }}>
                 {collapsed ? 'chevron_right' : 'chevron_left'}

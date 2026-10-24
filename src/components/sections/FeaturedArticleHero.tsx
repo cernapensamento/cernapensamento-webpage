@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { LocalizedString } from '@/lib/db/types';
+import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 
 interface FeaturedArticleData {
   id: string | number;
@@ -54,14 +57,15 @@ export default function FeaturedArticleHero({ articulo, lang, dict }: FeaturedAr
     : (lang === 'es' ? articulo.contenido_es : articulo.contenido_gl) || '';
 
   // Resolve type
-  const typeKey = (articulo.type || articulo.tipo || 'article').toLowerCase();
-  const typeLabel = dict?.documentTypes?.[typeKey] || dict?.documentTypes?.[typeKey === 'article' ? 'artigo' : typeKey] || typeKey;
+  const typeKey = (articulo.type || articulo.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
+  const typeLabel = dict?.documentTypes?.[typeKey] || dict?.documentTypes?.[typeKey === PUBLICATION_TYPES.ARTICLE ? 'artigo' : typeKey] || typeKey;
 
   // Resolve image URL
   const coverUrl = articulo.cover_image_url || articulo.imagen_url;
 
   // Resolve author name
-  const authorName = articulo.author?.full_name || articulo.author?.nombre || articulo.perfiles?.nombre || 'Autor Descoñecido';
+  const fallbackDict = lang === 'es' ? esDict : glDict;
+  const authorName = articulo.author?.full_name || articulo.author?.nombre || articulo.perfiles?.nombre || (dict?.articles as Record<string, string>)?.unknownAuthor || fallbackDict.articles.unknownAuthor;
 
   return (
     <section className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">

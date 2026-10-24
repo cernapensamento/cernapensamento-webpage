@@ -83,8 +83,8 @@ export default async function ArticuloPage({
   return (
     <>
       <main className="flex-grow flex flex-col items-center w-full pb-30">
-        <header className="w-full max-w-3xl px-5 md:px-0 pt-24 pb-12 mx-auto text-center relative">
-          <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">
+        <header className="w-full max-w-3xl px-5 md:px-0 pt-8 sm:pt-12 pb-10 mx-auto text-center relative">
+          <span className="font-mono text-xs font-bold text-gold uppercase tracking-[0.22em] block mb-4">
             {typeLabel}
           </span>
           <h1 className="font-serif text-4xl md:text-6xl text-charcoal mb-6 max-w-4xl mx-auto leading-tight">
@@ -96,51 +96,54 @@ export default async function ArticuloPage({
             </p>
           )}
           <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal/40 mt-8 border-y border-lines py-3">
-            <span>{publication.author.full_name}</span>
+            <Link 
+              href={`/${lang}/autor/${publication.author.slug || publication.author.id}`}
+              className="text-charcoal/80 hover:text-gold transition-colors font-medium hover:underline"
+            >
+              {publication.author.full_name}
+            </Link>
             <span>•</span>
             <time dateTime={publication.created_at}>{fecha}</time>
           </div>
           {publication.original_language && publication.original_language !== lang && (
             <div className="text-[10px] text-charcoal/60 uppercase tracking-[0.15em] mt-3">
-              {lang === 'es' ? 'Idioma original:' : 'Idioma orixinal:'}{' '}
+              {dict.article.originalLanguage}{' '}
               <Link href={`/${publication.original_language}/articulo/${publication.slug}`} className="text-gold font-bold hover:underline transition-all">
                 {publication.original_language.toUpperCase()}
               </Link>
             </div>
           )}
+          {publication.tags && publication.tags.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 mt-6">
+              {publication.tags.map((tag) => (
+                <Link
+                  key={tag.slug}
+                  href={`/${lang}/articulos?tema=${tag.slug}`}
+                  className="border border-lines dark:border-white/15 bg-surface dark:bg-[#1a1a1a] px-3.5 py-1.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] hover:border-gold hover:text-gold transition-all"
+                >
+                  {tag.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </header>
 
         {publication.cover_image_url && (
-          <div className="w-full max-w-5xl px-5 md:px-0 mb-16 mx-auto">
-            <div className="relative w-full aspect-video md:aspect-[21/9] overflow-hidden bg-lines/30">
-              <Image
-                src={publication.cover_image_url}
-                alt={titulo}
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 1200px) 100vw, 1200px"
-              />
-            </div>
+          <div className="w-full max-w-4xl px-5 md:px-0 mb-12 sm:mb-16 mx-auto flex justify-center">
+            <Image
+              src={publication.cover_image_url}
+              alt={titulo}
+              width={1400}
+              height={900}
+              priority
+              className="w-auto h-auto max-w-full max-h-[85vh] object-contain mx-auto"
+              sizes="(max-width: 1024px) 100vw, 1024px"
+            />
           </div>
         )}
 
         <ArticleScrollManager className="w-full">
           <article className="w-full max-w-2xl px-5 md:px-0 mx-auto min-w-0">
-            {publication.tags && publication.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-8">
-                {publication.tags.map((tag) => (
-                  <Link
-                    key={tag.slug}
-                    href={`/${lang}/articulos?tema=${tag.slug}`}
-                    className="text-xs font-semibold uppercase tracking-wider text-charcoal/60 bg-lines/40 hover:bg-gold hover:text-parchment px-3 py-1 rounded-full transition-colors"
-                  >
-                    #{tag.name}
-                  </Link>
-                ))}
-              </div>
-            )}
-
             <div 
               className={`article-content ${isEnsaio ? 'article-content-essay' : ''}`}
               dangerouslySetInnerHTML={{ 

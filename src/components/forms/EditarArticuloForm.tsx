@@ -18,6 +18,8 @@ import {
   type PublicationStatusValue,
 } from '@/lib/db/schema';
 import type { PublicationDetail } from '@/lib/db/types';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 
 interface Props {
   publication?: PublicationDetail;
@@ -29,28 +31,28 @@ function normalizePublicationType(type?: string): PublicationTypeValue {
   switch (type) {
     case 'ensaio':
     case 'ensayo':
-    case 'essay':
+    case PUBLICATION_TYPES.ESSAY:
       return PUBLICATION_TYPES.ESSAY;
     case 'reportaxe':
     case 'reportaje':
-    case 'reportage':
+    case PUBLICATION_TYPES.REPORTAGE:
       return PUBLICATION_TYPES.REPORTAGE;
     case 'columna':
-    case 'column':
+    case PUBLICATION_TYPES.COLUMN:
       return PUBLICATION_TYPES.COLUMN;
     case 'entrevista':
-    case 'interview':
+    case PUBLICATION_TYPES.INTERVIEW:
       return PUBLICATION_TYPES.INTERVIEW;
     case 'poesia':
     case 'poesía':
-    case 'poetry':
+    case PUBLICATION_TYPES.POETRY:
       return PUBLICATION_TYPES.POETRY;
     case 'noticia':
-    case 'news':
+    case PUBLICATION_TYPES.NEWS:
       return PUBLICATION_TYPES.NEWS;
     case 'artigo':
     case 'articulo':
-    case 'article':
+    case PUBLICATION_TYPES.ARTICLE:
     default:
       return PUBLICATION_TYPES.ARTICLE;
   }
@@ -65,7 +67,8 @@ export default function EditarArticuloForm({
   const [isPublishing, setIsPublishing] = useState(false);
   const router = useRouter();
   const params = useParams();
-  const lang = (params?.lang as string) || 'es';
+  const lang = (params?.lang as string) || 'gl';
+  const dict = lang === 'es' ? esDict : glDict;
   const supabase = createClient();
 
   const initialData: ArticleData = {
@@ -141,7 +144,7 @@ export default function EditarArticuloForm({
 
       let targetStatus: PublicationStatusValue = PUBLICATION_STATUSES.PUBLISHED;
       if (
-        action === 'draft' ||
+        action === PUBLICATION_STATUSES.DRAFT ||
         action === 'reject' ||
         action === 'revoke_approval'
       ) {
@@ -207,17 +210,17 @@ export default function EditarArticuloForm({
         }
 
         alert(
-          action === 'draft' ||
+          action === PUBLICATION_STATUSES.DRAFT ||
             action === 'reject' ||
             action === 'revoke_approval'
-            ? '¡Borrador actualizado!'
-            : '¡Acción realizada con éxito!'
+            ? dict.articleEditor.draftUpdated
+            : dict.articleEditor.actionSuccess
         );
         router.push(`/${lang}/escritorio`);
       }
     } catch (error: unknown) {
       console.error(error);
-      alert('Error inesperado al guardar.');
+      alert(dict.articleEditor.unexpectedError);
     } finally {
       setIsPublishing(false);
     }

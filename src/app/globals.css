@@ -246,7 +246,7 @@ input[type="submit"]:disabled {
 .animate-marquee-infinite {
   display: flex;
   width: max-content;
-  animation: marqueeScroll 45s linear infinite;
+  animation: marqueeScroll 70s linear infinite;
   will-change: transform;
 }
 
@@ -281,8 +281,8 @@ input[type="submit"]:disabled {
 
 /* Paragraph spacing & line heights */
 .article-content p {
-  margin-bottom: 1.5rem;
-  line-height: 1.8;
+  margin-bottom: 1.15rem;
+  line-height: 1.75;
 }
 
 /* Collapse redundant empty paragraphs in rendered articles while preserving editor cursor lines */
@@ -465,7 +465,6 @@ input[type="submit"]:disabled {
   max-width: 100%;
   height: auto;
   display: block;
-  border: 1px solid var(--color-lines);
 }
 
 .article-content figcaption {

@@ -42,25 +42,29 @@ export default function AssociationAndNewsSection({ lang, dict }: AssociationAnd
       <div className="max-w-[1120px] mx-auto px-5 md:px-16 flex flex-col gap-16">
         
         {/* Section Header */}
-        <RevealOnScroll className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-lines">
-          <div>
-            <span className="text-xs font-bold text-gold uppercase tracking-[0.2em] block mb-3">
-              {badge}
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-charcoal leading-tight">
-              {title}
-            </h2>
-          </div>
-          <p className="font-sans text-sm md:text-base text-charcoal/70 max-w-md">
-            {description}
-          </p>
-        </RevealOnScroll>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-lines">
+          <RevealOnScroll delayMs={50}>
+            <div>
+              <span className="text-xs font-bold text-gold uppercase tracking-[0.2em] block mb-3">
+                {badge}
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-charcoal leading-tight">
+                {title}
+              </h2>
+            </div>
+          </RevealOnScroll>
+          <RevealOnScroll delayMs={100}>
+            <p className="font-sans text-sm md:text-base text-charcoal/70 max-w-md">
+              {description}
+            </p>
+          </RevealOnScroll>
+        </div>
 
         {/* Dual Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
           
           {/* Card 1: Asociación */}
-          <RevealOnScroll delayMs={50} className="h-full">
+          <RevealOnScroll delayMs={100} className="h-full">
             <div className="bg-surface border border-lines p-8 sm:p-10 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-lg relative overflow-hidden group">
               <span 
                 aria-hidden="true" 
@@ -88,25 +92,31 @@ export default function AssociationAndNewsSection({ lang, dict }: AssociationAnd
                 {/* Sub-links */}
                 <div className="flex flex-col gap-3 pt-4 border-t border-lines/70 mb-8">
                   <Link 
-                    href={`/${lang}/asociacion`}
+                    href={`/${lang}/asociacion#manifesto`}
                     className="flex items-center justify-between py-2 text-sm text-charcoal/80 hover:text-gold transition-colors font-sans border-b border-lines/40 group/sub"
                   >
                     <span>{assoc.manifestoLink}</span>
-                    <span className="text-xs transition-transform group-hover/sub:translate-x-1">→</span>
+                    <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover/sub:translate-x-1" aria-hidden="true">
+                      arrow_forward
+                    </span>
                   </Link>
                   <Link 
                     href={`/${lang}/asociacion/estatutos`}
                     className="flex items-center justify-between py-2 text-sm text-charcoal/80 hover:text-gold transition-colors font-sans border-b border-lines/40 group/sub"
                   >
                     <span>{assoc.statutesLink}</span>
-                    <span className="text-xs transition-transform group-hover/sub:translate-x-1">→</span>
+                    <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover/sub:translate-x-1" aria-hidden="true">
+                      arrow_forward
+                    </span>
                   </Link>
                   <Link 
-                    href={`/${lang}/asociacion`}
+                    href={`/${lang}/asociacion#coleccions`}
                     className="flex items-center justify-between py-2 text-sm text-charcoal/80 hover:text-gold transition-colors font-sans group/sub"
                   >
                     <span>{assoc.collectionsLink}</span>
-                    <span className="text-xs transition-transform group-hover/sub:translate-x-1">→</span>
+                    <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover/sub:translate-x-1" aria-hidden="true">
+                      arrow_forward
+                    </span>
                   </Link>
                 </div>
               </div>
@@ -114,17 +124,19 @@ export default function AssociationAndNewsSection({ lang, dict }: AssociationAnd
               <div className="relative z-10 pt-2">
                 <Link
                   href={`/${lang}/asociacion`}
-                  className="btn-primary w-full sm:w-auto"
+                  className="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 group"
                 >
                   <span>{assoc.button}</span>
-                  <span aria-hidden="true">→</span>
+                  <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+                    arrow_forward
+                  </span>
                 </Link>
               </div>
             </div>
           </RevealOnScroll>
 
           {/* Card 2: Noticias */}
-          <RevealOnScroll delayMs={150} className="h-full">
+          <RevealOnScroll delayMs={200} className="h-full">
             <div className="bg-surface border border-lines p-8 sm:p-10 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-lg relative overflow-hidden group">
               <span 
                 aria-hidden="true" 
@@ -167,10 +179,12 @@ export default function AssociationAndNewsSection({ lang, dict }: AssociationAnd
               <div className="relative z-10 pt-2">
                 <Link
                   href={`/${lang}/noticias`}
-                  className="btn-outline w-full sm:w-auto"
+                  className="btn-outline w-full sm:w-auto inline-flex items-center justify-center gap-2 group"
                 >
                   <span>{news.button}</span>
-                  <span aria-hidden="true">→</span>
+                  <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+                    arrow_forward
+                  </span>
                 </Link>
               </div>
             </div>

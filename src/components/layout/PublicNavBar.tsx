@@ -22,7 +22,6 @@ export default function PublicNavBar() {
   const lang = useLocale();
   const pathname = usePathname();
   const dict = getDictionaryClient(lang);
-  const isEs = lang === 'es';
 
   // Desktop active dropdown ('publicacions' | 'asociacion' | 'autores' | null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -75,64 +74,64 @@ export default function PublicNavBar() {
   // Dropdown Content from Dictionary
   const publicacionsItems: DropdownItem[] = [
     {
-      title: dict.nav?.artigosOpinion || (isEs ? 'Artículos de Opinión' : 'Artigos de Opinión'),
-      desc: dict.nav?.artigosDesc || (isEs ? 'Columnas semanales y análisis de actualidad.' : 'Columnas semanais e análise de actualidade.'),
-      href: `/${lang}/articulos?tipo=artigo`,
+      title: dict.nav?.artigosOpinion,
+      desc: dict.nav?.artigosDesc,
+      href: `/${lang}/articulos?tipo=article`,
     },
     {
-      title: dict.nav?.ensaiosFilosoficos || (isEs ? 'Ensayos Filosóficos' : 'Ensaios Filosóficos'),
-      desc: dict.nav?.ensaiosDesc || (isEs ? 'Monografías extensas sobre economía, política y sociedad.' : 'Monográficos extensos sobre economía, política e sociedade.'),
-      href: `/${lang}/articulos?tipo=ensaio`,
+      title: dict.nav?.ensaiosFilosoficos,
+      desc: dict.nav?.ensaiosDesc,
+      href: `/${lang}/articulos?tipo=essay`,
     },
     {
-      title: dict.nav?.coleccionNarrativa || (isEs ? 'Colección Narrativa' : 'Colección Narrativa'),
-      desc: dict.nav?.narrativaDesc || (isEs ? 'Prosa contemporánea y ficción editorial.' : 'Prosa contemporánea e ficción editorial.'),
-      href: `/${lang}/proyecto-editorial/coleccion-narrativa`,
+      title: dict.nav?.coleccionNarrativa,
+      desc: dict.nav?.narrativaDesc,
+      href: `/${lang}/articulos?tipo=column`,
     },
     {
-      title: dict.nav?.coleccionPoesia || (isEs ? 'Colección Poesía' : 'Colección Poesía'),
-      desc: dict.nav?.poesiaDesc || (isEs ? 'Creación poética y lírica.' : 'Creación poética e lírica.'),
-      href: `/${lang}/proyecto-editorial/coleccion-poesia`,
+      title: dict.nav?.coleccionPoesia,
+      desc: dict.nav?.poesiaDesc,
+      href: `/${lang}/articulos?tipo=poetry`,
     },
   ];
 
   const asociacionItems: DropdownItem[] = [
     {
-      title: dict.nav?.proxectoManifesto || (isEs ? 'El Proyecto y Manifiesto' : 'O Proxecto e Manifesto'),
-      desc: dict.nav?.proxectoDesc || (isEs ? 'Principios fundacionales e ideario de Cerna.' : 'Principios fundacionais e ideario de Cerna.'),
-      href: `/${lang}/asociacion`,
+      title: dict.nav?.proxectoManifesto,
+      desc: dict.nav?.proxectoDesc,
+      href: `/${lang}/asociacion#manifesto`,
     },
     {
-      title: dict.nav?.estatutosSociais || (isEs ? 'Estatutos Sociales' : 'Estatutos Sociais'),
-      desc: dict.nav?.estatutosDesc || (isEs ? 'Normativa interna y marco jurídico de la asociación.' : 'Normativa interna e marco xurídico da asociación.'),
-      href: `/${lang}/asociacion/estatutos`,
+      title: dict.nav?.estatutosSociais,
+      desc: dict.nav?.estatutosDesc,
+      href: `/${lang}/asociacion#estatutos`,
     },
     {
-      title: dict.nav?.coleccionsEditoriais || (isEs ? 'Colecciones Editoriales' : 'Coleccións Editoriais'),
-      desc: dict.nav?.coleccionsDesc || (isEs ? 'Las cuatro ramas de publicación de nuestro sello.' : 'As catro ramas de publicación do noso selo.'),
-      href: `/${lang}/asociacion`,
+      title: dict.nav?.coleccionsEditoriais,
+      desc: dict.nav?.coleccionsDesc,
+      href: `/${lang}/asociacion#coleccions`,
     },
   ];
 
   const autoresItems: DropdownItem[] = [
     {
       title: 'Diego Araújo',
-      desc: isEs ? 'Economía, teoría del valor y filosofía política.' : 'Economía, teoría do valor e filosofía política.',
+      desc: dict.nav?.founderBios?.diego || '',
       href: `/${lang}/autor/diego-araujo`,
     },
     {
       title: 'Anxo Pérez',
-      desc: isEs ? 'Pensamiento crítico, literatura y sociedad.' : 'Pensamento crítico, literatura e sociedade.',
+      desc: dict.nav?.founderBios?.anxo || '',
       href: `/${lang}/autor/anxo-perez`,
     },
     {
       title: 'Héctor González',
-      desc: isEs ? 'Teoría de juegos, ensayo y política.' : 'Teoría de xogos, ensaio e política.',
+      desc: dict.nav?.founderBios?.hector || '',
       href: `/${lang}/autor/hector-gonzalez`,
     },
     {
       title: 'Denis Fernández',
-      desc: isEs ? 'Análisis institucional y cultural.' : 'Análise institucional e cultural.',
+      desc: dict.nav?.founderBios?.denis || '',
       href: `/${lang}/autor/denis-fernandez`,
     },
   ];
@@ -187,7 +186,7 @@ export default function PublicNavBar() {
                 href={`/${lang}/articulos`}
                 className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
               >
-                {dict.nav?.publicaciones || (isEs ? 'Publicaciones' : 'Publicacións')}
+                {dict.nav?.publicaciones}
               </Link>
               <button
                 type="button"
@@ -234,7 +233,7 @@ export default function PublicNavBar() {
                       onClick={() => setActiveDropdown(null)}
                       className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
                     >
-                      <span>{dict.nav?.todasPublicaciones || (isEs ? 'TODAS LAS PUBLICACIONES' : 'TODAS AS PUBLICACIÓNS')}</span>
+                      <span>{dict.nav?.todasPublicaciones}</span>
                       <span aria-hidden="true">→</span>
                     </Link>
                   </div>
@@ -258,7 +257,7 @@ export default function PublicNavBar() {
                 href={`/${lang}/asociacion`}
                 className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
               >
-                {dict.nav?.asociacion || (isEs ? 'Asociación' : 'A Asociación')}
+                {dict.nav?.asociacion}
               </Link>
               <button
                 type="button"
@@ -305,7 +304,7 @@ export default function PublicNavBar() {
                       onClick={() => setActiveDropdown(null)}
                       className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
                     >
-                      <span>{dict.nav?.conoceAsociacion || (isEs ? 'CONOCE LA ASOCIACIÓN' : 'COÑECE A ASOCIACIÓN')}</span>
+                      <span>{dict.nav?.conoceAsociacion}</span>
                       <span aria-hidden="true">→</span>
                     </Link>
                   </div>
@@ -329,7 +328,7 @@ export default function PublicNavBar() {
                 href={`/${lang}/autores`}
                 className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
               >
-                {dict.nav?.autores || (isEs ? 'Autores' : 'Autores')}
+                {dict.nav?.autores}
               </Link>
               <button
                 type="button"
@@ -376,7 +375,7 @@ export default function PublicNavBar() {
                       onClick={() => setActiveDropdown(null)}
                       className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
                     >
-                      <span>{dict.nav?.todosAutores || (isEs ? 'TODOS LOS AUTORES' : 'TODOS OS AUTORES')}</span>
+                      <span>{dict.nav?.todosAutores}</span>
                       <span aria-hidden="true">→</span>
                     </Link>
                   </div>
@@ -388,9 +387,25 @@ export default function PublicNavBar() {
           {/* 4. Noticias (Direct Link) */}
           <Link
             href={`/${lang}/noticias`}
-            className="h-full px-3.5 xl:px-4 flex items-center text-sm font-semibold tracking-wide text-charcoal/80 hover:text-charcoal transition-colors"
+            className={`h-full px-3.5 xl:px-4 flex items-center text-sm font-semibold tracking-wide transition-colors ${
+              pathname?.includes('/noticias')
+                ? 'text-charcoal border-b-2 border-charcoal font-bold'
+                : 'text-charcoal/80 hover:text-charcoal'
+            }`}
           >
-            {dict.nav?.noticias || (isEs ? 'Noticias' : 'Novas')}
+            {dict.nav?.noticias}
+          </Link>
+
+          {/* 5. Contactar (Direct Link) */}
+          <Link
+            href={`/${lang}/contacto`}
+            className={`h-full px-3.5 xl:px-4 flex items-center text-sm font-semibold tracking-wide transition-colors ${
+              pathname?.includes('/contacto')
+                ? 'text-charcoal border-b-2 border-charcoal font-bold'
+                : 'text-charcoal/80 hover:text-charcoal'
+            }`}
+          >
+            {dict.nav?.contactar || 'Contactar'}
           </Link>
 
         </div>
@@ -441,7 +456,7 @@ export default function PublicNavBar() {
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="w-10 h-10 border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors flex items-center justify-center"
-            aria-label={mobileMenuOpen ? 'Pechar menú' : 'Abrir menú'}
+            aria-label={mobileMenuOpen ? (dict.nav?.closeMenu || 'Pechar menú') : (dict.nav?.toggleMenu || 'Abrir menú')}
             aria-expanded={mobileMenuOpen}
           >
             <span className="material-symbols-outlined text-[24px]">
@@ -467,13 +482,13 @@ export default function PublicNavBar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="hover:text-gold transition-colors"
                 >
-                  {dict.nav?.publicaciones || (isEs ? 'Publicaciones' : 'Publicacións')}
+                  {dict.nav?.publicaciones}
                 </Link>
                 <button
                   type="button"
                   onClick={() => toggleMobileAccordion('publicacions')}
                   className="p-1 text-charcoal/70"
-                  aria-label="Expandir"
+                  aria-label={dict.dashboard?.expandSidebar || 'Expandir'}
                 >
                   <span className={`material-symbols-outlined transition-transform ${mobileExpanded['publicacions'] ? 'rotate-180 text-gold' : ''}`}>
                     expand_more
@@ -497,7 +512,7 @@ export default function PublicNavBar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
                   >
-                    {dict.nav?.verTodoArquivo || (isEs ? 'Ver todo el archivo →' : 'Ver todo o arquivo →')}
+                    {dict.nav?.verTodoArquivo}
                   </Link>
                 </div>
               )}
@@ -511,13 +526,13 @@ export default function PublicNavBar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="hover:text-gold transition-colors"
                 >
-                  {dict.nav?.asociacion || (isEs ? 'Asociación' : 'A Asociación')}
+                  {dict.nav?.asociacion}
                 </Link>
                 <button
                   type="button"
                   onClick={() => toggleMobileAccordion('asociacion')}
                   className="p-1 text-charcoal/70"
-                  aria-label="Expandir"
+                  aria-label={dict.dashboard?.expandSidebar || 'Expandir'}
                 >
                   <span className={`material-symbols-outlined transition-transform ${mobileExpanded['asociacion'] ? 'rotate-180 text-gold' : ''}`}>
                     expand_more
@@ -541,7 +556,7 @@ export default function PublicNavBar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
                   >
-                    {dict.nav?.conoceAsociacion ? `${dict.nav.conoceAsociacion} →` : (isEs ? 'Conoce la Asociación →' : 'Coñece a Asociación →')}
+                    {dict.nav?.conoceAsociacion} →
                   </Link>
                 </div>
               )}
@@ -555,13 +570,13 @@ export default function PublicNavBar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="hover:text-gold transition-colors"
                 >
-                  {dict.nav?.autores || (isEs ? 'Autores' : 'Autores')}
+                  {dict.nav?.autores}
                 </Link>
                 <button
                   type="button"
                   onClick={() => toggleMobileAccordion('autores')}
                   className="p-1 text-charcoal/70"
-                  aria-label="Expandir"
+                  aria-label={dict.dashboard?.expandSidebar || 'Expandir'}
                 >
                   <span className={`material-symbols-outlined transition-transform ${mobileExpanded['autores'] ? 'rotate-180 text-gold' : ''}`}>
                     expand_more
@@ -585,7 +600,7 @@ export default function PublicNavBar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
                   >
-                    {dict.nav?.todosAutores ? `${dict.nav.todosAutores} →` : (isEs ? 'Todos los autores →' : 'Todos os autores →')}
+                    {dict.nav?.todosAutores} →
                   </Link>
                 </div>
               )}
@@ -596,13 +611,28 @@ export default function PublicNavBar() {
               <Link
                 href={`/${lang}/noticias`}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-xl font-serif font-bold text-charcoal hover:text-gold py-2 block"
+                className={`text-xl font-serif font-bold py-2 block ${
+                  pathname?.includes('/noticias') ? 'text-gold' : 'text-charcoal hover:text-gold'
+                }`}
               >
-                {dict.nav?.noticiasYAvisos || (isEs ? 'Noticias y Avisos' : 'Novas e Avisos')}
+                {dict.nav?.noticiasYAvisos}
               </Link>
             </div>
 
-            {/* 5. Escritorio / Perfil */}
+            {/* 5. Contactar (Direct Link) */}
+            <div className="border-b border-lines pb-4">
+              <Link
+                href={`/${lang}/contacto`}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`text-xl font-serif font-bold py-2 block ${
+                  pathname?.includes('/contacto') ? 'text-gold' : 'text-charcoal hover:text-gold'
+                }`}
+              >
+                {dict.nav?.contactar}
+              </Link>
+            </div>
+
+            {/* 6. Escritorio / Perfil */}
             <div className="border-b border-lines pb-4">
               <Link
                 href={user ? `/${lang}/escritorio` : `/${lang}/login`}
@@ -610,7 +640,9 @@ export default function PublicNavBar() {
                 className="text-xl font-serif font-bold text-charcoal hover:text-gold py-2 flex items-center justify-between"
               >
                 <span>{user ? dict.nav?.escritorio : dict.nav?.login}</span>
-                <span className="material-symbols-outlined text-sm" aria-hidden="true">arrow_forward</span>
+                <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+                  arrow_forward
+                </span>
               </Link>
             </div>
 
