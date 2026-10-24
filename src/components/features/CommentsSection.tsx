@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import CommentForm from '@/components/forms/CommentForm';
 import Image from 'next/image';
 import Link from 'next/link';

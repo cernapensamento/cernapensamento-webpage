@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getDictionary } from '@/dictionaries';
 import { DB_TABLES, PUBLICATION_COLS, PUBLICATION_STATUSES, USER_COLS } from '@/lib/db/schema';
 import { renderNewsletterEmail } from '@/lib/email/newsletter-template';
-import { getNewsletterSecret, buildUnsubscribeUrl, getSiteBaseUrl } from '@/utils/newsletter';
+import { getNewsletterSecret, buildUnsubscribeUrl, getSiteBaseUrl } from '@/lib/email/newsletter';
 
 interface SubscriberRecord {
   email: string;

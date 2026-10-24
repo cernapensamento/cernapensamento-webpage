@@ -3,7 +3,7 @@
  * Typed queries for user profiles, columnists, and author pages.
  */
 
-import { createClient as createServerClient } from '@/utils/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
 import {
   DB_TABLES,

@@ -21,7 +21,7 @@ import { ArticleIndex } from '@/lib/editor/ArticleIndexExtension';
 import { useParams } from 'next/navigation';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import TagManager from '@/components/escritorio/TagManager';
 import type { LocalizedString } from '@/lib/db/types';
 import { DB_TABLES, USER_COLS } from '@/lib/db/schema';

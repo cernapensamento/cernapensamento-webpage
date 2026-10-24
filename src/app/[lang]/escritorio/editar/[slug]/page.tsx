@@ -1,6 +1,6 @@
 import React from 'react';
-import { getAuthenticatedUser } from '@/utils/auth';
-import { createClient } from '@/utils/supabase/server';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/server';
 import { redirect, notFound } from 'next/navigation';
 import EditarArticuloForm from '@/components/forms/EditarArticuloForm';
 import { getPublicationBySlug } from '@/lib/db/queries/publications';

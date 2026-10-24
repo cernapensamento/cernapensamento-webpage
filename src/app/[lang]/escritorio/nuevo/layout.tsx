@@ -1,7 +1,7 @@
 import React from 'react';
-import { getAuthenticatedUser } from '@/utils/auth';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { DB_TABLES, PUBLICATION_COLS, USER_ROLES } from '@/lib/db/schema';
 
 export default async function NuevoArticuloLayout({

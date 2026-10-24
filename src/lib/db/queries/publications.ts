@@ -4,7 +4,7 @@
  * Enforces bandwidth egress guardrails (never selects full content on listing queries).
  */
 
-import { createClient as createServerClient } from '@/utils/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
 import {
   DB_TABLES,

@@ -1,6 +1,6 @@
 "use server";
 
-import { getAuthenticatedUser } from '@/utils/auth';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { updatePublicationStatus } from '@/lib/db/queries/publications';
 import type { PublicationStatus } from '@/lib/db/types';
 import { USER_ROLES } from '@/lib/db/schema';

@@ -71,6 +71,5 @@ src/
 │   └── ui/              # Componentes visuales genéricos y accesibles
 ├── dictionaries/        # Diccionarios i18n (es.json, gl.json)
 ├── hooks/               # Custom hooks de React (useAuth, useLocale)
-├── lib/                 # Extensiones de TipTap, renderizado KaTeX y constantes
-└── utils/               # Clientes de Supabase y autenticación
+└── lib/                 # Biblioteca unificada: Supabase SSR, auth, DAL, editor, email, PDF
 ```
