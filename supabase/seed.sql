@@ -11,16 +11,98 @@
 SET search_path TO public, extensions, auth;
 
 -- 1. Storage Setup
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('imagenes-articulos', 'imagenes-articulos', true)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'media',
+  'media',
+  true,
+  5242880,
+  ARRAY['image/webp', 'image/jpeg', 'image/png']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 5242880,
+  allowed_mime_types = ARRAY['image/webp', 'image/jpeg', 'image/png'];
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'imagenes-articulos',
+  'imagenes-articulos',
+  true,
+  5242880,
+  ARRAY['image/webp', 'image/jpeg', 'image/png']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 5242880,
+  allowed_mime_types = ARRAY['image/webp', 'image/jpeg', 'image/png'];
 
 DO $$ BEGIN
-  CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'imagenes-articulos');
+  CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id IN ('media', 'imagenes-articulos'));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE POLICY "Authenticated users can upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'imagenes-articulos' AND auth.role() = 'authenticated');
+  CREATE POLICY "Users can upload own profile" ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id IN ('media', 'imagenes-articulos')
+    AND (
+      ((storage.foldername(name))[1] = 'profiles' AND (storage.foldername(name))[2] = (auth.uid())::text)
+      OR
+      ((storage.foldername(name))[1] = 'avatares' AND (storage.foldername(name))[2] = (auth.uid())::text)
+    )
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY "Writers can upload publication images" ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id IN ('media', 'imagenes-articulos')
+    AND (
+      ((storage.foldername(name))[1] = 'publications' AND (storage.foldername(name))[2] IN ('covers', 'inline') AND (storage.foldername(name))[3] = (auth.uid())::text)
+      OR
+      ((storage.foldername(name))[1] IN ('portadas', 'contenido') AND (storage.foldername(name))[2] = (auth.uid())::text)
+    )
+    AND EXISTS (
+      SELECT 1 FROM public.users u
+      WHERE u.id = auth.uid() AND u.role IN ('guest', 'member', 'founder', 'admin')
+    )
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY "Users or admins can delete images" ON storage.objects FOR DELETE TO authenticated
+  USING (
+    bucket_id IN ('media', 'imagenes-articulos')
+    AND (
+      ((storage.foldername(name))[1] = 'profiles' AND (storage.foldername(name))[2] = (auth.uid())::text)
+      OR
+      ((storage.foldername(name))[1] = 'avatares' AND (storage.foldername(name))[2] = (auth.uid())::text)
+      OR
+      ((storage.foldername(name))[1] = 'publications' AND (storage.foldername(name))[3] = (auth.uid())::text)
+      OR
+      ((storage.foldername(name))[1] IN ('portadas', 'contenido') AND (storage.foldername(name))[2] = (auth.uid())::text)
+      OR
+      EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('founder', 'admin'))
+    )
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY "Users or admins can update images" ON storage.objects FOR UPDATE TO authenticated
+  USING (
+    bucket_id IN ('media', 'imagenes-articulos')
+    AND (
+      ((storage.foldername(name))[1] = 'profiles' AND (storage.foldername(name))[2] = (auth.uid())::text)
+      OR
+      ((storage.foldername(name))[1] = 'avatares' AND (storage.foldername(name))[2] = (auth.uid())::text)
+      OR
+      ((storage.foldername(name))[1] = 'publications' AND (storage.foldername(name))[3] = (auth.uid())::text)
+      OR
+      ((storage.foldername(name))[1] IN ('portadas', 'contenido') AND (storage.foldername(name))[2] = (auth.uid())::text)
+      OR
+      EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('founder', 'admin'))
+    )
+  );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- 2. Auth Users & Public Users
