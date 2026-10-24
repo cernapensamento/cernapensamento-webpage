@@ -12,6 +12,7 @@ import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
 import type { UserRow } from '@/lib/db/types';
+import { uploadStorageImage, STORAGE_CATEGORIES } from '@/lib/storage';
 
 export interface ProfileDashboardProps {
   profile: (UserRow & { rol?: string; nombre?: string; recibir_newsletter?: boolean }) | null;
@@ -81,60 +82,50 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      alert('Solo se permiten imágenes JPG, PNG o WebP');
-      return;
-    }
-    if (file.size > 4 * 1024 * 1024) {
-      alert('La imagen no puede superar los 4 MB');
-      return;
-    }
-
+    const storageDict = dict.escritorio.storage;
     setIsUploading(true);
     const localPreview = URL.createObjectURL(file);
     setAvatarUrl(localPreview);
 
-    const ext = file.name.split('.').pop();
-    const path = `avatares/${user.id}/${Date.now()}.${ext}`;
+    try {
+      const { publicUrl } = await uploadStorageImage({
+        supabase,
+        file,
+        category: STORAGE_CATEGORIES.PROFILE_AVATAR,
+        userId: user.id,
+        previousUrl: profile?.avatar_url || avatarUrl,
+      });
 
-    const { error } = await supabase.storage
-      .from('imagenes-articulos')
-      .upload(path, file, {});
-
-    if (error) {
-      alert('Error al subir la imagen: ' + error.message);
-      setAvatarUrl(profile?.avatar_url || '');
-    } else {
-      // Eliminar el avatar anterior si era de Supabase Storage
-      const currentUrl = profile?.avatar_url || avatarUrl;
-      if (currentUrl && currentUrl.includes('supabase.co/storage/v1/object/public/imagenes-articulos/')) {
-          const oldPath = currentUrl.split('imagenes-articulos/')[1];
-          if (oldPath && oldPath !== path) {
-              supabase.storage.from('imagenes-articulos').remove([oldPath]).catch(console.error);
-          }
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('imagenes-articulos')
-        .getPublicUrl(path);
-      setAvatarUrl(urlData.publicUrl);
+      setAvatarUrl(publicUrl);
 
       // Auto-save to DB immediately so refresh doesn't lose the new image
       const { error: updateError } = await supabase
         .from(DB_TABLES.USERS)
-        .update({ [USER_COLS.AVATAR_URL]: urlData.publicUrl })
+        .update({ [USER_COLS.AVATAR_URL]: publicUrl })
         .eq(USER_COLS.ID, profile?.id || user?.id);
+
       if (updateError) {
         console.error('Error al guardar avatar en DB:', updateError.message);
       } else {
         window.dispatchEvent(new Event('profile_updated'));
         router.refresh();
       }
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : '';
+      if (errorMsg === 'INVALID_FORMAT') {
+        alert(storageDict.invalidFormat);
+      } else if (errorMsg.startsWith('FILE_TOO_LARGE:')) {
+        const maxMb = errorMsg.split(':')[1] || '5';
+        alert(storageDict.fileTooLarge.replace('{max}', maxMb));
+      } else {
+        alert(storageDict.uploadError.replace('{error}', errorMsg || 'Error desconocido'));
+      }
+      setAvatarUrl(profile?.avatar_url || '');
+    } finally {
+      URL.revokeObjectURL(localPreview);
+      setIsUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
     }
-
-    URL.revokeObjectURL(localPreview);
-    setIsUploading(false);
-    if (avatarInputRef.current) avatarInputRef.current.value = '';
   };
 
   return (

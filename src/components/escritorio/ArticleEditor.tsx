@@ -25,6 +25,13 @@ import { createClient } from '@/lib/supabase/client';
 import TagManager from '@/components/escritorio/TagManager';
 import type { LocalizedString } from '@/lib/db/types';
 import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
+import {
+  uploadStorageImage,
+  removeStorageImages,
+  extractInlineStoragePaths,
+  extractStoragePathFromUrl,
+  STORAGE_CATEGORIES,
+} from '@/lib/storage';
 
 
 const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -72,6 +79,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const params = useParams();
     const routeLang = (params?.lang as string) || 'es';
     const dict = routeLang === 'gl' ? glDict.articleEditor : esDict.articleEditor;
+    const storageDict = routeLang === 'gl' ? glDict.escritorio.storage : esDict.escritorio.storage;
 
     const [showPublishModal, setShowPublishModal] = useState(false);
     
@@ -284,47 +292,44 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-            alert('Solo se permiten imágenes JPG, PNG o WebP');
-            return;
-        }
-        if (file.size > 4 * 1024 * 1024) {
-            alert(activeLang === 'gl' ? 'A imaxe non pode superar os 4 MB' : 'La imagen no puede superar los 4 MB');
-            return;
-        }
-
         isUploadingCover.current = true;
         const localPreview = URL.createObjectURL(file);
         setCoverImageUrl(localPreview);
 
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { isUploadingCover.current = false; return; }
-
-        const ext = file.name.split('.').pop();
-        const path = `portadas/${user.id}/${Date.now()}.${ext}`;
-
-        const { error } = await supabase.storage
-            .from('imagenes-articulos')
-            .upload(path, file, {});
-
-        if (error) {
-            alert('Error al subir la imagen: ' + error.message);
-            setCoverImageUrl('');
-        } else {
-            if (coverImageUrl && coverImageUrl.includes('supabase.co/storage/v1/object/public/imagenes-articulos/')) {
-                const oldPath = coverImageUrl.split('imagenes-articulos/')[1];
-                if (oldPath) supabase.storage.from('imagenes-articulos').remove([oldPath]).catch(console.error);
-            }
-
-            const { data: urlData } = supabase.storage
-                .from('imagenes-articulos')
-                .getPublicUrl(path);
-            setCoverImageUrl(urlData.publicUrl);
+        if (!user) {
+            alert(storageDict.sessionRequired);
+            isUploadingCover.current = false;
+            URL.revokeObjectURL(localPreview);
+            return;
         }
 
-        URL.revokeObjectURL(localPreview);
-        isUploadingCover.current = false;
-        if (coverInputRef.current) coverInputRef.current.value = '';
+        try {
+            const { publicUrl } = await uploadStorageImage({
+                supabase,
+                file,
+                category: STORAGE_CATEGORIES.PUBLICATION_COVER,
+                userId: user.id,
+                previousUrl: coverImageUrl,
+            });
+
+            setCoverImageUrl(publicUrl);
+        } catch (err: unknown) {
+            const errorMsg = err instanceof Error ? err.message : '';
+            if (errorMsg === 'INVALID_FORMAT') {
+                alert(storageDict.invalidFormat);
+            } else if (errorMsg.startsWith('FILE_TOO_LARGE:')) {
+                const maxMb = errorMsg.split(':')[1] || '8';
+                alert(storageDict.fileTooLarge.replace('{max}', maxMb));
+            } else {
+                alert(storageDict.uploadError.replace('{error}', errorMsg || 'Error'));
+            }
+            setCoverImageUrl(initialData?.cover_image_url || '');
+        } finally {
+            URL.revokeObjectURL(localPreview);
+            isUploadingCover.current = false;
+            if (coverInputRef.current) coverInputRef.current.value = '';
+        }
     };
 
     const insertImage = () => {
@@ -335,28 +340,19 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         const file = e.target.files?.[0];
         if (!file || !editor) return;
 
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-            alert('Solo se permiten imágenes JPG, PNG o WebP');
-            return;
-        }
-        if (file.size > 4 * 1024 * 1024) {
-            alert(activeLang === 'gl' ? 'A imaxe non pode superar os 4 MB' : 'La imagen no puede superar los 4 MB');
-            return;
-        }
-
         isUploadingInline.current = true;
         const localUrl = URL.createObjectURL(file);
-        
-        const caption = window.prompt('Opcional: Añade una leyenda o pie de foto para esta imagen:');
-        
-        (editor.chain().focus() as unknown as { setFigure: (options: { src: string; caption?: string }) => { run: () => void } }).setFigure({ 
-            src: localUrl, 
-            caption: caption || undefined 
+
+        const caption = window.prompt(storageDict.captionPrompt);
+
+        (editor.chain().focus() as unknown as { setFigure: (options: { src: string; caption?: string }) => { run: () => void } }).setFigure({
+            src: localUrl,
+            caption: caption || undefined,
         }).run();
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            alert('Debes iniciar sesión para subir imágenes');
+            alert(storageDict.sessionRequired);
             editor.state.doc.descendants((node, pos) => {
                 if (node.type.name === 'figure' && node.attrs.src === localUrl) {
                     editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
@@ -367,38 +363,29 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             return;
         }
 
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = `contenido/${user.id}/${Date.now()}-${safeName}`;
-
-        const { error } = await supabase.storage
-            .from('imagenes-articulos')
-            .upload(path, file, {});
-
-        if (error) {
-            alert('Error al subir la imagen: ' + error.message);
-            editor.state.doc.descendants((node, pos) => {
-                if (node.type.name === 'figure' && node.attrs.src === localUrl) {
-                    editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
-                }
+        try {
+            const { publicUrl } = await uploadStorageImage({
+                supabase,
+                file,
+                category: STORAGE_CATEGORIES.PUBLICATION_INLINE,
+                userId: user.id,
+                originalFilename: file.name,
             });
-        } else {
-            const { data: urlData } = supabase.storage
-                .from('imagenes-articulos')
-                .getPublicUrl(path);
-            uploadedInlineImages.current.push(urlData.publicUrl);
-            
+
+            uploadedInlineImages.current.push(publicUrl);
+
             let replaced = false;
             editor.state.doc.descendants((node, pos) => {
                 if (node.type.name === 'figure' && node.attrs.src === localUrl) {
                     editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, {
                         ...node.attrs,
-                        src: urlData.publicUrl
+                        src: publicUrl,
                     }));
                     replaced = true;
                 }
             });
             if (!replaced) {
-                const html = editor.getHTML().replaceAll(localUrl, urlData.publicUrl);
+                const html = editor.getHTML().replaceAll(localUrl, publicUrl);
                 editor.commands.setContent(html);
             }
             const updatedHtml = editor.getHTML();
@@ -407,11 +394,26 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             } else {
                 setContenidoEs(updatedHtml);
             }
+        } catch (err: unknown) {
+            const errorMsg = err instanceof Error ? err.message : '';
+            if (errorMsg === 'INVALID_FORMAT') {
+                alert(storageDict.invalidFormat);
+            } else if (errorMsg.startsWith('FILE_TOO_LARGE:')) {
+                const maxMb = errorMsg.split(':')[1] || '8';
+                alert(storageDict.fileTooLarge.replace('{max}', maxMb));
+            } else {
+                alert(storageDict.uploadError.replace('{error}', errorMsg || 'Error'));
+            }
+            editor.state.doc.descendants((node, pos) => {
+                if (node.type.name === 'figure' && node.attrs.src === localUrl) {
+                    editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
+                }
+            });
+        } finally {
+            URL.revokeObjectURL(localUrl);
+            isUploadingInline.current = false;
+            if (inlineImageRef.current) inlineImageRef.current.value = '';
         }
-
-        URL.revokeObjectURL(localUrl);
-        isUploadingInline.current = false;
-        if (inlineImageRef.current) inlineImageRef.current.value = '';
     };
 
     const insertYoutube = () => {
@@ -564,19 +566,15 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 }
                 const byteArray = new Uint8Array(byteNumbers);
                 const blob = new Blob([byteArray], { type: `image/${m.format === 'jpg' ? 'jpeg' : m.format}` });
-                const path = `contenido/${userId}/pasted-${Date.now()}-${i}.${m.format}`;
-                const { error: uploadErr } = await supabase.storage
-                    .from('imagenes-articulos')
-                    .upload(path, blob, { upsert: true });
-                if (!uploadErr) {
-                    const { data: urlData } = supabase.storage
-                        .from('imagenes-articulos')
-                        .getPublicUrl(path);
-                    if (urlData?.publicUrl) {
-                        cleaned = cleaned.replace(m.fullMatch, urlData.publicUrl);
-                        uploadedInlineImages.current.push(urlData.publicUrl);
-                    }
-                }
+                const { publicUrl } = await uploadStorageImage({
+                    supabase,
+                    file: blob,
+                    category: STORAGE_CATEGORIES.PUBLICATION_INLINE,
+                    userId,
+                    originalFilename: `pasted-${i}`,
+                });
+                cleaned = cleaned.replace(m.fullMatch, publicUrl);
+                uploadedInlineImages.current.push(publicUrl);
             } catch (err) {
                 console.error('Error uploading pasted base64 image:', err);
             }
@@ -586,7 +584,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
 
     const handleSubmit = async (action: EditorAction = 'publish') => {
         if (isUploadingCover.current || isUploadingInline.current) {
-            alert(activeLang === 'gl' ? 'Por favor, agarda a que rematen de subirse as imaxes.' : 'Por favor, espera a que terminen de subirse las imágenes.');
+            alert(storageDict.uploadWait);
             return;
         }
 
@@ -601,32 +599,25 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         finalEs = await sanitizeBase64Images(finalEs, userId);
         
         // --- LIMPIEZA DE IMÁGENES INLINE (GARBAGE COLLECTION) ---
-        const supabaseRegex = /https:\/\/[a-zA-Z0-9.-]+\.supabase\.co\/storage\/v1\/object\/public\/imagenes-articulos\/contenido\/[a-zA-Z0-9-]+\/[^"'\s]+/g;
-        
-        const oldUrls: string[] = [
-            ...(initialData?.contenido_gl?.match(supabaseRegex) || []),
-            ...(initialData?.contenido_es?.match(supabaseRegex) || [])
+        const oldPaths = [
+            ...extractInlineStoragePaths(initialData?.contenido_gl),
+            ...extractInlineStoragePaths(initialData?.contenido_es)
         ];
-        const newUrls: string[] = [
-            ...(finalGl.match(supabaseRegex) || []),
-            ...(finalEs.match(supabaseRegex) || [])
-        ];
-        
-        const newUrlsSet = new Set(newUrls);
-        const urlsToDelete = oldUrls.filter(url => !newUrlsSet.has(url));
-        const uploadedButDeleted = uploadedInlineImages.current.filter(url => !newUrlsSet.has(url));
-        
-        const allUrlsToDelete = Array.from(new Set([...urlsToDelete, ...uploadedButDeleted]));
-        
-        if (allUrlsToDelete.length > 0) {
-            const pathsToDelete = allUrlsToDelete.flatMap(url => {
-                const parts = url.split('imagenes-articulos/');
-                return parts[1] ? [parts[1]] : [];
-            });
-            
-            if (pathsToDelete.length > 0) {
-                supabase.storage.from('imagenes-articulos').remove(pathsToDelete).catch(console.error);
-            }
+        const newPaths = new Set([
+            ...extractInlineStoragePaths(finalGl),
+            ...extractInlineStoragePaths(finalEs)
+        ]);
+        const uploadedPaths = uploadedInlineImages.current
+            .map(url => extractStoragePathFromUrl(url))
+            .filter((p): p is string => Boolean(p));
+
+        const pathsToDelete = Array.from(new Set([
+            ...oldPaths.filter(p => !newPaths.has(p)),
+            ...uploadedPaths.filter(p => !newPaths.has(p))
+        ]));
+
+        if (pathsToDelete.length > 0) {
+            removeStorageImages(supabase, pathsToDelete).catch(console.error);
         }
         // ---------------------------------------------------------
 
