@@ -12,15 +12,9 @@ export default async function SiteFooter() {
   const lang = (headersList.get('x-locale') as Locale) || 'gl';
   const dict = await getDictionary(lang);
   const currentYear = new Date().getFullYear();
-  const isEs = lang === 'es';
-
-  // Fallback defaults for footer columns
-  const brandDesc = dict.footer?.brandDescription || (isEs
-    ? 'Revista digital de pensamiento, filosofía política, economía y cultura. Un proyecto editorial independiente comprometido con el debate riguroso y la libertad de pensamiento en Galicia.'
-    : 'Revista dixital de pensamento, filosofía política, economía e cultura. Un proxecto editorial independente comprometido co debate rigoroso e a liberdade de pensamento en Galicia.');
-
+  const brandDesc = dict.footer?.brandDescription;
   const locationText = dict.footer?.location || 'Galicia, España';
-  const privacyText = dict.footer?.privacy || (isEs ? 'Privacidad' : 'Privacidade');
+  const privacyText = dict.footer?.privacy || 'Privacidade';
 
   const pubCols = dict.footer?.columns?.publications;
   const assocCols = dict.footer?.columns?.association;
@@ -31,31 +25,31 @@ export default async function SiteFooter() {
       <footer className="w-full mt-auto bg-parchment text-charcoal border-t border-lines transition-colors duration-200">
         
         {/* ==================================================== */}
-        {/* FOOTER: 4 COLUMNS */}
+        {/* FOOTER: RESPONSIVE MULTI-COLUMN LAYOUT */}
         {/* ==================================================== */}
-        <div className="w-full py-16 sm:py-20 px-5 md:px-16 bg-parchment">
-          <div className="max-w-[1120px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
+        <div className="w-full py-14 sm:py-16 md:py-20 px-5 md:px-16 bg-parchment">
+          <div className="max-w-[1120px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 sm:gap-12 lg:gap-8 items-start">
             
-            {/* Column 1: Brand & Contact (5 cols) */}
-            <div className="lg:col-span-5 flex flex-col gap-6">
+            {/* Column 1: Brand & Contact (Full on mobile, 5 cols on lg) */}
+            <div className="sm:col-span-2 lg:col-span-5 flex flex-col gap-5 sm:gap-6">
               <Link href={`/${lang}`} className="inline-block hover:opacity-80 transition-opacity">
                 <Image
                   src="/images/logo/cernawhite.png"
                   alt={SITE_NAME}
-                  width={260}
-                  height={65}
-                  className="h-12 md:h-14 w-auto object-contain block dark:hidden"
+                  width={430}
+                  height={159}
+                  className="h-20 sm:h-24 md:h-28 w-auto object-contain block dark:hidden"
                 />
                 <Image
                   src="/images/logo/cernablack.png"
                   alt={SITE_NAME}
-                  width={260}
-                  height={65}
-                  className="h-12 md:h-14 w-auto object-contain hidden dark:block brightness-0 invert"
+                  width={430}
+                  height={159}
+                  className="h-20 sm:h-24 md:h-28 w-auto object-contain hidden dark:block brightness-0 invert"
                 />
               </Link>
 
-              <p className="font-sans text-sm text-charcoal/70 leading-relaxed max-w-sm">
+              <p className="font-sans text-xs sm:text-sm text-charcoal/70 leading-relaxed max-w-sm">
                 {brandDesc}
               </p>
 
@@ -63,111 +57,111 @@ export default async function SiteFooter() {
               <div className="flex flex-col gap-2.5 text-xs text-charcoal/70 font-sans">
                 <a 
                   href="mailto:contacto@cernapensamento.org" 
-                  className="flex items-center gap-2.5 hover:text-charcoal transition-colors"
+                  className="flex items-center gap-2.5 hover:text-gold transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[16px] text-gold">mail</span>
-                  <span>contacto@cernapensamento.org</span>
+                  <span className="material-symbols-outlined text-[16px] text-gold shrink-0">mail</span>
+                  <span className="truncate">contacto@cernapensamento.org</span>
                 </a>
                 <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-[16px] text-gold">location_on</span>
+                  <span className="material-symbols-outlined text-[16px] text-gold shrink-0">location_on</span>
                   <span>{locationText}</span>
                 </div>
               </div>
 
               {/* Social links */}
               <SocialLinks 
-                className="flex items-center gap-4 mt-2" 
+                className="flex items-center gap-3.5 mt-1 sm:mt-2" 
                 itemClassName="bg-surface text-charcoal hover:bg-gold hover:text-parchment border border-lines transition-colors" 
               />
             </div>
 
-            {/* Column 2: Publicacións (2-3 cols) */}
-            <div className="lg:col-span-2 lg:col-start-7 flex flex-col gap-4">
+            {/* Column 2: Publicacións (sm: col-span-1, lg: 2 cols) */}
+            <div className="sm:col-span-1 lg:col-span-2 lg:col-start-7 flex flex-col gap-3.5 sm:gap-4">
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-charcoal font-sans">
-                {pubCols?.title || (isEs ? 'PUBLICACIONES' : 'PUBLICACIÓNS')}
+                {pubCols?.title}
               </span>
-              <ul className="flex flex-col gap-2.5 text-sm text-charcoal/70 font-sans">
+              <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-charcoal/70 font-sans">
                 <li>
-                  <Link href={`/${lang}/articulos?tipo=artigo`} className="hover:text-gold transition-colors">
-                    {pubCols?.opinion || (isEs ? 'Artículos de Opinión' : 'Artigos de Opinión')}
+                  <Link href={`/${lang}/articulos?tipo=article`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {pubCols?.opinion}
                   </Link>
                 </li>
                 <li>
-                  <Link href={`/${lang}/articulos?tipo=ensaio`} className="hover:text-gold transition-colors">
-                    {pubCols?.essays || (isEs ? 'Ensayos Filosóficos' : 'Ensaios Filosóficos')}
+                  <Link href={`/${lang}/articulos?tipo=essay`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {pubCols?.essays}
                   </Link>
                 </li>
                 <li>
-                  <Link href={`/${lang}/proyecto-editorial/coleccion-narrativa`} className="hover:text-gold transition-colors">
-                    {pubCols?.narrative || 'Colección Narrativa'}
+                  <Link href={`/${lang}/articulos?tipo=column`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {pubCols?.narrative}
                   </Link>
                 </li>
                 <li>
-                  <Link href={`/${lang}/proyecto-editorial/coleccion-poesia`} className="hover:text-gold transition-colors">
-                    {pubCols?.poetry || 'Colección Poesía'}
+                  <Link href={`/${lang}/articulos?tipo=poetry`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {pubCols?.poetry}
                   </Link>
                 </li>
                 <li>
-                  <Link href={`/${lang}/articulos`} className="hover:text-gold transition-colors">
-                    {pubCols?.generalArchive || (isEs ? 'Archivo General' : 'Arquivo Xeral')}
+                  <Link href={`/${lang}/articulos`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {pubCols?.generalArchive}
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* Column 3: Asociación (2 cols) */}
-            <div className="lg:col-span-2 flex flex-col gap-4">
+            {/* Column 3: Asociación (sm: col-span-1, lg: 2 cols) */}
+            <div className="sm:col-span-1 lg:col-span-2 flex flex-col gap-3.5 sm:gap-4">
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-charcoal font-sans">
-                {assocCols?.title || 'ASOCIACIÓN'}
+                {assocCols?.title}
               </span>
-              <ul className="flex flex-col gap-2.5 text-sm text-charcoal/70 font-sans">
+              <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-charcoal/70 font-sans">
                 <li>
-                  <Link href={`/${lang}/asociacion`} className="hover:text-gold transition-colors">
-                    {assocCols?.project || (isEs ? 'El Proyecto' : 'O Proxecto')}
+                  <Link href={`/${lang}/asociacion`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {assocCols?.project}
                   </Link>
                 </li>
                 <li>
-                  <Link href={`/${lang}/asociacion/estatutos`} className="hover:text-gold transition-colors">
-                    {assocCols?.statutes || 'Estatutos'}
+                  <Link href={`/${lang}/asociacion#estatutos`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {assocCols?.statutes}
                   </Link>
                 </li>
                 <li>
-                  <Link href={`/${lang}/noticias`} className="hover:text-gold transition-colors">
-                    {assocCols?.news || (isEs ? 'Noticias y Avisos' : 'Novas e Avisos')}
+                  <Link href={`/${lang}/noticias`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {assocCols?.news}
                   </Link>
                 </li>
                 <li>
-                  <Link href={`/${lang}/contacto`} className="hover:text-gold transition-colors">
-                    {assocCols?.join || 'Asociarse'}
+                  <Link href={`/${lang}/contacto`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {assocCols?.join}
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* Column 4: Cerna / Institucional (2 cols) */}
-            <div className="lg:col-span-2 flex flex-col gap-4">
+            {/* Column 4: Cerna / Institucional (sm: col-span-2 or 1, lg: 2 cols) */}
+            <div className="sm:col-span-2 md:col-span-1 lg:col-span-2 flex flex-col gap-3.5 sm:gap-4">
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-charcoal font-sans">
-                {cernaCols?.title || 'CERNA'}
+                {cernaCols?.title}
               </span>
-              <ul className="flex flex-col gap-2.5 text-sm text-charcoal/70 font-sans">
+              <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-charcoal/70 font-sans">
                 <li>
-                  <Link href={`/${lang}/autores`} className="hover:text-gold transition-colors">
-                    {cernaCols?.authors || (isEs ? 'Autores y Firmas' : 'Autores e Firmas')}
+                  <Link href={`/${lang}/autores`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {cernaCols?.authors}
                   </Link>
                 </li>
                 <li>
-                  <Link href={`/${lang}/contacto`} className="hover:text-gold transition-colors">
-                    {cernaCols?.contact || 'Contacto'}
+                  <Link href={`/${lang}/contacto`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {cernaCols?.contact}
                   </Link>
                 </li>
                 <li>
-                  <Link href={`/${lang}/escritorio`} className="hover:text-gold transition-colors">
-                    {cernaCols?.authorDesk || 'Escritorio de Autor'}
+                  <Link href={`/${lang}/escritorio`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {cernaCols?.authorDesk}
                   </Link>
                 </li>
                 <li>
-                  <Link href={`/${lang}/login`} className="hover:text-gold transition-colors">
-                    {cernaCols?.login || (isEs ? 'Iniciar Sesión' : 'Iniciar Sesión')}
+                  <Link href={`/${lang}/login`} className="hover:text-gold transition-colors py-0.5 inline-block">
+                    {cernaCols?.login}
                   </Link>
                 </li>
               </ul>
@@ -179,17 +173,17 @@ export default async function SiteFooter() {
         {/* ==================================================== */}
         {/* BOTTOM LEGAL BAR */}
         {/* ==================================================== */}
-        <div className="w-full border-t border-lines bg-surface/50 py-8 px-5 md:px-16 text-xs text-charcoal/60">
-          <div className="max-w-[1120px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p>
+        <div className="w-full border-t border-lines bg-surface/50 py-6 sm:py-8 px-5 md:px-16 text-xs text-charcoal/60">
+          <div className="max-w-[1120px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <p className="font-sans">
               © {currentYear} {SITE_NAME}. {dict.footer?.rights}
             </p>
-            <div className="flex flex-wrap items-center gap-6">
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-6 gap-y-2 font-sans">
               <Link href={`/${lang}/privacidad`} className="hover:text-charcoal transition-colors">
                 {privacyText}
               </Link>
-              <Link href={`/${lang}/asociacion/estatutos`} className="hover:text-charcoal transition-colors">
-                {dict.footer?.links?.estatutos}
+              <Link href={`/${lang}/asociacion#estatutos`} className="hover:text-charcoal transition-colors">
+                {dict.footer?.links?.estatutos || 'Estatutos'}
               </Link>
               <a
                 href="https://github.com/cernapensamento/cernapensamento-webpage"

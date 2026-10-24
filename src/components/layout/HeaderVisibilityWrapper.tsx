@@ -10,10 +10,9 @@ export default function HeaderVisibilityWrapper({
 }) {
   const pathname = usePathname();
 
-  // Hide the header on dashboard and auth routes
+  // Hide the header on dashboard and password update routes
   if (
     pathname?.includes('/escritorio') ||
-    pathname?.includes('/login') ||
     pathname?.includes('/actualizar-password') ||
     pathname?.includes('/recuperar-password')
   ) {
