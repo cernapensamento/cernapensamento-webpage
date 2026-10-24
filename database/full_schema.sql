@@ -173,8 +173,12 @@ ALTER FUNCTION "public"."generate_slug"("text") OWNER TO "postgres";
 CREATE OR REPLACE FUNCTION "public"."get_subscribers_emails"("webhook_secret" "text") RETURNS TABLE("email" "text", "full_name" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
+DECLARE
+  expected_secret text;
 BEGIN
-  IF webhook_secret != 'CERNA_WEBHOOK_SECRET_98765' THEN
+  expected_secret := COALESCE(current_setting('app.settings.webhook_secret', true), 'CERNA_WEBHOOK_SECRET_98765');
+
+  IF auth.role() != 'service_role' AND webhook_secret != expected_secret AND webhook_secret != 'CERNA_WEBHOOK_SECRET_98765' THEN
     RAISE EXCEPTION 'No autorizado';
   END IF;
 
@@ -188,6 +192,29 @@ $$;
 
 
 ALTER FUNCTION "public"."get_subscribers_emails"("webhook_secret" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."unsubscribe_newsletter_by_email"("target_email" "text") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_user_id uuid;
+BEGIN
+  SELECT id INTO v_user_id FROM auth.users WHERE LOWER(email) = LOWER(target_email) LIMIT 1;
+  IF v_user_id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  UPDATE public.users
+  SET newsletter_subscribed = FALSE
+  WHERE id = v_user_id;
+
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."unsubscribe_newsletter_by_email"("target_email" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
@@ -266,6 +293,7 @@ CREATE TABLE IF NOT EXISTS "public"."publications" (
     "title" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "subtitle" "jsonb" DEFAULT '{}'::"jsonb",
     "content" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "newsletter_sent_at" timestamp with time zone,
     CONSTRAINT "publications_content_bilingual_check" CHECK ((("content" ? 'gl'::"text") AND ("content" ? 'es'::"text") AND ("length"(TRIM(BOTH FROM ("content" ->> 'gl'::"text"))) > 0) AND ("length"(TRIM(BOTH FROM ("content" ->> 'es'::"text"))) > 0))),
     CONSTRAINT "publications_original_language_check" CHECK (("original_language" = ANY (ARRAY['gl'::"text", 'es'::"text"]))),
     CONSTRAINT "publications_subtitle_bilingual_check" CHECK ((("subtitle" IS NULL) OR ("subtitle" = '{}'::"jsonb") OR (("subtitle" ? 'gl'::"text") AND ("subtitle" ? 'es'::"text")))),
@@ -388,7 +416,7 @@ CREATE OR REPLACE TRIGGER "before_insert_publication_quota" BEFORE INSERT ON "pu
 
 
 
-CREATE OR REPLACE TRIGGER "on_publication_published_newsletter" AFTER INSERT OR UPDATE ON "public"."publications" FOR EACH ROW EXECUTE FUNCTION "supabase_functions"."http_request"('https://cernapensamento.org/api/webhooks/newsletter', 'POST', '{"Authorization":"Bearer CERNA_WEBHOOK_SECRET_98765"}', '{}', '5000');
+CREATE OR REPLACE TRIGGER "on_publication_published_newsletter" AFTER INSERT OR UPDATE ON "public"."publications" FOR EACH ROW WHEN (NEW.status = 'published' AND NEW.newsletter_sent_at IS NULL) EXECUTE FUNCTION "supabase_functions"."http_request"('https://cernapensamento.org/api/webhooks/newsletter', 'POST', '{"Authorization":"Bearer CERNA_WEBHOOK_SECRET_98765"}', '{}', '5000');
 
 
 
