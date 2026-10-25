@@ -11,6 +11,8 @@ interface ContactFormProps {
   lang?: string;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function ContactForm({ dict: propDict, lang: propLang }: ContactFormProps) {
   const params = useParams();
   const routeLang = propLang || (params?.lang as string) || 'gl';
@@ -20,6 +22,16 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const clearFieldError = (fieldName: string) => {
+    if (errors[fieldName]) {
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[fieldName];
+        return copy;
+      });
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -56,31 +68,66 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
     });
   };
 
+  const mapApiErrorToMessage = (code: string, httpStatus: number): string => {
+    if (httpStatus === 429) {
+      return dict.rateLimited || dict.genericError;
+    }
+    switch (code) {
+      case 'invalid_email':
+        return dict.invalidEmail || dict.requiredEmail;
+      case 'too_long':
+        return dict.tooLong || dict.genericError;
+      case 'invalid_file':
+        return dict.errorType;
+      case 'file_too_large':
+        return dict.errorSize;
+      case 'send_failed':
+        return dict.sendFailed || dict.genericError;
+      default:
+        return dict.genericError;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
     // Form boundary validation
     const formErrors: { [key: string]: string } = {};
-    if (!formData.get('fullName')?.toString().trim()) {
+    const fullNameVal = formData.get('fullName')?.toString().trim();
+    const emailVal = formData.get('email')?.toString().trim();
+    const subjectVal = formData.get('subject')?.toString().trim();
+    const messageVal = formData.get('message')?.toString().trim();
+    const guidelinesVal = formData.get('guidelines');
+
+    if (!fullNameVal) {
       formErrors.fullName = dict.requiredName;
     }
-    if (!formData.get('email')?.toString().trim()) {
+    if (!emailVal) {
       formErrors.email = dict.requiredEmail;
+    } else if (!EMAIL_REGEX.test(emailVal)) {
+      formErrors.email = dict.invalidEmail || dict.requiredEmail;
     }
-    if (!formData.get('subject')?.toString().trim()) {
+    if (!subjectVal) {
       formErrors.subject = dict.requiredSubject;
     }
-    if (!formData.get('message')?.toString().trim()) {
+    if (!messageVal) {
       formErrors.message = dict.requiredMessage;
     }
-    if (!formData.get('guidelines')) {
+    if (!guidelinesVal) {
       formErrors.guidelines = dict.requiredGuidelines;
     }
 
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
+    }
+
+    // Ensure the attached file from React state is explicitly included in FormData,
+    // overcoming the DOM unmount behavior when a file is selected.
+    formData.delete('file');
+    if (file) {
+      formData.set('file', file, file.name);
     }
 
     setStatus('loading');
@@ -94,7 +141,8 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || dict.genericError);
+        const message = mapApiErrorToMessage(data.error, res.status);
+        throw new Error(message);
       }
 
       setStatus('success');
@@ -153,6 +201,18 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
     >
       <div className="absolute top-0 left-0 right-0 h-1 bg-gold opacity-50" />
 
+      {/* Honeypot field for spam prevention (hidden from real users) */}
+      <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
+        <label htmlFor="contact-form-website">Do not fill this field</label>
+        <input
+          id="contact-form-website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
+
       {status === 'error' && (
         <div
           role="alert"
@@ -182,6 +242,7 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
             aria-required="true"
             aria-invalid={!!errors.fullName}
             aria-describedby={errors.fullName ? 'fullName-error' : undefined}
+            onChange={() => clearFieldError('fullName')}
             className="w-full border border-lines bg-parchment rounded-none px-4 py-3 font-sans text-sm text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
           />
           {errors.fullName && (
@@ -206,6 +267,7 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
             aria-required="true"
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? 'email-error' : undefined}
+            onChange={() => clearFieldError('email')}
             className="w-full border border-lines bg-parchment rounded-none px-4 py-3 font-sans text-sm text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
           />
           {errors.email && (
@@ -232,6 +294,7 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
             aria-required="true"
             aria-invalid={!!errors.subject}
             aria-describedby={errors.subject ? 'subject-error' : undefined}
+            onChange={() => clearFieldError('subject')}
             className="w-full border border-lines bg-parchment rounded-none px-4 py-3 pr-10 font-sans text-sm text-charcoal focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors appearance-none cursor-pointer"
             defaultValue=""
           >
@@ -272,6 +335,7 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
           aria-required="true"
           aria-invalid={!!errors.message}
           aria-describedby={errors.message ? 'message-error' : undefined}
+          onChange={() => clearFieldError('message')}
           className="w-full p-4 border border-lines bg-parchment font-sans text-sm text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold resize-y transition-colors"
         />
         {errors.message && (
@@ -366,6 +430,7 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
               aria-required="true"
               aria-invalid={!!errors.guidelines}
               aria-describedby={errors.guidelines ? 'guidelines-error' : undefined}
+              onChange={() => clearFieldError('guidelines')}
               className="appearance-none h-4.5 w-4.5 border border-lines bg-parchment rounded-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-gold hover:border-gold transition-colors checked:bg-[url('data:image/svg+xml;utf8,<svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2016%2016%22><path%20fill=%22none%22%20stroke=%22%23c5a059%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%20stroke-width=%222%22%20d=%22M4%208.5l2.5%202.5l5.5-5.5%22/></svg>')] checked:bg-no-repeat checked:bg-center checked:bg-[length:100%_100%]"
             />
           </div>
