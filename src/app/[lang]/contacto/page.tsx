@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import ContactForm from '@/components/forms/ContactForm';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getDictionary } from '@/dictionaries';
@@ -6,7 +7,21 @@ import { Locale } from '@/i18n-config';
 
 export const revalidate = 60;
 
-export default async function ContactoPage({ params }: { params: Promise<{ lang: string }> }) {
+interface Props {
+  params: Promise<{ lang: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang } = await params;
+  const dict = await getDictionary(lang as Locale);
+
+  return {
+    title: `${dict.contactoPage.title} | Cerna Pensamento`,
+    description: dict.contactoPage.description,
+  };
+}
+
+export default async function ContactoPage({ params }: Props) {
   const resolvedParams = await params;
   const lang = resolvedParams.lang;
   const dict = await getDictionary(lang as Locale);
