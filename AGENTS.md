@@ -271,6 +271,29 @@ npm run lint
 npm run build
 ```
 
+### Running Tests
+The project uses **Vitest** for unit, API, and component tests and **Playwright** for end-to-end user journeys:
+* **Unit & Component tests:**
+  ```bash
+  npm test
+  ```
+* **Watch mode:**
+  ```bash
+  npm run test:watch
+  ```
+* **Coverage report (v8):**
+  ```bash
+  npm run test:coverage
+  ```
+* **Database & RLS integration tests (requires local Supabase running via `npm run db:start`):**
+  ```bash
+  npm run test:db
+  ```
+* **End-to-End tests (Playwright):**
+  ```bash
+  npm run test:e2e
+  ```
+
 ### Adding a New UI String / Translation
 1. Add the Galician key-value in `src/dictionaries/gl.json`.
 2. Add the corresponding Spanish key-value in `src/dictionaries/es.json`.
