@@ -1,7 +1,6 @@
-import { test, describe, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Resend } from 'resend';
-import { POST } from '../src/app/api/contact/route.ts';
+import { POST } from './route';
 
 describe('Contact API Route (POST /api/contact)', () => {
   const originalEnv = { ...process.env };
@@ -32,18 +31,19 @@ describe('Contact API Route (POST /api/contact)', () => {
     capturedPayload = null;
     mockSendResult = { data: { id: 'email_test_123' }, error: null };
 
-    EmailsClass.prototype.send = async function (payload: MockSendPayload) {
+    EmailsClass.prototype.send = vi.fn(async function (payload: MockSendPayload) {
       capturedPayload = payload;
       return mockSendResult;
-    };
+    });
   });
 
   afterEach(() => {
     process.env = { ...originalEnv };
     EmailsClass.prototype.send = originalSend;
+    vi.restoreAllMocks();
   });
 
-  test('returns 400 when required fields are missing', async () => {
+  it('returns 400 when required fields are missing', async () => {
     const formData = new FormData();
     formData.append('email', 'reader@example.com');
     // fullName and message are missing
@@ -54,13 +54,13 @@ describe('Contact API Route (POST /api/contact)', () => {
     });
 
     const res = await POST(request);
-    assert.equal(res.status, 400);
+    expect(res.status).toBe(400);
     const data = await res.json();
-    assert.equal(data.error, 'missing_fields');
-    assert.equal(capturedPayload, null);
+    expect(data.error).toBe('missing_fields');
+    expect(capturedPayload).toBeNull();
   });
 
-  test('returns 400 when email format is invalid', async () => {
+  it('returns 400 when email format is invalid', async () => {
     const formData = new FormData();
     formData.append('email', 'not-an-email');
     formData.append('fullName', 'Xurxo');
@@ -72,13 +72,13 @@ describe('Contact API Route (POST /api/contact)', () => {
     });
 
     const res = await POST(request);
-    assert.equal(res.status, 400);
+    expect(res.status).toBe(400);
     const data = await res.json();
-    assert.equal(data.error, 'invalid_email');
-    assert.equal(capturedPayload, null);
+    expect(data.error).toBe('invalid_email');
+    expect(capturedPayload).toBeNull();
   });
 
-  test('returns 400 when fields exceed maximum length', async () => {
+  it('returns 400 when fields exceed maximum length', async () => {
     const formData = new FormData();
     formData.append('email', 'reader@example.com');
     formData.append('fullName', 'A'.repeat(201)); // max 200
@@ -90,13 +90,13 @@ describe('Contact API Route (POST /api/contact)', () => {
     });
 
     const res = await POST(request);
-    assert.equal(res.status, 400);
+    expect(res.status).toBe(400);
     const data = await res.json();
-    assert.equal(data.error, 'too_long');
-    assert.equal(capturedPayload, null);
+    expect(data.error).toBe('too_long');
+    expect(capturedPayload).toBeNull();
   });
 
-  test('silent honeypot: returns 200 without sending email when website is filled', async () => {
+  it('silent honeypot: returns 200 without sending email when website is filled', async () => {
     const formData = new FormData();
     formData.append('website', 'https://spam-bot.site');
     formData.append('email', 'spammer@bot.org');
@@ -109,14 +109,14 @@ describe('Contact API Route (POST /api/contact)', () => {
     });
 
     const res = await POST(request);
-    assert.equal(res.status, 200);
+    expect(res.status).toBe(200);
     const data = await res.json();
-    assert.equal(data.success, true);
+    expect(data.success).toBe(true);
     // Verified that Resend was never invoked
-    assert.equal(capturedPayload, null);
+    expect(capturedPayload).toBeNull();
   });
 
-  test('returns 400 when attachment is not a PDF MIME type', async () => {
+  it('returns 400 when attachment is not a PDF MIME type', async () => {
     const formData = new FormData();
     formData.append('email', 'reader@example.com');
     formData.append('fullName', 'Xurxo');
@@ -131,13 +131,13 @@ describe('Contact API Route (POST /api/contact)', () => {
     });
 
     const res = await POST(request);
-    assert.equal(res.status, 400);
+    expect(res.status).toBe(400);
     const data = await res.json();
-    assert.equal(data.error, 'invalid_file');
-    assert.equal(capturedPayload, null);
+    expect(data.error).toBe('invalid_file');
+    expect(capturedPayload).toBeNull();
   });
 
-  test('returns 400 when file has pdf MIME type but invalid PDF magic header', async () => {
+  it('returns 400 when file has pdf MIME type but invalid PDF magic header', async () => {
     const formData = new FormData();
     formData.append('email', 'reader@example.com');
     formData.append('fullName', 'Xurxo');
@@ -152,13 +152,13 @@ describe('Contact API Route (POST /api/contact)', () => {
     });
 
     const res = await POST(request);
-    assert.equal(res.status, 400);
+    expect(res.status).toBe(400);
     const data = await res.json();
-    assert.equal(data.error, 'invalid_file');
-    assert.equal(capturedPayload, null);
+    expect(data.error).toBe('invalid_file');
+    expect(capturedPayload).toBeNull();
   });
 
-  test('returns 500 when RESEND_API_KEY is not configured', async () => {
+  it('returns 500 when RESEND_API_KEY is not configured', async () => {
     delete process.env.RESEND_API_KEY;
 
     const formData = new FormData();
@@ -172,13 +172,13 @@ describe('Contact API Route (POST /api/contact)', () => {
     });
 
     const res = await POST(request);
-    assert.equal(res.status, 500);
+    expect(res.status).toBe(500);
     const data = await res.json();
-    assert.equal(data.error, 'send_failed');
-    assert.equal(capturedPayload, null);
+    expect(data.error).toBe('send_failed');
+    expect(capturedPayload).toBeNull();
   });
 
-  test('returns 502 when Resend API returns an error', async () => {
+  it('returns 502 when Resend API returns an error', async () => {
     mockSendResult = {
       data: null,
       error: {
@@ -200,13 +200,13 @@ describe('Contact API Route (POST /api/contact)', () => {
     });
 
     const res = await POST(request);
-    assert.equal(res.status, 502);
+    expect(res.status).toBe(502);
     const data = await res.json();
-    assert.equal(data.error, 'send_failed');
-    assert.notEqual(capturedPayload, null);
+    expect(data.error).toBe('send_failed');
+    expect(capturedPayload).not.toBeNull();
   });
 
-  test('successfully delivers message with escaped HTML, replyTo, verified sender, and valid PDF attachment', async () => {
+  it('successfully delivers message with escaped HTML, replyTo, verified sender, and valid PDF attachment', async () => {
     const formData = new FormData();
     formData.append('email', 'investigador@universidade.gal');
     formData.append('fullName', '<script>alert("hack")</script>Rosalía');
@@ -224,30 +224,32 @@ describe('Contact API Route (POST /api/contact)', () => {
     });
 
     const res = await POST(request);
-    assert.equal(res.status, 200);
+    expect(res.status).toBe(200);
     const data = await res.json();
-    assert.equal(data.success, true);
-    assert.equal(data.id, 'email_test_123');
+    expect(data.success).toBe(true);
+    expect(data.id).toBe('email_test_123');
 
     // Verify payload passed to Resend
-    assert.equal(capturedPayload.from, 'Cerna Contacto <contacto@cernapensamento.org>');
-    assert.deepEqual(capturedPayload.to, ['contacto@cernapensamento.org']);
-    assert.equal(capturedPayload.replyTo, 'investigador@universidade.gal');
-    assert.equal(capturedPayload.subject, '[Contacto] Artigo sobre economía & sociedade - <script>alert("hack")</script>Rosalía');
+    expect(capturedPayload?.from).toBe('Cerna Contacto <contacto@cernapensamento.org>');
+    expect(capturedPayload?.to).toEqual(['contacto@cernapensamento.org']);
+    expect(capturedPayload?.replyTo).toBe('investigador@universidade.gal');
+    expect(capturedPayload?.subject).toBe(
+      '[Contacto] Artigo sobre economía & sociedade - <script>alert("hack")</script>Rosalía'
+    );
 
     // Check HTML escaping (no raw script or img onerror tags in html)
-    assert.ok(capturedPayload.html.includes('&lt;script&gt;alert(&quot;hack&quot;)&lt;/script&gt;Rosalía'));
-    assert.ok(!capturedPayload.html.includes('<script>'));
-    assert.ok(capturedPayload.html.includes('&lt;img src=x onerror=alert(1)&gt;'));
-    assert.ok(!capturedPayload.html.includes('<img src=x'));
+    expect(capturedPayload?.html).toContain('&lt;script&gt;alert(&quot;hack&quot;)&lt;/script&gt;Rosalía');
+    expect(capturedPayload?.html).not.toContain('<script>');
+    expect(capturedPayload?.html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(capturedPayload?.html).not.toContain('<img src=x');
 
     // Check attachments
-    assert.equal(capturedPayload.attachments.length, 1);
-    assert.equal(capturedPayload.attachments[0].filename, 'borrador.pdf');
-    assert.ok(Buffer.isBuffer(capturedPayload.attachments[0].content));
+    expect(capturedPayload?.attachments?.length).toBe(1);
+    expect(capturedPayload?.attachments?.[0].filename).toBe('borrador.pdf');
+    expect(Buffer.isBuffer(capturedPayload?.attachments?.[0].content)).toBe(true);
 
     // Check text fallback presence
-    assert.ok(capturedPayload.text.includes('Nome: <script>alert("hack")</script>Rosalía'));
-    assert.ok(capturedPayload.text.includes('Email: investigador@universidade.gal'));
+    expect(capturedPayload?.text).toContain('Nome: <script>alert("hack")</script>Rosalía');
+    expect(capturedPayload?.text).toContain('Email: investigador@universidade.gal');
   });
 });
