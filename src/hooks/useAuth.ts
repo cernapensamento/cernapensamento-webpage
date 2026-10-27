@@ -16,14 +16,26 @@ export type Profile = {
   nombre?: string | null;
 } | null;
 
+const hasSupabaseConfig = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(hasSupabaseConfig);
 
   useEffect(() => {
+    if (!hasSupabaseConfig) return;
+
     let isMounted = true;
-    const supabase = createClient();
+    let supabase: ReturnType<typeof createClient>;
+    try {
+      supabase = createClient();
+    } catch (err) {
+      console.warn('[useAuth] Supabase client initialization skipped:', err);
+      return;
+    }
 
     async function fetchUserProfile(userId: string, jwtRole?: string) {
       try {
