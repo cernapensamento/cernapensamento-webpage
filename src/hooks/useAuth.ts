@@ -10,8 +10,10 @@ import { formatDbError } from '@/lib/db/formatDbError';
 export type Profile = {
   role: UserRole;
   avatar_url: string | null;
+  full_name?: string | null;
   // Backwards compatibility alias
   rol: string;
+  nombre?: string | null;
 } | null;
 
 export function useAuth() {
@@ -27,7 +29,7 @@ export function useAuth() {
       try {
         const { data } = await supabase
           .from(DB_TABLES.USERS)
-          .select(`${USER_COLS.ROLE}, ${USER_COLS.AVATAR_URL}`)
+          .select(`${USER_COLS.ROLE}, ${USER_COLS.AVATAR_URL}, ${USER_COLS.FULL_NAME}`)
           .eq(USER_COLS.ID, userId)
           .single();
 
@@ -36,7 +38,9 @@ export function useAuth() {
           setProfile({
             role,
             avatar_url: data.avatar_url,
+            full_name: data.full_name || null,
             rol: role,
+            nombre: data.full_name || null,
           });
         }
       } catch (err) {

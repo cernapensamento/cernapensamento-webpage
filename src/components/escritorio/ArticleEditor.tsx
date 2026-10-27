@@ -86,6 +86,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const toast = useToast();
     const confirm = useConfirm();
     const prompt = usePrompt();
+    const docTypes = (routeLang === 'gl' ? glDict.documentTypes : esDict.documentTypes) as Record<string, string>;
 
     const [showPublishModal, setShowPublishModal] = useState(false);
     
@@ -898,15 +899,18 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                         onChange={(e) => setTipo(e.target.value)}
                                         style={{ colorScheme: 'light dark' }}
                                     >
-                                        {ARTICLE_TYPES.map((type) => (
-                                        <option 
-                                            key={type} 
-                                            value={type} 
-                                            style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}
-                                        >
-                                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                                        </option>
-                                    ))}
+                                        {ARTICLE_TYPES.map((type) => {
+                                            const label = docTypes[type.toLowerCase()] || type.charAt(0).toUpperCase() + type.slice(1);
+                                            return (
+                                                <option 
+                                                    key={type} 
+                                                    value={type} 
+                                                    style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}
+                                                >
+                                                    {label}
+                                                </option>
+                                            );
+                                        })}
                                     </select>
 
                                     <select 
@@ -959,7 +963,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             {showPreview && (
                 <div 
                     ref={previewContainerRef}
-                    className="fixed inset-0 z-50 overflow-y-auto bg-parchment"
+                    className="fixed inset-0 z-[150] overflow-y-auto bg-parchment animate-in fade-in duration-200"
                     onClick={(e) => {
                         const target = (e.target as HTMLElement).closest('a');
                         if (target && target.hash && target.hash.startsWith('#')) {
@@ -1002,11 +1006,12 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     }}
                 >
                     {/* Preview TopBar */}
-                    <div className="sticky top-0 z-50 border-b border-lines bg-parchment/95 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm">
-                        <div className="flex items-center gap-3">
+                    <div className="sticky top-0 z-[160] border-b border-lines bg-parchment/95 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm">
+                        {/* Botón a la izquierda para retornar al panel de edición */}
+                        <div className="flex items-center">
                             <button
                                 type="button"
-                                className="group flex items-center gap-2 px-3.5 py-2 border border-lines bg-surface hover:bg-lines/50 text-charcoal font-sans text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                                className="group flex items-center gap-2 px-4 py-2 border border-lines bg-surface hover:bg-lines/50 text-charcoal font-sans text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-xs"
                                 onClick={() => setShowPreview(false)}
                                 title={dict.backToEditor || 'Volver ao Editor'}
                                 aria-label={dict.backToEditor || 'Volver ao Editor'}
@@ -1014,25 +1019,31 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                 <span className="material-symbols-outlined text-[18px] transition-transform duration-200 group-hover:-translate-x-1" style={{ fontFamily: 'Material Symbols Outlined' }}>arrow_back</span>
                                 <span className="font-semibold">{dict.backToEditor || 'Volver ao Editor'}</span>
                             </button>
-                            <span className="hidden sm:inline-block h-4 w-[1px] bg-lines"></span>
-                            <span className="font-sans text-[11px] font-bold text-gold uppercase tracking-[0.2em] bg-gold/10 px-3 py-1 border border-gold/30 rounded-sm">
-                                {dict.previewHeader || 'Vista Previa de Publicación'}
-                            </span>
                         </div>
-                        <button
-                            type="button"
-                            className="flex items-center gap-1.5 px-3.5 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold hover:text-charcoal transition-all duration-200 cursor-pointer shrink-0"
-                            onClick={() => setShowPreview(false)}
-                        >
-                            <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
-                            <span className="hidden md:inline">{dict.cancel || 'Pechar'}</span>
-                        </button>
+
+                        {/* Banner arriba a la derecha aclarando que es una preview del artículo */}
+                        <div className="flex items-center">
+                            <div className="flex items-center px-4 py-2 border border-gold/40 bg-gold/10 text-gold font-sans text-xs uppercase tracking-wider shadow-xs select-none">
+                                <span className="font-semibold">
+                                    {dict.previewHeader || 'Vista Previa de Publicación'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Preview Content Simulating Article View */}
                     <div className="w-full pb-24">
                         <header className="w-full max-w-3xl px-5 md:px-0 pt-20 pb-12 mx-auto text-center">
-                            <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">{tipo || 'Artículo'}</span>
+                            {(() => {
+                                const previewDocTypes = (activeLang === 'es' ? esDict.documentTypes : glDict.documentTypes) as Record<string, string>;
+                                const rawType = (tipo || 'artigo').toLowerCase();
+                                const typeLabel = previewDocTypes[rawType] || (rawType === 'news' ? (activeLang === 'gl' ? 'Nova' : 'Noticia') : (tipo || 'Artigo'));
+                                return (
+                                    <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">
+                                        {typeLabel}
+                                    </span>
+                                );
+                            })()}
                             <h1 className="font-serif text-4xl md:text-6xl text-charcoal mb-6 max-w-4xl mx-auto leading-tight">
                                 {activeLang === 'gl' ? (tituloGl || 'Sin título') : (tituloEs || 'Sin título')}
                             </h1>
