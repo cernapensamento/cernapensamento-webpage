@@ -258,7 +258,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center py-12 md:py-20 px-4 sm:px-6 bg-parchment">
+    <div className="flex-1 flex flex-col items-center justify-center pt-6 pb-12 md:pt-10 md:pb-20 px-4 sm:px-6 bg-parchment">
       <div className="w-full max-w-md flex flex-col items-center">
         
         {/* Prominent Editorial Header & Doubled Logo */}
