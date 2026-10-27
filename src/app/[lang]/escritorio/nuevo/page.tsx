@@ -4,6 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
 import ArticleEditor, { ArticleData, EditorAction } from '@/components/escritorio/ArticleEditor';
+import { useToast } from '@/components/ui/FeedbackProvider';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 import {
   DB_TABLES,
   PUBLICATION_COLS,
@@ -68,7 +71,10 @@ export default function NuevoArticulo() {
   const router = useRouter();
   const params = useParams();
   const lang = (params?.lang as string) || 'es';
+  const dict = lang === 'gl' ? glDict : esDict;
+  const edDict = dict.articleEditor;
   const supabase = createClient();
+  const toast = useToast();
 
   useEffect(() => {
     async function fetchRole() {
@@ -94,7 +100,7 @@ export default function NuevoArticulo() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        alert('Debes iniciar sesión para publicar');
+        toast.error(edDict.sessionRequiredPublish);
         return;
       }
 
@@ -139,7 +145,7 @@ export default function NuevoArticulo() {
 
       if (error || !insertedArticle) {
         console.error(error);
-        alert('Error al publicar: ' + error?.message);
+        toast.error(edDict.publishError + error?.message);
       } else {
         // Sync publication tags
         const tagSlugs = data.tags || data.tematicas || [];
@@ -159,16 +165,16 @@ export default function NuevoArticulo() {
           }
         }
 
-        alert(
+        toast.success(
           action === 'draft'
-            ? '¡Borrador guardado con éxito!'
-            : '¡Acción realizada con éxito!'
+            ? edDict.draftSaved
+            : edDict.actionSuccessGeneric
         );
         router.push(`/${lang}/escritorio`);
       }
     } catch (error: unknown) {
       console.error(error);
-      alert('Error inesperado al publicar.');
+      toast.error(edDict.unexpectedPublishError);
     } finally {
       setIsPublishing(false);
     }
