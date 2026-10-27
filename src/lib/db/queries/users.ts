@@ -22,6 +22,7 @@ import type {
   UserRole,
 } from '../types';
 import { getPublicationCards } from './publications';
+import { formatDbError } from '../formatDbError';
 
 async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient> {
   if (provided) return provided;
@@ -61,29 +62,37 @@ export async function getUserById(
   id: string,
   client?: SupabaseClient
 ): Promise<UserRow | null> {
-  const supabase = await resolveClient(client);
+  try {
+    const supabase = await resolveClient(client);
 
-  const { data, error } = await supabase
-    .from(DB_TABLES.USERS)
-    .select('*')
-    .eq(USER_COLS.ID, id)
-    .single();
+    const { data, error } = await supabase
+      .from(DB_TABLES.USERS)
+      .select('*')
+      .eq(USER_COLS.ID, id)
+      .single();
 
-  if (error || !data) {
-    if (error?.code === 'PGRST205') {
-      const { data: legData, error: legErr } = await supabase
-        .from('perfiles')
-        .select('*')
-        .eq('id', id)
-        .single();
-      if (!legErr && legData) {
-        return mapLegacyProfile(legData as Record<string, unknown>);
+    if (error || !data) {
+      if (error?.code === 'PGRST205') {
+        const { data: legData, error: legErr } = await supabase
+          .from('perfiles')
+          .select('*')
+          .eq('id', id)
+          .single();
+        if (!legErr && legData) {
+          return mapLegacyProfile(legData as Record<string, unknown>);
+        }
       }
+      if (error && error.code !== 'PGRST116') {
+        console.warn(`[DAL:users] Failed to fetch user by id "${id}":`, formatDbError(error));
+      }
+      return null;
     }
+
+    return data as UserRow;
+  } catch (err) {
+    console.warn(`[DAL:users] Unexpected error fetching user by id "${id}":`, formatDbError(err));
     return null;
   }
-
-  return data as UserRow;
 }
 
 /**
@@ -93,29 +102,37 @@ export async function getUserBySlug(
   slug: string,
   client?: SupabaseClient
 ): Promise<UserRow | null> {
-  const supabase = await resolveClient(client);
+  try {
+    const supabase = await resolveClient(client);
 
-  const { data, error } = await supabase
-    .from(DB_TABLES.USERS)
-    .select('*')
-    .eq(USER_COLS.SLUG, slug)
-    .single();
+    const { data, error } = await supabase
+      .from(DB_TABLES.USERS)
+      .select('*')
+      .eq(USER_COLS.SLUG, slug)
+      .single();
 
-  if (error || !data) {
-    if (error?.code === 'PGRST205') {
-      const { data: legData, error: legErr } = await supabase
-        .from('perfiles')
-        .select('*')
-        .eq('slug', slug)
-        .single();
-      if (!legErr && legData) {
-        return mapLegacyProfile(legData as Record<string, unknown>);
+    if (error || !data) {
+      if (error?.code === 'PGRST205') {
+        const { data: legData, error: legErr } = await supabase
+          .from('perfiles')
+          .select('*')
+          .eq('slug', slug)
+          .single();
+        if (!legErr && legData) {
+          return mapLegacyProfile(legData as Record<string, unknown>);
+        }
       }
+      if (error && error.code !== 'PGRST116') {
+        console.warn(`[DAL:users] Failed to fetch user by slug "${slug}":`, formatDbError(error));
+      }
+      return null;
     }
+
+    return data as UserRow;
+  } catch (err) {
+    console.warn(`[DAL:users] Unexpected error fetching user by slug "${slug}":`, formatDbError(err));
     return null;
   }
-
-  return data as UserRow;
 }
 
 /**
@@ -124,47 +141,52 @@ export async function getUserBySlug(
 export async function getColumnists(
   client?: SupabaseClient
 ): Promise<ColumnistItem[]> {
-  const supabase = await resolveClient(client);
+  try {
+    const supabase = await resolveClient(client);
 
-  const { data, error } = await supabase
-    .from(DB_TABLES.USERS)
-    .select(`
-      ${USER_COLS.ID},
-      ${USER_COLS.FULL_NAME},
-      ${USER_COLS.SLUG},
-      ${USER_COLS.BIO},
-      ${USER_COLS.AVATAR_URL},
-      ${USER_COLS.ROLE}
-    `)
-    .in(USER_COLS.ROLE, [USER_ROLES.FOUNDER, USER_ROLES.ADMIN])
-    .not(USER_COLS.SLUG, 'is', null)
-    .order(USER_COLS.FULL_NAME, { ascending: true });
+    const { data, error } = await supabase
+      .from(DB_TABLES.USERS)
+      .select(`
+        ${USER_COLS.ID},
+        ${USER_COLS.FULL_NAME},
+        ${USER_COLS.SLUG},
+        ${USER_COLS.BIO},
+        ${USER_COLS.AVATAR_URL},
+        ${USER_COLS.ROLE}
+      `)
+      .in(USER_COLS.ROLE, [USER_ROLES.FOUNDER, USER_ROLES.ADMIN])
+      .not(USER_COLS.SLUG, 'is', null)
+      .order(USER_COLS.FULL_NAME, { ascending: true });
 
-  if (error || !data) {
-    if (error?.code === 'PGRST205') {
-      const { data: legData, error: legErr } = await supabase
-        .from('perfiles')
-        .select('id, nombre, slug, bio, avatar_url, rol')
-        .in('rol', ['escritor', 'admin', 'fundador'])
-        .not('slug', 'is', null)
-        .order('nombre', { ascending: true });
+    if (error || !data) {
+      if (error?.code === 'PGRST205') {
+        const { data: legData, error: legErr } = await supabase
+          .from('perfiles')
+          .select('id, nombre, slug, bio, avatar_url, rol')
+          .in('rol', ['escritor', 'admin', 'fundador'])
+          .not('slug', 'is', null)
+          .order('nombre', { ascending: true });
 
-      if (!legErr && legData) {
-        return legData.map((row) => ({
-          id: row.id,
-          full_name: row.nombre || 'Anónimo',
-          slug: row.slug || null,
-          bio: parseBio(row.bio),
-          avatar_url: row.avatar_url || null,
-          role: row.rol === 'admin' ? USER_ROLES.ADMIN : USER_ROLES.FOUNDER,
-        })) as ColumnistItem[];
+        if (!legErr && legData) {
+          return legData.map((row) => ({
+            id: row.id,
+            full_name: row.nombre || 'Anónimo',
+            slug: row.slug || null,
+            bio: parseBio(row.bio),
+            avatar_url: row.avatar_url || null,
+            role: row.rol === 'admin' ? USER_ROLES.ADMIN : USER_ROLES.FOUNDER,
+          })) as ColumnistItem[];
+        }
       }
+      console.warn('[DAL:users] Failed to fetch columnists:', formatDbError(error));
+      return [];
     }
-    console.error('Error fetching columnists:', error);
+
+    return data as ColumnistItem[];
+  } catch (err) {
+    console.warn('[DAL:users] Unexpected error fetching columnists:', formatDbError(err));
     return [];
   }
-
-  return data as ColumnistItem[];
 }
 
 interface RawAuthorPublicationRow {
@@ -213,59 +235,64 @@ function sortPublishedAuthors(authors: PublishedAuthorItem[]): PublishedAuthorIt
 async function getLegacyPublishedAuthors(
   supabase: SupabaseClient
 ): Promise<PublishedAuthorItem[]> {
-  const { data, error } = await supabase
-    .from('articulos')
-    .select(`
-      id, slug, tipo, creado_en, titulo_gl, titulo_es, autor_id,
-      perfiles:autor_id (id, nombre, slug, avatar_url, biografia)
-    `)
-    .eq('estado', 'publicado')
-    .order('creado_en', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('articulos')
+      .select(`
+        id, slug, tipo, creado_en, titulo_gl, titulo_es, autor_id,
+        perfiles:autor_id (id, nombre, slug, avatar_url, biografia)
+      `)
+      .eq('estado', 'publicado')
+      .order('creado_en', { ascending: false });
 
-  if (error || !data) {
-    console.error('Error fetching legacy published authors:', error);
+    if (error || !data) {
+      console.warn('[DAL:users] Legacy published authors error:', formatDbError(error));
+      return [];
+    }
+
+    const authorsById = new Map<string, PublishedAuthorItem>();
+
+    for (const row of data as unknown as LegacyAuthorPublicationRow[]) {
+      const author = row.perfiles;
+      const authorId = author?.id || row.autor_id;
+      if (!authorId) continue;
+
+      const publicationType = (
+        row.tipo === 'ensaio' ? 'essay' : row.tipo === 'noticia' ? 'news' : 'article'
+      ) as PublicationType;
+      const title = { gl: row.titulo_gl || '', es: row.titulo_es || '' };
+
+      const existing = authorsById.get(authorId);
+      if (!existing) {
+        authorsById.set(authorId, {
+          id: authorId,
+          full_name: author?.nombre || 'Anónimo',
+          slug: author?.slug || null,
+          bio: author?.biografia
+            ? { gl: author.biografia, es: author.biografia }
+            : null,
+          avatar_url: author?.avatar_url || null,
+          role: USER_ROLES.MEMBER,
+          published_count: 1,
+          latest_publication_at: row.creado_en,
+          latest_publication_title: title,
+          latest_publication_slug: row.slug,
+          publication_types: [publicationType],
+        });
+        continue;
+      }
+
+      existing.published_count += 1;
+      if (!existing.publication_types.includes(publicationType)) {
+        existing.publication_types.push(publicationType);
+      }
+    }
+
+    return sortPublishedAuthors(Array.from(authorsById.values()));
+  } catch (err) {
+    console.warn('[DAL:users] Unexpected error fetching legacy published authors:', formatDbError(err));
     return [];
   }
-
-  const authorsById = new Map<string, PublishedAuthorItem>();
-
-  for (const row of data as unknown as LegacyAuthorPublicationRow[]) {
-    const author = row.perfiles;
-    const authorId = author?.id || row.autor_id;
-    if (!authorId) continue;
-
-    const publicationType = (
-      row.tipo === 'ensaio' ? 'essay' : row.tipo === 'noticia' ? 'news' : 'article'
-    ) as PublicationType;
-    const title = { gl: row.titulo_gl || '', es: row.titulo_es || '' };
-
-    const existing = authorsById.get(authorId);
-    if (!existing) {
-      authorsById.set(authorId, {
-        id: authorId,
-        full_name: author?.nombre || 'Anónimo',
-        slug: author?.slug || null,
-        bio: author?.biografia
-          ? { gl: author.biografia, es: author.biografia }
-          : null,
-        avatar_url: author?.avatar_url || null,
-        role: USER_ROLES.MEMBER,
-        published_count: 1,
-        latest_publication_at: row.creado_en,
-        latest_publication_title: title,
-        latest_publication_slug: row.slug,
-        publication_types: [publicationType],
-      });
-      continue;
-    }
-
-    existing.published_count += 1;
-    if (!existing.publication_types.includes(publicationType)) {
-      existing.publication_types.push(publicationType);
-    }
-  }
-
-  return sortPublishedAuthors(Array.from(authorsById.values()));
 }
 
 /**
@@ -276,68 +303,73 @@ async function getLegacyPublishedAuthors(
 export async function getPublishedAuthors(
   client?: SupabaseClient
 ): Promise<PublishedAuthorItem[]> {
-  const supabase = await resolveClient(client);
+  try {
+    const supabase = await resolveClient(client);
 
-  const { data, error } = await supabase
-    .from(DB_TABLES.PUBLICATIONS)
-    .select(`
-      ${PUBLICATION_COLS.ID},
-      ${PUBLICATION_COLS.TYPE},
-      ${PUBLICATION_COLS.CREATED_AT},
-      ${PUBLICATION_COLS.SLUG},
-      ${PUBLICATION_COLS.TITLE},
-      ${PUBLICATION_COLS.AUTHOR_ID},
-      author:${DB_TABLES.USERS} (
-        ${USER_COLS.ID},
-        ${USER_COLS.FULL_NAME},
-        ${USER_COLS.SLUG},
-        ${USER_COLS.BIO},
-        ${USER_COLS.AVATAR_URL},
-        ${USER_COLS.ROLE}
-      )
-    `)
-    .eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.PUBLISHED)
-    .order(PUBLICATION_COLS.CREATED_AT, { ascending: false });
+    const { data, error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select(`
+        ${PUBLICATION_COLS.ID},
+        ${PUBLICATION_COLS.TYPE},
+        ${PUBLICATION_COLS.CREATED_AT},
+        ${PUBLICATION_COLS.SLUG},
+        ${PUBLICATION_COLS.TITLE},
+        ${PUBLICATION_COLS.AUTHOR_ID},
+        author:${DB_TABLES.USERS} (
+          ${USER_COLS.ID},
+          ${USER_COLS.FULL_NAME},
+          ${USER_COLS.SLUG},
+          ${USER_COLS.BIO},
+          ${USER_COLS.AVATAR_URL},
+          ${USER_COLS.ROLE}
+        )
+      `)
+      .eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.PUBLISHED)
+      .order(PUBLICATION_COLS.CREATED_AT, { ascending: false });
 
-  if (error || !data) {
-    if (error?.code === 'PGRST205') {
-      return getLegacyPublishedAuthors(supabase);
+    if (error || !data) {
+      if (error?.code === 'PGRST205') {
+        return getLegacyPublishedAuthors(supabase);
+      }
+      console.warn('[DAL:users] Failed to fetch published authors:', formatDbError(error));
+      return [];
     }
-    console.error('Error fetching published authors:', error);
+
+    const authorsById = new Map<string, PublishedAuthorItem>();
+
+    for (const row of data as unknown as RawAuthorPublicationRow[]) {
+      const author = row.author;
+      if (!author) continue;
+
+      const existing = authorsById.get(author.id);
+      if (!existing) {
+        authorsById.set(author.id, {
+          id: author.id,
+          full_name: author.full_name,
+          slug: author.slug,
+          bio: parseBio(author.bio),
+          avatar_url: author.avatar_url,
+          role: author.role,
+          published_count: 1,
+          latest_publication_at: row.created_at,
+          latest_publication_title: row.title,
+          latest_publication_slug: row.slug,
+          publication_types: [row.type],
+        });
+        continue;
+      }
+
+      existing.published_count += 1;
+      if (!existing.publication_types.includes(row.type)) {
+        existing.publication_types.push(row.type);
+      }
+    }
+
+    return sortPublishedAuthors(Array.from(authorsById.values()));
+  } catch (err) {
+    console.warn('[DAL:users] Unexpected error fetching published authors:', formatDbError(err));
     return [];
   }
-
-  const authorsById = new Map<string, PublishedAuthorItem>();
-
-  for (const row of data as unknown as RawAuthorPublicationRow[]) {
-    const author = row.author;
-    if (!author) continue;
-
-    const existing = authorsById.get(author.id);
-    if (!existing) {
-      authorsById.set(author.id, {
-        id: author.id,
-        full_name: author.full_name,
-        slug: author.slug,
-        bio: parseBio(author.bio),
-        avatar_url: author.avatar_url,
-        role: author.role,
-        published_count: 1,
-        latest_publication_at: row.created_at,
-        latest_publication_title: row.title,
-        latest_publication_slug: row.slug,
-        publication_types: [row.type],
-      });
-      continue;
-    }
-
-    existing.published_count += 1;
-    if (!existing.publication_types.includes(row.type)) {
-      existing.publication_types.push(row.type);
-    }
-  }
-
-  return sortPublishedAuthors(Array.from(authorsById.values()));
 }
 
 /**
