@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { LocalizedString } from '@/lib/db/types';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import FormattedDate from '@/components/ui/FormattedDate';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -97,13 +98,6 @@ export default function ArticleCard({
 
   // Resolve date
   const rawDate = articulo.created_at || articulo.creado_en;
-  const formattedDate = rawDate
-    ? new Date(rawDate).toLocaleDateString(lang === 'es' ? 'es-ES' : 'gl-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : null;
 
   // Resolve cover image
   const coverUrl = articulo.cover_image_url || articulo.imagen_url || null;
@@ -138,11 +132,12 @@ export default function ArticleCard({
                 </span>
               ))}
             </div>
-            {formattedDate && (
-              <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
-                {formattedDate}
-              </time>
-            )}
+            <FormattedDate
+              date={rawDate}
+              lang={lang}
+              format="short"
+              className="text-xs font-sans text-charcoal/50"
+            />
           </div>
 
           {/* Headline */}
@@ -206,12 +201,15 @@ export default function ArticleCard({
           </span>
 
           <div className="relative z-10 max-w-4xl">
-            {formattedDate && (
+            {rawDate && (
               <div className="flex items-center gap-2 mb-4">
                 <span className="w-4 h-[1.5px] bg-gold" aria-hidden="true" />
-                <time dateTime={rawDate} className="text-xs font-mono uppercase tracking-wider text-charcoal/60 dark:text-white/60">
-                  {formattedDate}
-                </time>
+                <FormattedDate
+                  date={rawDate}
+                  lang={lang}
+                  format="short"
+                  className="text-xs font-mono uppercase tracking-wider text-charcoal/60 dark:text-white/60"
+                />
               </div>
             )}
 
@@ -286,12 +284,15 @@ export default function ArticleCard({
         {/* Text & Metadata Container */}
         <div className="lg:w-2/5 flex flex-col justify-between py-1">
           <div>
-            {formattedDate && (
+            {rawDate && (
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-4 h-[1.5px] bg-gold" aria-hidden="true" />
-                <time dateTime={rawDate} className="text-xs font-mono uppercase tracking-wider text-charcoal/60 dark:text-white/60">
-                  {formattedDate}
-                </time>
+                <FormattedDate
+                  date={rawDate}
+                  lang={lang}
+                  format="short"
+                  className="text-xs font-mono uppercase tracking-wider text-charcoal/60 dark:text-white/60"
+                />
               </div>
             )}
 
@@ -383,12 +384,15 @@ export default function ArticleCard({
                 </span>
               ))}
             </div>
-            {formattedDate && (
+            {rawDate && (
               <>
                 <span className="text-charcoal/30 select-none">•</span>
-                <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
-                  {formattedDate}
-                </time>
+                <FormattedDate
+                  date={rawDate}
+                  lang={lang}
+                  format="short"
+                  className="text-xs font-sans text-charcoal/50"
+                />
               </>
             )}
           </div>
@@ -464,10 +468,10 @@ export default function ArticleCard({
           </Link>
           <div className="flex items-center gap-2 text-xs text-charcoal/50 mt-auto">
             <span>{authorName}</span>
-            {formattedDate && (
+            {rawDate && (
               <>
                 <span>•</span>
-                <time dateTime={rawDate}>{formattedDate}</time>
+                <FormattedDate date={rawDate} lang={lang} format="short" />
               </>
             )}
           </div>
@@ -508,11 +512,12 @@ export default function ArticleCard({
             </span>
           ))}
         </div>
-        {formattedDate && (
-          <time dateTime={rawDate} className="text-xs font-sans text-charcoal/50">
-            {formattedDate}
-          </time>
-        )}
+        <FormattedDate
+          date={rawDate}
+          lang={lang}
+          format="short"
+          className="text-xs font-sans text-charcoal/50"
+        />
       </div>
 
       {/* Title */}
