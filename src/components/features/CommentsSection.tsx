@@ -9,6 +9,7 @@ import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { DB_TABLES, COMMENT_COLS, USER_COLS } from '@/lib/db/schema';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { useConfirm, useToast } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -39,6 +40,8 @@ export default function CommentsSection({
   const lang = (params?.lang as string) || 'gl';
   const dict = lang === 'es' ? esDict : glDict;
   const cDict = dict.comments;
+  const confirm = useConfirm();
+  const toast = useToast();
 
   const { user } = useAuth();
   const [comentarios, setComentarios] = useState<CommentViewItem[]>([]);
@@ -71,7 +74,14 @@ export default function CommentsSection({
   }, [targetId, supabase]);
 
   const handleDelete = async (comentarioId: string) => {
-    if (!window.confirm(cDict.deleteConfirm || '¿Estás seguro de que queres eliminar este comentario?')) return;
+    const ok = await confirm({
+      title: cDict.delete,
+      description: cDict.deleteConfirm,
+      confirmLabel: cDict.delete,
+      cancelLabel: dict.common.cancel,
+      variant: 'danger',
+    });
+    if (!ok) return;
 
     // Optimistic update
     setComentarios(prev => prev.filter(c => c.id !== comentarioId));
@@ -84,7 +94,7 @@ export default function CommentsSection({
 
     if (error || !data || data.length === 0) {
       console.error("Delete failed:", error || "No rows deleted (RLS blocked)");
-      alert(cDict.deleteError || 'Erro de permisos ou sesión caducada ao tentar borrar. Recarga a páxina.');
+      toast.error(cDict.deleteError);
       const timer = setTimeout(() => fetchComments(), 0);
       return () => clearTimeout(timer);
     }

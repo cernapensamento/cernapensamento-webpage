@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -16,6 +17,7 @@ export default function ActualizarPasswordPage() {
   const params = useParams();
   const lang = (params.lang as string) || 'es';
   const supabase = createClient();
+  const toast = useToast();
   
   const dict = lang === 'es' ? esDict : glDict;
   const loginDict = dict.loginPage;
@@ -48,7 +50,7 @@ export default function ActualizarPasswordPage() {
       
       if (error) throw error;
       
-      alert(loginDict.updateSuccess);
+      toast.success(loginDict.updateSuccess);
       router.push(`/${lang}/escritorio`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : loginDict.genericAuthError);

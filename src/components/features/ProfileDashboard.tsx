@@ -14,6 +14,7 @@ import { DB_TABLES, USER_COLS, USER_ROLES } from '@/lib/db/schema';
 import type { UserRow } from '@/lib/db/types';
 import { uploadStorageImage, STORAGE_CATEGORIES } from '@/lib/storage';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { useToast } from '@/components/ui/FeedbackProvider';
 
 export interface ProfileDashboardProps {
   profile: (UserRow & { rol?: string; nombre?: string; recibir_newsletter?: boolean }) | null;
@@ -25,6 +26,7 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
   const lang = (params?.lang as string) || 'gl';
   const dict = lang === 'es' ? esDict : glDict;
   const dashDict = dict.dashboard;
+  const toast = useToast();
 
   const currentBio = typeof profile?.bio === 'object' && profile?.bio !== null
     ? (profile.bio[lang as 'gl' | 'es'] || profile.bio.gl || profile.bio.es || '')
@@ -114,12 +116,12 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : '';
       if (errorMsg === 'INVALID_FORMAT') {
-        alert(storageDict.invalidFormat);
+        toast.error(storageDict.invalidFormat);
       } else if (errorMsg.startsWith('FILE_TOO_LARGE:')) {
         const maxMb = errorMsg.split(':')[1] || '5';
-        alert(storageDict.fileTooLarge.replace('{max}', maxMb));
+        toast.error(storageDict.fileTooLarge.replace('{max}', maxMb));
       } else {
-        alert(storageDict.uploadError.replace('{error}', errorMsg || 'Error desconocido'));
+        toast.error(storageDict.uploadError.replace('{error}', errorMsg || 'Error desconocido'));
       }
       setAvatarUrl(profile?.avatar_url || '');
     } finally {

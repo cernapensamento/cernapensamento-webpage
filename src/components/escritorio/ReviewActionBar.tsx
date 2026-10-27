@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PUBLICATION_STATUSES } from '@/lib/db/schema';
 import { updateArticleState } from '@/actions/articles';
+import { useToast } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -17,6 +18,7 @@ export default function ReviewActionBar({ articuloId }: Props) {
   const params = useParams();
   const lang = (params?.lang as string) || 'gl';
   const dict = lang === 'es' ? esDict : glDict;
+  const toast = useToast();
 
   const handleAction = async (action: 'approve' | 'reject') => {
     setIsProcessing(true);
@@ -25,14 +27,14 @@ export default function ReviewActionBar({ articuloId }: Props) {
       const res = await updateArticleState(articuloId, newState);
 
       if (!res.success) {
-        alert('Error: ' + res.error);
+        toast.error(dict.feedback.error + ': ' + res.error);
       } else {
-        alert(action === 'approve' ? (dict.dashboard.approvedSuccess || '¡Artigo aprobado e publicado!') : (dict.dashboard.rejectedSuccess || 'Artigo rexeitado e devolto a borrador.'));
+        toast.success(action === 'approve' ? dict.dashboard.approvedSuccess : dict.dashboard.rejectedSuccess);
         router.push(`/${lang}/escritorio?filtro=para_aprobar`);
         router.refresh();
       }
     } catch (e: unknown) {
-      alert('Error: ' + (e instanceof Error ? e.message : String(e)));
+      toast.error(dict.feedback.error + ': ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setIsProcessing(false);
     }

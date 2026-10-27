@@ -18,6 +18,7 @@ import {
   type PublicationStatusValue,
 } from '@/lib/db/schema';
 import type { PublicationDetail } from '@/lib/db/types';
+import { useToast } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -70,6 +71,7 @@ export default function EditarArticuloForm({
   const lang = (params?.lang as string) || 'gl';
   const dict = lang === 'es' ? esDict : glDict;
   const supabase = createClient();
+  const toast = useToast();
 
   const initialData: ArticleData = {
     id: pub.id,
@@ -102,7 +104,7 @@ export default function EditarArticuloForm({
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        alert('Debes iniciar sesión para editar');
+        toast.error(dict.articleEditor.sessionRequiredEdit);
         return;
       }
 
@@ -182,7 +184,7 @@ export default function EditarArticuloForm({
 
       if (error) {
         console.error(error);
-        alert('Error al guardar cambios: ' + error.message);
+        toast.error(dict.articleEditor.saveError + error.message);
       } else {
         // Sync publication tags
         const tagSlugs = data.tags || data.tematicas;
@@ -209,7 +211,7 @@ export default function EditarArticuloForm({
           }
         }
 
-        alert(
+        toast.success(
           action === PUBLICATION_STATUSES.DRAFT ||
             action === 'reject' ||
             action === 'revoke_approval'
@@ -220,7 +222,7 @@ export default function EditarArticuloForm({
       }
     } catch (error: unknown) {
       console.error(error);
-      alert(dict.articleEditor.unexpectedError);
+      toast.error(dict.articleEditor.unexpectedError);
     } finally {
       setIsPublishing(false);
     }

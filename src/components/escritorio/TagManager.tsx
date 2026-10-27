@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { DB_TABLES, TAG_COLS, TAG_TRANSLATION_COLS } from '@/lib/db/schema';
+import { useToast } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -17,6 +18,7 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
     const lang = (params?.lang as string) || 'gl';
     const dict = lang === 'es' ? esDict : glDict;
     const edDict = dict.articleEditor;
+    const toast = useToast();
 
     const supabase = createClient();
     const [allTags, setAllTags] = useState<{ id?: string | number; slug: string; tag_translations: { lang: string; name: string }[] }[]>([]);
@@ -70,7 +72,10 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
     };
 
     const handleCreateNew = async () => {
-        if (!newTagEs || !newTagGl) return alert(edDict.bothLangsRequired || 'Debes completar ambos idiomas');
+        if (!newTagEs || !newTagGl) {
+            toast.warning(edDict.bothLangsRequired);
+            return;
+        }
         setIsSaving(true);
         try {
             // Generar slug del término en castellano
@@ -100,7 +105,7 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
             setNewTagEs('');
             setNewTagGl('');
         } catch (e: unknown) {
-            alert((edDict.createTagError || 'Error al crear etiqueta: ') + (e instanceof Error ? e.message : String(e)));
+            toast.error(edDict.createTagError + (e instanceof Error ? e.message : String(e)));
         } finally {
             setIsSaving(false);
         }

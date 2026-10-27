@@ -91,6 +91,18 @@
     "cancel": "Cancelar",
     "edit": "Editar"
   },
+  "feedback": {
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "accept": "Aceptar",
+    "delete": "Eliminar",
+    "success": "Éxito",
+    "error": "Error",
+    "warning": "Aviso",
+    "info": "Información",
+    "notificationsAria": "Notificaciones"
+  },
   "about": {
     "title": "Quiénes Somos",
     "subtitle": "Un espacio de reflexión crítica y pensamiento libre",
@@ -486,7 +498,39 @@
     "actionSuccess": "¡Acción realizada con éxito!",
     "unexpectedError": "Ocurrió un error inesperado al guardar.",
     "unpublish": "Despublicar",
-    "create": "Crear"
+    "create": "Crear",
+    "sessionRequired": "Debes iniciar sesión para realizar esta acción.",
+    "sessionRequiredPublish": "Debes iniciar sesión para publicar.",
+    "sessionRequiredEdit": "Debes iniciar sesión para editar.",
+    "publishError": "Error al publicar: ",
+    "saveError": "Error al guardar cambios: ",
+    "draftSaved": "¡Borrador guardado con éxito!",
+    "actionSuccessGeneric": "¡Acción realizada con éxito!",
+    "unexpectedPublishError": "Error inesperado al publicar.",
+    "clearAllConfirm": "¿Estás seguro de que quieres borrar todo el contenido de este artículo? Se perderán todos los cambios en gallego y en castellano.",
+    "clearAllTitle": "¿Borrar todo el contenido?",
+    "noHeadingsFound": "No se encontraron secciones (H1, H2, H3) en el artículo.",
+    "translateSuccess": "Traducción generada correctamente. Puedes cambiar de idioma en las pestañas para revisarla.",
+    "translateError": "Error al traducir el contenido. Revisa la consola o tu API KEY.",
+    "insert": "Insertar",
+    "clear": "Borrar",
+    "youtubePrompt": {
+      "title": "Insertar vídeo de YouTube",
+      "description": "Introduce la URL completa del vídeo de YouTube que deseas incorporar al artículo:",
+      "placeholder": "https://www.youtube.com/watch?v=...",
+      "emptyUrl": "La URL no puede estar vacía."
+    },
+    "latexPrompt": {
+      "title": "Insertar fórmula matemática",
+      "description": "Introduce la expresión matemática en notación LaTeX (ej: \\int_0^\\infty e^{-x} dx = 1):",
+      "placeholder": "\\int_0^\\infty e^{-x} dx = 1",
+      "emptyFormula": "La fórmula matemática no puede estar vacía."
+    },
+    "captionPrompt": {
+      "title": "Pie de foto",
+      "description": "Opcional: Añade una leyenda o pie de foto para esta imagen:",
+      "placeholder": "Ej: Retrato del autor en Santiago..."
+    }
   },
   "contactForm": {
     "fullName": "Nombre Completo",

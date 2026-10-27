@@ -21,6 +21,7 @@ import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
 import { getHeadingsFromHtml, generateIndex, stripIndex } from '@/lib/editor/generateIndex';
 import { ArticleIndex } from '@/lib/editor/ArticleIndexExtension';
 import { useParams } from 'next/navigation';
+import { useToast, useConfirm, usePrompt } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 import { createClient } from '@/lib/supabase/client';
@@ -82,6 +83,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const routeLang = (params?.lang as string) || 'gl';
     const dict = routeLang === 'gl' ? glDict.articleEditor : esDict.articleEditor;
     const storageDict = routeLang === 'gl' ? glDict.escritorio.storage : esDict.escritorio.storage;
+    const toast = useToast();
+    const confirm = useConfirm();
+    const prompt = usePrompt();
 
     const [showPublishModal, setShowPublishModal] = useState(false);
     
@@ -300,7 +304,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            alert(storageDict.sessionRequired);
+            toast.error(storageDict.sessionRequired);
             isUploadingCover.current = false;
             URL.revokeObjectURL(localPreview);
             return;
@@ -319,12 +323,12 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         } catch (err: unknown) {
             const errorMsg = err instanceof Error ? err.message : '';
             if (errorMsg === 'INVALID_FORMAT') {
-                alert(storageDict.invalidFormat);
+                toast.error(storageDict.invalidFormat);
             } else if (errorMsg.startsWith('FILE_TOO_LARGE:')) {
                 const maxMb = errorMsg.split(':')[1] || '8';
-                alert(storageDict.fileTooLarge.replace('{max}', maxMb));
+                toast.error(storageDict.fileTooLarge.replace('{max}', maxMb));
             } else {
-                alert(storageDict.uploadError.replace('{error}', errorMsg || 'Error'));
+                toast.error(storageDict.uploadError.replace('{error}', errorMsg || 'Error'));
             }
             setCoverImageUrl(initialData?.cover_image_url || '');
         } finally {
@@ -345,7 +349,13 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         isUploadingInline.current = true;
         const localUrl = URL.createObjectURL(file);
 
-        const caption = window.prompt(storageDict.captionPrompt);
+        const caption = await prompt({
+            title: dict.captionPrompt.title,
+            description: dict.captionPrompt.description,
+            placeholder: dict.captionPrompt.placeholder,
+            confirmLabel: dict.insert,
+            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+        });
 
         (editor.chain().focus() as unknown as { setFigure: (options: { src: string; caption?: string }) => { run: () => void } }).setFigure({
             src: localUrl,
@@ -354,7 +364,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            alert(storageDict.sessionRequired);
+            toast.error(storageDict.sessionRequired);
             editor.state.doc.descendants((node, pos) => {
                 if (node.type.name === 'figure' && node.attrs.src === localUrl) {
                     editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
@@ -399,12 +409,12 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         } catch (err: unknown) {
             const errorMsg = err instanceof Error ? err.message : '';
             if (errorMsg === 'INVALID_FORMAT') {
-                alert(storageDict.invalidFormat);
+                toast.error(storageDict.invalidFormat);
             } else if (errorMsg.startsWith('FILE_TOO_LARGE:')) {
                 const maxMb = errorMsg.split(':')[1] || '8';
-                alert(storageDict.fileTooLarge.replace('{max}', maxMb));
+                toast.error(storageDict.fileTooLarge.replace('{max}', maxMb));
             } else {
-                alert(storageDict.uploadError.replace('{error}', errorMsg || 'Error'));
+                toast.error(storageDict.uploadError.replace('{error}', errorMsg || 'Error'));
             }
             editor.state.doc.descendants((node, pos) => {
                 if (node.type.name === 'figure' && node.attrs.src === localUrl) {
@@ -418,18 +428,40 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         }
     };
 
-    const insertYoutube = () => {
-        const url = window.prompt('URL del vídeo de YouTube:');
-        if (url && editor) {
+    const insertYoutube = async () => {
+        if (!editor) return;
+        const url = await prompt({
+            title: dict.youtubePrompt.title,
+            description: dict.youtubePrompt.description,
+            placeholder: dict.youtubePrompt.placeholder,
+            confirmLabel: dict.insert,
+            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+            validate: (val) => {
+                if (!val.trim()) return dict.youtubePrompt.emptyUrl;
+                return null;
+            },
+        });
+        if (url && url.trim() && editor) {
             editor.commands.setYoutubeVideo({
-                src: url,
+                src: url.trim(),
             });
         }
     };
 
-    const insertMath = () => {
+    const insertMath = async () => {
         if (!editor) return;
-        const latex = window.prompt('Introduce a fórmula matemática en LaTeX / Introduce la fórmula matemática en LaTeX:\n(ex: \\int_0^\\infty e^{-x} dx = 1)');
+        const latex = await prompt({
+            title: dict.latexPrompt.title,
+            description: dict.latexPrompt.description,
+            placeholder: dict.latexPrompt.placeholder,
+            multiline: true,
+            confirmLabel: dict.insert,
+            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+            validate: (val) => {
+                if (!val.trim()) return dict.latexPrompt.emptyFormula;
+                return null;
+            },
+        });
         if (latex && latex.trim()) {
             (editor.chain().focus() as unknown as { insertBlockMath: (opts: { latex: string }) => { run: () => boolean } }).insertBlockMath({ latex: latex.trim() }).run();
         }
@@ -445,11 +477,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         const rawHtml = editor.getHTML();
         const items = getHeadingsFromHtml(rawHtml);
         if (!items.length) {
-            alert(
-                activeLang === 'gl'
-                    ? 'Non se atoparon seccións (H1, H2, H3) no artigo.'
-                    : 'No se encontraron secciones (H1, H2, H3) en el artículo.'
-            );
+            toast.warning(dict.noHeadingsFound);
             return;
         }
 
@@ -524,17 +552,25 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             if (data.htmlContent) {
                 if (targetLang === 'gl') setContenidoGl(data.htmlContent); else setContenidoEs(data.htmlContent);
             }
-            alert('Traducción generada correctamente. Puedes cambiar de idioma en las pestañas para revisarla.');
+            toast.success(dict.translateSuccess);
         } catch (e: unknown) {
             console.error(e);
-            alert((e instanceof Error ? e.message : String(e)) || 'Error al traducir el contenido. Revisa la consola o tu API KEY.');
+            toast.error((e instanceof Error ? e.message : String(e)) || dict.translateError);
         } finally {
             setIsTranslating(false);
         }
     };
 
-    const handleClearAll = () => {
-        if (window.confirm('¿Estás seguro de que quieres borrar todo el contenido de este artículo? Se perderán todos los cambios en gallego y en castellano.')) {
+    const handleClearAll = async () => {
+        const ok = await confirm({
+            title: dict.clearAllTitle,
+            description: dict.clearAllConfirm,
+            confirmLabel: dict.clear,
+            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+            variant: 'danger',
+        });
+
+        if (ok) {
             setTituloGl('');
             setTituloEs('');
             setSubtituloGl('');
@@ -586,7 +622,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
 
     const handleSubmit = async (action: EditorAction = 'publish') => {
         if (isUploadingCover.current || isUploadingInline.current) {
-            alert(storageDict.uploadWait);
+            toast.warning(storageDict.uploadWait);
             return;
         }
 
