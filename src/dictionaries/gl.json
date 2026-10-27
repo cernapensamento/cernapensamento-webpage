@@ -40,6 +40,12 @@
       "anxo": "Pensamento crítico, literatura e sociedade.",
       "hector": "Teoría de xogos, ensaio e política.",
       "denis": "Análise institucional e cultural."
+    },
+    "userMenu": {
+      "profile": "O teu Perfil",
+      "myArticles": "As miñas Publicacións",
+      "newArticle": "Novo Artigo",
+      "logout": "Pechar Sesión"
     }
   },
   "footer": {
@@ -401,6 +407,7 @@
     "noPendingArticles": "Non hai publicacións pendentes de aprobación."
   },
   "articleEditor": {
+    "backToArticles": "Artigos",
     "publishModalTitleCreate": "¿Publicar artigo?",
     "publishModalTitleEdit": "¿Publicar cambios?",
     "publishModalDescCreate": "¿Estás seguro de que queres publicar este artigo agora? Será visible para a túa audiencia seleccionada.",
