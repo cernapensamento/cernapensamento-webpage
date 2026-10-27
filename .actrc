@@ -1,0 +1,5 @@
+# Default platform mappings for nektos/act to emulate GitHub Actions runners locally
+# Uses catthehacker optimized runners to balance speed and completeness
+-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
+-P ubuntu-22.04=ghcr.io/catthehacker/ubuntu:act-22.04
+-P ubuntu-20.04=ghcr.io/catthehacker/ubuntu:act-20.04
