@@ -24,6 +24,13 @@ export default function PublicNavBar() {
   const lang = useLocale();
   const pathname = usePathname();
   const dict = getDictionaryClient(lang);
+  const userName =
+    userProfile?.full_name ||
+    userProfile?.nombre ||
+    (user?.user_metadata?.full_name as string) ||
+    (user?.user_metadata?.name as string) ||
+    user?.email?.split('@')[0] ||
+    'Usuario';
 
   // Desktop active dropdown ('publicacions' | 'asociacion' | 'autores' | null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -479,7 +486,7 @@ export default function PublicNavBar() {
                         : dict.dashboard?.reader || 'LECTOR'}
                     </p>
                     <p className="text-sm font-serif font-bold text-charcoal truncate">
-                      {user.email}
+                      {userName}
                     </p>
                   </div>
 
@@ -520,14 +527,14 @@ export default function PublicNavBar() {
                       <Link
                         href={`/${lang}/escritorio/nuevo`}
                         onClick={() => setUserMenuOpen(false)}
-                        className="group px-4 py-2.5 text-sm font-sans flex items-center justify-between text-gold hover:bg-gold/10 transition-all duration-200 font-semibold"
+                        className="group px-4 py-2.5 text-sm font-sans flex items-center justify-between text-charcoal hover:bg-lines/50 hover:text-gold transition-all duration-200"
                         role="menuitem"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-[18px] text-gold group-hover:scale-110 group-hover:rotate-6 transition-all duration-200">edit_square</span>
-                          <span className="group-hover:translate-x-0.5 transition-transform duration-200">{dict.nav?.userMenu?.newArticle || dict.dashboard?.newArticle || 'Novo Artigo'}</span>
+                          <span className="material-symbols-outlined text-[18px] text-charcoal/60 group-hover:text-gold group-hover:scale-110 transition-all duration-200">edit_square</span>
+                          <span className="font-medium group-hover:translate-x-0.5 transition-transform duration-200">{dict.nav?.userMenu?.newArticle || dict.dashboard?.newArticle || 'Novo Artigo'}</span>
                         </div>
-                        <span className="material-symbols-outlined text-[14px] text-gold group-hover:translate-x-1 transition-all duration-200">add</span>
+                        <span className="material-symbols-outlined text-[14px] text-charcoal/30 group-hover:text-gold group-hover:translate-x-1 transition-all duration-200">arrow_forward</span>
                       </Link>
                     )}
                   </div>
@@ -751,7 +758,7 @@ export default function PublicNavBar() {
               {user ? (
                 <div className="flex flex-col gap-2 pt-2">
                   <div className="text-xs font-sans text-charcoal/50 uppercase tracking-widest pb-1">
-                    {dict.nav?.userMenu?.profile || 'A túa Conta'} • {user.email}
+                    {dict.nav?.userMenu?.profile || 'A túa Conta'} • {userName}
                   </div>
                   <Link
                     href={`/${lang}/escritorio/perfil`}
@@ -777,7 +784,7 @@ export default function PublicNavBar() {
                     <Link
                       href={`/${lang}/escritorio/nuevo`}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-serif font-bold text-gold py-1 flex items-center justify-between"
+                      className="text-lg font-serif font-bold text-charcoal hover:text-gold py-1 flex items-center justify-between"
                     >
                       <span>{dict.nav?.userMenu?.newArticle || 'Novo Artigo'}</span>
                       <span className="material-symbols-outlined text-sm">edit_square</span>
