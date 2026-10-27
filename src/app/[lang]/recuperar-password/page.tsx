@@ -49,7 +49,7 @@ export default function RecuperarPasswordPage() {
         <div className="text-center mb-12 flex flex-col items-center">
           <div className="relative mb-6">
             <Image 
-              src="/images/logo/cernawhite.png" 
+              src="/images/logo/cernawhite.webp" 
               alt="Cerna Pensamento" 
               width={400} 
               height={100} 
@@ -57,7 +57,7 @@ export default function RecuperarPasswordPage() {
               priority
             />
             <Image 
-              src="/images/logo/cernablack.png" 
+              src="/images/logo/cernablack.webp" 
               alt="Cerna Pensamento" 
               width={400} 
               height={100} 

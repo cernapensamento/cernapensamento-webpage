@@ -265,7 +265,7 @@ export default function LoginPage() {
         <div className="text-center mb-8 flex flex-col items-center">
           <div className="relative mb-4">
             <Image 
-              src="/images/logo/cernawhite.png" 
+              src="/images/logo/cernawhite.webp" 
               alt="Cerna Pensamento" 
               width={800} 
               height={200} 
@@ -273,7 +273,7 @@ export default function LoginPage() {
               priority
             />
             <Image 
-              src="/images/logo/cernablack.png" 
+              src="/images/logo/cernablack.webp" 
               alt="Cerna Pensamento" 
               width={800} 
               height={200} 
