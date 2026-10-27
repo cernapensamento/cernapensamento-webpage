@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
 import { DB_TABLES, PUBLICATION_COLS } from '@/lib/db/schema';
+import { useToast } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -22,6 +23,7 @@ export default function PinArticleButton({ id, isPinned, fijado }: Props) {
     const dict = lang === 'es' ? esDict : glDict;
     const dashDict = dict.dashboard;
     const supabase = createClient();
+    const toast = useToast();
 
     const handleToggle = async () => {
         setIsToggling(true);
@@ -35,7 +37,7 @@ export default function PinArticleButton({ id, isPinned, fijado }: Props) {
                 if (countError) throw countError;
 
                 if (count !== null && count >= 8) {
-                    alert(dashDict.pinLimitReached || 'Deben retirarse publicacións do taboleiro para liberar espazo (límite máximo de 8).');
+                    toast.warning(dashDict.pinLimitReached);
                     setIsToggling(false);
                     return;
                 }
@@ -47,13 +49,13 @@ export default function PinArticleButton({ id, isPinned, fijado }: Props) {
                 .eq(PUBLICATION_COLS.ID, id);
 
             if (error) {
-                alert((dashDict.pinError || 'Erro ao fixar/desfixar') + ': ' + error.message);
+                toast.error(dashDict.pinError + ': ' + error.message);
             } else {
                 router.refresh();
             }
         } catch (error) {
             console.error(error);
-            alert(dashDict.pinError || 'Erro ao fixar/desfixar');
+            toast.error(dashDict.pinError);
         } finally {
             setIsToggling(false);
         }

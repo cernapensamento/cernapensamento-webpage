@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
 import { DB_TABLES, PUBLICATION_COLS } from '@/lib/db/schema';
 import { cleanupPublicationImages } from '@/lib/storage';
+import { useConfirm, useToast } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -21,10 +22,19 @@ export default function DeleteArticleButton({ id, titulo }: Props) {
     const dict = lang === 'es' ? esDict : glDict;
     const dashDict = dict.dashboard;
     const supabase = createClient();
+    const confirm = useConfirm();
+    const toast = useToast();
 
     const handleDelete = async () => {
-        const confirmMsg = (dashDict.deleteConfirm || '¿Estás seguro de que queres eliminar \"{title}\" por completo? Esta acción non se pode desfacer.').replace('{title}', titulo);
-        if (!window.confirm(confirmMsg)) {
+        const confirmMsg = dashDict.deleteConfirm.replace('{title}', titulo);
+        const ok = await confirm({
+            title: dashDict.deleteArticle,
+            description: confirmMsg,
+            confirmLabel: dashDict.delete,
+            cancelLabel: dict.common.cancel,
+            variant: 'danger',
+        });
+        if (!ok) {
             return;
         }
 
@@ -43,7 +53,7 @@ export default function DeleteArticleButton({ id, titulo }: Props) {
                 .eq(PUBLICATION_COLS.ID, id);
 
             if (error) {
-                alert((dashDict.deleteError || 'Erro ao eliminar') + ': ' + error.message);
+                toast.error(dashDict.deleteError + ': ' + error.message);
             } else {
                 if (pubData) {
                     const content = pubData.content as { gl?: string; es?: string } | null;
@@ -57,7 +67,7 @@ export default function DeleteArticleButton({ id, titulo }: Props) {
             }
         } catch (error) {
             console.error(error);
-            alert(dashDict.deleteError || 'Erro ao eliminar');
+            toast.error(dashDict.deleteError);
         } finally {
             setIsDeleting(false);
         }
