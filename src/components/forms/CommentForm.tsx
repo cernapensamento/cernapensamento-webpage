@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { DB_TABLES, COMMENT_COLS } from '@/lib/db/schema';
+import { useToast } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -32,6 +33,7 @@ export default function CommentForm({
   const params = useParams();
   const lang = (params?.lang as string) || 'gl';
   const cDict = dict || (lang === 'es' ? esDict.comments : glDict.comments);
+  const toast = useToast();
 
   const [contenido, setContenido] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,9 +61,11 @@ export default function CommentForm({
 
     if (error) {
       if (error.code === '23505') { // Postgres unique violation error code
-        alert(cDict.alreadyCommented || 'Xa comentaches neste artigo.');
+        const msg = cDict.alreadyCommented || (lang === 'es' ? esDict.comments.alreadyCommented : glDict.comments.alreadyCommented);
+        toast.warning(msg);
       } else {
-        alert(cDict.postError || 'Erro ao publicar o comentario.');
+        const msg = cDict.postError || (lang === 'es' ? esDict.comments.postError : glDict.comments.postError);
+        toast.error(msg);
       }
     } else {
       setContenido('');
