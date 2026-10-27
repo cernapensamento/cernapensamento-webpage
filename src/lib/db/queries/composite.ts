@@ -32,6 +32,8 @@ export interface HomepageData {
 /**
  * Fetch all data required for the homepage in parallel.
  * Prevents waterfall network bottlenecks.
+ * Individual query fallbacks are retained; an aggregate exception returns a null
+ * featured publication and empty lists. Uses the supplied client or a server client.
  */
 export async function getHomepageData(options?: {
   lang?: string;

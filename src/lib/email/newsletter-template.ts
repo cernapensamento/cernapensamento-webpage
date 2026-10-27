@@ -21,6 +21,9 @@ export interface NewsletterEmailProps {
   dict?: any;
 }
 
+/**
+ * Escapes ampersands, angle brackets, and quotes for insertion into email HTML.
+ */
 function escapeHtml(unsafe: string): string {
   return unsafe
     .replace(/&/g, '&amp;')
@@ -30,6 +33,11 @@ function escapeHtml(unsafe: string): string {
     .replace(/'/g, '&#039;');
 }
 
+/**
+ * Builds localized HTML, plain text, and subject for a publication notification.
+ * Uses `dict` when provided, otherwise the locale's client dictionary, and falls
+ * back to the dictionary title when the supplied title is blank. Does not send email.
+ */
 export function renderNewsletterEmail(props: NewsletterEmailProps): { html: string; text: string; subject: string } {
   const {
     title,

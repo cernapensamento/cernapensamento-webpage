@@ -29,7 +29,10 @@ async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient>
 }
 
 /**
- * Fetch all available tags with localized names.
+ * Fetch tags ordered by slug, using the requested language (default `gl`), then
+ * the first available translation, then the slug as the display name.
+ * Query errors and caught exceptions return an empty array. Uses the supplied
+ * client or a request-bound server client.
  */
 export async function getAllTagsWithTranslations(
   options?: { lang?: string; client?: SupabaseClient }
@@ -77,7 +80,10 @@ export async function getAllTagsWithTranslations(
 }
 
 /**
- * Set (overwrite) the tags assigned to a publication.
+ * Replace a publication's tag links, or clear them when `tagIds` is empty.
+ * Deletion and insertion are separate operations: an insertion failure leaves
+ * previous links removed. Query errors and caught exceptions are returned as
+ * `success: false` with the error. Uses the supplied client or a server client.
  */
 export async function setPublicationTags(
   publicationId: string,
@@ -124,7 +130,9 @@ export async function setPublicationTags(
 }
 
 /**
- * Fetch publication IDs associated with one or more tag slugs.
+ * Fetch distinct publication IDs matching any supplied tag slug.
+ * Empty input, no matches, query errors, and caught exceptions return an empty
+ * array. Uses the supplied client or a request-bound server client.
  */
 export async function getPublicationIdsByTagSlugs(
   tagSlugs: string[],

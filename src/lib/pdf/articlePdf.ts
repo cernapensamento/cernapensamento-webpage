@@ -90,6 +90,10 @@ const MATH_REPLACEMENTS: Record<string, string> = {
   '\u00D7': 'x',
 };
 
+/**
+ * Replaces selected math symbols with text, strips characters outside the
+ * supported PDF font character set, and converts nonbreaking spaces to spaces.
+ */
 function safeText(value: string): string {
   let text = value;
 
@@ -104,6 +108,10 @@ function cleanInline(value: string): string {
   return value.replace(/\s+/g, ' ');
 }
 
+/**
+ * Returns new runs with adjacent matching styles merged and outer whitespace
+ * trimmed; empty runs are dropped without modifying the supplied runs.
+ */
 function mergeRuns(runs: Run[]): Run[] {
   const merged: Run[] = [];
 
@@ -159,6 +167,10 @@ function findTexAnnotation(node: ChildNode): string | null {
   return null;
 }
 
+/**
+ * Flattens inline HTML into styled text runs, preserving explicit line breaks.
+ * KaTeX spans use TeX annotations when available; inline images are skipped.
+ */
 function inlineRuns(nodes: ChildNode[], style: InlineStyle = {}): Run[] {
   const runs: Run[] = [];
 
@@ -215,6 +227,9 @@ function inlineRuns(nodes: ChildNode[], style: InlineStyle = {}): Run[] {
   return runs;
 }
 
+/**
+ * Appends nonempty quote paragraphs and list items to `out` in document order.
+ */
 function collectQuoteParagraphs(nodes: ChildNode[], out: Run[][]): void {
   for (const node of nodes) {
     if (node.type === 'text') {
@@ -301,6 +316,10 @@ function figureCaption(nodes: ChildNode[]): Run[] {
   return [];
 }
 
+/**
+ * Appends supported article blocks to `out` in document order, skipping navigation
+ * indexes and flattening other elements to inline text. Does not sanitize HTML.
+ */
 function blocksFromNodes(nodes: ChildNode[], out: Block[]): void {
   for (const node of nodes) {
     if (node.type === 'text') {
@@ -402,6 +421,10 @@ function blocksFromNodes(nodes: ChildNode[], out: Block[]): void {
   }
 }
 
+/**
+ * Parses article HTML with entity decoding into supported PDF blocks, omitting
+ * navigation indexes. This conversion does not sanitize the source HTML.
+ */
 function htmlToBlocks(html: string): Block[] {
   const document = parseDocument(html, { decodeEntities: true });
   const blocks: Block[] = [];
@@ -409,6 +432,10 @@ function htmlToBlocks(html: string): Block[] {
   return blocks;
 }
 
+/**
+ * Accepts parseable HTTP(S) URLs except localhost, 0.0.0.0, and the listed private,
+ * loopback, and link-local IPv4 prefixes. Does not resolve DNS or check redirects.
+ */
 function isFetchableUrl(value: string): boolean {
   try {
     const url = new URL(value);
@@ -1071,6 +1098,13 @@ class ArticlePdfBuilder {
   }
 }
 
+/**
+ * Typesets article HTML and prelocalized metadata into paginated A4 PDF bytes.
+ * Fetches supported cover/inline images, resolving root-relative URLs against
+ * `siteUrl`; failed, unsupported, or rejected image loads are omitted. Text outside
+ * the supported font character set is replaced or removed. PDF creation, parsing,
+ * typesetting, and serialization errors propagate to the caller.
+ */
 export async function buildArticlePdf(input: ArticlePdfInput): Promise<Uint8Array> {
   const builder = await ArticlePdfBuilder.create();
   builder.setSiteUrl(input.siteUrl);

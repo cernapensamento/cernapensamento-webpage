@@ -4,6 +4,10 @@ import { getDictionary } from '@/dictionaries';
 import { renderUnsubscribeHtml } from '@/lib/email/newsletter-template';
 import { verifyUnsubscribeToken, getSiteBaseUrl } from '@/lib/email/newsletter';
 
+/**
+ * Creates an unsubscribe client using the service role key when available,
+ * otherwise the public anon key. Missing/invalid configuration errors propagate.
+ */
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -11,7 +15,10 @@ function getSupabaseClient() {
 }
 
 /**
- * GET: Handles user clicking the unsubscribe link in the email footer.
+ * Unsubscribes immediately using email/token query parameters and returns HTML
+ * in Spanish only for `lang=es`, otherwise Galician. Returns 400 for invalid
+ * credentials, 200 when the RPC completes without error, or 500 for database
+ * failures and caught exceptions. Dictionary loading errors propagate.
  */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -74,7 +81,11 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST: Handles RFC 8058 One-Click automated unsubscribe requests from email clients (Gmail/Yahoo).
+ * Handles RFC 8058 one-click unsubscribe requests using email/token query
+ * parameters, falling back to form fields for missing values. Invalid form
+ * parsing is ignored. Returns JSON with 400 for invalid credentials, 200 when
+ * the unsubscribe RPC completes without error, or 500 for database failures
+ * and caught exceptions.
  */
 export async function POST(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;

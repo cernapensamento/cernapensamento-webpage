@@ -8,11 +8,10 @@ export interface FormattedDateProps extends React.TimeHTMLAttributes<HTMLTimeEle
 }
 
 /**
- * Universal, semantic and hydration-safe date display component.
- *
- * Guarantees consistent SSR and client rendering in Galician ('gl') and Spanish ('es')
- * without locale fallback issues in client browsers, suppresses hydration mismatch warnings,
- * and sets the standard machine-readable ISO `dateTime` attribute.
+ * Displays a localized UTC date in a semantic time element, or renders nothing
+ * when formatArticleDate returns an empty string. String inputs are copied to
+ * dateTime unchanged, Date inputs use ISO, and numeric inputs omit dateTime.
+ * Additional time-element props can override the generated attributes.
  */
 export default function FormattedDate({
   date,

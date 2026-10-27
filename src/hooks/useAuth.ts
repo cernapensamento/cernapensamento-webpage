@@ -20,6 +20,13 @@ const hasSupabaseConfig = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+/**
+ * Tracks the browser session and asynchronously loads its profile, including
+ * legacy `rol` and `nombre` aliases. Session loading can finish before the
+ * profile request completes. Auth changes and `profile_updated` refresh state;
+ * subscriptions are removed on unmount. Without Supabase configuration, returns
+ * null user/profile with loading false and makes no auth requests.
+ */
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile>(null);

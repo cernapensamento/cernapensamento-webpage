@@ -7,14 +7,17 @@ import {
 } from './constants';
 
 /**
- * Generates an unguessable 6-character alphanumeric slug for deduplication.
+ * Returns up to six base-36 characters from Math.random() for a filename suffix;
+ * the suffix is neither cryptographically secure nor guaranteed to be unique.
  */
 function generateShortSlug(): string {
   return Math.random().toString(36).substring(2, 8);
 }
 
 /**
- * Generates a structured storage path matching the canonical domain hierarchy.
+ * Builds a category-specific path with a millisecond timestamp and random suffix.
+ * Trims `userId`, using `general` when empty. Only inline image names use
+ * `originalFilename`, cleaning and truncating its stem to at most 24 characters.
  */
 export function buildStoragePath(
   category: StorageCategory,
@@ -52,13 +55,10 @@ export function buildStoragePath(
 }
 
 /**
- * Extracts the storage object path (e.g. "profiles/123/avatar.webp") from any
- * public Supabase URL (cloud, local Docker stack, or custom domain).
- * Returns null if the URL does not belong to the target storage bucket.
- */
-/**
- * Extracts both the bucket identifier and relative storage path from any
- * public Supabase URL (cloud, local Docker stack, or custom domain).
+ * Extracts a recognized bucket marker and its following path, stripping query
+ * and fragment suffixes. Also accepts canonical or legacy folder-relative paths,
+ * assigning them to `media`. Returns null for empty or unrecognized input.
+ * Matching is based on string markers; URL origin and ownership are not validated.
  */
 export function extractBucketAndPathFromUrl(
   url: string | null | undefined
@@ -92,9 +92,9 @@ export function extractBucketAndPathFromUrl(
 }
 
 /**
- * Extracts the storage object path (e.g. "profiles/123/avatar.webp") from any
- * public Supabase URL (cloud, local Docker stack, or custom domain).
- * Returns null if the URL does not belong to a recognized storage bucket.
+ * Returns only the path from a recognized bucket URL or supported relative path,
+ * stripping query and fragment suffixes. Returns null for unrecognized input;
+ * URL origin and ownership are not validated.
  */
 export function extractStoragePathFromUrl(url: string | null | undefined): string | null {
   const result = extractBucketAndPathFromUrl(url);
@@ -102,9 +102,9 @@ export function extractStoragePathFromUrl(url: string | null | undefined): strin
 }
 
 /**
- * Scans an HTML body (e.g. from TipTap editor) and extracts all unique relative
- * storage paths pointing to images in the application's storage bucket.
- * Supports cloud, local Docker stack, and custom domains.
+ * Extracts unique recognized storage paths from quoted img src attributes in HTML,
+ * including legacy URLs and supported relative paths. Bucket identities are discarded;
+ * empty input or no recognized images returns an empty array.
  */
 export function extractInlineStoragePaths(html: string | null | undefined): string[] {
   if (!html || typeof html !== 'string') return [];

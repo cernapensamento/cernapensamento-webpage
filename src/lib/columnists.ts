@@ -75,6 +75,9 @@ export function getColumnistBySlug(slug?: string | null): Columnist | undefined 
   return COLUMNISTS.find(c => c.slug === normalized || c.id === normalized);
 }
 
+/**
+ * Returns the shared columnist array; callers receive the original mutable array.
+ */
 export function getAllColumnists(): Columnist[] {
   return COLUMNISTS;
 }

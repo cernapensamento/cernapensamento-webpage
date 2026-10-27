@@ -29,6 +29,11 @@ async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient>
   return await createServerClient();
 }
 
+/**
+ * Normalizes a legacy biography into both locales, copying the other locale
+ * when a string value is missing. Plain strings are used for both locales;
+ * falsy or unsupported values return null.
+ */
 function parseBio(rawBio: unknown): LocalizedString | null {
   if (!rawBio) return null;
   if (typeof rawBio === 'object' && rawBio !== null) {
@@ -43,6 +48,10 @@ function parseBio(rawBio: unknown): LocalizedString | null {
   return null;
 }
 
+/**
+ * Maps a legacy profile to the canonical user shape, treating `escritor` as
+ * founder, `admin` as admin, and all other legacy roles as member.
+ */
 function mapLegacyProfile(row: Record<string, unknown>): UserRow {
   return {
     id: (row.id as string) || '',
@@ -56,7 +65,9 @@ function mapLegacyProfile(row: Record<string, unknown>): UserRow {
 }
 
 /**
- * Fetch a user profile by internal UUID.
+ * Fetch a user profile by internal UUID, falling back to legacy `perfiles`
+ * when the canonical table is missing. No match, query errors, and caught
+ * exceptions return null. Uses the supplied client or a server client.
  */
 export async function getUserById(
   id: string,
@@ -96,7 +107,9 @@ export async function getUserById(
 }
 
 /**
- * Fetch a user profile by public author slug.
+ * Fetch a user profile by public author slug, falling back to legacy `perfiles`
+ * when the canonical table is missing. No match, query errors, and caught
+ * exceptions return null. Uses the supplied client or a server client.
  */
 export async function getUserBySlug(
   slug: string,
@@ -136,7 +149,10 @@ export async function getUserBySlug(
 }
 
 /**
- * Fetch editorial columnists (Founders) for the homepage section.
+ * Fetch founders and admins with non-null slugs, ordered by full name.
+ * Falls back to legacy writer/admin/founder profiles when the canonical table
+ * is missing. Query errors and caught exceptions return an empty array.
+ * Uses the supplied client or a request-bound server client.
  */
 export async function getColumnists(
   client?: SupabaseClient
@@ -223,6 +239,10 @@ interface LegacyAuthorPublicationRow {
   } | null;
 }
 
+/**
+ * Sorts and returns the input array in place by descending publication count,
+ * breaking ties by full name using Galician collation.
+ */
 function sortPublishedAuthors(authors: PublishedAuthorItem[]): PublishedAuthorItem[] {
   return authors.sort((a, b) => {
     if (b.published_count !== a.published_count) {
@@ -232,6 +252,11 @@ function sortPublishedAuthors(authors: PublishedAuthorItem[]): PublishedAuthorIt
   });
 }
 
+/**
+ * Aggregates legacy published articles by author, retaining metadata from the
+ * newest article and sorting by publication count, then name.
+ * Query errors and caught exceptions return an empty array.
+ */
 async function getLegacyPublishedAuthors(
   supabase: SupabaseClient
 ): Promise<PublishedAuthorItem[]> {
@@ -299,6 +324,10 @@ async function getLegacyPublishedAuthors(
  * Fetch every author with at least one published publication, aggregating
  * lightweight publication metadata for the public author directory.
  * Heavy content fields are never selected.
+ * Includes publication counts, types, and the latest publication by creation time;
+ * sorts by descending count, then name using Galician collation. Falls back to
+ * legacy articles when the canonical table is missing. Query errors and caught
+ * exceptions return an empty array. Uses the supplied client or a server client.
  */
 export async function getPublishedAuthors(
   client?: SupabaseClient

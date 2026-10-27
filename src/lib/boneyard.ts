@@ -4,6 +4,10 @@ import { configureBoneyard } from 'boneyard-js/react';
 
 let configured = false;
 
+/**
+ * Applies the shared skeleton theme in the browser once configuration succeeds.
+ * Server calls do nothing; configuration failures are ignored and allow a later retry.
+ */
 export function setupBoneyard() {
   if (configured) return;
   if (typeof window !== 'undefined') {

@@ -5,6 +5,11 @@ import { updatePublicationStatus, getPublicationCards, formatDbError } from '@/l
 import type { PublicationStatus, PublicationType, PublicationCardItem } from '@/lib/db';
 import { USER_ROLES } from '@/lib/db/schema';
 
+/**
+ * Loads another page of published cards, defaulting to 10 items from the supplied
+ * zero-based offset. DAL failures normally produce a successful empty page;
+ * exceptions reaching this action return `success: false` with an empty list and error.
+ */
 export async function fetchMoreArticlesAction(options: {
   offset: number;
   limit?: number;

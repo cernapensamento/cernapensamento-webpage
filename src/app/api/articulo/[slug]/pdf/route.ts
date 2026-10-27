@@ -18,6 +18,10 @@ interface RouteContext {
  *
  * The PDF is generated server-side so the reader receives a real file with
  * selectable text instead of opening the browser print dialog.
+ * Uses Spanish only for `lang=es`, otherwise Galician, with content fallback to
+ * the other locale. Returns 404 when lookup produces no publication (including
+ * DAL failures) or 500 for caught generation errors; successful PDFs have
+ * attachment and shared-cache headers. Parameter resolution errors propagate.
  */
 export async function GET(request: Request, { params }: RouteContext) {
   const { slug } = await params;

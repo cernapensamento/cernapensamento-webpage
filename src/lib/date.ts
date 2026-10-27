@@ -31,9 +31,11 @@ export interface FormatArticleDateOptions {
 }
 
 /**
- * Formats an ISO date string or Date object into localized Galician or Spanish date.
- * Uses UTC methods to guarantee that timezone offsets never cause day-boundary
- * discrepancies between server rendering (SSR) and client hydration.
+ * Formats a date using UTC calendar fields and Galician or Spanish month names.
+ * Numeric inputs are milliseconds since the Unix epoch. Falsy inputs (including
+ * timestamp 0) and invalid dates return an empty string. Locale codes beginning
+ * with "es" (case-insensitive) use Spanish; all others use Galician.
+ * Defaults to the short format; `format: 'long'` uses full month names.
  *
  * Examples:
  * - formatArticleDate('2026-10-26T19:18:26Z', 'gl', { format: 'short' }) => "26 de out. de 2026"

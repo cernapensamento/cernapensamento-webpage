@@ -2,12 +2,17 @@ import crypto from 'crypto';
 
 const DEFAULT_SECRET = 'CERNA_WEBHOOK_SECRET_98765';
 
+/**
+ * Returns WEBHOOK_SECRET, falling back to the built-in shared secret when unset
+ * or empty. The same secret is used for webhook authorization and unsubscribe tokens.
+ */
 export function getNewsletterSecret(): string {
   return process.env.WEBHOOK_SECRET || DEFAULT_SECRET;
 }
 
 /**
  * Generates a stateless HMAC-SHA256 token for 1-click unsubscribe links.
+ * Signs the trimmed, lowercase email with the newsletter secret and returns hex.
  */
 export function createUnsubscribeToken(email: string): string {
   const secret = getNewsletterSecret();
@@ -19,7 +24,9 @@ export function createUnsubscribeToken(email: string): string {
 }
 
 /**
- * Timing-safe verification of the unsubscribe token.
+ * Verifies a token against the trimmed, lowercase email using a timing-safe
+ * comparison for equal-length token strings. Missing input, a mismatch, or a
+ * caught comparison error returns false; token generation errors propagate.
  */
 export function verifyUnsubscribeToken(email: string, token: string): boolean {
   if (!email || !token) return false;
@@ -37,7 +44,8 @@ export function verifyUnsubscribeToken(email: string, token: string): boolean {
 }
 
 /**
- * Canonical site URL with fallback.
+ * Returns NEXT_PUBLIC_SITE_URL with one trailing slash removed, falling back to
+ * https://cernapensamento.org when unset or whitespace-only.
  */
 export function getSiteBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL;
@@ -48,7 +56,9 @@ export function getSiteBaseUrl(): string {
 }
 
 /**
- * Builds the RFC 8058 compliant unsubscribe URL with HMAC token and locale.
+ * Builds the unsubscribe endpoint URL with normalized email, HMAC token, and
+ * locale query parameters for browser links and RFC 8058 headers.
+ * Uses the configured site URL and defaults to Galician; token errors propagate.
  */
 export function buildUnsubscribeUrl(email: string, lang: 'gl' | 'es' = 'gl'): string {
   const baseUrl = getSiteBaseUrl();

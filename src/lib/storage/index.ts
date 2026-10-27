@@ -34,9 +34,13 @@ export interface UploadStorageImageResult {
 }
 
 /**
- * Validates, optimizes (WebP compression & downscaling), and uploads an image
- * to Supabase Storage according to the category's preset.
- * Automatically cleans up any previously associated image if provided.
+ * Validates, compresses, and uploads an image using the category preset, then
+ * returns its public URL, path, and dimensions in pixels. WebP is preferred with
+ * a JPEG fallback. A recognized `previousUrl` is scheduled for deletion after
+ * upload; that deletion is not awaited and its rejection is caught.
+ * Rejects with `INVALID_FORMAT` for a nonempty unsupported MIME type or
+ * `FILE_TOO_LARGE:<rounded MiB limit>` when the input exceeds its size limit.
+ * Compression failures, upload errors, and uncaught storage SDK errors propagate.
  */
 export async function uploadStorageImage({
   supabase,
@@ -107,8 +111,9 @@ export async function uploadStorageImage({
 }
 
 /**
- * Deletes an array of images from storage by their public URLs or relative paths.
- * Automatically resolves the correct bucket (canonical 'media' or legacy buckets).
+ * Attempts deletion of recognized storage URLs or relative paths, deduplicated
+ * per bucket; relative paths use `media`. Empty and unrecognized inputs are skipped.
+ * Errors returned by storage are ignored; thrown SDK errors propagate.
  */
 export async function removeStorageImages(
   supabase: SupabaseClient,
@@ -138,8 +143,10 @@ export async function removeStorageImages(
 }
 
 /**
- * Removes all storage images associated with a publication (cover image + all inline figures)
- * across both Galician and Spanish content.
+ * Attempts deletion of the cover and unique recognized inline image paths from
+ * both Galician and Spanish HTML. Inline paths are resolved in `media`; the cover
+ * retains its recognized bucket. Returned storage errors are ignored, while
+ * thrown SDK errors propagate. Empty input performs no deletions.
  */
 export async function cleanupPublicationImages(
   supabase: SupabaseClient,

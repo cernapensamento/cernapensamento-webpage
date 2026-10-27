@@ -3,6 +3,12 @@ import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
 import type { UserRow, UserRole } from '@/lib/db/types';
 import { formatDbError } from '@/lib/db/formatDbError';
 
+/**
+ * Resolves the authenticated user, profile (including the legacy `rol` alias),
+ * and role, preferring the JWT role over the profile role and then `reader`.
+ * A profile query error can leave the user authenticated with a null profile;
+ * a missing session, auth error, or thrown exception returns all three as null.
+ */
 export async function getAuthenticatedUser() {
   try {
     const supabase = await createClient();

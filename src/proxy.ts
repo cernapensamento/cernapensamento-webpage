@@ -30,6 +30,10 @@ const globalMutationLimiter = redis ? new Ratelimit({
   prefix: '@upstash/ratelimit/global',
 }) : null;
 
+/**
+ * Selects a supported locale from NEXT_LOCALE, then Accept-Language, falling
+ * back to the default locale when negotiation fails or has no supported match.
+ */
 function getLocale(request: NextRequest): string {
   const negotiatorHeaders: Record<string, string> = {};
   request.headers.forEach((value, key) => (negotiatorHeaders[key] = value));
@@ -48,6 +52,14 @@ function getLocale(request: NextRequest): string {
   }
 }
 
+/**
+ * Applies locale redirects/headers, optional Redis rate limits, and session
+ * redirects for dashboard/login routes. Successful session refreshes update cookies.
+ * Returns 429 for exceeded limits; Redis failures, auth exceptions, and missing
+ * auth configuration allow processing to continue. Unexpected outer errors pass
+ * the request through with an X-Proxy-Error response header. Discovery text/XML
+ * endpoints bypass these checks.
+ */
 export async function proxy(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname;

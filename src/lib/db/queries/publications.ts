@@ -66,6 +66,10 @@ async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient>
   return await createServerClient();
 }
 
+/**
+ * Rewrites the former Supabase image hostname to the current one, or returns
+ * null for an empty URL.
+ */
 function cleanImageUrl(url?: string | null): string | null {
   if (!url) return null;
   return url.replace('pzupxjsprmuudmvhzpxu.supabase.co', 'srbrnpbtfmilohkicpbb.supabase.co');
@@ -107,8 +111,13 @@ function normalizeTags(
 }
 
 /**
- * Fetch a single publication with full TipTap content, author details, and tags.
- * Used exclusively on the reader page (/articulo/[slug]).
+ * Fetch a publication by slug or UUID with full content, author details, and tags.
+ * An unmatched slug ending in six alphanumeric characters after a hyphen can
+ * resolve to the first slug sharing that suffix; the result keeps its current slug.
+ * Falls back to legacy articles when the canonical table is missing (without tags).
+ * Returns null for no match, query failure, or caught exception. Visibility depends
+ * on the supplied client or request-bound server client; no status filter is added.
+ * `lang` selects tag names, defaulting to `gl`, then the first translation or slug.
  */
 export async function getPublicationBySlug(
   slugOrId: string,
@@ -289,6 +298,16 @@ export interface GetPublicationCardsOptions {
   lang?: string;
 }
 
+/**
+ * Fetch lightweight cards without full content, newest creation time first.
+ * Defaults to 20 published items at zero-based offset 0. Filters can restrict type,
+ * author, pin state, tags, and titles/subtitles in either language (ILIKE patterns).
+ * `tagSlug` takes precedence over `tagSlugs`; multiple tags match any supplied slug.
+ * `lang` selects tag names, defaulting to `gl`, then the first translation or slug.
+ * A missing canonical table triggers legacy lookup, which omits tags and does not
+ * apply tag filtering. No matches, query errors, and caught exceptions return [].
+ * Uses the supplied client or a request-bound server client.
+ */
 export async function getPublicationCards(
   options?: GetPublicationCardsOptions
 ): Promise<PublicationCardItem[]> {

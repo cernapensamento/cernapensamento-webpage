@@ -33,9 +33,12 @@ function calculateTargetDimensions(
 }
 
 /**
- * Client-side image compressor using HTML5 Canvas.
- * Resizes large photos and encodes them into optimized WebP (or JPEG fallback)
- * before upload, drastically reducing storage bandwidth and load times.
+ * Resizes an image within the category's pixel bounds without enlarging it and
+ * encodes WebP, falling back to JPEG when WebP output is unavailable.
+ * Requires browser image, object URL, and canvas APIs. Returns the encoded blob,
+ * format/extension, and output dimensions in pixels. Rejects failed image loads,
+ * unavailable canvas contexts, and empty encoding results; caught browser API
+ * errors propagate as promise rejections.
  */
 export async function compressImageClient(
   file: File | Blob,

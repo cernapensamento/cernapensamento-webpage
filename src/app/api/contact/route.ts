@@ -7,6 +7,9 @@ const MAX_SUBJECT_LENGTH = 200;
 const MAX_MESSAGE_LENGTH = 10000;
 const MAX_FILE_SIZE = 3.5 * 1024 * 1024; // 3.5MB
 
+/**
+ * Escapes ampersands, angle brackets, and quotes in contact fields for email HTML.
+ */
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -16,6 +19,15 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+/**
+ * Validates multipart contact fields and sends the message through Resend.
+ * Requires email, fullName, and message; subject defaults when blank. An optional
+ * PDF must have the PDF MIME type and header and be at most 3.5 MiB.
+ * With mail configuration present, a populated website honeypot returns success
+ * without sending. Returns JSON: 200 on success, 400 for invalid fields/files,
+ * 502 for a returned mail provider error, or 500 for missing configuration or
+ * caught exceptions.
+ */
 export async function POST(request: Request) {
   try {
     const resendApiKey = process.env.RESEND_API_KEY;

@@ -29,7 +29,9 @@ async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient>
 }
 
 /**
- * Fetch all comments for a publication, ordered from earliest to latest.
+ * Fetch all comments for a publication, ordered by update time from earliest to latest.
+ * Missing authors receive a placeholder profile. Query errors and caught exceptions
+ * return an empty array. Uses the supplied client or a request-bound server client.
  */
 export async function getCommentsForPublication(
   publicationId: string,

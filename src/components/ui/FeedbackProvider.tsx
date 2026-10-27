@@ -29,6 +29,11 @@ export interface FeedbackContextValue {
 
 const FeedbackContext = createContext<FeedbackContextValue | null>(null);
 
+/**
+ * Provides shared toast notifications and promise-based confirmation/prompt dialogs.
+ * Maintains one active confirmation and one active prompt; another request of the
+ * same kind replaces the active dialog without settling its previous promise.
+ */
 export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [confirmState, setConfirmState] = useState<{
@@ -126,6 +131,10 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Returns the shared toast and dialog APIs.
+ * @throws {Error} If called outside a FeedbackProvider.
+ */
 export function useFeedback(): FeedbackContextValue {
   const ctx = useContext(FeedbackContext);
   if (!ctx) {
@@ -134,16 +143,30 @@ export function useFeedback(): FeedbackContextValue {
   return ctx;
 }
 
+/**
+ * Returns toast methods that create notifications and return dismissal IDs.
+ * Durations are in milliseconds (default 4500); nonpositive values disable the timer.
+ * @throws {Error} If called outside a FeedbackProvider.
+ */
 export function useToast(): ToastApi {
   const { toast } = useFeedback();
   return toast;
 }
 
+/**
+ * Returns a dialog function resolving true on confirmation or false on cancellation.
+ * @throws {Error} If called outside a FeedbackProvider.
+ */
 export function useConfirm(): (options: ConfirmDialogOptions) => Promise<boolean> {
   const { confirm } = useFeedback();
   return confirm;
 }
 
+/**
+ * Returns a dialog function resolving the entered value after optional validation,
+ * or null on cancellation. Input is returned without trimming.
+ * @throws {Error} If called outside a FeedbackProvider.
+ */
 export function usePrompt(): (options: PromptDialogOptions) => Promise<string | null> {
   const { prompt } = useFeedback();
   return prompt;

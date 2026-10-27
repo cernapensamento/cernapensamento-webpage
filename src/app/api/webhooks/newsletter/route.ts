@@ -11,6 +11,15 @@ interface SubscriberRecord {
   full_name?: string | null;
 }
 
+/**
+ * Authorizes a publication webhook with a Bearer secret, claims an unsent record
+ * for a published event, and sends subscriber emails in batches of at most 100.
+ * The claim writes newsletter_sent_at before sending and is retained on failures.
+ * Returns JSON with 401 for failed authorization, 400 for a missing record ID,
+ * 500 for setup/database failures or outer exceptions, and 200 for ignored events
+ * or completed batch attempts. Individual batch failures remain in the 200 results;
+ * `success: true` does not mean every email was sent.
+ */
 export async function POST(request: NextRequest) {
   try {
     const WEBHOOK_SECRET = getNewsletterSecret();
