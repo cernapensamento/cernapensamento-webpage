@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { fontVariables } from "@/lib/fonts";
 import "../globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { FeedbackProvider } from "@/components/ui/FeedbackProvider";
 import SiteFooter from '@/components/layout/SiteFooter';
 
 import { SITE_NAME } from "@/lib/constants";
@@ -37,13 +38,15 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col font-sans bg-parchment text-charcoal">
         <ThemeProvider>
-          <HeaderVisibilityWrapper>
-            <PublicNavBar />
-          </HeaderVisibilityWrapper>
-          <main className="flex-grow flex flex-col relative">
-            {children}
-          </main>
-          <SiteFooter />
+          <FeedbackProvider>
+            <HeaderVisibilityWrapper>
+              <PublicNavBar />
+            </HeaderVisibilityWrapper>
+            <main className="flex-grow flex flex-col relative">
+              {children}
+            </main>
+            <SiteFooter />
+          </FeedbackProvider>
         </ThemeProvider>
       </body>
     </html>
