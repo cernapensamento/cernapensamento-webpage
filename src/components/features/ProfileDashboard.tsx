@@ -275,9 +275,12 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
               </span>
             </button>
             <form action={handleSignOut} className="w-full sm:w-auto">
-              <button type="submit" className="flex items-center justify-center gap-3 py-3 px-4 bg-transparent border border-lines/50 text-charcoal/50 hover:bg-red-50/50 hover:text-red-500 hover:border-red-500/20 transition-all duration-300 group w-full cursor-pointer shrink-0 rounded-sm">
+              <button
+                type="submit"
+                className="flex items-center justify-center gap-3 py-3 px-5 bg-transparent border border-lines/60 text-charcoal/60 hover:border-red-500/40 dark:hover:border-red-400/30 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 dark:hover:bg-red-500/15 transition-all duration-300 group w-full cursor-pointer shrink-0 rounded-sm font-medium"
+              >
                 <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:-translate-x-1" data-icon="logout">logout</span>
-                <span className="font-sans text-xs uppercase tracking-[0.15em] transition-colors duration-300">{dashDict.logout}</span>
+                <span className="font-sans text-xs uppercase tracking-[0.18em] transition-colors duration-300">{dashDict.logout}</span>
               </button>
             </form>
           </div>
