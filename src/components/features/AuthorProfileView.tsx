@@ -7,6 +7,7 @@ import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { Columnist } from '@/lib/columnists';
 import type { LocalizedString, TagItem } from '@/lib/db/types';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import FormattedDate from '@/components/ui/FormattedDate';
 
 export interface ArticleData {
   id: string | number;
@@ -107,29 +108,6 @@ interface AuthorProfileViewProps {
     };
     [key: string]: unknown;
   };
-}
-
-const GL_MONTHS = [
-  'xaneiro', 'febreiro', 'marzo', 'abril', 'maio', 'xuño',
-  'xullo', 'agosto', 'setembro', 'outubro', 'novembro', 'decembro'
-];
-
-function formatDate(dateStr?: string | null, lang: string = 'gl'): string {
-  if (!dateStr) return '';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '';
-    if (lang === 'gl') {
-      return `${d.getDate()} de ${GL_MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
-    }
-    return d.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  } catch {
-    return '';
-  }
 }
 
 export default function AuthorProfileView({
@@ -505,11 +483,12 @@ export default function AuthorProfileView({
                               <span className="px-2.5 py-1 text-[11px] font-semibold text-gold bg-gold/10 rounded uppercase tracking-widest">
                                 {getTypeLabel(rawType)}
                               </span>
-                              {dateStr && (
-                                <time dateTime={dateStr} className="text-xs text-charcoal/60 font-sans">
-                                  {formatDate(dateStr, lang)}
-                                </time>
-                              )}
+                              <FormattedDate
+                                date={dateStr}
+                                lang={lang}
+                                format="long"
+                                className="text-xs text-charcoal/60 font-sans"
+                              />
                             </div>
 
                             <Link href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}>
@@ -643,11 +622,12 @@ export default function AuthorProfileView({
 
                           {/* Time of publication in card footer */}
                           <div className="mt-auto pt-4 border-t border-lines/60 flex items-center justify-between text-xs text-charcoal/60">
-                            {dateStr && (
-                              <time dateTime={dateStr} className="font-sans">
-                                {formatDate(dateStr, lang)}
-                              </time>
-                            )}
+                            <FormattedDate
+                              date={dateStr}
+                              lang={lang}
+                              format="long"
+                              className="font-sans"
+                            />
                             <Link
                               href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
                               className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-charcoal/60 group-hover:text-gold transition-colors font-medium ml-auto group/read"
