@@ -10,6 +10,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLocale } from '@/hooks/useLocale';
 import { getDictionaryClient } from '@/dictionaries/client';
 import { SITE_NAME } from '@/lib/constants';
+import { USER_ROLES } from '@/lib/db/schema';
+import { handleSignOut } from '@/actions/auth';
 
 interface DropdownItem {
   title: string;
@@ -25,6 +27,8 @@ export default function PublicNavBar() {
 
   // Desktop active dropdown ('publicacions' | 'asociacion' | 'autores' | null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  // User profile popup menu state
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   // Mobile hamburger menu state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Mobile accordion state
@@ -35,20 +39,35 @@ export default function PublicNavBar() {
   if (prevPathname !== pathname) {
     setPrevPathname(pathname);
     setActiveDropdown(null);
+    setUserMenuOpen(false);
     setMobileMenuOpen(false);
   }
 
   const navRef = useRef<HTMLElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close desktop dropdown on outside click
+  // Close desktop dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setActiveDropdown(null);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setActiveDropdown(null);
+        setUserMenuOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   // Prevent scroll when mobile menu is open
@@ -421,19 +440,114 @@ export default function PublicNavBar() {
           {/* Theme Toggle */}
           <ThemeToggle />
 
-          {/* User desk / Login */}
+          {/* User desk dropdown / Login */}
           {!loading && user ? (
-            <Link
-              href={`/${lang}/escritorio`}
-              className="w-10 h-10 border border-lines bg-parchment hover:bg-lines flex items-center justify-center transition-colors relative overflow-hidden"
-              title={dict.nav?.escritorio}
-            >
-              {userProfile?.avatar_url ? (
-                <Image className="object-cover" alt="Perfil" src={userProfile.avatar_url} fill sizes="40px" />
-              ) : (
-                <span className="material-symbols-outlined text-[20px]">person</span>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((prev) => !prev)}
+                className="w-10 h-10 border border-lines bg-parchment hover:bg-lines flex items-center justify-center transition-colors relative overflow-hidden cursor-pointer"
+                title={dict.nav?.userMenu?.profile || dict.nav?.escritorio}
+                aria-expanded={userMenuOpen}
+                aria-haspopup="true"
+                aria-label={dict.nav?.userMenu?.profile || 'Menú de usuario'}
+              >
+                {userProfile?.avatar_url ? (
+                  <Image className="object-cover" alt="Perfil" src={userProfile.avatar_url} fill sizes="40px" />
+                ) : (
+                  <span className="material-symbols-outlined text-[20px]">person</span>
+                )}
+              </button>
+
+              {/* User Dropdown Menu */}
+              {userMenuOpen && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-72 bg-surface border border-lines shadow-2xl z-50 flex flex-col py-2 animate-dropdown transition-all duration-200"
+                  role="menu"
+                >
+                  {/* User identity header */}
+                  <div className="px-4 py-3 border-b border-lines/80 bg-parchment/40">
+                    <p className="text-[10px] font-sans text-charcoal/50 uppercase tracking-[0.2em] mb-1">
+                      {userProfile?.role === USER_ROLES.ADMIN
+                        ? dict.dashboard?.admin || 'ADMIN'
+                        : userProfile?.role === USER_ROLES.FOUNDER
+                        ? dict.dashboard?.founder || dict.dashboard?.writer || 'FUNDADOR'
+                        : userProfile?.role === USER_ROLES.MEMBER
+                        ? dict.dashboard?.member || 'MEMBRO'
+                        : userProfile?.role === USER_ROLES.GUEST
+                        ? dict.dashboard?.guest || 'CONVIDADO'
+                        : dict.dashboard?.reader || 'LECTOR'}
+                    </p>
+                    <p className="text-sm font-serif font-bold text-charcoal truncate">
+                      {user.email}
+                    </p>
+                  </div>
+
+                  {/* Actions list */}
+                  <div className="py-2 flex flex-col gap-0.5">
+                    {/* Perfil */}
+                    <Link
+                      href={`/${lang}/escritorio/perfil`}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="group px-4 py-2.5 text-sm font-sans flex items-center justify-between text-charcoal hover:bg-lines/50 hover:text-gold transition-all duration-200"
+                      role="menuitem"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-[18px] text-charcoal/60 group-hover:text-gold group-hover:scale-110 transition-all duration-200">badge</span>
+                        <span className="font-medium group-hover:translate-x-0.5 transition-transform duration-200">{dict.nav?.userMenu?.profile || dict.dashboard?.profileTitle || 'O teu Perfil'}</span>
+                      </div>
+                      <span className="material-symbols-outlined text-[14px] text-charcoal/30 group-hover:text-gold group-hover:translate-x-1 transition-all duration-200">arrow_forward</span>
+                    </Link>
+
+                    {/* As miñas publicacións */}
+                    {userProfile?.role !== USER_ROLES.READER && (
+                      <Link
+                        href={`/${lang}/escritorio`}
+                        onClick={() => setUserMenuOpen(false)}
+                        className="group px-4 py-2.5 text-sm font-sans flex items-center justify-between text-charcoal hover:bg-lines/50 hover:text-gold transition-all duration-200"
+                        role="menuitem"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="material-symbols-outlined text-[18px] text-charcoal/60 group-hover:text-gold group-hover:scale-110 transition-all duration-200">article</span>
+                          <span className="font-medium group-hover:translate-x-0.5 transition-transform duration-200">{dict.nav?.userMenu?.myArticles || dict.dashboard?.myArticles || 'As miñas Publicacións'}</span>
+                        </div>
+                        <span className="material-symbols-outlined text-[14px] text-charcoal/30 group-hover:text-gold group-hover:translate-x-1 transition-all duration-200">arrow_forward</span>
+                      </Link>
+                    )}
+
+                    {/* Escribir novo artigo */}
+                    {userProfile?.role !== USER_ROLES.READER && (
+                      <Link
+                        href={`/${lang}/escritorio/nuevo`}
+                        onClick={() => setUserMenuOpen(false)}
+                        className="group px-4 py-2.5 text-sm font-sans flex items-center justify-between text-gold hover:bg-gold/10 transition-all duration-200 font-semibold"
+                        role="menuitem"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="material-symbols-outlined text-[18px] text-gold group-hover:scale-110 group-hover:rotate-6 transition-all duration-200">edit_square</span>
+                          <span className="group-hover:translate-x-0.5 transition-transform duration-200">{dict.nav?.userMenu?.newArticle || dict.dashboard?.newArticle || 'Novo Artigo'}</span>
+                        </div>
+                        <span className="material-symbols-outlined text-[14px] text-gold group-hover:translate-x-1 transition-all duration-200">add</span>
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Divider and Logout */}
+                  <div className="border-t border-lines/80 pt-1.5 px-2">
+                    <form action={handleSignOut} className="w-full">
+                      <button
+                        type="submit"
+                        className="group w-full text-left px-3 py-2 text-sm font-sans flex items-center gap-3 text-charcoal/70 hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 cursor-pointer rounded-sm"
+                        role="menuitem"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-charcoal/50 group-hover:text-red-500 group-hover:-translate-x-0.5 transition-all duration-200">logout</span>
+                        <span className="font-medium">{dict.nav?.userMenu?.logout || dict.nav?.logout || 'Pechar Sesión'}</span>
+                      </button>
+                    </form>
+                  </div>
+                </div>
               )}
-            </Link>
+            </div>
           ) : !loading && (
             <Link
               href={`/${lang}/login`}
@@ -634,16 +748,64 @@ export default function PublicNavBar() {
 
             {/* 6. Escritorio / Perfil */}
             <div className="border-b border-lines pb-4">
-              <Link
-                href={user ? `/${lang}/escritorio` : `/${lang}/login`}
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-xl font-serif font-bold text-charcoal hover:text-gold py-2 flex items-center justify-between"
-              >
-                <span>{user ? dict.nav?.escritorio : dict.nav?.login}</span>
-                <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
-                  arrow_forward
-                </span>
-              </Link>
+              {user ? (
+                <div className="flex flex-col gap-2 pt-2">
+                  <div className="text-xs font-sans text-charcoal/50 uppercase tracking-widest pb-1">
+                    {dict.nav?.userMenu?.profile || 'A túa Conta'} • {user.email}
+                  </div>
+                  <Link
+                    href={`/${lang}/escritorio/perfil`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-lg font-serif font-bold text-charcoal hover:text-gold py-1 flex items-center justify-between"
+                  >
+                    <span>{dict.nav?.userMenu?.profile || 'O teu Perfil'}</span>
+                    <span className="material-symbols-outlined text-sm">badge</span>
+                  </Link>
+
+                  {userProfile?.role !== USER_ROLES.READER && (
+                    <Link
+                      href={`/${lang}/escritorio`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-lg font-serif font-bold text-charcoal hover:text-gold py-1 flex items-center justify-between"
+                    >
+                      <span>{dict.nav?.userMenu?.myArticles || 'As miñas Publicacións'}</span>
+                      <span className="material-symbols-outlined text-sm">article</span>
+                    </Link>
+                  )}
+
+                  {userProfile?.role !== USER_ROLES.READER && (
+                    <Link
+                      href={`/${lang}/escritorio/nuevo`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-lg font-serif font-bold text-gold py-1 flex items-center justify-between"
+                    >
+                      <span>{dict.nav?.userMenu?.newArticle || 'Novo Artigo'}</span>
+                      <span className="material-symbols-outlined text-sm">edit_square</span>
+                    </Link>
+                  )}
+
+                  <form action={handleSignOut} className="pt-2">
+                    <button
+                      type="submit"
+                      className="w-full text-left py-2 text-sm font-sans flex items-center justify-between text-charcoal/60 hover:text-red-500 cursor-pointer"
+                    >
+                      <span>{dict.nav?.userMenu?.logout || 'Pechar Sesión'}</span>
+                      <span className="material-symbols-outlined text-sm">logout</span>
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <Link
+                  href={`/${lang}/login`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-xl font-serif font-bold text-charcoal hover:text-gold py-2 flex items-center justify-between"
+                >
+                  <span>{dict.nav?.login}</span>
+                  <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
+                    arrow_forward
+                  </span>
+                </Link>
+              )}
             </div>
 
           </div>
