@@ -222,6 +222,23 @@ input[type="submit"]:disabled {
   animation: smoothFadeIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+@keyframes dropdownFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-dropdown {
+  animation: dropdownFadeSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+  will-change: opacity, transform;
+}
+
 .reveal-init {
   opacity: 0;
   transform: translateY(22px);
