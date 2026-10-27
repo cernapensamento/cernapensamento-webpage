@@ -374,6 +374,7 @@ input[type="submit"]:disabled {
 }
 
 .article-content blockquote p {
+  line-height: inherit;
   margin-bottom: 0.75rem;
 }
 
@@ -531,14 +532,27 @@ input[type="submit"]:disabled {
   color: var(--color-charcoal);
 }
 
-.article-content .katex-display,
 .article-content .katex-display-container {
-  margin: 2rem 0;
+  margin: 1.25rem 0;
   text-align: center;
   overflow-x: auto;
   overflow-y: hidden;
   max-width: 100%;
-  padding: 0.5rem 0;
+  padding: 0.25rem 0;
+}
+
+.article-content .katex-display {
+  margin: 1.25rem 0;
+  text-align: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+
+.article-content .katex-display-container .katex-display,
+.article-content div[data-type="block-math"] .katex-display {
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .article-content span[data-type="inline-math"] {
@@ -549,8 +563,8 @@ input[type="submit"]:disabled {
 
 .article-content div[data-type="block-math"] {
   background-color: var(--dynamic-surface);
-  padding: 1.25rem;
-  margin: 2rem 0;
+  padding: 0.75rem 1rem;
+  margin: 1.25rem 0;
   border-radius: 0.375rem;
   text-align: center;
 }

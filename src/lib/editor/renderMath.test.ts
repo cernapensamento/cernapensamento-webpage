@@ -12,7 +12,7 @@ describe('renderMathInHtml', () => {
   it('converts TipTap block-math nodes to display container with centered KaTeX', () => {
     const input = '<div data-type="block-math" data-latex="\\int_0^1 x dx">$$\\int_0^1 x dx$$</div>';
     const output = renderMathInHtml(input);
-    expect(output).toContain('class="katex-display-container my-6 text-center"');
+    expect(output).toContain('class="katex-display-container my-4 text-center"');
     expect(output).toContain('class="katex-display"');
   });
 
