@@ -73,7 +73,7 @@ export default function SideMenu() {
         <div className="py-2 flex justify-between items-center px-8 sm:px-12 border-b border-lines shrink-0">
           <Link href={`/${lang}`} className="inline-block hover:opacity-80 transition-opacity" onClick={() => setIsOpen(false)}>
             <Image 
-              src="/images/logo/cernawhite.png" 
+              src="/images/logo/cernawhite.webp" 
               alt={SITE_NAME} 
               width={300} 
               height={75} 
@@ -81,7 +81,7 @@ export default function SideMenu() {
               priority
             />
             <Image 
-              src="/images/logo/cernablack.png" 
+              src="/images/logo/cernablack.webp" 
               alt={SITE_NAME} 
               width={300} 
               height={75} 

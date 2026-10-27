@@ -34,14 +34,14 @@ export default async function SiteFooter() {
             <div className="sm:col-span-2 lg:col-span-5 flex flex-col gap-5 sm:gap-6">
               <Link href={`/${lang}`} className="inline-block hover:opacity-80 transition-opacity">
                 <Image
-                  src="/images/logo/cernawhite.png"
+                  src="/images/logo/cernawhite.webp"
                   alt={SITE_NAME}
                   width={430}
                   height={159}
                   className="h-20 sm:h-24 md:h-28 w-auto object-contain block dark:hidden"
                 />
                 <Image
-                  src="/images/logo/cernablack.png"
+                  src="/images/logo/cernablack.webp"
                   alt={SITE_NAME}
                   width={430}
                   height={159}
