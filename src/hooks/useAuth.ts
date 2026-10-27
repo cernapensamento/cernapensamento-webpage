@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
 import type { UserRole } from '@/lib/db/types';
+import { formatDbError } from '@/lib/db/formatDbError';
 
 export type Profile = {
   role: UserRole;
@@ -39,7 +40,7 @@ export function useAuth() {
           });
         }
       } catch (err) {
-        console.error('Error fetching user profile:', err);
+        console.warn('[useAuth] Failed to fetch user profile:', formatDbError(err));
       }
     }
 

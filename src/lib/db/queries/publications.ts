@@ -13,6 +13,7 @@ import {
   PUBLICATION_STATUSES,
 } from '../schema';
 import { getPublicationIdsByTagSlugs } from './tags';
+import { formatDbError } from '../formatDbError';
 import type {
 
   PublicationRow,
@@ -113,102 +114,112 @@ export async function getPublicationBySlug(
   slugOrId: string,
   options?: { client?: SupabaseClient; lang?: string }
 ): Promise<PublicationDetail | null> {
-  const supabase = await resolveClient(options?.client);
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slugOrId);
-  const columnKey = isUUID ? PUBLICATION_COLS.ID : PUBLICATION_COLS.SLUG;
+  try {
+    const supabase = await resolveClient(options?.client);
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slugOrId);
+    const columnKey = isUUID ? PUBLICATION_COLS.ID : PUBLICATION_COLS.SLUG;
 
-  const { data, error } = await supabase
-    .from(DB_TABLES.PUBLICATIONS)
-    .select(`
-      *,
-      author:${DB_TABLES.USERS} (
-        ${USER_COLS.ID},
-        ${USER_COLS.FULL_NAME},
-        ${USER_COLS.SLUG},
-        ${USER_COLS.AVATAR_URL},
-        ${USER_COLS.BIO}
-      ),
-      publication_tags (
-        tag:${DB_TABLES.TAGS} (
-          id, slug,
-          translations:${DB_TABLES.TAG_TRANSLATIONS} (lang, name)
+    const { data, error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select(`
+        *,
+        author:${DB_TABLES.USERS} (
+          ${USER_COLS.ID},
+          ${USER_COLS.FULL_NAME},
+          ${USER_COLS.SLUG},
+          ${USER_COLS.AVATAR_URL},
+          ${USER_COLS.BIO}
+        ),
+        publication_tags (
+          tag:${DB_TABLES.TAGS} (
+            id, slug,
+            translations:${DB_TABLES.TAG_TRANSLATIONS} (lang, name)
+          )
         )
-      )
-    `)
-    .eq(columnKey, slugOrId)
-    .single();
+      `)
+      .eq(columnKey, slugOrId)
+      .single();
 
-  if (error || !data) {
-    if (error?.code === 'PGRST205') {
-      // Schema fallback to articulos table
-      const legacyCol = isUUID ? 'id' : 'slug';
-      const { data: legacyData, error: legacyError } = await supabase
-        .from('articulos')
-        .select(`
-          id, slug, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, contenido_gl, contenido_es,
-          imagen_url, tipo, estado, fijado, idioma_original, creado_en, actualizado_en, autor_id,
-          perfiles:autor_id (id, nombre, slug, avatar_url, biografia)
-        `)
-        .eq(legacyCol, slugOrId)
-        .single();
+    if (error || !data) {
+      if (error?.code === 'PGRST205') {
+        // Schema fallback to articulos table
+        const legacyCol = isUUID ? 'id' : 'slug';
+        const { data: legacyData, error: legacyError } = await supabase
+          .from('articulos')
+          .select(`
+            id, slug, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, contenido_gl, contenido_es,
+            imagen_url, tipo, estado, fijado, idioma_original, creado_en, actualizado_en, autor_id,
+            perfiles:autor_id (id, nombre, slug, avatar_url, biografia)
+          `)
+          .eq(legacyCol, slugOrId)
+          .single();
 
-      if (legacyError || !legacyData) {
-        return null;
+        if (legacyError || !legacyData) {
+          if (legacyError && legacyError.code !== 'PGRST116') {
+            console.warn('[DAL:publications] Legacy query error:', formatDbError(legacyError));
+          }
+          return null;
+        }
+
+        const pAuthor = (legacyData.perfiles as unknown as { id?: string; nombre?: string; slug?: string; avatar_url?: string; biografia?: string }) || {};
+
+        return {
+          id: legacyData.id,
+          slug: legacyData.slug,
+          title: { gl: legacyData.titulo_gl || '', es: legacyData.titulo_es || '' },
+          subtitle: legacyData.subtitulo_gl || legacyData.subtitulo_es ? { gl: legacyData.subtitulo_gl || '', es: legacyData.subtitulo_es || '' } : null,
+          content: { gl: legacyData.contenido_gl || '', es: legacyData.contenido_es || '' },
+          cover_image_url: cleanImageUrl(legacyData.imagen_url),
+          type: (legacyData.tipo === 'ensaio' ? 'essay' : legacyData.tipo === 'noticia' ? 'news' : 'article') as PublicationType,
+          status: (legacyData.estado === 'publicado' ? 'published' : 'draft') as PublicationStatus,
+          original_language: legacyData.idioma_original || 'gl',
+          is_pinned: legacyData.fijado ?? false,
+          created_at: legacyData.creado_en,
+          updated_at: legacyData.actualizado_en,
+          author: {
+            id: pAuthor.id || legacyData.autor_id,
+            full_name: pAuthor.nombre || 'Anónimo',
+            slug: pAuthor.slug || null,
+            avatar_url: pAuthor.avatar_url || null,
+            bio: pAuthor.biografia ? { gl: pAuthor.biografia, es: pAuthor.biografia } : null,
+          },
+          tags: [],
+        };
       }
-
-      const pAuthor = (legacyData.perfiles as unknown as { id?: string; nombre?: string; slug?: string; avatar_url?: string; biografia?: string }) || {};
-
-
-      return {
-        id: legacyData.id,
-        slug: legacyData.slug,
-        title: { gl: legacyData.titulo_gl || '', es: legacyData.titulo_es || '' },
-        subtitle: legacyData.subtitulo_gl || legacyData.subtitulo_es ? { gl: legacyData.subtitulo_gl || '', es: legacyData.subtitulo_es || '' } : null,
-        content: { gl: legacyData.contenido_gl || '', es: legacyData.contenido_es || '' },
-        cover_image_url: cleanImageUrl(legacyData.imagen_url),
-        type: (legacyData.tipo === 'ensaio' ? 'essay' : legacyData.tipo === 'noticia' ? 'news' : 'article') as PublicationType,
-        status: (legacyData.estado === 'publicado' ? 'published' : 'draft') as PublicationStatus,
-        original_language: legacyData.idioma_original || 'gl',
-        is_pinned: legacyData.fijado ?? false,
-        created_at: legacyData.creado_en,
-        updated_at: legacyData.actualizado_en,
-        author: {
-          id: pAuthor.id || legacyData.autor_id,
-          full_name: pAuthor.nombre || 'Anónimo',
-          slug: pAuthor.slug || null,
-          avatar_url: pAuthor.avatar_url || null,
-          bio: pAuthor.biografia ? { gl: pAuthor.biografia, es: pAuthor.biografia } : null,
-        },
-        tags: [],
-      };
+      if (error && error.code !== 'PGRST116') {
+        console.warn(`[DAL:publications] Failed to fetch publication by ${columnKey} "${slugOrId}":`, formatDbError(error));
+      }
+      return null;
     }
+
+    const normalizedAuthor = data.author || {
+      id: data.author_id,
+      full_name: 'Anónimo',
+      slug: null,
+      avatar_url: null,
+      bio: null,
+    };
+
+    return {
+      id: data.id,
+      slug: data.slug,
+      title: data.title,
+      subtitle: data.subtitle,
+      content: data.content,
+      cover_image_url: data.cover_image_url,
+      type: data.type,
+      status: data.status,
+      original_language: data.original_language,
+      is_pinned: data.is_pinned ?? false,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      author: normalizedAuthor,
+      tags: normalizeTags(data.publication_tags, options?.lang),
+    };
+  } catch (err) {
+    console.warn(`[DAL:publications] Unexpected error fetching publication "${slugOrId}":`, formatDbError(err));
     return null;
   }
-
-  const normalizedAuthor = data.author || {
-    id: data.author_id,
-    full_name: 'Anónimo',
-    slug: null,
-    avatar_url: null,
-    bio: null,
-  };
-
-  return {
-    id: data.id,
-    slug: data.slug,
-    title: data.title,
-    subtitle: data.subtitle,
-    content: data.content,
-    cover_image_url: data.cover_image_url,
-    type: data.type,
-    status: data.status,
-    original_language: data.original_language,
-    is_pinned: data.is_pinned ?? false,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    author: normalizedAuthor,
-    tags: normalizeTags(data.publication_tags, options?.lang),
-  };
 }
 
 /**
@@ -232,159 +243,164 @@ export interface GetPublicationCardsOptions {
 export async function getPublicationCards(
   options?: GetPublicationCardsOptions
 ): Promise<PublicationCardItem[]> {
-  const supabase = await resolveClient(options?.client);
-  const limit = options?.limit ?? 20;
-  const offset = options?.offset ?? 0;
-  const status = options?.status ?? PUBLICATION_STATUSES.PUBLISHED;
+  try {
+    const supabase = await resolveClient(options?.client);
+    const limit = options?.limit ?? 20;
+    const offset = options?.offset ?? 0;
+    const status = options?.status ?? PUBLICATION_STATUSES.PUBLISHED;
 
-  // Handle tag filtering via junction table
-  const tagSlugsFilter = options?.tagSlug
-    ? [options.tagSlug]
-    : (options?.tagSlugs && options.tagSlugs.length > 0 ? options.tagSlugs : null);
+    // Handle tag filtering via junction table
+    const tagSlugsFilter = options?.tagSlug
+      ? [options.tagSlug]
+      : (options?.tagSlugs && options.tagSlugs.length > 0 ? options.tagSlugs : null);
 
-  let allowedIds: string[] | null = null;
-  if (tagSlugsFilter && tagSlugsFilter.length > 0) {
-    allowedIds = await getPublicationIdsByTagSlugs(tagSlugsFilter, supabase);
-    if (allowedIds.length === 0) {
-      return [];
-    }
-  }
-
-  let query = supabase
-    .from(DB_TABLES.PUBLICATIONS)
-    .select(`
-      ${PUBLICATION_COLS.ID},
-      ${PUBLICATION_COLS.SLUG},
-      ${PUBLICATION_COLS.TITLE},
-      ${PUBLICATION_COLS.SUBTITLE},
-      ${PUBLICATION_COLS.COVER_IMAGE_URL},
-      ${PUBLICATION_COLS.TYPE},
-      ${PUBLICATION_COLS.STATUS},
-      ${PUBLICATION_COLS.IS_PINNED},
-      ${PUBLICATION_COLS.CREATED_AT},
-      ${PUBLICATION_COLS.UPDATED_AT},
-      author:${DB_TABLES.USERS} (
-        ${USER_COLS.ID},
-        ${USER_COLS.FULL_NAME},
-        ${USER_COLS.SLUG},
-        ${USER_COLS.AVATAR_URL}
-      ),
-      publication_tags (
-        tag:${DB_TABLES.TAGS} (
-          id, slug,
-          translations:${DB_TABLES.TAG_TRANSLATIONS} (lang, name)
-        )
-      )
-    `)
-    .eq(PUBLICATION_COLS.STATUS, status)
-    .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (allowedIds !== null) {
-    query = query.in(PUBLICATION_COLS.ID, allowedIds);
-  }
-  if (options?.type) {
-    query = query.eq(PUBLICATION_COLS.TYPE, options.type);
-  }
-  if (options?.authorId) {
-    query = query.eq(PUBLICATION_COLS.AUTHOR_ID, options.authorId);
-  }
-  if (options?.isPinned !== undefined) {
-    query = query.eq(PUBLICATION_COLS.IS_PINNED, options.isPinned);
-  }
-  if (options?.searchQuery) {
-    const q = options.searchQuery.trim();
-    if (q) {
-      query = query.or(`title->>gl.ilike.%${q}%,title->>es.ilike.%${q}%,subtitle->>gl.ilike.%${q}%,subtitle->>es.ilike.%${q}%`);
-    }
-  }
-
-  const { data, error } = await query;
-  if (error || !data) {
-    if (error?.code === 'PGRST205') {
-      let legQuery = supabase
-        .from('articulos')
-        .select(`
-          id, slug, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, imagen_url, tipo, estado, fijado, creado_en, actualizado_en, autor_id,
-          perfiles:autor_id (id, nombre, slug, avatar_url)
-        `)
-        .order('creado_en', { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (status) {
-        legQuery = legQuery.eq('estado', status === 'published' ? 'publicado' : status);
-      }
-      if (options?.type) {
-        const legType = options.type === 'essay' ? 'ensaio' : options.type === 'news' ? 'noticia' : 'artigo';
-        legQuery = legQuery.eq('tipo', legType);
-      }
-      if (options?.authorId) {
-        legQuery = legQuery.eq('autor_id', options.authorId);
-      }
-      if (options?.isPinned !== undefined) {
-        legQuery = legQuery.eq('fijado', options.isPinned);
-      }
-      if (options?.searchQuery) {
-        const q = options.searchQuery.trim();
-        if (q) {
-          legQuery = legQuery.or(`titulo_gl.ilike.%${q}%,titulo_es.ilike.%${q}%,subtitulo_gl.ilike.%${q}%,subtitulo_es.ilike.%${q}%`);
-        }
-      }
-
-      const { data: legData, error: legErr } = await legQuery;
-      if (legErr || !legData) {
-        console.error('Error fetching legacy articles:', legErr);
+    let allowedIds: string[] | null = null;
+    if (tagSlugsFilter && tagSlugsFilter.length > 0) {
+      allowedIds = await getPublicationIdsByTagSlugs(tagSlugsFilter, supabase);
+      if (allowedIds.length === 0) {
         return [];
       }
-
-      return legData.map((row) => {
-        const pAuthor = (row.perfiles as unknown as { id?: string; nombre?: string; slug?: string; avatar_url?: string }) || {};
-        return {
-          id: row.id,
-          slug: row.slug,
-          title: { gl: row.titulo_gl || '', es: row.titulo_es || '' },
-          subtitle: row.subtitulo_gl || row.subtitulo_es ? { gl: row.subtitulo_gl || '', es: row.subtitulo_es || '' } : null,
-          cover_image_url: cleanImageUrl(row.imagen_url),
-          type: (row.tipo === 'ensaio' ? 'essay' : row.tipo === 'noticia' ? 'news' : 'article') as PublicationType,
-          status: (row.estado === 'publicado' ? 'published' : 'draft') as PublicationStatus,
-          is_pinned: row.fijado ?? false,
-          created_at: row.creado_en,
-          updated_at: row.actualizado_en,
-          author: {
-            id: pAuthor.id || row.autor_id,
-            full_name: pAuthor.nombre || 'Anónimo',
-            slug: pAuthor.slug || null,
-            avatar_url: pAuthor.avatar_url || null,
-          },
-          tags: [],
-        };
-      });
     }
-    console.error('Error fetching publication cards:', error);
+
+    let query = supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select(`
+        ${PUBLICATION_COLS.ID},
+        ${PUBLICATION_COLS.SLUG},
+        ${PUBLICATION_COLS.TITLE},
+        ${PUBLICATION_COLS.SUBTITLE},
+        ${PUBLICATION_COLS.COVER_IMAGE_URL},
+        ${PUBLICATION_COLS.TYPE},
+        ${PUBLICATION_COLS.STATUS},
+        ${PUBLICATION_COLS.IS_PINNED},
+        ${PUBLICATION_COLS.CREATED_AT},
+        ${PUBLICATION_COLS.UPDATED_AT},
+        author:${DB_TABLES.USERS} (
+          ${USER_COLS.ID},
+          ${USER_COLS.FULL_NAME},
+          ${USER_COLS.SLUG},
+          ${USER_COLS.AVATAR_URL}
+        ),
+        publication_tags (
+          tag:${DB_TABLES.TAGS} (
+            id, slug,
+            translations:${DB_TABLES.TAG_TRANSLATIONS} (lang, name)
+          )
+        )
+      `)
+      .eq(PUBLICATION_COLS.STATUS, status)
+      .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (allowedIds !== null) {
+      query = query.in(PUBLICATION_COLS.ID, allowedIds);
+    }
+    if (options?.type) {
+      query = query.eq(PUBLICATION_COLS.TYPE, options.type);
+    }
+    if (options?.authorId) {
+      query = query.eq(PUBLICATION_COLS.AUTHOR_ID, options.authorId);
+    }
+    if (options?.isPinned !== undefined) {
+      query = query.eq(PUBLICATION_COLS.IS_PINNED, options.isPinned);
+    }
+    if (options?.searchQuery) {
+      const q = options.searchQuery.trim();
+      if (q) {
+        query = query.or(`title->>gl.ilike.%${q}%,title->>es.ilike.%${q}%,subtitle->>gl.ilike.%${q}%,subtitle->>es.ilike.%${q}%`);
+      }
+    }
+
+    const { data, error } = await query;
+    if (error || !data) {
+      if (error?.code === 'PGRST205') {
+        let legQuery = supabase
+          .from('articulos')
+          .select(`
+            id, slug, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, imagen_url, tipo, estado, fijado, creado_en, actualizado_en, autor_id,
+            perfiles:autor_id (id, nombre, slug, avatar_url)
+          `)
+          .order('creado_en', { ascending: false })
+          .range(offset, offset + limit - 1);
+
+        if (status) {
+          legQuery = legQuery.eq('estado', status === 'published' ? 'publicado' : status);
+        }
+        if (options?.type) {
+          const legType = options.type === 'essay' ? 'ensaio' : options.type === 'news' ? 'noticia' : 'artigo';
+          legQuery = legQuery.eq('tipo', legType);
+        }
+        if (options?.authorId) {
+          legQuery = legQuery.eq('autor_id', options.authorId);
+        }
+        if (options?.isPinned !== undefined) {
+          legQuery = legQuery.eq('fijado', options.isPinned);
+        }
+        if (options?.searchQuery) {
+          const q = options.searchQuery.trim();
+          if (q) {
+            legQuery = legQuery.or(`titulo_gl.ilike.%${q}%,titulo_es.ilike.%${q}%,subtitulo_gl.ilike.%${q}%,subtitulo_es.ilike.%${q}%`);
+          }
+        }
+
+        const { data: legData, error: legErr } = await legQuery;
+        if (legErr || !legData) {
+          console.warn('[DAL:publications] Legacy query error:', formatDbError(legErr));
+          return [];
+        }
+
+        return legData.map((row) => {
+          const pAuthor = (row.perfiles as unknown as { id?: string; nombre?: string; slug?: string; avatar_url?: string }) || {};
+          return {
+            id: row.id,
+            slug: row.slug,
+            title: { gl: row.titulo_gl || '', es: row.titulo_es || '' },
+            subtitle: row.subtitulo_gl || row.subtitulo_es ? { gl: row.subtitulo_gl || '', es: row.subtitulo_es || '' } : null,
+            cover_image_url: cleanImageUrl(row.imagen_url),
+            type: (row.tipo === 'ensaio' ? 'essay' : row.tipo === 'noticia' ? 'news' : 'article') as PublicationType,
+            status: (row.estado === 'publicado' ? 'published' : 'draft') as PublicationStatus,
+            is_pinned: row.fijado ?? false,
+            created_at: row.creado_en,
+            updated_at: row.actualizado_en,
+            author: {
+              id: pAuthor.id || row.autor_id,
+              full_name: pAuthor.nombre || 'Anónimo',
+              slug: pAuthor.slug || null,
+              avatar_url: pAuthor.avatar_url || null,
+            },
+            tags: [],
+          };
+        });
+      }
+      console.warn('[DAL:publications] Failed to fetch publication cards:', formatDbError(error));
+      return [];
+    }
+
+    const rawCards = data as unknown as RawPublicationCard[];
+
+    return rawCards.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      title: row.title,
+      subtitle: row.subtitle,
+      cover_image_url: cleanImageUrl(row.cover_image_url),
+      type: row.type,
+      status: row.status,
+      is_pinned: row.is_pinned ?? false,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      author: row.author || {
+        id: row.author_id,
+        full_name: 'Anónimo',
+        slug: null,
+        avatar_url: null,
+      },
+      tags: normalizeTags(row.publication_tags, options?.lang),
+    }));
+  } catch (err) {
+    console.warn('[DAL:publications] Unexpected error fetching publication cards:', formatDbError(err));
     return [];
   }
-
-  const rawCards = data as unknown as RawPublicationCard[];
-
-  return rawCards.map((row) => ({
-    id: row.id,
-    slug: row.slug,
-    title: row.title,
-    subtitle: row.subtitle,
-    cover_image_url: cleanImageUrl(row.cover_image_url),
-    type: row.type,
-    status: row.status,
-    is_pinned: row.is_pinned ?? false,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    author: row.author || {
-      id: row.author_id,
-      full_name: 'Anónimo',
-      slug: null,
-      avatar_url: null,
-    },
-    tags: normalizeTags(row.publication_tags, options?.lang),
-  }));
 }
 
 /**

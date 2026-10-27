@@ -1,7 +1,7 @@
 "use server";
 
 import { getAuthenticatedUser } from '@/lib/auth';
-import { updatePublicationStatus, getPublicationCards } from '@/lib/db';
+import { updatePublicationStatus, getPublicationCards, formatDbError } from '@/lib/db';
 import type { PublicationStatus, PublicationType, PublicationCardItem } from '@/lib/db';
 import { USER_ROLES } from '@/lib/db/schema';
 
@@ -24,7 +24,7 @@ export async function fetchMoreArticlesAction(options: {
     });
     return { success: true, publications };
   } catch (err: unknown) {
-    console.error('fetchMoreArticlesAction error:', err);
+    console.warn('[Action:fetchMoreArticles] Failed:', formatDbError(err));
     return { success: false, publications: [], error: 'Error al cargar más publicaciones' };
   }
 }

@@ -14,6 +14,7 @@ import {
   USER_ROLES,
 } from '@/lib/db/schema';
 import type { LocalizedString } from '@/lib/db/types';
+import { formatDbError } from '@/lib/db/formatDbError';
 
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
 import PinArticleButton from '@/components/escritorio/PinArticleButton';
@@ -93,8 +94,17 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
     query = query.eq(PUBLICATION_COLS.AUTHOR_ID, user.id);
   }
 
-  const { data: publicationsRaw } = await query;
-  const allPublications = (publicationsRaw || []) as unknown as PublicationDashboardItem[];
+  let allPublications: PublicationDashboardItem[] = [];
+  try {
+    const { data: publicationsRaw, error: pubError } = await query;
+    if (pubError) {
+      console.warn('[Escritorio] Failed to fetch user publications:', formatDbError(pubError));
+    } else {
+      allPublications = (publicationsRaw || []) as unknown as PublicationDashboardItem[];
+    }
+  } catch (err) {
+    console.warn('[Escritorio] Unexpected error fetching publications:', formatDbError(err));
+  }
   
   // Client-side filter
   let filteredPublications = allPublications;

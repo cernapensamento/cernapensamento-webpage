@@ -15,6 +15,7 @@ import {
   getLatestPublications,
 } from './publications';
 import { getColumnists } from './users';
+import { formatDbError } from '../formatDbError';
 
 async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient> {
   if (provided) return provided;
@@ -36,20 +37,30 @@ export async function getHomepageData(options?: {
   lang?: string;
   client?: SupabaseClient;
 }): Promise<HomepageData> {
-  const supabase = await resolveClient(options?.client);
-  const lang = options?.lang || 'gl';
+  try {
+    const supabase = await resolveClient(options?.client);
+    const lang = options?.lang || 'gl';
 
-  const [featured, pinned, latest, columnists] = await Promise.all([
-    getFeaturedPublication(supabase, lang),
-    getPinnedPublications(4, supabase, lang),
-    getLatestPublications(12, supabase, lang),
-    getColumnists(supabase),
-  ]);
+    const [featured, pinned, latest, columnists] = await Promise.all([
+      getFeaturedPublication(supabase, lang),
+      getPinnedPublications(4, supabase, lang),
+      getLatestPublications(12, supabase, lang),
+      getColumnists(supabase),
+    ]);
 
-  return {
-    featured,
-    pinned,
-    latest,
-    columnists,
-  };
+    return {
+      featured,
+      pinned,
+      latest,
+      columnists,
+    };
+  } catch (err) {
+    console.warn('[DAL:composite] Unexpected error fetching homepage data:', formatDbError(err));
+    return {
+      featured: null,
+      pinned: [],
+      latest: [],
+      columnists: [],
+    };
+  }
 }
