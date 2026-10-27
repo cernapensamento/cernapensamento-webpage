@@ -6,6 +6,7 @@ import Image from 'next/image';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { PublicationCardItem } from '@/lib/db';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import FormattedDate from '@/components/ui/FormattedDate';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -25,27 +26,6 @@ interface NewsMosaicGridProps {
     documentTypes?: Record<string, string>;
     [key: string]: unknown;
   };
-}
-
-const GL_SHORT_MONTHS = [
-  'xan.', 'feb.', 'mar.', 'abr.', 'maio', 'xuño',
-  'xul.', 'ago.', 'set.', 'out.', 'nov.', 'dec.',
-];
-
-const ES_SHORT_MONTHS = [
-  'ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.',
-  'jul.', 'ago.', 'sep.', 'oct.', 'nov.', 'dic.',
-];
-
-function formatNewsDate(dateStr: string | null | undefined, lang: string): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return '';
-  const day = d.getDate();
-  const year = d.getFullYear();
-  const months = lang === 'gl' ? GL_SHORT_MONTHS : ES_SHORT_MONTHS;
-  const month = months[d.getMonth()] || '';
-  return `${day} ${month} ${year}`;
 }
 
 function getLocalizedCategory(
@@ -90,7 +70,7 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
     (item.subtitle as Record<string, string>)?.es ||
     '';
   const category = getLocalizedCategory(item, lang, dict?.documentTypes);
-  const dateStr = formatNewsDate(item.created_at, lang);
+  const rawDate = item.created_at;
   const hasCover = Boolean(item.cover_image_url);
   const byLabel = dict?.articles?.by || 'Por';
 
@@ -144,11 +124,12 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
             >
               {category}
             </span>
-            {dateStr && (
-              <span className={`font-mono text-[11px] uppercase tracking-wider ${hasCover ? 'text-charcoal/70 dark:text-white/80' : textAuthorClass}`}>
-                {dateStr}
-              </span>
-            )}
+            <FormattedDate
+              date={rawDate}
+              lang={lang}
+              format="short"
+              className={`font-mono text-[11px] uppercase tracking-wider ${hasCover ? 'text-charcoal/70 dark:text-white/80' : textAuthorClass}`}
+            />
           </div>
 
           <h2 className={`font-serif text-2xl sm:text-3xl md:text-4xl font-bold leading-tight group-hover:text-gold transition-colors line-clamp-3 ${hasCover ? 'text-charcoal dark:text-white' : textHeadingClass}`}>
@@ -192,11 +173,12 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-2.5 py-1">
               {category}
             </span>
-            {dateStr && (
-              <span className={`font-mono text-[10px] uppercase tracking-wider ${textAuthorClass}`}>
-                {dateStr}
-              </span>
-            )}
+            <FormattedDate
+              date={rawDate}
+              lang={lang}
+              format="short"
+              className={`font-mono text-[10px] uppercase tracking-wider ${textAuthorClass}`}
+            />
           </div>
 
           <h3 className={`font-serif text-xl sm:text-2xl font-bold leading-snug ${textHeadingClass}`}>
@@ -238,11 +220,12 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
           <span className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-2 py-0.5">
             {category}
           </span>
-          {dateStr && (
-            <span className={`font-mono text-[10px] uppercase tracking-wider ${textAuthorClass}`}>
-              {dateStr}
-            </span>
-          )}
+          <FormattedDate
+            date={rawDate}
+            lang={lang}
+            format="short"
+            className={`font-mono text-[10px] uppercase tracking-wider ${textAuthorClass}`}
+          />
         </div>
 
         <h3 className={`font-serif text-base sm:text-lg font-bold leading-snug line-clamp-2 ${textHeadingClass}`}>
