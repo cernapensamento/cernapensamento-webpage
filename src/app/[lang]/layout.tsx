@@ -29,6 +29,7 @@ export default async function RootLayout({
     <html
       lang={lang || "es"}
       className={`${fontVariables} antialiased`}
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>
