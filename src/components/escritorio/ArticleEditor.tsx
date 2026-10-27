@@ -5,6 +5,7 @@ import Link from 'next/link';
 import NextImage from 'next/image';
 import { ARTICLE_STATES } from '@/lib/constants';
 import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL, ARTICLE_TYPES } from '@/lib/constants';
+import FormattedDate from '@/components/ui/FormattedDate';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Figure } from '@/lib/editor/FigureExtension';
@@ -1016,9 +1017,12 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                     {authorProfile?.nombre || 'Autor del Artículo'}
                                 </span>
                                 <span className="font-serif text-lines">—</span>
-                                <time className="uppercase tracking-widest">
-                                    {new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                </time>
+                                <FormattedDate
+                                    date={new Date()}
+                                    lang={activeLang}
+                                    format="long"
+                                    className="uppercase tracking-widest"
+                                />
                             </div>
                         </header>
 

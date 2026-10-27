@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { DB_TABLES, COMMENT_COLS, USER_COLS } from '@/lib/db/schema';
+import FormattedDate from '@/components/ui/FormattedDate';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -125,9 +126,12 @@ export default function CommentsSection({
                 <div className="flex items-baseline justify-between mb-2">
                   <div className="flex items-baseline gap-3">
                     <span className="font-sans text-sm font-semibold text-charcoal">{authorName}</span>
-                    <time className="font-sans text-[10px] uppercase tracking-widest text-charcoal/50">
-                      {new Date(comentario.updated_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'gl-ES', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}
-                    </time>
+                    <FormattedDate
+                      date={comentario.updated_at}
+                      lang={lang}
+                      format="short"
+                      className="font-sans text-[10px] uppercase tracking-widest text-charcoal/50"
+                    />
                   </div>
                   {user && user.id === comentario.author_id && (
                     <button type="button" 

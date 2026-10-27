@@ -4,6 +4,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
+import FormattedDate from '@/components/ui/FormattedDate';
 import type { PublicationType, UserRole } from '@/lib/db/types';
 import { USER_ROLES } from '@/lib/db/schema';
 
@@ -66,41 +67,6 @@ interface AuthorsDirectoryProps {
 }
 
 type SortOption = 'recent' | 'works' | 'name';
-
-const GL_SHORT_MONTHS = [
-  'xan.',
-  'feb.',
-  'mar.',
-  'abr.',
-  'maio',
-  'xuño',
-  'xul.',
-  'ago.',
-  'set.',
-  'out.',
-  'nov.',
-  'dec.',
-];
-
-function formatDate(value: string | null, lang: string): string {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-
-  if (lang === 'gl') {
-    return `${date.getDate()} ${GL_SHORT_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
-  }
-
-  try {
-    return new Intl.DateTimeFormat('es-ES', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }).format(date);
-  } catch {
-    return '';
-  }
-}
 
 function getInitials(name: string): string {
   return name
@@ -174,7 +140,6 @@ function AuthorCard({
       : author.role === USER_ROLES.ADMIN
         ? dict.roles.editorialBoard
         : dict.roles.contributor;
-  const latestDate = formatDate(author.latest_publication_at, lang);
   const showsImage = Boolean(author.avatar_url) && !imageError;
 
   return (
@@ -263,11 +228,12 @@ function AuthorCard({
           <span className="mt-0.5 block truncate font-serif text-xs sm:text-sm font-semibold text-charcoal/85">
             {author.latest_publication_title || '—'}
           </span>
-          {latestDate && (
-            <span className="mt-0.5 block font-sans text-[10px] text-charcoal/50">
-              {latestDate}
-            </span>
-          )}
+          <FormattedDate
+            date={author.latest_publication_at}
+            lang={lang}
+            format="short"
+            className="mt-0.5 block font-sans text-[10px] text-charcoal/50"
+          />
         </div>
 
         <div className="pt-2 flex items-center justify-between font-sans text-[11px] font-bold uppercase tracking-[0.16em] text-charcoal group-hover:text-gold transition-colors">

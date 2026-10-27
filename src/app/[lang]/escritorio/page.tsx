@@ -15,6 +15,7 @@ import {
 } from '@/lib/db/schema';
 import type { LocalizedString } from '@/lib/db/types';
 import { formatDbError } from '@/lib/db/formatDbError';
+import FormattedDate from '@/components/ui/FormattedDate';
 
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
 import PinArticleButton from '@/components/escritorio/PinArticleButton';
@@ -209,7 +210,12 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                           <div className="flex items-center gap-4 mb-2">
                             <span className="font-sans text-xs text-gold uppercase tracking-widest">{typeLabel}</span>
                             <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>
-                            <span className="font-sans text-xs text-charcoal/60">{new Date(articulo.created_at).toLocaleDateString(lang === 'gl' ? 'gl-ES' : 'es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                            <FormattedDate
+                              date={articulo.created_at}
+                              lang={lang}
+                              format="short"
+                              className="font-sans text-xs text-charcoal/60"
+                            />
                             {articulo.status === PUBLICATION_STATUSES.DRAFT && (
                               <>
                                 <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>

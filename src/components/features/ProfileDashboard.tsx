@@ -13,6 +13,7 @@ import glDict from '@/dictionaries/gl.json';
 import { DB_TABLES, USER_COLS, USER_ROLES } from '@/lib/db/schema';
 import type { UserRow } from '@/lib/db/types';
 import { uploadStorageImage, STORAGE_CATEGORIES } from '@/lib/storage';
+import FormattedDate from '@/components/ui/FormattedDate';
 
 export interface ProfileDashboardProps {
   profile: (UserRow & { rol?: string; nombre?: string; recibir_newsletter?: boolean }) | null;
@@ -198,9 +199,16 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
             </div>
             <div>
               <span className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Fecha de Ingreso</span>
-              <span className="font-sans text-sm sm:text-base text-charcoal/80">
-                {user?.created_at ? new Date(user.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : 'Desconocida'}
-              </span>
+              {user?.created_at ? (
+                <FormattedDate
+                  date={user.created_at}
+                  lang={lang}
+                  format="long"
+                  className="font-sans text-sm sm:text-base text-charcoal/80"
+                />
+              ) : (
+                <span className="font-sans text-sm sm:text-base text-charcoal/80">Desconocida</span>
+              )}
             </div>
           </div>
 

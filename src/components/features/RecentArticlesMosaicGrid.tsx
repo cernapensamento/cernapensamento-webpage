@@ -6,6 +6,7 @@ import Image from 'next/image';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { ArticleCardData } from '@/components/features/ArticleCard';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import FormattedDate from '@/components/ui/FormattedDate';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -22,27 +23,6 @@ interface RecentArticlesMosaicGridProps {
     };
     [key: string]: unknown;
   };
-}
-
-const GL_SHORT_MONTHS = [
-  'xan.', 'feb.', 'mar.', 'abr.', 'maio', 'xuño',
-  'xul.', 'ago.', 'set.', 'out.', 'nov.', 'dec.',
-];
-
-const ES_SHORT_MONTHS = [
-  'ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.',
-  'jul.', 'ago.', 'sep.', 'oct.', 'nov.', 'dic.',
-];
-
-function formatDate(dateStr: string | null | undefined, lang: string): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return '';
-  const day = d.getDate();
-  const year = d.getFullYear();
-  const months = lang === 'gl' ? GL_SHORT_MONTHS : ES_SHORT_MONTHS;
-  const month = months[d.getMonth()] || '';
-  return `${day} ${month} ${year}`;
 }
 
 function getLocalizedTitle(item: ArticleCardData, lang: string): string {
@@ -116,7 +96,7 @@ function RecentArticleCard({
   const title = getLocalizedTitle(item, lang);
   const subtitle = getLocalizedSubtitle(item, lang);
   const labels = getLocalizedLabels(item, lang, dict);
-  const dateStr = formatDate(item.created_at || item.creado_en, lang);
+  const rawDate = item.created_at || item.creado_en;
   const coverUrl = item.cover_image_url || item.imagen_url;
   const hasCover = Boolean(coverUrl && coverUrl.trim().length > 0);
   const authorName = item.author?.full_name || item.author?.nombre || item.perfiles?.nombre || '';
@@ -174,15 +154,14 @@ function RecentArticleCard({
                 </span>
               ))}
             </div>
-            {dateStr && (
-              <span
-                className={`font-mono text-[11px] uppercase tracking-wider ${
-                  hasCover ? 'text-charcoal/70 dark:text-white/80' : 'text-charcoal/60'
-                }`}
-              >
-                {dateStr}
-              </span>
-            )}
+            <FormattedDate
+              date={rawDate}
+              lang={lang}
+              format="short"
+              className={`font-mono text-[11px] uppercase tracking-wider ${
+                hasCover ? 'text-charcoal/70 dark:text-white/80' : 'text-charcoal/60'
+              }`}
+            />
           </div>
 
           <h3
@@ -262,11 +241,12 @@ function RecentArticleCard({
                 </span>
               ))}
             </div>
-            {dateStr && (
-              <span className="font-mono text-[10px] uppercase tracking-wider text-charcoal/60">
-                {dateStr}
-              </span>
-            )}
+            <FormattedDate
+              date={rawDate}
+              lang={lang}
+              format="short"
+              className="font-mono text-[10px] uppercase tracking-wider text-charcoal/60"
+            />
           </div>
 
           <h3 className="font-serif text-xl sm:text-2xl font-bold leading-snug text-charcoal group-hover:text-gold transition-colors duration-300 line-clamp-3">
@@ -352,15 +332,14 @@ function RecentArticleCard({
                   ))}
                 </div>
               ) : null}
-              {dateStr && (
-                <span
-                  className={`font-mono text-[10px] uppercase tracking-wider ${
-                    hasCover ? 'text-charcoal/70 dark:text-white/80' : 'text-charcoal/60'
-                  } ${!showLabels ? 'ml-auto' : ''}`}
-                >
-                  {dateStr}
-                </span>
-              )}
+              <FormattedDate
+                date={rawDate}
+                lang={lang}
+                format="short"
+                className={`font-mono text-[10px] uppercase tracking-wider ${
+                  hasCover ? 'text-charcoal/70 dark:text-white/80' : 'text-charcoal/60'
+                } ${!showLabels ? 'ml-auto' : ''}`}
+              />
             </div>
 
             <h3
@@ -419,11 +398,12 @@ function RecentArticleCard({
                   </span>
                 ))}
               </div>
-              {dateStr && (
-                <span className="font-mono text-[10px] uppercase tracking-wider text-charcoal/60">
-                  {dateStr}
-                </span>
-              )}
+              <FormattedDate
+                date={rawDate}
+                lang={lang}
+                format="short"
+                className="font-mono text-[10px] uppercase tracking-wider text-charcoal/60"
+              />
             </div>
 
             <h3 className="font-serif text-base sm:text-lg font-bold leading-snug text-charcoal group-hover:text-gold transition-colors duration-300 line-clamp-2">
