@@ -1,6 +1,7 @@
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
 import { getDictionary } from '@/dictionaries';
 import { buildArticlePdf } from '@/lib/pdf/articlePdf';
+import { formatArticleDate } from '@/lib/date';
 import { SITE_NAME } from '@/lib/constants';
 import type { Locale } from '@/i18n-config';
 
@@ -39,10 +40,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     const content =
       publication.content[lang] || publication.content.gl || publication.content.es || '';
 
-    const date = new Date(publication.created_at).toLocaleDateString(
-      lang === 'es' ? 'es-ES' : 'gl-ES',
-      { year: 'numeric', month: 'long', day: 'numeric' }
-    );
+    const date = formatArticleDate(publication.created_at, lang, { format: 'long' });
 
     const dbBio = publication.author.bio
       ? typeof publication.author.bio === 'object'
