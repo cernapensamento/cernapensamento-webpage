@@ -4,7 +4,7 @@ import { PUBLICATION_STATUSES } from '@/lib/db/schema';
 import ReviewActionBar from '@/components/escritorio/ReviewActionBar';
 import Link from 'next/link';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import sanitizeHtml from 'sanitize-html';
 import 'katex/dist/katex.min.css';
 import { renderMathInHtml } from '@/lib/editor/renderMath';
@@ -54,6 +54,11 @@ export default async function ArticuloPage({
 
   if (!publication) {
     notFound();
+  }
+
+  // Canonical slug auto-redirect if accessed via a legacy or renamed slug with the same unique suffix
+  if (publication.slug && publication.slug !== slug) {
+    permanentRedirect(`/${lang}/articulo/${publication.slug}`);
   }
 
   const { profile } = await getAuthenticatedUser();
