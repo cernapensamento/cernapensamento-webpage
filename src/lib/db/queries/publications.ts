@@ -118,6 +118,8 @@ export async function getPublicationBySlug(
     const supabase = await resolveClient(options?.client);
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slugOrId);
     const columnKey = isUUID ? PUBLICATION_COLS.ID : PUBLICATION_COLS.SLUG;
+    const suffixMatch = !isUUID ? slugOrId.match(/-([a-z0-9]{6})$/i) : null;
+    const suffix = suffixMatch ? suffixMatch[1] : null;
 
     const { data, error } = await supabase
       .from(DB_TABLES.PUBLICATIONS)
@@ -140,7 +142,36 @@ export async function getPublicationBySlug(
       .eq(columnKey, slugOrId)
       .single();
 
-    if (error || !data) {
+    let activeData = data;
+    if (!activeData && suffix && error?.code !== 'PGRST205') {
+      const { data: suffixData } = await supabase
+        .from(DB_TABLES.PUBLICATIONS)
+        .select(`
+          *,
+          author:${DB_TABLES.USERS} (
+            ${USER_COLS.ID},
+            ${USER_COLS.FULL_NAME},
+            ${USER_COLS.SLUG},
+            ${USER_COLS.AVATAR_URL},
+            ${USER_COLS.BIO}
+          ),
+          publication_tags (
+            tag:${DB_TABLES.TAGS} (
+              id, slug,
+              translations:${DB_TABLES.TAG_TRANSLATIONS} (lang, name)
+            )
+          )
+        `)
+        .ilike(PUBLICATION_COLS.SLUG, `%-${suffix}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (suffixData) {
+        activeData = suffixData;
+      }
+    }
+
+    if (!activeData) {
       if (error?.code === 'PGRST205') {
         // Schema fallback to articulos table
         const legacyCol = isUUID ? 'id' : 'slug';
@@ -154,30 +185,48 @@ export async function getPublicationBySlug(
           .eq(legacyCol, slugOrId)
           .single();
 
-        if (legacyError || !legacyData) {
+        let activeLegacyData = legacyData;
+        if (!activeLegacyData && suffix) {
+          const { data: suffixLegacyData } = await supabase
+            .from('articulos')
+            .select(`
+              id, slug, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, contenido_gl, contenido_es,
+              imagen_url, tipo, estado, fijado, idioma_original, creado_en, actualizado_en, autor_id,
+              perfiles:autor_id (id, nombre, slug, avatar_url, biografia)
+            `)
+            .ilike('slug', `%-${suffix}`)
+            .limit(1)
+            .maybeSingle();
+
+          if (suffixLegacyData) {
+            activeLegacyData = suffixLegacyData;
+          }
+        }
+
+        if (!activeLegacyData) {
           if (legacyError && legacyError.code !== 'PGRST116') {
             console.warn('[DAL:publications] Legacy query error:', formatDbError(legacyError));
           }
           return null;
         }
 
-        const pAuthor = (legacyData.perfiles as unknown as { id?: string; nombre?: string; slug?: string; avatar_url?: string; biografia?: string }) || {};
+        const pAuthor = (activeLegacyData.perfiles as unknown as { id?: string; nombre?: string; slug?: string; avatar_url?: string; biografia?: string }) || {};
 
         return {
-          id: legacyData.id,
-          slug: legacyData.slug,
-          title: { gl: legacyData.titulo_gl || '', es: legacyData.titulo_es || '' },
-          subtitle: legacyData.subtitulo_gl || legacyData.subtitulo_es ? { gl: legacyData.subtitulo_gl || '', es: legacyData.subtitulo_es || '' } : null,
-          content: { gl: legacyData.contenido_gl || '', es: legacyData.contenido_es || '' },
-          cover_image_url: cleanImageUrl(legacyData.imagen_url),
-          type: (legacyData.tipo === 'ensaio' ? 'essay' : legacyData.tipo === 'noticia' ? 'news' : 'article') as PublicationType,
-          status: (legacyData.estado === 'publicado' ? 'published' : 'draft') as PublicationStatus,
-          original_language: legacyData.idioma_original || 'gl',
-          is_pinned: legacyData.fijado ?? false,
-          created_at: legacyData.creado_en,
-          updated_at: legacyData.actualizado_en,
+          id: activeLegacyData.id,
+          slug: activeLegacyData.slug,
+          title: { gl: activeLegacyData.titulo_gl || '', es: activeLegacyData.titulo_es || '' },
+          subtitle: activeLegacyData.subtitulo_gl || activeLegacyData.subtitulo_es ? { gl: activeLegacyData.subtitulo_gl || '', es: activeLegacyData.subtitulo_es || '' } : null,
+          content: { gl: activeLegacyData.contenido_gl || '', es: activeLegacyData.contenido_es || '' },
+          cover_image_url: cleanImageUrl(activeLegacyData.imagen_url),
+          type: (activeLegacyData.tipo === 'ensaio' ? 'essay' : activeLegacyData.tipo === 'noticia' ? 'news' : 'article') as PublicationType,
+          status: (activeLegacyData.estado === 'publicado' ? 'published' : 'draft') as PublicationStatus,
+          original_language: activeLegacyData.idioma_original || 'gl',
+          is_pinned: activeLegacyData.fijado ?? false,
+          created_at: activeLegacyData.creado_en,
+          updated_at: activeLegacyData.actualizado_en,
           author: {
-            id: pAuthor.id || legacyData.autor_id,
+            id: pAuthor.id || activeLegacyData.autor_id,
             full_name: pAuthor.nombre || 'Anónimo',
             slug: pAuthor.slug || null,
             avatar_url: pAuthor.avatar_url || null,
@@ -192,8 +241,8 @@ export async function getPublicationBySlug(
       return null;
     }
 
-    const normalizedAuthor = data.author || {
-      id: data.author_id,
+    const normalizedAuthor = activeData.author || {
+      id: activeData.author_id,
       full_name: 'Anónimo',
       slug: null,
       avatar_url: null,
@@ -201,20 +250,20 @@ export async function getPublicationBySlug(
     };
 
     return {
-      id: data.id,
-      slug: data.slug,
-      title: data.title,
-      subtitle: data.subtitle,
-      content: data.content,
-      cover_image_url: data.cover_image_url,
-      type: data.type,
-      status: data.status,
-      original_language: data.original_language,
-      is_pinned: data.is_pinned ?? false,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
+      id: activeData.id,
+      slug: activeData.slug,
+      title: activeData.title,
+      subtitle: activeData.subtitle,
+      content: activeData.content,
+      cover_image_url: activeData.cover_image_url,
+      type: activeData.type,
+      status: activeData.status,
+      original_language: activeData.original_language,
+      is_pinned: activeData.is_pinned ?? false,
+      created_at: activeData.created_at,
+      updated_at: activeData.updated_at,
       author: normalizedAuthor,
-      tags: normalizeTags(data.publication_tags, options?.lang),
+      tags: normalizeTags(activeData.publication_tags, options?.lang),
     };
   } catch (err) {
     console.warn(`[DAL:publications] Unexpected error fetching publication "${slugOrId}":`, formatDbError(err));
