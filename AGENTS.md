@@ -294,6 +294,27 @@ The project uses **Vitest** for unit, API, and component tests and **Playwright*
   npm run test:e2e
   ```
 
+### Running GitHub Actions CI Locally with `act` (Optional but Recommended)
+Running GitHub Actions locally through [`nektos/act`](https://github.com/nektos/act) allows developers to validate the exact GitHub CI pipeline in a local Docker container before pushing code. It is **optional** for developers, but **highly recommended** when touching CI workflows or preparing releases.
+
+* **Prerequisites:**
+  - Docker daemon running (`systemctl start docker`).
+  - `act` installed via Arch Linux: `sudo pacman -S act` (or via your system's package manager).
+* **Commands:**
+  - **Syntax check / dry-run:**
+    ```bash
+    npm run act:check
+    ```
+  - **Simulate push CI pipeline (runs `.github/workflows/test.yml`):**
+    ```bash
+    npm run act:test
+    ```
+  - **Simulate pull request pipeline:**
+    ```bash
+    npm run act:pr
+    ```
+  - Configuration is persisted in `.actrc` mapping `ubuntu-latest` to optimized runner images (`catthehacker/ubuntu:act-latest`).
+
 ### Adding a New UI String / Translation
 1. Add the Galician key-value in `src/dictionaries/gl.json`.
 2. Add the corresponding Spanish key-value in `src/dictionaries/es.json`.
