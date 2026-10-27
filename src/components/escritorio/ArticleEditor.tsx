@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import NextImage from 'next/image';
 import { ARTICLE_STATES } from '@/lib/constants';
 import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL, ARTICLE_TYPES } from '@/lib/constants';
@@ -689,6 +690,18 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     {/* Floating Toolbar */}
                     <div className="sticky top-0 z-30 border-b border-lines bg-parchment/80 backdrop-blur-sm px-4 md:px-8 py-3 flex flex-col xl:flex-row items-center justify-between gap-3 xl:gap-0">
                         <div className="flex items-center gap-1 text-charcoal/80 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
+                            {/* Back to author's articles button */}
+                            <Link
+                                href={`/${routeLang}/escritorio`}
+                                className="flex items-center gap-1.5 h-10 px-3 mr-1 text-charcoal/70 hover:text-charcoal hover:bg-lines/40 border border-lines transition-colors text-xs font-sans uppercase tracking-wider shrink-0 cursor-pointer"
+                                title={dict.backToArticles || 'Volver a publicacións'}
+                                aria-label={dict.backToArticles || 'Volver a publicacións'}
+                            >
+                                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                                <span className="hidden sm:inline font-semibold">{dict.backToArticles || 'Artigos'}</span>
+                            </Link>
+                            <div className="h-6 w-[1px] shrink-0 bg-lines mx-1 mr-2"></div>
+
                             <button type="button" aria-label="Negrita" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bold') ? 'bg-lines/30' : ''}`} title="Negrita" onClick={() => editor?.chain().focus().toggleBold().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_bold</span></button>
                             <button type="button" aria-label="Cursiva" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('italic') ? 'bg-lines/30' : ''}`} title="Cursiva" onClick={() => editor?.chain().focus().toggleItalic().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_italic</span></button>
                             <select
@@ -952,11 +965,30 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     }}
                 >
                     {/* Preview TopBar */}
-                    <div className="sticky top-0 z-50 border-b border-lines bg-parchment/95 backdrop-blur-sm px-8 py-4 flex items-center justify-between">
-                        <span className="font-sans text-[10px] text-gold uppercase tracking-[0.2em]">{dict.previewHeader}</span>
-                        <button type="button" className="flex items-center gap-2 px-4 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer" onClick={() => setShowPreview(false)}>
+                    <div className="sticky top-0 z-50 border-b border-lines bg-parchment/95 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                className="group flex items-center gap-2 px-3.5 py-2 border border-lines bg-surface hover:bg-lines/50 text-charcoal font-sans text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                                onClick={() => setShowPreview(false)}
+                                title={dict.backToEditor || 'Volver ao Editor'}
+                                aria-label={dict.backToEditor || 'Volver ao Editor'}
+                            >
+                                <span className="material-symbols-outlined text-[18px] transition-transform duration-200 group-hover:-translate-x-1" style={{ fontFamily: 'Material Symbols Outlined' }}>arrow_back</span>
+                                <span className="font-semibold">{dict.backToEditor || 'Volver ao Editor'}</span>
+                            </button>
+                            <span className="hidden sm:inline-block h-4 w-[1px] bg-lines"></span>
+                            <span className="font-sans text-[11px] font-bold text-gold uppercase tracking-[0.2em] bg-gold/10 px-3 py-1 border border-gold/30 rounded-sm">
+                                {dict.previewHeader || 'Vista Previa de Publicación'}
+                            </span>
+                        </div>
+                        <button
+                            type="button"
+                            className="flex items-center gap-1.5 px-3.5 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold hover:text-charcoal transition-all duration-200 cursor-pointer shrink-0"
+                            onClick={() => setShowPreview(false)}
+                        >
                             <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
-                            Cerrar Vista Previa
+                            <span className="hidden md:inline">{dict.cancel || 'Pechar'}</span>
                         </button>
                     </div>
 
