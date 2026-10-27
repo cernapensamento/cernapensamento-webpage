@@ -10,6 +10,7 @@ import 'katex/dist/katex.min.css';
 import { renderMathInHtml } from '@/lib/editor/renderMath';
 import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
+import FormattedDate from '@/components/ui/FormattedDate';
 import CommentsSection from '@/components/features/CommentsSection';
 import ArticleDownload from '@/components/features/ArticleDownload';
 import ArticleScrollManager from '@/components/features/ArticleScrollManager';
@@ -64,12 +65,6 @@ export default async function ArticuloPage({
   const contenido = publication.content[lang] || publication.content.gl || publication.content.es || '';
   const isEnsaio = publication.type === 'essay';
 
-  const fecha = new Date(publication.created_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'gl-ES', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-
   const authorBio = publication.author.bio
     ? (typeof publication.author.bio === 'object'
         ? (publication.author.bio[lang] || publication.author.bio.gl || publication.author.bio.es || '')
@@ -103,7 +98,7 @@ export default async function ArticuloPage({
               {publication.author.full_name}
             </Link>
             <span>•</span>
-            <time dateTime={publication.created_at}>{fecha}</time>
+            <FormattedDate date={publication.created_at} lang={lang} format="long" />
           </div>
           {publication.original_language && publication.original_language !== lang && (
             <div className="text-[10px] text-charcoal/60 uppercase tracking-[0.15em] mt-3">
