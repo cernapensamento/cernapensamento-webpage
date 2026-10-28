@@ -1,4 +1,6 @@
 import React from 'react';
+import { getDictionaryClient } from '@/dictionaries/client';
+import type { Locale } from '@/i18n-config';
 import Link from 'next/link';
 import ArticleCard, { type ArticleCardData } from '@/components/features/ArticleCard';
 import RecentArticlesMosaicGrid from '@/components/features/RecentArticlesMosaicGrid';
@@ -12,6 +14,7 @@ interface ArticlesMosaicSectionProps {
     documentTypes?: Record<string, string>;
     readArticle?: string;
     archiveTitle?: string;
+    articles?: { title?: string };
     viewAll?: string;
     pinnedTitle?: string;
     mosaic?: {
@@ -57,6 +60,10 @@ export default function ArticlesMosaicSection({
 
   return (
     <section className="w-full flex flex-col gap-14 md:gap-18">
+      {/* Semantic H2 heading for articles section ensuring strictly sequential hierarchy */}
+      <h2 className="sr-only">
+        {dict?.archiveTitle || dict?.articles?.title || getDictionaryClient(lang as Locale).articles.title}
+      </h2>
       
       {/* ==================================================== */}
       {/* MOSAIC LEVEL 1: HERO HORIZONTAL SPOTLIGHT (FULL WIDTH) */}
@@ -116,9 +123,9 @@ export default function ArticlesMosaicSection({
               <span className="material-symbols-outlined text-gold text-2xl" data-icon="push_pin">
                 push_pin
               </span>
-              <h2 className="font-serif text-2xl md:text-3xl text-charcoal font-semibold">
+              <h3 className="font-serif text-2xl md:text-3xl text-charcoal font-semibold">
                 {dict?.mosaic?.pinnedTitle}
-              </h2>
+              </h3>
             </div>
             <span className="text-[11px] sm:text-xs uppercase font-mono tracking-[0.16em] text-charcoal/40">
               {dict?.mosaic?.pinnedSubtitle}

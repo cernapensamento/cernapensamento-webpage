@@ -1,4 +1,9 @@
 {
+  "homepage": {
+    "description": "Revista digital y asociación cultural independiente en Galicia. Publicación periódica de ensayo, filosofía política, economía, crítica cultural, narrativa y poesía.",
+    "organizationDescription": "Revista digital y asociación cultural independiente en Galicia dedicada al ensayo, la filosofía política, la economía y la creación literaria.",
+    "websiteDescription": "Revista cultural de ensayo, filosofía, economía y creación literaria."
+  },
   "nav": {
     "inicio": "Inicio",
     "revista": "Revista",

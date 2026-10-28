@@ -261,23 +261,32 @@ async function getLegacyPublishedAuthors(
   supabase: SupabaseClient
 ): Promise<PublishedAuthorItem[]> {
   try {
-    const { data, error } = await supabase
-      .from('articulos')
-      .select(`
-        id, slug, tipo, creado_en, titulo_gl, titulo_es, autor_id,
-        perfiles:autor_id (id, nombre, slug, avatar_url, biografia)
-      `)
-      .eq('estado', 'publicado')
-      .order('creado_en', { ascending: false });
+    const pageSize = 1000;
+    const publications: LegacyAuthorPublicationRow[] = [];
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await supabase
+        .from('articulos')
+        .select(`
+          id, slug, tipo, creado_en, titulo_gl, titulo_es, autor_id,
+          perfiles:autor_id (id, nombre, slug, avatar_url, biografia)
+        `)
+        .eq('estado', 'publicado')
+        .order('creado_en', { ascending: false })
+        .order('id', { ascending: false })
+        .range(offset, offset + pageSize - 1);
 
-    if (error || !data) {
-      console.warn('[DAL:users] Legacy published authors error:', formatDbError(error));
-      return [];
+      if (error || !data) {
+        console.warn('[DAL:users] Legacy published authors error:', formatDbError(error));
+        return [];
+      }
+
+      publications.push(...data as unknown as LegacyAuthorPublicationRow[]);
+      if (data.length < pageSize) break;
     }
 
     const authorsById = new Map<string, PublishedAuthorItem>();
 
-    for (const row of data as unknown as LegacyAuthorPublicationRow[]) {
+    for (const row of publications) {
       const author = row.perfiles;
       const authorId = author?.id || row.autor_id;
       if (!authorId) continue;
@@ -335,38 +344,47 @@ export async function getPublishedAuthors(
   try {
     const supabase = await resolveClient(client);
 
-    const { data, error } = await supabase
-      .from(DB_TABLES.PUBLICATIONS)
-      .select(`
-        ${PUBLICATION_COLS.ID},
-        ${PUBLICATION_COLS.TYPE},
-        ${PUBLICATION_COLS.CREATED_AT},
-        ${PUBLICATION_COLS.SLUG},
-        ${PUBLICATION_COLS.TITLE},
-        ${PUBLICATION_COLS.AUTHOR_ID},
-        author:${DB_TABLES.USERS} (
-          ${USER_COLS.ID},
-          ${USER_COLS.FULL_NAME},
-          ${USER_COLS.SLUG},
-          ${USER_COLS.BIO},
-          ${USER_COLS.AVATAR_URL},
-          ${USER_COLS.ROLE}
-        )
-      `)
-      .eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.PUBLISHED)
-      .order(PUBLICATION_COLS.CREATED_AT, { ascending: false });
+    const pageSize = 1000;
+    const publications: RawAuthorPublicationRow[] = [];
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await supabase
+        .from(DB_TABLES.PUBLICATIONS)
+        .select(`
+          ${PUBLICATION_COLS.ID},
+          ${PUBLICATION_COLS.TYPE},
+          ${PUBLICATION_COLS.CREATED_AT},
+          ${PUBLICATION_COLS.SLUG},
+          ${PUBLICATION_COLS.TITLE},
+          ${PUBLICATION_COLS.AUTHOR_ID},
+          author:${DB_TABLES.USERS} (
+            ${USER_COLS.ID},
+            ${USER_COLS.FULL_NAME},
+            ${USER_COLS.SLUG},
+            ${USER_COLS.BIO},
+            ${USER_COLS.AVATAR_URL},
+            ${USER_COLS.ROLE}
+          )
+        `)
+        .eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.PUBLISHED)
+        .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
+        .order(PUBLICATION_COLS.ID, { ascending: false })
+        .range(offset, offset + pageSize - 1);
 
-    if (error || !data) {
-      if (error?.code === 'PGRST205') {
-        return getLegacyPublishedAuthors(supabase);
+      if (error || !data) {
+        if (error?.code === 'PGRST205') {
+          return getLegacyPublishedAuthors(supabase);
+        }
+        console.warn('[DAL:users] Failed to fetch published authors:', formatDbError(error));
+        return [];
       }
-      console.warn('[DAL:users] Failed to fetch published authors:', formatDbError(error));
-      return [];
+
+      publications.push(...data as unknown as RawAuthorPublicationRow[]);
+      if (data.length < pageSize) break;
     }
 
     const authorsById = new Map<string, PublishedAuthorItem>();
 
-    for (const row of data as unknown as RawAuthorPublicationRow[]) {
+    for (const row of publications) {
       const author = row.author;
       if (!author) continue;
 

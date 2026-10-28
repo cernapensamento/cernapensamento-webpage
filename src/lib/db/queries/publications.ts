@@ -113,13 +113,14 @@ function normalizeTags(
  * An unmatched slug ending in six alphanumeric characters after a hyphen can
  * resolve to the first slug sharing that suffix; the result keeps its current slug.
  * Falls back to legacy articles when the canonical table is missing (without tags).
- * Returns null for no match, query failure, or caught exception. Visibility depends
+ * Returns null for no match; failures also return null unless `throwOnError` is set.
+ * With `throwOnError`, query failures and exceptions propagate to the caller. Visibility depends
  * on the supplied client or request-bound server client; no status filter is added.
  * `lang` selects tag names, defaulting to `gl`, then the first translation or slug.
  */
 export async function getPublicationBySlug(
   slugOrId: string,
-  options?: { client?: SupabaseClient; lang?: string }
+  options?: { client?: SupabaseClient; lang?: string; throwOnError?: boolean }
 ): Promise<PublicationDetail | null> {
   try {
     const supabase = await resolveClient(options?.client);
@@ -147,11 +148,13 @@ export async function getPublicationBySlug(
         )
       `)
       .eq(columnKey, slugOrId)
-      .single();
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST205') throw error;
 
     let activeData = data;
     if (!activeData && suffix && error?.code !== 'PGRST205') {
-      const { data: suffixData } = await supabase
+      const { data: suffixData, error: suffixError } = await supabase
         .from(DB_TABLES.PUBLICATIONS)
         .select(`
           *,
@@ -173,6 +176,7 @@ export async function getPublicationBySlug(
         .limit(1)
         .maybeSingle();
 
+      if (suffixError) throw suffixError;
       if (suffixData) {
         activeData = suffixData;
       }
@@ -190,11 +194,13 @@ export async function getPublicationBySlug(
             perfiles:autor_id (id, nombre, slug, avatar_url, biografia)
           `)
           .eq(legacyCol, slugOrId)
-          .single();
+          .maybeSingle();
+
+        if (legacyError) throw legacyError;
 
         let activeLegacyData = legacyData;
         if (!activeLegacyData && suffix) {
-          const { data: suffixLegacyData } = await supabase
+          const { data: suffixLegacyData, error: suffixLegacyError } = await supabase
             .from('articulos')
             .select(`
               id, slug, titulo_gl, titulo_es, subtitulo_gl, subtitulo_es, contenido_gl, contenido_es,
@@ -205,15 +211,13 @@ export async function getPublicationBySlug(
             .limit(1)
             .maybeSingle();
 
+          if (suffixLegacyError) throw suffixLegacyError;
           if (suffixLegacyData) {
             activeLegacyData = suffixLegacyData;
           }
         }
 
         if (!activeLegacyData) {
-          if (legacyError && legacyError.code !== 'PGRST116') {
-            console.warn('[DAL:publications] Legacy query error:', formatDbError(legacyError));
-          }
           return null;
         }
 
@@ -241,9 +245,6 @@ export async function getPublicationBySlug(
           },
           tags: [],
         };
-      }
-      if (error && error.code !== 'PGRST116') {
-        console.warn(`[DAL:publications] Failed to fetch publication by ${columnKey} "${slugOrId}":`, formatDbError(error));
       }
       return null;
     }
@@ -273,6 +274,7 @@ export async function getPublicationBySlug(
       tags: normalizeTags(activeData.publication_tags, options?.lang),
     };
   } catch (err) {
+    if (options?.throwOnError) throw err;
     console.warn(`[DAL:publications] Unexpected error fetching publication "${slugOrId}":`, formatDbError(err));
     return null;
   }
@@ -356,6 +358,7 @@ export async function getPublicationCards(
       `)
       .eq(PUBLICATION_COLS.STATUS, status)
       .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
+      .order(PUBLICATION_COLS.ID, { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (allowedIds !== null) {
@@ -387,6 +390,7 @@ export async function getPublicationCards(
             perfiles:autor_id (id, nombre, slug, avatar_url)
           `)
           .order('creado_en', { ascending: false })
+          .order('id', { ascending: false })
           .range(offset, offset + limit - 1);
 
         if (status) {
