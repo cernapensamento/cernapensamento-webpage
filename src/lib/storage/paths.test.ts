@@ -4,6 +4,9 @@ import {
   extractBucketAndPathFromUrl,
   extractStoragePathFromUrl,
   extractInlineStoragePaths,
+  sanitizeStorageUrl,
+  LEGACY_STORAGE_HOST,
+  CURRENT_STORAGE_HOST,
 } from './paths';
 
 describe('Storage paths utilities', () => {
@@ -98,6 +101,25 @@ describe('Storage paths utilities', () => {
     it('returns empty array for empty HTML', () => {
       expect(extractInlineStoragePaths('')).toEqual([]);
       expect(extractInlineStoragePaths(null)).toEqual([]);
+    });
+  });
+
+  describe('sanitizeStorageUrl', () => {
+    it('rewrites legacy Supabase storage host to current host preserving path and query', () => {
+      const input = `https://${LEGACY_STORAGE_HOST}/storage/v1/object/public/media/covers/1.webp?q=test`;
+      const expected = `https://${CURRENT_STORAGE_HOST}/storage/v1/object/public/media/covers/1.webp?q=test`;
+      expect(sanitizeStorageUrl(input)).toBe(expected);
+    });
+
+    it('leaves non-legacy URLs unmodified', () => {
+      const normal = 'https://example.com/images/pzupxjsprmuudmvhzpxu.supabase.co/photo.jpg';
+      expect(sanitizeStorageUrl(normal)).toBe(normal);
+    });
+
+    it('returns null for empty or null input', () => {
+      expect(sanitizeStorageUrl(null)).toBeNull();
+      expect(sanitizeStorageUrl('')).toBeNull();
+      expect(sanitizeStorageUrl(undefined)).toBeNull();
     });
   });
 });

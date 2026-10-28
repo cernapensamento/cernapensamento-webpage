@@ -6,6 +6,7 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
+import { sanitizeStorageUrl } from '@/lib/storage';
 import {
   DB_TABLES,
   PUBLICATION_COLS,
@@ -68,12 +69,9 @@ async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient>
 
 /**
  * Rewrites the former Supabase image hostname to the current one, or returns
- * null for an empty URL.
+ * null for an empty URL. Delegates to sanitizeStorageUrl.
  */
-function cleanImageUrl(url?: string | null): string | null {
-  if (!url) return null;
-  return url.replace('pzupxjsprmuudmvhzpxu.supabase.co', 'srbrnpbtfmilohkicpbb.supabase.co');
-}
+const cleanImageUrl = sanitizeStorageUrl;
 
 /**
  * Normalizes raw PostgREST publication_tags join into a clean TagItem array.
@@ -264,7 +262,7 @@ export async function getPublicationBySlug(
       title: activeData.title,
       subtitle: activeData.subtitle,
       content: activeData.content,
-      cover_image_url: activeData.cover_image_url,
+      cover_image_url: cleanImageUrl(activeData.cover_image_url),
       type: activeData.type,
       status: activeData.status,
       original_language: activeData.original_language,

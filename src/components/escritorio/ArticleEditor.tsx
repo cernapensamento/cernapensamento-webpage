@@ -771,10 +771,10 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 </div>
             )}
             
-            <div className="flex flex-grow overflow-hidden relative">
-                <div className="flex-grow overflow-y-auto">
+            <div className="flex flex-grow relative">
+                <div className="flex-grow w-full">
                     {/* Floating Toolbar */}
-                    <div className="sticky top-0 z-30 border-b border-lines bg-parchment/80 backdrop-blur-sm px-4 md:px-8 py-3 flex flex-col xl:flex-row items-center justify-between gap-3 xl:gap-0">
+                    <div className="sticky top-16 md:top-20 z-40 border-b border-lines bg-parchment/95 dark:bg-[#121212]/95 backdrop-blur-md px-4 md:px-8 py-3 flex flex-col xl:flex-row items-center justify-between gap-3 xl:gap-0 shadow-xs">
                         <div className="flex items-center gap-1 text-charcoal/80 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
                             {/* Back to author's articles button */}
                             <Link
