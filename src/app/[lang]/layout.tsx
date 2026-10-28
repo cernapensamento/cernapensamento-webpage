@@ -10,7 +10,10 @@ import { SITE_NAME } from "@/lib/constants";
 export const metadata: Metadata = {
   title: SITE_NAME,
   description: "A weekly literary and philosophical journal.",
-  icons: [{ rel: "icon", url: "/images/logo/screen.webp" }],
+  icons: [
+    { rel: "icon", url: "/images/logo/screen.png" },
+    { rel: "apple-touch-icon", url: "/images/logo/screen.png" },
+  ],
 };
 
 import HeaderVisibilityWrapper from '@/components/layout/HeaderVisibilityWrapper';

@@ -9,6 +9,7 @@ import {
 import { parseDocument } from 'htmlparser2';
 import type { ChildNode, Element } from 'domhandler';
 import sharp from 'sharp';
+import { sanitizeStorageUrl } from '@/lib/storage';
 
 /**
  * Server-side PDF typesetting for a published article.
@@ -873,10 +874,7 @@ class ArticlePdfBuilder {
   private async loadImage(rawUrl: string): Promise<PDFImage | null> {
     if (!rawUrl) return null;
 
-    const sanitizedUrl = rawUrl.replace(
-      'pzupxjsprmuudmvhzpxu.supabase.co',
-      'srbrnpbtfmilohkicpbb.supabase.co'
-    );
+    const sanitizedUrl = sanitizeStorageUrl(rawUrl) ?? rawUrl;
 
     const url = sanitizedUrl.startsWith('//')
       ? `https:${sanitizedUrl}`
@@ -904,27 +902,30 @@ class ArticlePdfBuilder {
 
       const contentType = (response.headers.get('content-type') || '').toLowerCase();
       const bytes = new Uint8Array(await response.arrayBuffer());
-      const isPng =
-        (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e) ||
-        contentType.includes('image/png');
+
+      const sigPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e;
+      const sigJpeg = bytes[0] === 0xff && bytes[1] === 0xd8;
+      const sigWebp =
+        bytes[0] === 0x52 &&
+        bytes[1] === 0x49 &&
+        bytes[2] === 0x46 &&
+        bytes[3] === 0x46 &&
+        bytes[8] === 0x57 &&
+        bytes[9] === 0x45 &&
+        bytes[10] === 0x42 &&
+        bytes[11] === 0x50;
+
+      const hasSignature = sigPng || sigJpeg || sigWebp;
+      const isPng = sigPng || (!hasSignature && contentType.includes('image/png'));
       const isJpeg =
-        (bytes[0] === 0xff && bytes[1] === 0xd8) ||
-        contentType.includes('image/jpeg') ||
-        contentType.includes('image/jpg');
-      const isWebp =
-        (bytes[0] === 0x52 &&
-          bytes[1] === 0x49 &&
-          bytes[2] === 0x46 &&
-          bytes[3] === 0x46 &&
-          bytes[8] === 0x57 &&
-          bytes[9] === 0x45 &&
-          bytes[10] === 0x42 &&
-          bytes[11] === 0x50) ||
-        contentType.includes('image/webp');
+        sigJpeg ||
+        (!hasSignature && (contentType.includes('image/jpeg') || contentType.includes('image/jpg')));
+      const isWebp = sigWebp || (!hasSignature && contentType.includes('image/webp'));
       const isOtherConvertible =
-        contentType.includes('image/avif') ||
-        contentType.includes('image/gif') ||
-        contentType.includes('image/svg');
+        !hasSignature &&
+        (contentType.includes('image/avif') ||
+          contentType.includes('image/gif') ||
+          contentType.includes('image/svg'));
 
       let image: PDFImage;
 

@@ -124,3 +124,30 @@ export function extractInlineStoragePaths(html: string | null | undefined): stri
 
   return Array.from(paths);
 }
+
+export const LEGACY_STORAGE_HOST = 'pzupxjsprmuudmvhzpxu.supabase.co';
+export const CURRENT_STORAGE_HOST = 'srbrnpbtfmilohkicpbb.supabase.co';
+
+/**
+ * Rewrites legacy Supabase storage hostnames to the current hostname while
+ * preserving protocol, path, port, and query parameters.
+ * Only modifies the hostname when it matches the legacy host.
+ * Returns null for null/undefined/empty input.
+ */
+export function sanitizeStorageUrl(url?: string | null): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === LEGACY_STORAGE_HOST) {
+      parsed.hostname = CURRENT_STORAGE_HOST;
+      return parsed.toString();
+    }
+    return url;
+  } catch {
+    // Relative or protocol-relative fallback
+    if (url.includes(LEGACY_STORAGE_HOST)) {
+      return url.replace(LEGACY_STORAGE_HOST, CURRENT_STORAGE_HOST);
+    }
+    return url;
+  }
+}
