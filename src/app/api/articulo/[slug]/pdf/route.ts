@@ -25,15 +25,18 @@ interface RouteContext {
  * attachment and shared-cache headers. Parameter resolution errors propagate.
  */
 export async function GET(request: Request, { params }: RouteContext) {
-  const { slug } = await params;
-  const { searchParams } = new URL(request.url);
-  const lang: Locale = searchParams.get('lang') === 'es' ? 'es' : 'gl';
-
   try {
+    const { slug } = await params;
+    const { searchParams } = new URL(request.url);
+    const lang: Locale = searchParams.get('lang') === 'es' ? 'es' : 'gl';
+
     const publication = await getPublicationBySlug(slug, { lang });
 
     if (!publication || publication.status !== PUBLICATION_STATUSES.PUBLISHED) {
-      return new Response('Artigo non atopado', { status: 404 });
+      return new Response('Artigo non atopado', {
+        status: 404,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      });
     }
 
     const dict = await getDictionary(lang);
@@ -83,6 +86,9 @@ export async function GET(request: Request, { params }: RouteContext) {
     });
   } catch (error) {
     console.error('Error generating article PDF:', error);
-    return new Response('Non foi posible xerar o PDF', { status: 500 });
+    return new Response('Non foi posible xerar o PDF', {
+      status: 500,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
 }
