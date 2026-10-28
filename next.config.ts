@@ -34,6 +34,19 @@ const nextConfig: NextConfig = {
     ],
   },
   allowedDevOrigins: ['cyan-swans-wear.loca.lt', 'loca.lt', '*.loca.lt', '*.trycloudflare.com', 'trycloudflare.com'],
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Vary',
+            value: 'Accept',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default withSentryConfig(nextConfig, {

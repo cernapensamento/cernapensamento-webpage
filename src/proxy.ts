@@ -5,6 +5,13 @@ import { match as matchLocale } from '@formatjs/intl-localematcher';
 import Negotiator from 'negotiator';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import {
+  prefersMarkdown,
+  get404Markdown,
+  getHomepageMarkdown,
+  isHomepagePath,
+  isKnownPath,
+} from '@/lib/agent/markdown';
 
 // Inicializar Redis solo si las variables de entorno están presentes
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
@@ -70,13 +77,21 @@ export async function proxy(request: NextRequest) {
       '/favicon.ico',
       '/images',
       '/llms.txt',
+      '/agent-instructions.md',
       '/robots.txt',
       '/sitemap.xml',
     ].some((path) => pathname.startsWith(path));
 
     // Bypass excluded static files immediately
-    if (pathname === '/llms.txt' || pathname === '/robots.txt' || pathname === '/sitemap.xml') {
-      return NextResponse.next();
+    if (
+      pathname === '/llms.txt' ||
+      pathname === '/agent-instructions.md' ||
+      pathname === '/robots.txt' ||
+      pathname === '/sitemap.xml'
+    ) {
+      const response = NextResponse.next();
+      response.headers.set('Vary', 'Accept');
+      return response;
     }
 
     // Determine Locale
@@ -86,6 +101,88 @@ export async function proxy(request: NextRequest) {
       currentLocale = localeMatch[1] as 'gl' | 'es';
     } else if (!isExcluded) {
       currentLocale = getLocale(request) as 'gl' | 'es';
+    }
+
+    // --- Trust Anchor Route Aliases (/privacy, /about, /contact) ---
+    const cleanPath = pathname.replace(/\/+$/, '') || '/';
+    if (cleanPath === '/privacy' || cleanPath === `/${currentLocale}/privacy`) {
+      const res = NextResponse.redirect(
+        new URL(`/${currentLocale}/privacidad${request.nextUrl.search}`, request.url)
+      );
+      res.headers.set('Vary', 'Accept');
+      return res;
+    }
+    if (cleanPath === '/about' || cleanPath === `/${currentLocale}/about`) {
+      const res = NextResponse.redirect(
+        new URL(`/${currentLocale}/asociacion${request.nextUrl.search}`, request.url)
+      );
+      res.headers.set('Vary', 'Accept');
+      return res;
+    }
+    if (cleanPath === '/contact' || cleanPath === `/${currentLocale}/contact`) {
+      const res = NextResponse.redirect(
+        new URL(`/${currentLocale}/contacto${request.nextUrl.search}`, request.url)
+      );
+      res.headers.set('Vary', 'Accept');
+      return res;
+    }
+
+    // --- Content Negotiation: Markdown for AI Agents (acceptmarkdown.com) ---
+    const hasMarkdownPreference = prefersMarkdown(request.headers.get('accept'));
+
+    if (hasMarkdownPreference) {
+      // 1. Agent-friendly 404 for unknown / nonexistent paths
+      if (!isKnownPath(pathname)) {
+        return new NextResponse(get404Markdown(currentLocale), {
+          status: 404,
+          headers: {
+            'Content-Type': 'text/markdown; charset=utf-8',
+            'Vary': 'Accept',
+          },
+        });
+      }
+
+      // 2. Homepage Markdown representation
+      if (isHomepagePath(pathname)) {
+        return new NextResponse(getHomepageMarkdown(currentLocale), {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/markdown; charset=utf-8',
+            'Vary': 'Accept',
+          },
+        });
+      }
+
+      // 3. Article Markdown representation
+      const articleMatch = pathname.match(/^(?:\/(?:gl|es))?\/articulo\/([^/]+)$/);
+      if (articleMatch) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/api/markdown';
+        url.searchParams.set('type', 'article');
+        url.searchParams.set('slug', articleMatch[1]);
+        url.searchParams.set('lang', currentLocale);
+        return NextResponse.rewrite(url, {
+          headers: {
+            'Vary': 'Accept',
+          },
+        });
+      }
+
+      // 4. Legal / About Markdown representation
+      const legalMatch = pathname.match(/^(?:\/(?:gl|es))?\/(privacidad|privacy|asociacion\/estatutos)$/);
+      if (legalMatch) {
+        const slug = legalMatch[1].includes('estatutos') ? 'estatutos' : 'privacidad';
+        const url = request.nextUrl.clone();
+        url.pathname = '/api/markdown';
+        url.searchParams.set('type', 'legal');
+        url.searchParams.set('slug', slug);
+        url.searchParams.set('lang', currentLocale);
+        return NextResponse.rewrite(url, {
+          headers: {
+            'Vary': 'Accept',
+          },
+        });
+      }
     }
 
     // --- Rate Limiting Logic ---
@@ -150,9 +247,11 @@ export async function proxy(request: NextRequest) {
       );
 
       if (pathnameIsMissingLocale) {
-        return NextResponse.redirect(
+        const redirectRes = NextResponse.redirect(
           new URL(`/${currentLocale}${pathname === '/' ? '' : pathname}${request.nextUrl.search}`, request.url)
         );
+        redirectRes.headers.set('Vary', 'Accept');
+        return redirectRes;
       }
     }
 
@@ -208,6 +307,13 @@ export async function proxy(request: NextRequest) {
       }
     }
 
+    const existingVary = supabaseResponse.headers.get('Vary');
+    if (!existingVary) {
+      supabaseResponse.headers.set('Vary', 'Accept');
+    } else if (!existingVary.includes('Accept')) {
+      supabaseResponse.headers.set('Vary', `${existingVary}, Accept`);
+    }
+
     return supabaseResponse;
   } catch (err) {
     console.error('[Proxy:Fatal] Unhandled proxy error:', err);
@@ -223,6 +329,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|agent-instructions.md|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
