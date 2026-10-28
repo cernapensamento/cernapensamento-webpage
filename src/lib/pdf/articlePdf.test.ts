@@ -13,6 +13,12 @@ describe('formatMathText', () => {
     expect(formatMathText('P_{máx} &lt; P_e')).toBe('P_(máx) < P_e');
   });
 
+  it('preserves nested subscript and superscript groups', () => {
+    expect(formatMathText('x^{n_{i}+1}')).toBe('x^(n_(i)+1)');
+    expect(formatMathText('x_{n^{i}+1}')).toBe('x_(n^(i)+1)');
+    expect(formatMathText('x^{n_{i_{j}}+1}')).toBe('x^(n_(i_(j))+1)');
+  });
+
   it('formats fractions and nested fractions with Greek letters and operators', () => {
     const formula1 =
       'E_d = \\frac{\\% \\Delta Q}{\\% \\Delta P} = \\frac{\\frac{dQ}{Q}}{\\frac{dP}{P}} = \\frac{dQ}{dP} \\cdot \\frac{P}{Q}';
