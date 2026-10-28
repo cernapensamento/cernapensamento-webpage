@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildArticlePdf, formatMathText } from './articlePdf';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, PDFPage, PDFRawStream, PDFName } from 'pdf-lib';
 import sharp from 'sharp';
 
 describe('formatMathText', () => {
@@ -38,32 +38,59 @@ describe('formatMathText', () => {
 
 describe('buildArticlePdf Typesetting', () => {
   it('preserves spaces around bold and italic tags without merging words', async () => {
+    const drawTextSpy = vi.spyOn(PDFPage.prototype, 'drawText');
+
     const html = `
       <p>Siendo Ed la <strong>elasticidad del precio de la demanda</strong>, que se calcula como...</p>
       <p>En 1962, el economista austriaco Murray Rothbard publica <em>Man, Economy and State </em>(1962/2009)<em> </em>una obra de más de 1500 páginas, que pretendió actualizar la monumental <em>La</em> <em>Acción humana </em>de Mises.</p>
     `;
 
-    const pdfBytes = await buildArticlePdf({
-      title: 'Artigo de proba',
-      subtitle: 'Subtítulo',
-      typeLabel: 'Ensaio',
-      authorName: 'Autor Proba',
-      date: '28 de outubro de 2026',
-      tags: ['Filosofía'],
-      coverImageUrl: null,
-      html,
-      siteName: 'Cerna Pensamento',
-      siteUrl: 'https://cernapensamento.org',
-    });
+    try {
+      const pdfBytes = await buildArticlePdf({
+        title: 'Artigo de proba',
+        subtitle: 'Subtítulo',
+        typeLabel: 'Ensaio',
+        authorName: 'Autor Proba',
+        date: '28 de outubro de 2026',
+        tags: ['Filosofía'],
+        coverImageUrl: null,
+        html,
+        siteName: 'Cerna Pensamento',
+        siteUrl: 'https://cernapensamento.org',
+      });
 
-    expect(pdfBytes).toBeInstanceOf(Uint8Array);
-    expect(pdfBytes.length).toBeGreaterThan(1000);
+      expect(pdfBytes).toBeInstanceOf(Uint8Array);
+      expect(pdfBytes.length).toBeGreaterThan(1000);
 
-    const doc = await PDFDocument.load(pdfBytes);
-    expect(doc.getPageCount()).toBeGreaterThanOrEqual(1);
+      const doc = await PDFDocument.load(pdfBytes);
+      expect(doc.getPageCount()).toBeGreaterThanOrEqual(1);
+
+      const drawnStrings = drawTextSpy.mock.calls.map((c) => c[0]);
+      // Verify adjacent words across bold and italic transitions were not merged
+      expect(drawnStrings.some((s) => s.includes('laelasticidad'))).toBe(false);
+      expect(drawnStrings.some((s) => s.includes('humanade'))).toBe(false);
+      expect(drawnStrings.some((s) => s.includes('publicaMan'))).toBe(false);
+
+      // Verify words are rendered with space tokens between them
+      const laIdx = drawnStrings.indexOf('la');
+      const elastIdx = drawnStrings.indexOf('elasticidad');
+      expect(laIdx).toBeGreaterThan(-1);
+      expect(elastIdx).toBe(laIdx + 2);
+      expect(drawnStrings[laIdx + 1]).toBe(' ');
+
+      const humanaIdx = drawnStrings.indexOf('humana');
+      const deIdx = drawnStrings.indexOf('de', humanaIdx);
+      expect(humanaIdx).toBeGreaterThan(-1);
+      expect(deIdx).toBe(humanaIdx + 2);
+      expect(drawnStrings[humanaIdx + 1]).toBe(' ');
+    } finally {
+      drawTextSpy.mockRestore();
+    }
   });
 
   it('renders block-math and inline-math nodes without dropping formulas', async () => {
+    const drawTextSpy = vi.spyOn(PDFPage.prototype, 'drawText');
+
     const html = `
       <p>Condición de equilibrio:</p>
       <div data-latex="\\vert{}E_d\\vert{} &lt; 1" data-type="block-math"></div>
@@ -71,22 +98,33 @@ describe('buildArticlePdf Typesetting', () => {
       <div data-latex="E_d = \\frac{\\% \\Delta Q}{\\% \\Delta P}" data-type="block-math"></div>
     `;
 
-    const pdfBytes = await buildArticlePdf({
-      title: 'Artigo de fórmulas',
-      subtitle: null,
-      typeLabel: 'Ensaio',
-      authorName: 'Autor Proba',
-      date: '28 de outubro de 2026',
-      tags: [],
-      coverImageUrl: null,
-      html,
-      siteName: 'Cerna Pensamento',
-      siteUrl: 'https://cernapensamento.org',
-    });
+    try {
+      const pdfBytes = await buildArticlePdf({
+        title: 'Artigo de fórmulas',
+        subtitle: null,
+        typeLabel: 'Ensaio',
+        authorName: 'Autor Proba',
+        date: '28 de outubro de 2026',
+        tags: [],
+        coverImageUrl: null,
+        html,
+        siteName: 'Cerna Pensamento',
+        siteUrl: 'https://cernapensamento.org',
+      });
 
-    expect(pdfBytes).toBeInstanceOf(Uint8Array);
-    const doc = await PDFDocument.load(pdfBytes);
-    expect(doc.getPageCount()).toBeGreaterThanOrEqual(1);
+      expect(pdfBytes).toBeInstanceOf(Uint8Array);
+      const doc = await PDFDocument.load(pdfBytes);
+      expect(doc.getPageCount()).toBeGreaterThanOrEqual(1);
+
+      const drawnStrings = drawTextSpy.mock.calls.map((c) => c[0]);
+      // Verify math nodes were rendered into formatted tokens on the PDF
+      expect(drawnStrings).toContain('|E_d|');
+      expect(drawnStrings).toContain('mc^2');
+      expect(drawnStrings).toContain('delta');
+      expect(drawnStrings).toContain('E_d');
+    } finally {
+      drawTextSpy.mockRestore();
+    }
   });
 
   it('successfully embeds WebP cover images by converting them for pdf-lib', async () => {
@@ -102,7 +140,7 @@ describe('buildArticlePdf Typesetting', () => {
       .toBuffer();
 
     const originalFetch = global.fetch;
-    global.fetch = vi.fn().mockImplementation(async (url: string) => {
+    const fetchSpy = vi.fn().mockImplementation(async (url: string) => {
       if (url.includes('cover.webp')) {
         return new Response(webpBuffer, {
           status: 200,
@@ -111,6 +149,7 @@ describe('buildArticlePdf Typesetting', () => {
       }
       return new Response(null, { status: 404 });
     });
+    global.fetch = fetchSpy;
 
     try {
       const pdfBytes = await buildArticlePdf({
@@ -126,9 +165,17 @@ describe('buildArticlePdf Typesetting', () => {
         siteUrl: 'https://cernapensamento.org',
       });
 
+      expect(fetchSpy).toHaveBeenCalledWith('https://example.com/cover.webp', expect.anything());
       expect(pdfBytes).toBeInstanceOf(Uint8Array);
+
       const doc = await PDFDocument.load(pdfBytes);
       expect(doc.getPageCount()).toBeGreaterThanOrEqual(1);
+
+      // Verify the image was converted and embedded as an Image XObject stream in the PDF
+      const imageObjects = doc.context.enumerateIndirectObjects().filter(([, obj]) => {
+        return obj instanceof PDFRawStream && obj.dict.get(PDFName.of('Subtype')) === PDFName.of('Image');
+      });
+      expect(imageObjects.length).toBe(1);
     } finally {
       global.fetch = originalFetch;
     }
