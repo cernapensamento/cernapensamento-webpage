@@ -8,8 +8,7 @@ import {
 } from 'pdf-lib';
 import { parseDocument } from 'htmlparser2';
 import type { ChildNode, Element } from 'domhandler';
-import sharp from 'sharp';
-import { sanitizeStorageUrl } from '@/lib/storage';
+import { sanitizeStorageUrl } from '@/lib/storage/paths';
 
 /**
  * Server-side PDF typesetting for a published article.
@@ -723,6 +722,26 @@ interface WordToken {
   breakBefore: boolean;
 }
 
+type SharpInstance = typeof import('sharp')['default'];
+
+let cachedSharp: SharpInstance | null | false = null;
+
+async function getSharp(): Promise<SharpInstance | null> {
+  if (cachedSharp !== null) {
+    return cachedSharp === false ? null : cachedSharp;
+  }
+  try {
+    const mod = await import('sharp');
+    const sharpFn = (mod.default || mod) as unknown as SharpInstance;
+    cachedSharp = sharpFn;
+    return cachedSharp;
+  } catch (err) {
+    console.warn('[PDF] Native sharp module is not available in runtime:', err);
+    cachedSharp = false;
+    return null;
+  }
+}
+
 class ArticlePdfBuilder {
   private readonly document: PDFDocument;
   private page!: PDFPage;
@@ -977,7 +996,13 @@ class ArticlePdfBuilder {
       } else if (isJpeg) {
         image = await this.document.embedJpg(bytes);
       } else if (isWebp || isOtherConvertible) {
-        const jpeg = await sharp(bytes)
+        const sharpInstance = await getSharp();
+        if (!sharpInstance) {
+          console.warn(`[PDF] Sharp is unavailable to convert image from ${url}`);
+          this.imageCache.set(url, null);
+          return null;
+        }
+        const jpeg = await sharpInstance(bytes)
           .resize({ width: 1400, withoutEnlargement: true })
           .flatten({ background: '#ffffff' })
           .jpeg({ quality: 82 })

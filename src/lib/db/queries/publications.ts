@@ -6,7 +6,7 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
-import { sanitizeStorageUrl } from '@/lib/storage';
+import { sanitizeStorageUrl } from '@/lib/storage/paths';
 import {
   DB_TABLES,
   PUBLICATION_COLS,
