@@ -10,7 +10,7 @@ describe('formatMathText', () => {
     expect(formatMathText('P &gt; CMg')).toBe('P > CMg');
     expect(formatMathText('P = IMg = CMg')).toBe('P = IMg = CMg');
     expect(formatMathText('P_m>P_c')).toBe('P_m > P_c');
-    expect(formatMathText('P_{máx} &lt; P_e')).toBe('P_máx < P_e');
+    expect(formatMathText('P_{máx} &lt; P_e')).toBe('P_(máx) < P_e');
   });
 
   it('formats fractions and nested fractions with Greek letters and operators', () => {
@@ -25,11 +25,13 @@ describe('formatMathText', () => {
       'IMg = \\frac{\\Delta IT}{\\Delta Q} = \\frac{IT_n - IT_{n-1}}{Q_n - Q_{n-1}}';
     const formatted2 = formatMathText(formula2);
     expect(formatted2).toContain('(delta IT) / (delta Q)');
-    expect(formatted2).toContain('(IT_n - IT_n-1) / (Q_n - Q_n-1)');
+    expect(formatted2).toContain('(IT_n - IT_(n-1)) / (Q_n - Q_(n-1))');
   });
 
   it('formats symbols, roots, and common algebra functions', () => {
     expect(formatMathText('\\sqrt{x^2 + y^2}')).toBe('sqrt(x^2 + y^2)');
+    expect(formatMathText('\\sqrt{x^{2} + y^{2}}')).toBe('sqrt(x^(2) + y^(2))');
+    expect(formatMathText('\\sqrt{\\frac{a}{b}}')).toBe('sqrt(a / b)');
     expect(formatMathText('\\sqrt[3]{8}')).toBe('root_3(8)');
     expect(formatMathText('a \\pm b \\times c \\approx d')).toBe('a ± b × c ~ d');
     expect(formatMathText('x \\le y \\ge z \\ne w')).toBe('x <= y >= z != w');
