@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import HeroIntroSection from '@/components/sections/HeroIntroSection';
 import ArticlesMosaicLoader from '@/components/sections/ArticlesMosaicLoader';
 import ArticlesMosaicSkeleton from '@/components/sections/ArticlesMosaicSkeleton';
@@ -15,19 +16,162 @@ import { getAllTagsWithTranslations } from '@/lib/db';
 
 export const revalidate = 60;
 
-export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { lang } = await params;
+  const isGalician = lang === 'gl';
+  const siteUrl = 'https://cernapensamento.org';
+  const pageUrl = `${siteUrl}/${lang}`;
+
+  const title = isGalician
+    ? 'Cerna Pensamento · Revista Galega de Ensaio, Filosofía e Creación Literaria'
+    : 'Cerna Pensamento · Revista Cultural de Ensayo, Filosofía y Creación Literaria';
+
+  const description = isGalician
+    ? 'Revista dixital e asociación cultural independente en Galicia. Publicación periódica de ensaio, filosofía política, economía, crítica cultural, narrativa e poesía.'
+    : 'Revista digital y asociación cultural independiente en Galicia. Publicación periódica de ensayo, filosofía política, economía, crítica cultural, narrativa y poesía.';
+
+  return {
+    title,
+    description,
+    keywords: [
+      'Cerna',
+      'Cerna Pensamento',
+      'Cerna literary journal',
+      'revista literaria',
+      'ensaio galego',
+      'filosofía política',
+      'escola austríaca',
+      'Galicia',
+      'literary journal Galicia',
+      'cultural magazine',
+    ],
+    alternates: {
+      canonical: pageUrl,
+      languages: {
+        gl: `${siteUrl}/gl`,
+        es: `${siteUrl}/es`,
+        'x-default': `${siteUrl}/gl`,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      siteName: 'Cerna Pensamento',
+      locale: isGalician ? 'gl_ES' : 'es_ES',
+      type: 'website',
+      images: [
+        {
+          url: `${siteUrl}/images/logo/screen.png`,
+          width: 1200,
+          height: 630,
+          alt: 'Cerna Pensamento · Revista de Ensaio e Filosofía',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [`${siteUrl}/images/logo/screen.png`],
+    },
+  };
+}
+
+export default async function HomePage({ params }: PageProps) {
   const { lang } = await params;
   const dict = await getDictionary(lang as Locale);
   const tags = await getAllTagsWithTranslations({ lang });
   const themesTags = tags.slice(0, 12);
+  const isGalician = lang === 'gl';
+
+  // Schema.org JSON-LD Structured Data (Organization + NewsMediaOrganization + Periodical + WebSite)
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': ['Organization', 'NewsMediaOrganization', 'Periodical'],
+        '@id': 'https://cernapensamento.org/#organization',
+        name: 'Asociación Cerna Pensamento',
+        alternateName: [
+          'Cerna',
+          'Cerna Pensamento',
+          'Cerna Revista Literaria',
+          'Cerna Literary Journal',
+        ],
+        url: 'https://cernapensamento.org',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://cernapensamento.org/images/logo/cernablack.png',
+          width: 430,
+          height: 159,
+        },
+        image: 'https://cernapensamento.org/images/logo/screen.png',
+        description: isGalician
+          ? 'Revista dixital e asociación cultural independente en Galicia dedicada ao ensaio, a filosofía política, a economía e a creación literaria.'
+          : 'Revista digital y asociación cultural independiente en Galicia dedicada al ensayo, la filosofía política, la economía y la creación literaria.',
+        email: 'contacto@cernapensamento.org',
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Santiago de Compostela',
+          addressRegion: 'Galicia',
+          postalCode: '15701',
+          addressCountry: 'ES',
+        },
+        contactPoint: [
+          {
+            '@type': 'ContactPoint',
+            email: 'contacto@cernapensamento.org',
+            contactType: 'editorial',
+            availableLanguage: ['Galician', 'Spanish', 'English'],
+          },
+        ],
+        sameAs: [
+          'https://www.instagram.com/cernapensamento',
+          'https://github.com/cernapensamento/cernapensamento-webpage',
+        ],
+        foundingLocation: {
+          '@type': 'Place',
+          name: 'Galicia, España',
+        },
+        publishingPrinciples: 'https://cernapensamento.org/gl/asociacion',
+      },
+      {
+        '@type': 'WebSite',
+        '@id': 'https://cernapensamento.org/#website',
+        url: 'https://cernapensamento.org',
+        name: 'Cerna Pensamento',
+        description: isGalician
+          ? 'Revista galega de ensaio, filosofía, economía e creación literaria.'
+          : 'Revista cultural de ensayo, filosofía, economía y creación literaria.',
+        publisher: {
+          '@id': 'https://cernapensamento.org/#organization',
+        },
+        inLanguage: ['gl', 'es'],
+      },
+    ],
+  };
 
   return (
     <>
+      {/* Schema.org Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* 1. HERO INTRO SECTION (White / Black: bg-parchment) */}
       <HeroIntroSection lang={lang} dict={dict.hero} />
 
       {/* 2. ARTICLES MOSAIC SECTION (Grey / Dark-Grey: bg-surface) */}
-      <section aria-label={dict.mosaic?.recentTitle || dict.articles?.title} className="flex-grow w-full bg-surface border-b border-lines py-16 sm:py-24">
+      <section
+        aria-label={dict.mosaic?.recentTitle || dict.articles?.title}
+        className="flex-grow w-full bg-surface border-b border-lines py-16 sm:py-24"
+      >
         <div className="max-w-[1120px] mx-auto px-5 md:px-16">
           <Suspense fallback={<ArticlesMosaicSkeleton />}>
             <ArticlesMosaicLoader lang={lang} dict={dict} />
@@ -48,7 +192,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
       {/* 6. COLUMNISTS / AUTHORS SECTION (Grey / Dark-Grey: bg-surface) */}
       <RevealOnScroll delayMs={50}>
-        <ColumnistsSection lang={lang} dict={{ columnists: dict.columnists, authors: dict.authors }} />
+        <ColumnistsSection
+          lang={lang}
+          dict={{ columnists: dict.columnists, authors: dict.authors }}
+        />
       </RevealOnScroll>
 
       {/* 7. FAQ SECTION (White / Black: bg-parchment) */}

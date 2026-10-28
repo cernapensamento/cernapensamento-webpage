@@ -177,13 +177,13 @@ export default function SideMenu() {
           
           {/* Contact Section */}
             <div>
-            <h3 className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans">{dict.nav.contactar}</h3>
+            <p className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans font-semibold">{dict.nav.contactar}</p>
             <SocialLinks className="flex items-center gap-4 pl-4 border-l-2 border-lines ml-2" itemClassName="bg-parchment" />
           </div>
 
           {/* Language Section */}
             <div>
-            <h3 className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans">{dict.nav.idiomas}</h3>
+            <p className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans font-semibold">{dict.nav.idiomas}</p>
             <div className="flex items-center pl-4 border-l-2 border-lines ml-2 h-12">
               <LanguageToggle />
             </div>
