@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: repoRoot,
   },
+  serverExternalPackages: ['sharp'],
   images: {
     remotePatterns: [
       {

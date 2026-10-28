@@ -8,6 +8,7 @@ import {
 } from 'pdf-lib';
 import { parseDocument } from 'htmlparser2';
 import type { ChildNode, Element } from 'domhandler';
+import sharp from 'sharp';
 
 /**
  * Server-side PDF typesetting for a published article.
@@ -46,6 +47,7 @@ interface Run {
 type Block =
   | { kind: 'heading'; level: number; runs: Run[] }
   | { kind: 'paragraph'; runs: Run[] }
+  | { kind: 'math'; latex: string }
   | { kind: 'list'; ordered: boolean; items: Run[][] }
   | { kind: 'quote'; paragraphs: Run[][] }
   | { kind: 'code'; text: string }
@@ -86,7 +88,15 @@ const MATH_REPLACEMENTS: Record<string, string> = {
   '\u03B2': 'beta',
   '\u03B3': 'gamma',
   '\u03B4': 'delta',
+  '\u0394': 'delta',
   '\u03A3': 'sum',
+  '\u03BC': 'mu',
+  '\u03BB': 'lambda',
+  '\u03B8': 'theta',
+  '\u03C3': 'sigma',
+  '\u03C9': 'omega',
+  '\u03A9': 'omega',
+  '\u2202': 'd',
   '\u00D7': 'x',
 };
 
@@ -167,6 +177,166 @@ function findTexAnnotation(node: ChildNode): string | null {
   return null;
 }
 
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+}
+
+function extractBraced(str: string, startIndex: number): { content: string; endIndex: number } | null {
+  if (str[startIndex] !== '{') return null;
+  let depth = 0;
+  for (let i = startIndex; i < str.length; i++) {
+    if (str[i] === '{') depth++;
+    else if (str[i] === '}') {
+      depth--;
+      if (depth === 0) {
+        return { content: str.slice(startIndex + 1, i), endIndex: i };
+      }
+    }
+  }
+  return null;
+}
+
+function formatFractions(str: string): string {
+  let result = '';
+  let i = 0;
+  while (i < str.length) {
+    const fracIdx = str.indexOf('\\frac', i);
+    const dfracIdx = str.indexOf('\\dfrac', i);
+    const tfracIdx = str.indexOf('\\tfrac', i);
+
+    const candidates = [fracIdx, dfracIdx, tfracIdx].filter((idx) => idx !== -1);
+    if (candidates.length === 0) {
+      result += str.slice(i);
+      break;
+    }
+    const matchIdx = Math.min(...candidates);
+    const matchLen = str.startsWith('\\dfrac', matchIdx) || str.startsWith('\\tfrac', matchIdx) ? 6 : 5;
+
+    result += str.slice(i, matchIdx);
+    let afterCmd = matchIdx + matchLen;
+    while (afterCmd < str.length && str[afterCmd] === ' ') afterCmd++;
+
+    const numMatch = extractBraced(str, afterCmd);
+    if (!numMatch) {
+      result += str.slice(matchIdx, matchIdx + matchLen);
+      i = matchIdx + matchLen;
+      continue;
+    }
+
+    let afterNum = numMatch.endIndex + 1;
+    while (afterNum < str.length && str[afterNum] === ' ') afterNum++;
+    const denMatch = extractBraced(str, afterNum);
+    if (!denMatch) {
+      result += str.slice(matchIdx, afterNum);
+      i = afterNum;
+      continue;
+    }
+
+    const formattedNum = formatMathText(numMatch.content.trim());
+    const formattedDen = formatMathText(denMatch.content.trim());
+
+    const numNeedsParens = /[+\-=\/ ]/.test(formattedNum);
+    const denNeedsParens = /[+\-=\/ ]/.test(formattedDen);
+
+    const numStr = numNeedsParens ? `(${formattedNum})` : formattedNum;
+    const denStr = denNeedsParens ? `(${formattedDen})` : formattedDen;
+
+    result += `${numStr} / ${denStr}`;
+    i = denMatch.endIndex + 1;
+  }
+  return result;
+}
+
+/**
+ * Formats a LaTeX math string into clean, readable notation suitable for
+ * serif typesetting in standard PDF fonts.
+ */
+export function formatMathText(rawLatex: string): string {
+  if (!rawLatex) return '';
+  let text = decodeHtmlEntities(rawLatex);
+
+  text = text.replace(/^\$\$?|\$\$?$/g, '').trim();
+
+  // Strip font/text wrappers
+  text = text.replace(/\\(?:text|mathrm|mathbf|mathit|mathsf|mathtt|operatorname)\{([^{}]*)\}/g, '$1');
+
+  // Format fractions recursively
+  text = formatFractions(text);
+
+  // Roots
+  text = text.replace(/\\sqrt\[([^\]]+)\]\{([^{}]+)\}/g, 'root_$1($2)');
+  text = text.replace(/\\sqrt\{([^{}]+)\}/g, 'sqrt($1)');
+
+  // Delimiters
+  text = text
+    .replace(/\\left\s*([|()\[\]{}])/g, '$1')
+    .replace(/\\right\s*([|()\[\]{}])/g, '$1')
+    .replace(/\\left\./g, '')
+    .replace(/\\right\./g, '')
+    .replace(/\\vert\{\}/g, '|')
+    .replace(/\\vert\b/g, '|')
+    .replace(/\\\|/g, '|');
+
+  // Operators and symbols
+  text = text
+    .replace(/\\cdot\b/g, ' · ')
+    .replace(/\\times\b/g, ' × ')
+    .replace(/\\pm\b/g, ' ± ')
+    .replace(/\\leq\b|\\le\b/g, ' <= ')
+    .replace(/\\geq\b|\\ge\b/g, ' >= ')
+    .replace(/\\neq\b|\\ne\b/g, ' != ')
+    .replace(/\\approx\b/g, ' ~ ')
+    .replace(/\\sim\b/g, ' ~ ')
+    .replace(/\\to\b|\\rightarrow\b/g, ' -> ')
+    .replace(/\\leftarrow\b/g, ' <- ')
+    .replace(/\\infty\b/g, 'inf')
+    .replace(/\\partial\b/g, 'd')
+    .replace(/\\sum\b/g, 'sum')
+    .replace(/\\prod\b/g, 'prod')
+    .replace(/\\int\b/g, 'int')
+    // Greek letters
+    .replace(/\\Delta\b/g, 'delta')
+    .replace(/\\delta\b/g, 'delta')
+    .replace(/\\alpha\b/g, 'alpha')
+    .replace(/\\beta\b/g, 'beta')
+    .replace(/\\gamma\b/g, 'gamma')
+    .replace(/\\pi\b/g, 'pi')
+    .replace(/\\sigma\b/g, 'sigma')
+    .replace(/\\Sigma\b/g, 'sum')
+    .replace(/\\lambda\b/g, 'lambda')
+    .replace(/\\theta\b/g, 'theta')
+    .replace(/\\mu\b/g, 'mu')
+    .replace(/\\omega\b/g, 'omega')
+    .replace(/\\Omega\b/g, 'omega')
+    // Escaped chars
+    .replace(/\\%/g, '%')
+    .replace(/\\_/g, '_')
+    .replace(/\\\{/g, '{')
+    .replace(/\\\}/g, '}')
+    .replace(/\\,/g, ' ')
+    .replace(/\\;/g, ' ')
+    .replace(/\\!/g, '')
+    .replace(/\\quad\b|\\qquad\b/g, '  ')
+    // Clean remaining single-level braces: {abc} -> abc
+    .replace(/\{([^{}]+)\}/g, '$1')
+    .replace(/\{\}/g, '')
+    // Operators and spaces spacing
+    .replace(/\s*([!<>=]=|->|<-|[=<>])\s*/g, ' $1 ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return text;
+}
+
 /**
  * Flattens inline HTML into styled text runs, preserving explicit line breaks.
  * KaTeX spans use TeX annotations when available; inline images are skipped.
@@ -206,12 +376,22 @@ function inlineRuns(nodes: ChildNode[], style: InlineStyle = {}): Run[] {
       continue;
     }
 
-    if (name === 'span' && (node.attribs.class || '').includes('katex')) {
-      const tex = findTexAnnotation(node);
-      runs.push({
-        text: tex ? ` ${cleanInline(tex)} ` : cleanInline(textOf(node)),
-        style: { ...style, italic: true },
-      });
+    if (
+      (name === 'span' &&
+        (node.attribs['data-type'] === 'inline-math' ||
+          (node.attribs.class || '').includes('katex'))) ||
+      node.attribs['data-type'] === 'inline-math' ||
+      node.attribs['data-type'] === 'block-math' ||
+      (node.attribs.class || '').includes('katex-display')
+    ) {
+      const latex = node.attribs['data-latex'] || findTexAnnotation(node) || textOf(node).trim();
+      const formatted = formatMathText(latex);
+      if (formatted) {
+        runs.push({
+          text: ` ${formatted} `,
+          style: { ...style, italic: true },
+        });
+      }
       continue;
     }
 
@@ -254,6 +434,20 @@ function collectQuoteParagraphs(nodes: ChildNode[], out: Run[][]): void {
           const runs = mergeRuns(inlineRuns(child.children));
           if (runs.length > 0) out.push(runs);
         }
+      }
+      continue;
+    }
+
+    if (
+      (name === 'div' &&
+        (node.attribs['data-type'] === 'block-math' ||
+          (node.attribs.class || '').includes('katex-display'))) ||
+      node.attribs['data-type'] === 'block-math'
+    ) {
+      const latex = node.attribs['data-latex'] || findTexAnnotation(node) || textOf(node).trim();
+      const formatted = formatMathText(latex);
+      if (formatted) {
+        out.push([{ text: formatted, style: { italic: true } }]);
       }
       continue;
     }
@@ -411,6 +605,19 @@ function blocksFromNodes(nodes: ChildNode[], out: Block[]): void {
       continue;
     }
 
+    if (
+      (name === 'div' &&
+        (node.attribs['data-type'] === 'block-math' ||
+          (node.attribs.class || '').includes('katex-display'))) ||
+      node.attribs['data-type'] === 'block-math'
+    ) {
+      const latex = node.attribs['data-latex'] || findTexAnnotation(node) || textOf(node).trim();
+      if (latex) {
+        out.push({ kind: 'math', latex });
+      }
+      continue;
+    }
+
     if (name === 'div' || name === 'section' || name === 'article' || name === 'main' || name === 'body') {
       blocksFromNodes(node.children, out);
       continue;
@@ -545,6 +752,7 @@ class ArticlePdfBuilder {
 
   private layoutRuns(runs: Run[], size: number, maxWidth: number): Line[] {
     const tokens: WordToken[] = [];
+    let pendingSpace = false;
 
     for (const run of runs) {
       if (!run.text) continue;
@@ -554,22 +762,7 @@ class ArticlePdfBuilder {
       const lines = normalized.split('\n');
 
       lines.forEach((lineText, lineIndex) => {
-        const words = lineText.split(/ +/);
-
-        words.forEach((word, wordIndex) => {
-          if (!word) return;
-
-          tokens.push({
-            text: word,
-            font,
-            size,
-            width: font.widthOfTextAtSize(word, size),
-            spaceBefore: wordIndex > 0,
-            breakBefore: false,
-          });
-        });
-
-        if (lineIndex < lines.length - 1) {
+        if (lineIndex > 0) {
           tokens.push({
             text: '',
             font,
@@ -578,7 +771,34 @@ class ArticlePdfBuilder {
             spaceBefore: false,
             breakBefore: true,
           });
+          pendingSpace = false;
         }
+
+        const hasLeadingSpace = /^\s/.test(lineText);
+        const hasTrailingSpace = /\s$/.test(lineText);
+        const trimmed = lineText.trim();
+
+        if (!trimmed) {
+          if (hasLeadingSpace || hasTrailingSpace) {
+            if (tokens.length > 0) pendingSpace = true;
+          }
+          return;
+        }
+
+        const words = trimmed.split(/ +/);
+        words.forEach((word, wordIndex) => {
+          const spaceBefore = wordIndex === 0 ? (pendingSpace || hasLeadingSpace) : true;
+          tokens.push({
+            text: word,
+            font,
+            size,
+            width: font.widthOfTextAtSize(word, size),
+            spaceBefore,
+            breakBefore: false,
+          });
+        });
+
+        pendingSpace = hasTrailingSpace;
       });
     }
 
@@ -653,34 +873,58 @@ class ArticlePdfBuilder {
   private async loadImage(rawUrl: string): Promise<PDFImage | null> {
     if (!rawUrl) return null;
 
-    const url = rawUrl.startsWith('//')
-      ? `https:${rawUrl}`
-      : rawUrl.startsWith('/')
-        ? `${this.siteUrl}${rawUrl}`
-        : rawUrl;
+    const sanitizedUrl = rawUrl.replace(
+      'pzupxjsprmuudmvhzpxu.supabase.co',
+      'srbrnpbtfmilohkicpbb.supabase.co'
+    );
+
+    const url = sanitizedUrl.startsWith('//')
+      ? `https:${sanitizedUrl}`
+      : sanitizedUrl.startsWith('/')
+        ? `${this.siteUrl}${sanitizedUrl}`
+        : sanitizedUrl;
 
     if (!isFetchableUrl(url)) return null;
     if (this.imageCache.has(url)) return this.imageCache.get(url) ?? null;
 
     try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(9000) });
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(9000),
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 CernaBot/1.0',
+          Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        },
+      });
       if (!response.ok) {
+        console.warn(`[PDF] Failed to fetch image (HTTP ${response.status}): ${url}`);
         this.imageCache.set(url, null);
         return null;
       }
 
+      const contentType = (response.headers.get('content-type') || '').toLowerCase();
       const bytes = new Uint8Array(await response.arrayBuffer());
-      const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e;
-      const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8;
+      const isPng =
+        (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e) ||
+        contentType.includes('image/png');
+      const isJpeg =
+        (bytes[0] === 0xff && bytes[1] === 0xd8) ||
+        contentType.includes('image/jpeg') ||
+        contentType.includes('image/jpg');
       const isWebp =
-        bytes[0] === 0x52 &&
-        bytes[1] === 0x49 &&
-        bytes[2] === 0x46 &&
-        bytes[3] === 0x46 &&
-        bytes[8] === 0x57 &&
-        bytes[9] === 0x45 &&
-        bytes[10] === 0x42 &&
-        bytes[11] === 0x50;
+        (bytes[0] === 0x52 &&
+          bytes[1] === 0x49 &&
+          bytes[2] === 0x46 &&
+          bytes[3] === 0x46 &&
+          bytes[8] === 0x57 &&
+          bytes[9] === 0x45 &&
+          bytes[10] === 0x42 &&
+          bytes[11] === 0x50) ||
+        contentType.includes('image/webp');
+      const isOtherConvertible =
+        contentType.includes('image/avif') ||
+        contentType.includes('image/gif') ||
+        contentType.includes('image/svg');
 
       let image: PDFImage;
 
@@ -688,10 +932,7 @@ class ArticlePdfBuilder {
         image = await this.document.embedPng(bytes);
       } else if (isJpeg) {
         image = await this.document.embedJpg(bytes);
-      } else if (isWebp) {
-        // Uploads are stored as WebP inside .jpg files, which pdf-lib cannot
-        // embed directly; normalise them to a print-sized JPEG first.
-        const { default: sharp } = await import('sharp');
+      } else if (isWebp || isOtherConvertible) {
         const jpeg = await sharp(bytes)
           .resize({ width: 1400, withoutEnlargement: true })
           .flatten({ background: '#ffffff' })
@@ -699,13 +940,15 @@ class ArticlePdfBuilder {
           .toBuffer();
         image = await this.document.embedJpg(new Uint8Array(jpeg));
       } else {
+        console.warn(`[PDF] Unsupported image type: ${contentType || 'unknown'} from ${url}`);
         this.imageCache.set(url, null);
         return null;
       }
 
       this.imageCache.set(url, image);
       return image;
-    } catch {
+    } catch (err) {
+      console.warn(`[PDF] Error processing image from ${url}:`, err);
       this.imageCache.set(url, null);
       return null;
     }
@@ -972,6 +1215,51 @@ class ArticlePdfBuilder {
           this.ensureSpace(BODY_LINE * 2);
           this.drawLines(lines);
           this.y -= 7;
+          break;
+        }
+
+        case 'math': {
+          const formatted = formatMathText(block.latex);
+          if (!formatted) break;
+
+          const size = 11;
+          const lineHeight = 16;
+          this.ensureSpace(lineHeight * 2 + 16);
+          this.y -= 8;
+
+          const lines = this.layoutRuns(
+            [{ text: formatted, style: { italic: true } }],
+            size,
+            CONTENT_WIDTH - 32
+          );
+
+          for (const line of lines) {
+            this.ensureSpace(lineHeight);
+            let lineWidth = 0;
+            for (const segment of line) {
+              lineWidth += segment.font.widthOfTextAtSize(segment.text, segment.size);
+            }
+
+            const startX = MARGIN.left + Math.max(0, (CONTENT_WIDTH - lineWidth) / 2);
+            let cursor = startX;
+
+            for (const segment of line) {
+              if (segment.text) {
+                this.page.drawText(segment.text, {
+                  x: cursor,
+                  y: this.y,
+                  font: segment.font,
+                  size: segment.size,
+                  color: INK,
+                });
+              }
+              cursor += segment.font.widthOfTextAtSize(segment.text, segment.size);
+            }
+
+            this.y -= lineHeight;
+          }
+
+          this.y -= 8;
           break;
         }
 

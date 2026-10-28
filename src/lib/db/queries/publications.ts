@@ -264,7 +264,7 @@ export async function getPublicationBySlug(
       title: activeData.title,
       subtitle: activeData.subtitle,
       content: activeData.content,
-      cover_image_url: activeData.cover_image_url,
+      cover_image_url: cleanImageUrl(activeData.cover_image_url),
       type: activeData.type,
       status: activeData.status,
       original_language: activeData.original_language,
