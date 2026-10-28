@@ -257,6 +257,43 @@ function formatFractions(str: string): string {
   return result;
 }
 
+function formatRoots(str: string): string {
+  let result = '';
+  let i = 0;
+  while (i < str.length) {
+    const sqrtIdx = str.indexOf('\\sqrt', i);
+    if (sqrtIdx === -1) {
+      result += str.slice(i);
+      break;
+    }
+    result += str.slice(i, sqrtIdx);
+    let cursor = sqrtIdx + 5;
+    let degree: string | null = null;
+    if (str[cursor] === '[') {
+      const closeBracket = str.indexOf(']', cursor);
+      if (closeBracket !== -1) {
+        degree = str.slice(cursor + 1, closeBracket).trim();
+        cursor = closeBracket + 1;
+      }
+    }
+    while (cursor < str.length && str[cursor] === ' ') cursor++;
+    const radicand = extractBraced(str, cursor);
+    if (!radicand) {
+      result += str.slice(sqrtIdx, cursor);
+      i = cursor;
+      continue;
+    }
+    const formattedRadicand = formatMathText(radicand.content.trim());
+    if (degree) {
+      result += `root_${degree}(${formattedRadicand})`;
+    } else {
+      result += `sqrt(${formattedRadicand})`;
+    }
+    i = radicand.endIndex + 1;
+  }
+  return result;
+}
+
 /**
  * Formats a LaTeX math string into clean, readable notation suitable for
  * serif typesetting in standard PDF fonts.
@@ -273,9 +310,8 @@ export function formatMathText(rawLatex: string): string {
   // Format fractions recursively
   text = formatFractions(text);
 
-  // Roots
-  text = text.replace(/\\sqrt\[([^\]]+)\]\{([^{}]+)\}/g, 'root_$1($2)');
-  text = text.replace(/\\sqrt\{([^{}]+)\}/g, 'sqrt($1)');
+  // Format square/n-th roots recursively
+  text = formatRoots(text);
 
   // Delimiters
   text = text
@@ -327,6 +363,8 @@ export function formatMathText(rawLatex: string): string {
     .replace(/\\;/g, ' ')
     .replace(/\\!/g, '')
     .replace(/\\quad\b|\\qquad\b/g, '  ')
+    // Parenthesize grouped subscripts and superscripts: x_{n-1} -> x_(n-1), y^{n+1} -> y^(n+1)
+    .replace(/([_^])\{([^{}]+)\}/g, '$1($2)')
     // Clean remaining single-level braces: {abc} -> abc
     .replace(/\{([^{}]+)\}/g, '$1')
     .replace(/\{\}/g, '')
