@@ -1,7 +1,7 @@
 -- Migration: CodeRabbit PR #31 Security & RLS Hardening
 -- Ensures all security fixes from CodeRabbit review are applied to remote databases.
 
--- 1. get_subscribers_emails RPC hardening: search_path, service_role authorization only
+-- 1. get_subscribers_emails RPC hardening: search_path, service_role authorization only, auth.users join
 CREATE OR REPLACE FUNCTION "public"."get_subscribers_emails"("webhook_secret" "text") 
 RETURNS TABLE("email" "text", "full_name" "text")
 LANGUAGE "plpgsql" SECURITY DEFINER
@@ -13,72 +13,50 @@ BEGIN
   END IF;
 
   RETURN QUERY
-  SELECT u.email::text, u.full_name::text
-  FROM public.users u
-  WHERE u.newsletter_subscribed = true AND u.email IS NOT NULL;
+  SELECT au.email::text, u.full_name::text
+  FROM auth.users au
+  JOIN public.users u ON au.id = u.id
+  WHERE u.newsletter_subscribed = TRUE AND au.email IS NOT NULL;
 END;
 $$;
 
 REVOKE ALL ON FUNCTION "public"."get_subscribers_emails"("text") FROM PUBLIC, "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."get_subscribers_emails"("text") TO "service_role";
 
--- 2. unsubscribe_newsletter_by_email RPC hardening: search_path, service_role authorization only
+-- 2. unsubscribe_newsletter_by_email RPC hardening: search_path, service_role authorization only, auth.users lookup
 CREATE OR REPLACE FUNCTION "public"."unsubscribe_newsletter_by_email"("target_email" "text") 
 RETURNS boolean
 LANGUAGE "plpgsql" SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
-  v_count integer;
+  v_user_id uuid;
 BEGIN
   IF auth.role() IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION 'Unauthorized: service_role required';
   END IF;
 
-  UPDATE public.users
-  SET newsletter_subscribed = false
-  WHERE email = target_email AND newsletter_subscribed = true;
+  SELECT id INTO v_user_id 
+  FROM auth.users 
+  WHERE LOWER(email) = LOWER(TRIM(target_email)) 
+  LIMIT 1;
 
-  GET DIAGNOSTICS v_count = ROW_COUNT;
-  RETURN v_count > 0;
+  IF v_user_id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  UPDATE public.users
+  SET newsletter_subscribed = FALSE
+  WHERE id = v_user_id;
+
+  RETURN TRUE;
 END;
 $$;
 
 REVOKE ALL ON FUNCTION "public"."unsubscribe_newsletter_by_email"("text") FROM PUBLIC, "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."unsubscribe_newsletter_by_email"("text") TO "service_role";
 
--- 3. Dynamic trigger without hardcoded webhook secret
-CREATE OR REPLACE FUNCTION "public"."trigger_publication_published_newsletter"() 
-RETURNS trigger
-LANGUAGE "plpgsql" SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  app_url text;
-  wh_secret text;
-BEGIN
-  IF NEW.status = 'published' AND (OLD.status IS NULL OR OLD.status != 'published') THEN
-    app_url := COALESCE(current_setting('app.settings.site_url', true), 'https://cernapensamento.org');
-    wh_secret := current_setting('app.settings.webhook_secret', true);
-    
-    PERFORM net.http_post(
-      url := app_url || '/api/webhooks/newsletter',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || COALESCE(wh_secret, '')
-      ),
-      body := jsonb_build_object(
-        'publication_id', NEW.id,
-        'title', NEW.title,
-        'slug', NEW.slug
-      )
-    );
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
--- 4. Publication policies: author publication gating and reviewer policies
+-- 3. Publication policies: author publication gating and reviewer policies
 DROP POLICY IF EXISTS "Authors can insert publications" ON "public"."publications";
 CREATE POLICY "Authors can insert publications" ON "public"."publications"
   FOR INSERT TO authenticated
@@ -122,7 +100,7 @@ CREATE POLICY "Reviewers can update in_review publications" ON "public"."publica
     COALESCE(((auth.jwt() -> 'app_metadata'::text) ->> 'user_role'::text), (SELECT (users.role)::text FROM public.users WHERE (users.id = auth.uid()))) = ANY (ARRAY['founder'::text, 'admin'::text])
   );
 
--- 5. Tags and tag_translations management restricted to editorial roles
+-- 4. Tags and tag_translations management restricted to editorial roles
 DROP POLICY IF EXISTS "Editores pueden crear tags" ON "public"."tags";
 DROP POLICY IF EXISTS "Editors can manage tags" ON "public"."tags";
 CREATE POLICY "Editors can manage tags" ON "public"."tags"
@@ -137,7 +115,7 @@ CREATE POLICY "Editors can manage tag translations" ON "public"."tag_translation
   USING (COALESCE(((auth.jwt() -> 'app_metadata'::text) ->> 'user_role'::text), (SELECT (users.role)::text FROM public.users WHERE (users.id = auth.uid()))) = ANY (ARRAY['founder'::text, 'admin'::text, 'member'::text]))
   WITH CHECK (COALESCE(((auth.jwt() -> 'app_metadata'::text) ->> 'user_role'::text), (SELECT (users.role)::text FROM public.users WHERE (users.id = auth.uid()))) = ANY (ARRAY['founder'::text, 'admin'::text, 'member'::text]));
 
--- 6. Column-level permissions on public.users to prevent self-elevation of role
+-- 5. Column-level permissions on public.users to prevent self-elevation of role
 REVOKE ALL ON TABLE "public"."users" FROM "anon", "authenticated";
 GRANT SELECT ON TABLE "public"."users" TO "anon";
 GRANT SELECT ON TABLE "public"."users" TO "authenticated";
