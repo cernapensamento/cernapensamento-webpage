@@ -1,4 +1,6 @@
 import React from 'react';
+import { getDictionaryClient } from '@/dictionaries/client';
+import type { Locale } from '@/i18n-config';
 import Link from 'next/link';
 import ArticleCard, { type ArticleCardData } from '@/components/features/ArticleCard';
 import RecentArticlesMosaicGrid from '@/components/features/RecentArticlesMosaicGrid';
@@ -12,6 +14,7 @@ interface ArticlesMosaicSectionProps {
     documentTypes?: Record<string, string>;
     readArticle?: string;
     archiveTitle?: string;
+    articles?: { title?: string };
     viewAll?: string;
     pinnedTitle?: string;
     mosaic?: {
@@ -59,7 +62,7 @@ export default function ArticlesMosaicSection({
     <section className="w-full flex flex-col gap-14 md:gap-18">
       {/* Semantic H2 heading for articles section ensuring strictly sequential hierarchy */}
       <h2 className="sr-only">
-        {dict?.mosaic?.pinnedTitle || dict?.pinnedTitle || dict?.archiveTitle || 'Publicacións Destacadas'}
+        {dict?.archiveTitle || dict?.articles?.title || getDictionaryClient(lang as Locale).articles.title}
       </h2>
       
       {/* ==================================================== */}
@@ -120,9 +123,9 @@ export default function ArticlesMosaicSection({
               <span className="material-symbols-outlined text-gold text-2xl" data-icon="push_pin">
                 push_pin
               </span>
-              <h2 className="font-serif text-2xl md:text-3xl text-charcoal font-semibold">
+              <h3 className="font-serif text-2xl md:text-3xl text-charcoal font-semibold">
                 {dict?.mosaic?.pinnedTitle}
-              </h2>
+              </h3>
             </div>
             <span className="text-[11px] sm:text-xs uppercase font-mono tracking-[0.16em] text-charcoal/40">
               {dict?.mosaic?.pinnedSubtitle}
@@ -189,9 +192,9 @@ export default function ArticlesMosaicSection({
       {displayedRecentArticles.length > 0 && (
         <div className="flex flex-col gap-10">
           <div className="flex items-center justify-between border-b border-lines pb-4">
-            <h2 className="font-serif text-2xl md:text-3xl text-charcoal font-semibold">
+            <h3 className="font-serif text-2xl md:text-3xl text-charcoal font-semibold">
               {dict?.mosaic?.recentTitle}
-            </h2>
+            </h3>
             <Link
               href={`/${lang}/articulos`}
               className="text-xs font-bold uppercase tracking-[0.2em] text-gold hover:text-charcoal transition-colors flex items-center gap-1.5 group"

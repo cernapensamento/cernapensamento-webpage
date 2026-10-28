@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateMetadata } from './page';
+import { getDictionary } from '@/dictionaries';
 
 describe('Homepage Metadata & Agent Readiness', () => {
   it('generates complete metadata with all 4 signals (canonical, og:image, og:type, brand discovery)', async () => {
@@ -31,4 +32,13 @@ describe('Homepage Metadata & Agent Readiness', () => {
     expect(meta.alternates?.canonical).toBe('https://cernapensamento.org/es');
     expect(meta.openGraph?.locale).toBe('es_ES');
   });
+
+  it.each(['gl', 'es'] as const)('uses the selected dictionary for %s descriptions', async (lang) => {
+    const dict = await getDictionary(lang);
+    const meta = await generateMetadata({ params: Promise.resolve({ lang }) });
+    expect(meta.description).toBe(dict.homepage.description);
+    expect(meta.openGraph?.description).toBe(dict.homepage.description);
+    expect(meta.twitter?.description).toBe(dict.homepage.description);
+  });
+
 });

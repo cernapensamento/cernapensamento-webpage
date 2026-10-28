@@ -32,7 +32,7 @@ describe('getPublicationBySlug - Suffix Fallback Resolution', () => {
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            single: vi.fn().mockResolvedValue({
+            maybeSingle: vi.fn().mockResolvedValue({
               data: canonicalPublication,
               error: null,
             }),
@@ -51,9 +51,9 @@ describe('getPublicationBySlug - Suffix Fallback Resolution', () => {
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            single: vi.fn().mockResolvedValue({
+            maybeSingle: vi.fn().mockResolvedValue({
               data: null,
-              error: { code: 'PGRST116', message: 'No rows found' },
+              error: null,
             }),
           })),
           ilike: vi.fn(() => ({
@@ -80,9 +80,9 @@ describe('getPublicationBySlug - Suffix Fallback Resolution', () => {
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            single: vi.fn().mockResolvedValue({
+            maybeSingle: vi.fn().mockResolvedValue({
               data: null,
-              error: { code: 'PGRST116', message: 'No rows found' },
+              error: null,
             }),
           })),
           ilike: vi.fn(() => ({

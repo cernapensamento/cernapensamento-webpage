@@ -2,10 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
-const contentDirectory = path.join(process.cwd(), 'src/content');
+const contentDirectory = path.resolve(process.cwd(), 'src/content');
 
 export function getDocument(slug: string, lang: string) {
-  const fullPath = path.join(contentDirectory, slug, `${lang}.md`);
+  const fullPath = path.resolve(contentDirectory, slug, `${lang}.md`);
+  const relativePath = path.relative(contentDirectory, fullPath);
+  if (relativePath.startsWith(`..${path.sep}`) || relativePath === '..' || path.isAbsolute(relativePath)) {
+    return { data: {}, content: '' };
+  }
   
   try {
     const fileContents = fs.readFileSync(fullPath, 'utf8');
