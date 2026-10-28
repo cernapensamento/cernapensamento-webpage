@@ -1,4 +1,5 @@
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
+import { PUBLICATION_STATUSES } from '@/lib/db/schema';
 import { getDictionary } from '@/dictionaries';
 import { buildArticlePdf } from '@/lib/pdf/articlePdf';
 import { formatArticleDate } from '@/lib/date';
@@ -31,7 +32,7 @@ export async function GET(request: Request, { params }: RouteContext) {
   try {
     const publication = await getPublicationBySlug(slug, { lang });
 
-    if (!publication) {
+    if (!publication || publication.status !== PUBLICATION_STATUSES.PUBLISHED) {
       return new Response('Artigo non atopado', { status: 404 });
     }
 

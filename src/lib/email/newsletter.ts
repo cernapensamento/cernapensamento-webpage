@@ -1,13 +1,22 @@
 import crypto from 'crypto';
 
-const DEFAULT_SECRET = 'CERNA_WEBHOOK_SECRET_98765';
-
 /**
- * Returns WEBHOOK_SECRET, falling back to the built-in shared secret when unset
- * or empty. The same secret is used for webhook authorization and unsubscribe tokens.
+ * Returns WEBHOOK_SECRET, throwing an error if unset or empty.
  */
 export function getNewsletterSecret(): string {
-  return process.env.WEBHOOK_SECRET || DEFAULT_SECRET;
+  const secret = process.env.WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error('WEBHOOK_SECRET environment variable is not set');
+  }
+  return secret;
+}
+
+export function getUnsubscribeTokenSecret(): string {
+  const secret = process.env.UNSUBSCRIBE_TOKEN_SECRET || process.env.WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error('Neither UNSUBSCRIBE_TOKEN_SECRET nor WEBHOOK_SECRET environment variable is set');
+  }
+  return secret;
 }
 
 /**
@@ -15,7 +24,7 @@ export function getNewsletterSecret(): string {
  * Signs the trimmed, lowercase email with the newsletter secret and returns hex.
  */
 export function createUnsubscribeToken(email: string): string {
-  const secret = getNewsletterSecret();
+  const secret = getUnsubscribeTokenSecret();
   const normalizedEmail = email.trim().toLowerCase();
   return crypto
     .createHmac('sha256', secret)
@@ -30,8 +39,8 @@ export function createUnsubscribeToken(email: string): string {
  */
 export function verifyUnsubscribeToken(email: string, token: string): boolean {
   if (!email || !token) return false;
-  const expectedToken = createUnsubscribeToken(email);
   try {
+    const expectedToken = createUnsubscribeToken(email);
     const tokenBuf = Buffer.from(token);
     const expectedBuf = Buffer.from(expectedToken);
     if (tokenBuf.length !== expectedBuf.length) {

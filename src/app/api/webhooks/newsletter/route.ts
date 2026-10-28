@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { getDictionary } from '@/dictionaries';
 import { DB_TABLES, PUBLICATION_COLS, PUBLICATION_STATUSES, USER_COLS } from '@/lib/db/schema';
 import { renderNewsletterEmail } from '@/lib/email/newsletter-template';
@@ -21,8 +21,17 @@ interface SubscriberRecord {
  * `success: true` does not mean every email was sent.
  */
 export async function POST(request: NextRequest) {
+  let supabase: SupabaseClient | null = null;
+  let claimedPublicationId: string | null = null;
+
   try {
-    const WEBHOOK_SECRET = getNewsletterSecret();
+    let WEBHOOK_SECRET: string;
+    try {
+      WEBHOOK_SECRET = getNewsletterSecret();
+    } catch {
+      console.error('[Newsletter Webhook] Missing WEBHOOK_SECRET');
+      return NextResponse.json({ error: 'Configuración non dispoñible' }, { status: 500 });
+    }
 
     // 1. Verify Authorization Header (Bearer WEBHOOK_SECRET) with timing-safe comparison
     const authHeader = request.headers.get('Authorization');
@@ -71,10 +80,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Connect to Supabase using Service Role Key (preferred for admin updates) or Anon Key
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // 3. Validate credentials before claiming publication
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+    if (!resendApiKey || !serviceKey || !supabaseUrl) {
+      console.error('[Newsletter Webhook] Missing RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL');
+      return NextResponse.json({ error: 'Configuración non dispoñible' }, { status: 500 });
+    }
+
+    supabase = createClient(supabaseUrl, serviceKey);
+    const resend = new Resend(resendApiKey);
 
     // 4. Atomically claim this publication dispatch: set newsletter_sent_at = now() WHERE newsletter_sent_at IS NULL
     const nowIso = new Date().toISOString();
@@ -99,6 +116,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    claimedPublicationId = claimedPublication.id;
+
+    const releaseClaim = async () => {
+      if (!supabase || !claimedPublicationId) return;
+      try {
+        await supabase
+          .from(DB_TABLES.PUBLICATIONS)
+          .update({ [PUBLICATION_COLS.NEWSLETTER_SENT_AT]: null })
+          .eq(PUBLICATION_COLS.ID, claimedPublicationId);
+      } catch (releaseErr) {
+        console.error('[Newsletter Webhook] Erro ao liberar o bloqueo da publicación:', releaseErr);
+      }
+    };
+
     // 5. Fetch Author Information (full_name) if available
     let authorName: string | null = null;
     if (claimedPublication.author_id) {
@@ -120,6 +151,7 @@ export async function POST(request: NextRequest) {
 
     if (subError) {
       console.error('[Newsletter Webhook] Error fetching subscribers:', subError);
+      await releaseClaim();
       return NextResponse.json({ error: 'Erro ao obter a lista de subscritores' }, { status: 500 });
     }
 
@@ -159,13 +191,6 @@ export async function POST(request: NextRequest) {
     const publicationType = claimedPublication.type || 'artigo';
 
     // 8. Prepare Email List with Personalized 1-Click Unsubscribe & RFC 8058 Headers
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (!resendApiKey) {
-      console.error('[Newsletter Webhook] RESEND_API_KEY is missing');
-      return NextResponse.json({ error: 'Configuración de correo (Resend) non dispoñible' }, { status: 500 });
-    }
-    const resend = new Resend(resendApiKey);
-
     const emailBatch = subscribers.map((sub) => {
       const userUnsubscribeUrl = buildUnsubscribeUrl(sub.email, primaryLang);
       const emailContent = renderNewsletterEmail({
@@ -216,6 +241,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (successfulDispatches === 0) {
+      console.error('[Newsletter Webhook] Ningún correo foi enviado correctamente. Liberando claim.');
+      await releaseClaim();
+      return NextResponse.json(
+        {
+          error: 'Non se puido enviar ningún correo da newsletter',
+          totalSubscribers: emailBatch.length,
+          successfulDispatches: 0,
+          results,
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -229,6 +268,16 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('[Newsletter Webhook] Erro crítico non controlado:', error);
+    if (supabase && claimedPublicationId) {
+      try {
+        await supabase
+          .from(DB_TABLES.PUBLICATIONS)
+          .update({ [PUBLICATION_COLS.NEWSLETTER_SENT_AT]: null })
+          .eq(PUBLICATION_COLS.ID, claimedPublicationId);
+      } catch (releaseErr) {
+        console.error('[Newsletter Webhook] Erro ao liberar o bloqueo tras excepción:', releaseErr);
+      }
+    }
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }

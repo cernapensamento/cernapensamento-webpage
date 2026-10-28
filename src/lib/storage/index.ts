@@ -22,6 +22,11 @@ export interface UploadStorageImageOptions {
   file: File | Blob;
   category: StorageCategory;
   userId: string;
+  /**
+   * @deprecated Superseded asset cleanup is now the caller's responsibility after
+   * successful persistence (e.g. using `removeStorageImages`). This prevents deleting
+   * assets if saving fails or is cancelled.
+   */
   previousUrl?: string | null;
   originalFilename?: string;
 }
@@ -34,10 +39,8 @@ export interface UploadStorageImageResult {
 }
 
 /**
- * Validates, compresses, and uploads an image using the category preset, then
- * returns its public URL, path, and dimensions in pixels. WebP is preferred with
- * a JPEG fallback. A recognized `previousUrl` is scheduled for deletion after
- * upload; that deletion is not awaited and its rejection is caught.
+ * Validates, optimizes (WebP compression & downscaling), and uploads an image
+ * to Supabase Storage according to the category's preset.
  * Rejects with `INVALID_FORMAT` for a nonempty unsupported MIME type or
  * `FILE_TOO_LARGE:<rounded MiB limit>` when the input exceeds its size limit.
  * Compression failures, upload errors, and uncaught storage SDK errors propagate.
@@ -47,7 +50,6 @@ export async function uploadStorageImage({
   file,
   category,
   userId,
-  previousUrl,
   originalFilename,
 }: UploadStorageImageOptions): Promise<UploadStorageImageResult> {
   const preset = STORAGE_PRESETS[category];
@@ -86,18 +88,7 @@ export async function uploadStorageImage({
     throw error;
   }
 
-  // 5. Cleanup previous asset if superseded
-  if (previousUrl) {
-    const oldInfo = extractBucketAndPathFromUrl(previousUrl);
-    if (oldInfo && (oldInfo.bucket !== STORAGE_BUCKET || oldInfo.path !== path)) {
-      supabase.storage
-        .from(oldInfo.bucket)
-        .remove([oldInfo.path])
-        .catch((err) => console.error('Failed to cleanup previous storage image:', err));
-    }
-  }
-
-  // 6. Public URL resolution
+  // 5. Public URL resolution
   const { data: urlData } = supabase.storage
     .from(STORAGE_BUCKET)
     .getPublicUrl(path);

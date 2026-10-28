@@ -12,7 +12,7 @@ import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 import { DB_TABLES, USER_COLS, USER_ROLES } from '@/lib/db/schema';
 import type { UserRow } from '@/lib/db/types';
-import { uploadStorageImage, STORAGE_CATEGORIES } from '@/lib/storage';
+import { uploadStorageImage, removeStorageImages, STORAGE_CATEGORIES } from '@/lib/storage';
 import FormattedDate from '@/components/ui/FormattedDate';
 import { useToast } from '@/components/ui/FeedbackProvider';
 
@@ -88,6 +88,7 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
     const storageDict = dict.escritorio.storage;
     setIsUploading(true);
     const localPreview = URL.createObjectURL(file);
+    const oldAvatar = profile?.avatar_url || avatarUrl;
     setAvatarUrl(localPreview);
 
     try {
@@ -96,7 +97,6 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
         file,
         category: STORAGE_CATEGORIES.PROFILE_AVATAR,
         userId: user.id,
-        previousUrl: profile?.avatar_url || avatarUrl,
       });
 
       setAvatarUrl(publicUrl);
@@ -110,6 +110,11 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
       if (updateError) {
         console.error('Error al guardar avatar en DB:', updateError.message);
       } else {
+        if (oldAvatar && oldAvatar !== publicUrl) {
+          removeStorageImages(supabase, [oldAvatar]).catch((err) =>
+            console.error('Failed to cleanup previous avatar:', err)
+          );
+        }
         window.dispatchEvent(new Event('profile_updated'));
         router.refresh();
       }

@@ -14,11 +14,13 @@ vi.mock('@supabase/supabase-js', () => ({
 describe('Newsletter Unsubscribe API Route (/api/newsletter/unsubscribe)', () => {
   const originalEnv = { ...process.env };
   const testEmail = 'lector@cerna.org';
-  const validToken = createUnsubscribeToken(testEmail);
+  let validToken: string;
 
   beforeEach(() => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:54321';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock_service_key';
+    process.env.UNSUBSCRIBE_TOKEN_SECRET = 'mock_unsubscribe_token_secret';
+    validToken = createUnsubscribeToken(testEmail);
     mockRpc.mockReset();
     mockRpc.mockResolvedValue({ data: true, error: null });
   });

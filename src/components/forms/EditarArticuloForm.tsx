@@ -97,7 +97,7 @@ export default function EditarArticuloForm({
     idioma_original: pub.original_language,
   };
 
-  const handleSave = async (data: ArticleData, action: EditorAction) => {
+  const handleSave = async (data: ArticleData, action: EditorAction): Promise<boolean> => {
     setIsPublishing(true);
     try {
       const {
@@ -105,7 +105,7 @@ export default function EditarArticuloForm({
       } = await supabase.auth.getUser();
       if (!user) {
         toast.error(dict.articleEditor.sessionRequiredEdit);
-        return;
+        return false;
       }
 
       let updatedSlug = pub.slug;
@@ -185,44 +185,47 @@ export default function EditarArticuloForm({
       if (error) {
         console.error(error);
         toast.error(dict.articleEditor.saveError + error.message);
-      } else {
-        // Sync publication tags
-        const tagSlugs = data.tags || data.tematicas;
-        if (tagSlugs) {
-          await supabase
-            .from(DB_TABLES.PUBLICATION_TAGS)
-            .delete()
-            .eq(PUBLICATION_TAG_COLS.PUBLICATION_ID, pub.id);
+        return false;
+      }
 
-          if (tagSlugs.length > 0) {
-            const { data: tagRows } = await supabase
-              .from(DB_TABLES.TAGS)
-              .select(TAG_COLS.ID)
-              .in(TAG_COLS.SLUG, tagSlugs);
+      // Sync publication tags
+      const tagSlugs = data.tags || data.tematicas;
+      if (tagSlugs) {
+        await supabase
+          .from(DB_TABLES.PUBLICATION_TAGS)
+          .delete()
+          .eq(PUBLICATION_TAG_COLS.PUBLICATION_ID, pub.id);
 
-            if (tagRows && tagRows.length > 0) {
-              await supabase.from(DB_TABLES.PUBLICATION_TAGS).insert(
-                tagRows.map((t) => ({
-                  [PUBLICATION_TAG_COLS.PUBLICATION_ID]: pub.id,
-                  [PUBLICATION_TAG_COLS.TAG_ID]: t.id,
-                }))
-              );
-            }
+        if (tagSlugs.length > 0) {
+          const { data: tagRows } = await supabase
+            .from(DB_TABLES.TAGS)
+            .select(TAG_COLS.ID)
+            .in(TAG_COLS.SLUG, tagSlugs);
+
+          if (tagRows && tagRows.length > 0) {
+            await supabase.from(DB_TABLES.PUBLICATION_TAGS).insert(
+              tagRows.map((t) => ({
+                [PUBLICATION_TAG_COLS.PUBLICATION_ID]: pub.id,
+                [PUBLICATION_TAG_COLS.TAG_ID]: t.id,
+              }))
+            );
           }
         }
-
-        toast.success(
-          action === PUBLICATION_STATUSES.DRAFT ||
-            action === 'reject' ||
-            action === 'revoke_approval'
-            ? dict.articleEditor.draftUpdated
-            : dict.articleEditor.actionSuccess
-        );
-        router.push(`/${lang}/escritorio`);
       }
+
+      toast.success(
+        action === PUBLICATION_STATUSES.DRAFT ||
+          action === 'reject' ||
+          action === 'revoke_approval'
+          ? dict.articleEditor.draftUpdated
+          : dict.articleEditor.actionSuccess
+      );
+      router.push(`/${lang}/escritorio`);
+      return true;
     } catch (error: unknown) {
       console.error(error);
       toast.error(dict.articleEditor.unexpectedError);
+      return false;
     } finally {
       setIsPublishing(false);
     }

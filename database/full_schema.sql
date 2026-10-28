@@ -172,21 +172,18 @@ ALTER FUNCTION "public"."generate_slug"("text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."get_subscribers_emails"("webhook_secret" "text") RETURNS TABLE("email" "text", "full_name" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET search_path = ''
     AS $$
-DECLARE
-  expected_secret text;
 BEGIN
-  expected_secret := COALESCE(current_setting('app.settings.webhook_secret', true), 'CERNA_WEBHOOK_SECRET_98765');
-
-  IF auth.role() != 'service_role' AND webhook_secret != expected_secret AND webhook_secret != 'CERNA_WEBHOOK_SECRET_98765' THEN
-    RAISE EXCEPTION 'No autorizado';
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'Unauthorized: service_role required';
   END IF;
 
   RETURN QUERY
-  SELECT au.email::text, u.full_name
+  SELECT au.email::text, u.full_name::text
   FROM auth.users au
   JOIN public.users u ON au.id = u.id
-  WHERE u.newsletter_subscribed = TRUE;
+  WHERE u.newsletter_subscribed = TRUE AND au.email IS NOT NULL;
 END;
 $$;
 
@@ -196,6 +193,7 @@ ALTER FUNCTION "public"."get_subscribers_emails"("webhook_secret" "text") OWNER 
 
 CREATE OR REPLACE FUNCTION "public"."unsubscribe_newsletter_by_email"("target_email" "text") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET search_path = ''
     AS $$
 DECLARE
   v_user_id uuid;
@@ -239,6 +237,44 @@ $$;
 
 
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_publication_published_newsletter"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET search_path = ''
+    AS $$
+DECLARE
+  v_secret text;
+  v_headers text;
+  v_url text;
+BEGIN
+  v_secret := current_setting('app.settings.webhook_secret', true);
+  IF v_secret IS NULL OR v_secret = '' THEN
+    RAISE WARNING 'app.settings.webhook_secret is not set. Webhook skipped.';
+    RETURN NEW;
+  END IF;
+
+  v_headers := json_build_object(
+    'Content-Type', 'application/json',
+    'Authorization', 'Bearer ' || v_secret
+  )::text;
+
+  v_url := COALESCE(current_setting('app.settings.site_url', true), 'https://cernapensamento.org') || '/api/webhooks/newsletter';
+
+  PERFORM "supabase_functions"."http_request"(
+    v_url,
+    'POST',
+    v_headers,
+    json_build_object('record', row_to_json(NEW))::text,
+    '5000'
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_publication_published_newsletter"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
@@ -416,7 +452,7 @@ CREATE OR REPLACE TRIGGER "before_insert_publication_quota" BEFORE INSERT ON "pu
 
 
 
-CREATE OR REPLACE TRIGGER "on_publication_published_newsletter" AFTER INSERT OR UPDATE ON "public"."publications" FOR EACH ROW WHEN (NEW.status = 'published' AND NEW.newsletter_sent_at IS NULL) EXECUTE FUNCTION "supabase_functions"."http_request"('https://cernapensamento.org/api/webhooks/newsletter', 'POST', '{"Authorization":"Bearer CERNA_WEBHOOK_SECRET_98765"}', '{}', '5000');
+CREATE OR REPLACE TRIGGER "on_publication_published_newsletter" AFTER INSERT OR UPDATE ON "public"."publications" FOR EACH ROW WHEN (NEW.status = 'published' AND NEW.newsletter_sent_at IS NULL) EXECUTE FUNCTION "public"."trigger_publication_published_newsletter"();
 
 
 
@@ -475,21 +511,25 @@ CREATE POLICY "Authors and Admins can delete publications" ON "public"."publicat
 
 CREATE POLICY "Authors can insert publications" ON "public"."publications" FOR INSERT WITH CHECK ((("auth"."uid"() = "author_id") AND (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), ( SELECT ("users"."role")::"text" AS "role"
    FROM "public"."users"
-  WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['guest'::"text", 'member'::"text", 'founder'::"text", 'admin'::"text"]))));
+  WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['guest'::"text", 'member'::"text", 'founder'::"text", 'admin'::"text"])) AND (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), ( SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text"]) OR (("status" <> 'published'::"public"."publication_status") AND ("is_pinned" = false))))));
 
 
 
 CREATE POLICY "Authors can update own publications" ON "public"."publications" FOR UPDATE USING ((("auth"."uid"() = "author_id") AND (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), ( SELECT ("users"."role")::"text" AS "role"
    FROM "public"."users"
-  WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['guest'::"text", 'member'::"text", 'founder'::"text", 'admin'::"text"])))) WITH CHECK (("auth"."uid"() = "author_id"));
+  WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['guest'::"text", 'member'::"text", 'founder'::"text", 'admin'::"text"])))) WITH CHECK ((("auth"."uid"() = "author_id") AND (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), ( SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text"]) OR (("status" <> 'published'::"public"."publication_status") AND ("is_pinned" = false)))));
 
 
 
-CREATE POLICY "Editores pueden crear tags" ON "public"."tags" USING (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Editors can manage tags" ON "public"."tags"
+  USING (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), (SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text", 'member'::"text"]))
+  WITH CHECK (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), (SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text", 'member'::"text"]));
 
 
 
-CREATE POLICY "Editores pueden traducir tags" ON "public"."tag_translations" USING (("auth"."role"() = 'authenticated'::"text"));
+CREATE POLICY "Editors can manage tag translations" ON "public"."tag_translations"
+  USING (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), (SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text", 'member'::"text"]))
+  WITH CHECK (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), (SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text", 'member'::"text"]));
 
 
 
@@ -512,6 +552,27 @@ CREATE POLICY "Public read publication tags" ON "public"."publication_tags" FOR 
 
 
 CREATE POLICY "Public read published publications" ON "public"."publications" FOR SELECT USING ((("status" = 'published'::"public"."publication_status") OR ("auth"."uid"() = "author_id")));
+
+
+
+CREATE POLICY "Reviewers can view reviewable publications" ON "public"."publications"
+  FOR SELECT TO authenticated
+  USING (
+    ("status" = 'in_review'::"public"."publication_status") AND
+    (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), (SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text"]))
+  );
+
+
+
+CREATE POLICY "Reviewers can update in_review publications" ON "public"."publications"
+  FOR UPDATE TO authenticated
+  USING (
+    ("status" = 'in_review'::"public"."publication_status") AND
+    (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), (SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text"]))
+  )
+  WITH CHECK (
+    COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), (SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text"])
+  );
 
 
 
@@ -734,9 +795,8 @@ GRANT ALL ON FUNCTION "public"."generate_slug"("text") TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."get_subscribers_emails"("webhook_secret" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."get_subscribers_emails"("webhook_secret" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_subscribers_emails"("webhook_secret" "text") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."get_subscribers_emails"("webhook_secret" "text") FROM PUBLIC, "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."get_subscribers_emails"("webhook_secret" "text") TO "service_role";
 
 
 
@@ -749,6 +809,11 @@ GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."unsubscribe_newsletter_by_email"("text") FROM PUBLIC, "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."unsubscribe_newsletter_by_email"("text") TO "service_role";
 
 
 
@@ -797,8 +862,10 @@ GRANT ALL ON TABLE "public"."tags" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."users" TO "anon";
-GRANT ALL ON TABLE "public"."users" TO "authenticated";
+REVOKE ALL ON TABLE "public"."users" FROM "anon", "authenticated";
+GRANT SELECT ON TABLE "public"."users" TO "anon";
+GRANT SELECT ON TABLE "public"."users" TO "authenticated";
+GRANT UPDATE ("full_name", "bio", "avatar_url", "newsletter_subscribed") ON TABLE "public"."users" TO "authenticated";
 GRANT ALL ON TABLE "public"."users" TO "service_role";
 GRANT SELECT ON TABLE "public"."users" TO "supabase_auth_admin";
 

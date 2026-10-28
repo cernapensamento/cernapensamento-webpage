@@ -2,23 +2,41 @@
 
 import React, { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { PUBLICATION_STATUSES } from '@/lib/db/schema';
+import { PUBLICATION_STATUSES, USER_ROLES } from '@/lib/db/schema';
 import { updateArticleState } from '@/actions/articles';
 import { useToast } from '@/components/ui/FeedbackProvider';
+import { useAuth } from '@/hooks/useAuth';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
 interface Props {
   articuloId: string;
+  status?: string;
 }
 
-export default function ReviewActionBar({ articuloId }: Props) {
+const AUTHORIZED_ROLES: string[] = [
+  USER_ROLES.ADMIN,
+  USER_ROLES.FOUNDER,
+  'escritor',
+];
+
+export default function ReviewActionBar({ articuloId, status }: Props) {
+  const { profile, loading } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
   const params = useParams();
   const lang = (params?.lang as string) || 'gl';
   const dict = lang === 'es' ? esDict : glDict;
   const toast = useToast();
+
+  if (status && status !== PUBLICATION_STATUSES.IN_REVIEW) {
+    return null;
+  }
+
+  const role = profile?.role || profile?.rol;
+  if (loading || !role || !AUTHORIZED_ROLES.includes(role)) {
+    return null;
+  }
 
   const handleAction = async (action: 'approve' | 'reject') => {
     setIsProcessing(true);

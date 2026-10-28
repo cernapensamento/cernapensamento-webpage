@@ -384,25 +384,33 @@ export default function NewsMosaicGrid({ news, lang, dict }: NewsMosaicGridProps
                 )}
               </div>
 
-              {/* Bottom Row: 2-Stacked (Left, 4 cols) + Large (Right, 8 cols) */}
-              {(item3 || item4 || item5) && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
-                  <div className="lg:col-span-4 flex flex-col gap-6 sm:gap-8 h-full justify-between">
-                    {item3 && (
-                      <RevealOnScroll delayMs={200} className="flex-1">
-                        <NewsCard item={item3} lang={lang} variant="stacked" theme="light" dict={d} />
-                      </RevealOnScroll>
-                    )}
-                    {item4 && (
-                      <RevealOnScroll delayMs={250} className="flex-1">
-                        <NewsCard item={item4} lang={lang} variant="stacked" theme="dark" dict={d} />
-                      </RevealOnScroll>
-                    )}
-                  </div>
+              {/* Bottom Row: 2-Stacked (Left, 4 cols) + Large (Right, 8 cols) or 3-Col layout when item6 exists */}
+              {(item3 || item4 || item5 || item6) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
+                  {(item3 || item4) && (
+                    <div className="lg:col-span-4 flex flex-col gap-6 sm:gap-8 h-full justify-between">
+                      {item3 && (
+                        <RevealOnScroll delayMs={200} className="flex-1">
+                          <NewsCard item={item3} lang={lang} variant="stacked" theme="light" dict={d} />
+                        </RevealOnScroll>
+                      )}
+                      {item4 && (
+                        <RevealOnScroll delayMs={250} className="flex-1">
+                          <NewsCard item={item4} lang={lang} variant="stacked" theme="dark" dict={d} />
+                        </RevealOnScroll>
+                      )}
+                    </div>
+                  )}
 
                   {item5 && (
-                    <RevealOnScroll delayMs={300} className="lg:col-span-8 h-full">
-                      <NewsCard item={item5} lang={lang} variant="large" theme="charcoal" dict={d} />
+                    <RevealOnScroll delayMs={300} className={item6 ? "lg:col-span-4 h-full" : "lg:col-span-8 h-full"}>
+                      <NewsCard item={item5} lang={lang} variant={item6 ? "tall" : "large"} theme="charcoal" dict={d} />
+                    </RevealOnScroll>
+                  )}
+
+                  {item6 && (
+                    <RevealOnScroll delayMs={350} className="lg:col-span-4 h-full">
+                      <NewsCard item={item6} lang={lang} variant="tall" theme="light" dict={d} />
                     </RevealOnScroll>
                   )}
                 </div>

@@ -93,7 +93,7 @@ export default function NuevoArticulo() {
     fetchRole();
   }, [supabase]);
 
-  const handleSave = async (data: ArticleData, action: EditorAction) => {
+  const handleSave = async (data: ArticleData, action: EditorAction): Promise<boolean> => {
     setIsPublishing(true);
     try {
       const {
@@ -101,7 +101,7 @@ export default function NuevoArticulo() {
       } = await supabase.auth.getUser();
       if (!user) {
         toast.error(edDict.sessionRequiredPublish);
-        return;
+        return false;
       }
 
       const titleGl = data.title?.gl || data.titulo_gl || 'Sen Título';
@@ -146,35 +146,38 @@ export default function NuevoArticulo() {
       if (error || !insertedArticle) {
         console.error(error);
         toast.error(edDict.publishError + error?.message);
-      } else {
-        // Sync publication tags
-        const tagSlugs = data.tags || data.tematicas || [];
-        if (tagSlugs.length > 0) {
-          const { data: tagRows } = await supabase
-            .from(DB_TABLES.TAGS)
-            .select(TAG_COLS.ID)
-            .in(TAG_COLS.SLUG, tagSlugs);
-
-          if (tagRows && tagRows.length > 0) {
-            await supabase.from(DB_TABLES.PUBLICATION_TAGS).insert(
-              tagRows.map((t) => ({
-                [PUBLICATION_TAG_COLS.PUBLICATION_ID]: insertedArticle.id,
-                [PUBLICATION_TAG_COLS.TAG_ID]: t.id,
-              }))
-            );
-          }
-        }
-
-        toast.success(
-          action === 'draft'
-            ? edDict.draftSaved
-            : edDict.actionSuccessGeneric
-        );
-        router.push(`/${lang}/escritorio`);
+        return false;
       }
+
+      // Sync publication tags
+      const tagSlugs = data.tags || data.tematicas || [];
+      if (tagSlugs.length > 0) {
+        const { data: tagRows } = await supabase
+          .from(DB_TABLES.TAGS)
+          .select(TAG_COLS.ID)
+          .in(TAG_COLS.SLUG, tagSlugs);
+
+        if (tagRows && tagRows.length > 0) {
+          await supabase.from(DB_TABLES.PUBLICATION_TAGS).insert(
+            tagRows.map((t) => ({
+              [PUBLICATION_TAG_COLS.PUBLICATION_ID]: insertedArticle.id,
+              [PUBLICATION_TAG_COLS.TAG_ID]: t.id,
+            }))
+          );
+        }
+      }
+
+      toast.success(
+        action === 'draft'
+          ? edDict.draftSaved
+          : edDict.actionSuccessGeneric
+      );
+      router.push(`/${lang}/escritorio`);
+      return true;
     } catch (error: unknown) {
       console.error(error);
       toast.error(edDict.unexpectedPublishError);
+      return false;
     } finally {
       setIsPublishing(false);
     }

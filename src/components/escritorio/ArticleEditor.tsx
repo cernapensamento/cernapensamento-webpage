@@ -70,9 +70,11 @@ export interface ArticleData {
 
 export type EditorAction = typeof PUBLICATION_STATUSES.DRAFT | 'publish' | 'submit_approval' | 'approve' | 'reject' | 'revoke_approval';
 
+export type OnSaveResult = boolean | { success: boolean } | void;
+
 interface ArticleEditorProps {
     initialData?: ArticleData;
-    onSave: (data: ArticleData, action: EditorAction) => Promise<void>;
+    onSave: (data: ArticleData, action: EditorAction) => Promise<OnSaveResult>;
     isPublishing: boolean;
     mode: 'create' | 'edit';
     userRole?: string;
@@ -112,14 +114,22 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const [tipo, setTipo] = useState(initialType || PUBLICATION_TYPES.ARTICLE);
     const [coverImageUrl, setCoverImageUrl] = useState(initialData?.cover_image_url || initialData?.imagen_url || '');
     const [tematicas, setTematicas] = useState<string[]>(initialData?.tags || initialData?.tematicas || []);
-        const [showPreview, setShowPreview] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
     const isUploadingCover = useRef(false);
     const isUploadingInline = useRef(false);
     const uploadedInlineImages = useRef<string[]>([]);
+    const uploadedCoverImages = useRef<string[]>([]);
+    const savedCoverUrlRef = useRef<string | null>(initialData?.cover_image_url || initialData?.imagen_url || null);
     const coverInputRef = useRef<HTMLInputElement>(null);
     const inlineImageRef = useRef<HTMLInputElement>(null);
     const previewContainerRef = useRef<HTMLDivElement>(null);
     const [authorProfile, setAuthorProfile] = useState<{ nombre: string; avatar_url?: string; bio?: string } | null>(null);
+
+    useEffect(() => {
+        if (initialData?.cover_image_url || initialData?.imagen_url) {
+            savedCoverUrlRef.current = initialData.cover_image_url || initialData.imagen_url || null;
+        }
+    }, [initialData?.cover_image_url, initialData?.imagen_url]);
     
     const supabase = createClient();
 
@@ -194,7 +204,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             MathKit,
             ArticleIndex,
         ],
-        content: initialData?.contenido_gl || (mode === 'create' ? '<p>La naturaleza del pensamiento contemporáneo exige una pausa deliberada...</p>' : ''),
+        content: initialData?.content?.gl || initialData?.contenido_gl || (mode === 'create' ? '<p>La naturaleza del pensamiento contemporáneo exige una pausa deliberada...</p>' : ''),
         immediatelyRender: false,
         editorProps: {
             attributes: {
@@ -285,11 +295,12 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 }
             }
             
-            if (initialData?.contenido_gl) {
-                editor.commands.setContent(initialData.contenido_gl);
+            const savedContentGl = initialData?.content?.gl || initialData?.contenido_gl;
+            if (savedContentGl) {
+                editor.commands.setContent(savedContentGl);
             }
         }
-    }, [editor, draftKey, activeLang, initialData?.contenido_gl]);
+    }, [editor, draftKey, activeLang, initialData?.content?.gl, initialData?.contenido_gl]);
 
     const handleChangeCoverImage = () => {
         coverInputRef.current?.click();
@@ -317,9 +328,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 file,
                 category: STORAGE_CATEGORIES.PUBLICATION_COVER,
                 userId: user.id,
-                previousUrl: coverImageUrl,
             });
 
+            uploadedCoverImages.current.push(publicUrl);
             setCoverImageUrl(publicUrl);
         } catch (err: unknown) {
             const errorMsg = err instanceof Error ? err.message : '';
@@ -637,52 +648,89 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         finalGl = await sanitizeBase64Images(finalGl, userId);
         finalEs = await sanitizeBase64Images(finalEs, userId);
         
-        // --- LIMPIEZA DE IMÁGENES INLINE (GARBAGE COLLECTION) ---
-        const oldPaths = [
-            ...extractInlineStoragePaths(initialData?.contenido_gl),
-            ...extractInlineStoragePaths(initialData?.contenido_es)
+        // --- LIMPIEZA DE IMÁGENES (GARBAGE COLLECTION) ---
+        // 1. Inline images
+        const oldInlinePaths = [
+            ...extractInlineStoragePaths(initialData?.content?.gl || initialData?.contenido_gl),
+            ...extractInlineStoragePaths(initialData?.content?.es || initialData?.contenido_es)
         ];
-        const newPaths = new Set([
+        const newInlinePaths = new Set([
             ...extractInlineStoragePaths(finalGl),
             ...extractInlineStoragePaths(finalEs)
         ]);
-        const uploadedPaths = uploadedInlineImages.current
+        const uploadedInlinePaths = uploadedInlineImages.current
             .map(url => extractStoragePathFromUrl(url))
             .filter((p): p is string => Boolean(p));
 
+        const inlinePathsToDelete = [
+            ...oldInlinePaths.filter(p => !newInlinePaths.has(p)),
+            ...uploadedInlinePaths.filter(p => !newInlinePaths.has(p))
+        ];
+
+        // 2. Cover image: compare saved cover URL with the new cover
+        const savedCoverPath = extractStoragePathFromUrl(savedCoverUrlRef.current);
+        const newCoverPath = extractStoragePathFromUrl(coverImageUrl);
+        const uploadedCoverPaths = uploadedCoverImages.current
+            .map(url => extractStoragePathFromUrl(url))
+            .filter((p): p is string => Boolean(p));
+
+        const coverPathsToDelete = [
+            ...(savedCoverPath && savedCoverPath !== newCoverPath ? [savedCoverPath] : []),
+            ...uploadedCoverPaths.filter(p => p !== newCoverPath)
+        ];
+
         const pathsToDelete = Array.from(new Set([
-            ...oldPaths.filter(p => !newPaths.has(p)),
-            ...uploadedPaths.filter(p => !newPaths.has(p))
+            ...inlinePathsToDelete,
+            ...coverPathsToDelete,
         ]));
+        // -------------------------------------------------
 
-        if (pathsToDelete.length > 0) {
-            removeStorageImages(supabase, pathsToDelete).catch(console.error);
+        try {
+            const saveResult = await onSave({
+                title: { gl: tituloGl, es: tituloEs },
+                subtitle: { gl: subtituloGl, es: subtituloEs },
+                content: { gl: finalGl, es: finalEs },
+                cover_image_url: coverImageUrl,
+                tags: tematicas,
+                type: tipo,
+                original_language: idiomaOriginal,
+                titulo_gl: tituloGl,
+                titulo_es: tituloEs,
+                subtitulo_gl: subtituloGl,
+                subtitulo_es: subtituloEs,
+                contenido_gl: finalGl,
+                contenido_es: finalEs,
+                imagen_url: coverImageUrl,
+                tematicas: tematicas,
+                tipo: tipo,
+                idioma_original: idiomaOriginal
+            }, action);
+
+            const isSuccess =
+                saveResult === false ||
+                (typeof saveResult === 'object' && saveResult !== null && 'success' in saveResult && !saveResult.success)
+                    ? false
+                    : true;
+
+            if (!isSuccess) {
+                return;
+            }
+
+            // Only remove superseded images after save succeeds
+            if (pathsToDelete.length > 0) {
+                removeStorageImages(supabase, pathsToDelete).catch(console.error);
+            }
+
+            savedCoverUrlRef.current = coverImageUrl;
+            uploadedCoverImages.current = [];
+            uploadedInlineImages.current = [];
+
+            localStorage.removeItem(draftKey);
+            setHasUnsavedChanges(false);
+            setShowPublishModal(false);
+        } catch (saveError) {
+            console.error('Error saving article:', saveError);
         }
-        // ---------------------------------------------------------
-
-        await onSave({
-            title: { gl: tituloGl, es: tituloEs },
-            subtitle: { gl: subtituloGl, es: subtituloEs },
-            content: { gl: finalGl, es: finalEs },
-            cover_image_url: coverImageUrl,
-            tags: tematicas,
-            type: tipo,
-            original_language: idiomaOriginal,
-            titulo_gl: tituloGl,
-            titulo_es: tituloEs,
-            subtitulo_gl: subtituloGl,
-            subtitulo_es: subtituloEs,
-            contenido_gl: finalGl,
-            contenido_es: finalEs,
-            imagen_url: coverImageUrl,
-            tematicas: tematicas,
-            tipo: tipo,
-            idioma_original: idiomaOriginal
-        }, action);
-
-        localStorage.removeItem(draftKey);
-        setHasUnsavedChanges(false);
-        setShowPublishModal(false);
     };
 
     

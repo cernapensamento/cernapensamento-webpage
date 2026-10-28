@@ -1,5 +1,4 @@
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
-import { getAuthenticatedUser } from '@/lib/auth';
 import { PUBLICATION_STATUSES } from '@/lib/db/schema';
 import ReviewActionBar from '@/components/escritorio/ReviewActionBar';
 import Link from 'next/link';
@@ -60,8 +59,6 @@ export default async function ArticuloPage({
   if (publication.slug && publication.slug !== slug) {
     permanentRedirect(`/${lang}/articulo/${publication.slug}`);
   }
-
-  const { profile } = await getAuthenticatedUser();
 
   const titulo = publication.title[lang] || publication.title.gl || publication.title.es;
   const subtitulo = publication.subtitle
@@ -306,8 +303,8 @@ export default async function ArticuloPage({
             />
           </article>
         </ArticleScrollManager>
-        {publication.status === PUBLICATION_STATUSES.IN_REVIEW && profile && ['admin', 'founder', 'escritor'].includes(profile.role) && (
-          <ReviewActionBar articuloId={publication.id} />
+        {publication.status === PUBLICATION_STATUSES.IN_REVIEW && (
+          <ReviewActionBar articuloId={publication.id} status={publication.status} />
         )}
       </main>
     </>
