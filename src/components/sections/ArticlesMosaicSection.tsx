@@ -57,6 +57,10 @@ export default function ArticlesMosaicSection({
 
   return (
     <section className="w-full flex flex-col gap-14 md:gap-18">
+      {/* Semantic H2 heading for articles section ensuring strictly sequential hierarchy */}
+      <h2 className="sr-only">
+        {dict?.mosaic?.pinnedTitle || dict?.pinnedTitle || dict?.archiveTitle || 'Publicacións Destacadas'}
+      </h2>
       
       {/* ==================================================== */}
       {/* MOSAIC LEVEL 1: HERO HORIZONTAL SPOTLIGHT (FULL WIDTH) */}
@@ -185,9 +189,9 @@ export default function ArticlesMosaicSection({
       {displayedRecentArticles.length > 0 && (
         <div className="flex flex-col gap-10">
           <div className="flex items-center justify-between border-b border-lines pb-4">
-            <h3 className="font-serif text-2xl md:text-3xl text-charcoal font-semibold">
+            <h2 className="font-serif text-2xl md:text-3xl text-charcoal font-semibold">
               {dict?.mosaic?.recentTitle}
-            </h3>
+            </h2>
             <Link
               href={`/${lang}/articulos`}
               className="text-xs font-bold uppercase tracking-[0.2em] text-gold hover:text-charcoal transition-colors flex items-center gap-1.5 group"
