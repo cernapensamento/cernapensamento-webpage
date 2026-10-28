@@ -52,6 +52,9 @@
     "sanitize-html": "^2.17.5",
     "sharp": "^0.35.5"
   },
+  "optionalDependencies": {
+    "@img/sharp-linux-x64": "^0.35.5"
+  },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
