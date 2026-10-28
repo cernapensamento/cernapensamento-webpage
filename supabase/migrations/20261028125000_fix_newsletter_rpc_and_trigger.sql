@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- Migration: Fix Newsletter RPCs and Trigger Contract (CodeRabbit Feedback)
 -- Restores auth.users join for email resolution, case-insensitive trimmed unsubscribe match,
--- and restores the supabase_functions.http_request payload contract.
+-- and dispatches the newsletter webhook via pg_net with the expected payload.
 -- ==============================================================================
 
 BEGIN;
@@ -61,7 +61,7 @@ $$;
 REVOKE ALL ON FUNCTION "public"."unsubscribe_newsletter_by_email"("text") FROM PUBLIC, "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."unsubscribe_newsletter_by_email"("text") TO "service_role";
 
--- 3. Restore the supabase_functions.http_request trigger contract with { record: row_to_json(NEW) }
+-- 3. Dispatch the newsletter webhook via pg_net with { record: row_to_json(NEW) }
 CREATE OR REPLACE FUNCTION "public"."trigger_publication_published_newsletter"()
 RETURNS trigger
 LANGUAGE "plpgsql" SECURITY DEFINER
@@ -69,7 +69,7 @@ SET search_path = ''
 AS $$
 DECLARE
   v_secret text;
-  v_headers text;
+  v_headers jsonb;
   v_url text;
 BEGIN
   v_secret := current_setting('app.settings.webhook_secret', true);
@@ -78,19 +78,18 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  v_headers := json_build_object(
+  v_headers := jsonb_build_object(
     'Content-Type', 'application/json',
     'Authorization', 'Bearer ' || v_secret
-  )::text;
+  );
 
   v_url := COALESCE(current_setting('app.settings.site_url', true), 'https://cernapensamento.org') || '/api/webhooks/newsletter';
 
-  PERFORM "supabase_functions"."http_request"(
-    v_url,
-    'POST',
-    v_headers,
-    json_build_object('record', row_to_json(NEW))::text,
-    '5000'
+  PERFORM net.http_post(
+    url := v_url,
+    body := jsonb_build_object('record', row_to_json(NEW)),
+    headers := v_headers,
+    timeout_milliseconds := 5000
   );
 
   RETURN NEW;
