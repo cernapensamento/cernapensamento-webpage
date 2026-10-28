@@ -362,9 +362,14 @@ export function formatMathText(rawLatex: string): string {
     .replace(/\\,/g, ' ')
     .replace(/\\;/g, ' ')
     .replace(/\\!/g, '')
-    .replace(/\\quad\b|\\qquad\b/g, '  ')
-    // Parenthesize grouped subscripts and superscripts: x_{n-1} -> x_(n-1), y^{n+1} -> y^(n+1)
-    .replace(/([_^])\{([^{}]+)\}/g, '$1($2)')
+    .replace(/\\quad\b|\\qquad\b/g, '  ');
+
+  // Parenthesize grouped subscripts and superscripts from the inside out.
+  while (/([_^])\{([^{}]+)\}/.test(text)) {
+    text = text.replace(/([_^])\{([^{}]+)\}/g, '$1($2)');
+  }
+
+  text = text
     // Clean remaining single-level braces: {abc} -> abc
     .replace(/\{([^{}]+)\}/g, '$1')
     .replace(/\{\}/g, '')
