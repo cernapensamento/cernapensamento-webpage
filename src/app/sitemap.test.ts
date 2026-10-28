@@ -78,4 +78,28 @@ describe('Sitemap Generator (src/app/sitemap.ts)', () => {
     const urls = entries.map((e) => e.url);
     expect(urls).toContain('https://cernapensamento.org/gl');
   });
+
+  it.each([false, true])('includes pages beyond the first 1,000 publications (full last page: %s)', async (fullLastPage) => {
+    const firstPage = Array.from({ length: 1000 }, (_, index) => ({
+      id: `pub-${index}`, slug: `article-${index}`,
+    } as PublicationCardItem));
+    vi.mocked(getPublicationCards)
+      .mockResolvedValueOnce(firstPage)
+      .mockResolvedValueOnce(fullLastPage ? firstPage.map((pub) => ({ ...pub, slug: `${pub.slug}-next` })) : [
+        { id: 'last', slug: 'last-article' } as PublicationCardItem,
+      ])
+      .mockResolvedValue([]);
+    vi.mocked(getPublishedAuthors).mockResolvedValue([]);
+
+    const entries = await sitemap();
+    const lastSlug = fullLastPage ? 'article-999-next' : 'last-article';
+    expect(entries.map((entry) => entry.url)).toEqual(expect.arrayContaining([
+      `https://cernapensamento.org/gl/articulo/${lastSlug}`,
+      `https://cernapensamento.org/es/articulo/${lastSlug}`,
+    ]));
+    expect(getPublicationCards).toHaveBeenNthCalledWith(1, expect.objectContaining({ limit: 1000, offset: 0 }));
+    expect(getPublicationCards).toHaveBeenNthCalledWith(2, expect.objectContaining({ limit: 1000, offset: 1000 }));
+    expect(getPublicationCards).toHaveBeenCalledTimes(fullLastPage ? 3 : 2);
+  });
+
 });

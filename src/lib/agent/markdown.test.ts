@@ -8,6 +8,15 @@ import {
 
 describe('Agent Markdown Negotiation', () => {
   describe('prefersMarkdown', () => {
+    it.each([
+      ['TEXT/MARKDOWN', true],
+      ['Text/Markdown;q=1, text/html;q=0.8', true],
+      ['TEXT/HTML, TEXT/MARKDOWN;q=0.5', false],
+      ['TEXT/MARKDOWN;q=0', false],
+    ])('negotiates case-insensitive media types: %s', (header, expected) => {
+      expect(prefersMarkdown(header)).toBe(expected);
+    });
+
     it('returns true when Accept header is text/markdown', () => {
       expect(prefersMarkdown('text/markdown')).toBe(true);
     });

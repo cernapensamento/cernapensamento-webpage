@@ -21,10 +21,15 @@ function htmlToMarkdown(html: string): string {
     .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
     .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
     .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
-    .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
     .replace(/<hr\s*\/?>/gi, '\n\n---\n\n')
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
+    .replace(/<a\b[^>]*href=(?:"([^"]*)"|'([^']*)')[^>]*>([\s\S]*?)<\/a>|<[^>]+>/gi,
+      (_match, doubleQuotedUrl: string | undefined, singleQuotedUrl: string | undefined, text: string) => {
+        const url = doubleQuotedUrl ?? singleQuotedUrl;
+        if (url === undefined) return '';
+        const destination = url.replace(/[<>\\\x00-\x20]/g, (character) => encodeURIComponent(character));
+        return `[${text.replace(/<[^>]+>/g, '')}](<${destination}>)`;
+      })
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -49,7 +54,7 @@ export async function GET(request: NextRequest) {
 
   if (type === 'article' && slug) {
     try {
-      const publication = await getPublicationBySlug(slug, { lang });
+      const publication = await getPublicationBySlug(slug, { lang, throwOnError: true });
 
       if (!publication) {
         return new NextResponse(get404Markdown(lang), {
@@ -83,14 +88,14 @@ export async function GET(request: NextRequest) {
       });
     } catch (err) {
       console.error('[API:Markdown] Failed to fetch article:', err);
-      return new NextResponse(get404Markdown(lang), {
-        status: 404,
+      return new NextResponse('# 500 - Internal Server Error', {
+        status: 500,
         headers,
       });
     }
   }
 
-  if (type === 'legal' && slug) {
+  if (type === 'legal' && (slug === 'privacidad' || slug === 'estatutos') && (lang === 'gl' || lang === 'es')) {
     try {
       const doc = getDocument(slug, lang);
       if (!doc || !doc.content) {

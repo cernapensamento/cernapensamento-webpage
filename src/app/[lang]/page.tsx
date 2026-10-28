@@ -22,6 +22,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang } = await params;
+  const dict = await getDictionary(lang as Locale);
   const isGalician = lang === 'gl';
   const siteUrl = 'https://cernapensamento.org';
   const pageUrl = `${siteUrl}/${lang}`;
@@ -30,9 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ? 'Cerna Pensamento · Revista Galega de Ensaio, Filosofía e Creación Literaria'
     : 'Cerna Pensamento · Revista Cultural de Ensayo, Filosofía y Creación Literaria';
 
-  const description = isGalician
-    ? 'Revista dixital e asociación cultural independente en Galicia. Publicación periódica de ensaio, filosofía política, economía, crítica cultural, narrativa e poesía.'
-    : 'Revista digital y asociación cultural independiente en Galicia. Publicación periódica de ensayo, filosofía política, economía, crítica cultural, narrativa y poesía.';
+  const description = dict.homepage.description;
 
   return {
     title,
@@ -87,7 +86,6 @@ export default async function HomePage({ params }: PageProps) {
   const dict = await getDictionary(lang as Locale);
   const tags = await getAllTagsWithTranslations({ lang });
   const themesTags = tags.slice(0, 12);
-  const isGalician = lang === 'gl';
 
   // Schema.org JSON-LD Structured Data (Organization + NewsMediaOrganization + Periodical + WebSite)
   const jsonLd = {
@@ -111,17 +109,8 @@ export default async function HomePage({ params }: PageProps) {
           height: 159,
         },
         image: 'https://cernapensamento.org/images/logo/screen.png',
-        description: isGalician
-          ? 'Revista dixital e asociación cultural independente en Galicia dedicada ao ensaio, a filosofía política, a economía e a creación literaria.'
-          : 'Revista digital y asociación cultural independiente en Galicia dedicada al ensayo, la filosofía política, la economía y la creación literaria.',
+        description: dict.homepage.organizationDescription,
         email: 'contacto@cernapensamento.org',
-        address: {
-          '@type': 'PostalAddress',
-          addressLocality: 'Santiago de Compostela',
-          addressRegion: 'Galicia',
-          postalCode: '15701',
-          addressCountry: 'ES',
-        },
         contactPoint: [
           {
             '@type': 'ContactPoint',
@@ -145,9 +134,7 @@ export default async function HomePage({ params }: PageProps) {
         '@id': 'https://cernapensamento.org/#website',
         url: 'https://cernapensamento.org',
         name: 'Cerna Pensamento',
-        description: isGalician
-          ? 'Revista galega de ensaio, filosofía, economía e creación literaria.'
-          : 'Revista cultural de ensayo, filosofía, economía y creación literaria.',
+        description: dict.homepage.websiteDescription,
         publisher: {
           '@id': 'https://cernapensamento.org/#organization',
         },

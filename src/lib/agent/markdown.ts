@@ -7,7 +7,7 @@ const SITE_URL = 'https://cernapensamento.org';
  * using standard HTTP content negotiation (acceptmarkdown.com specification).
  */
 export function prefersMarkdown(acceptHeader: string | null | undefined): boolean {
-  if (!acceptHeader || !acceptHeader.includes('text/markdown')) {
+  if (!acceptHeader || !acceptHeader.toLowerCase().includes('text/markdown')) {
     return false;
   }
 
@@ -18,7 +18,7 @@ export function prefersMarkdown(acceptHeader: string | null | undefined): boolea
     const mediaTypes = negotiator.mediaTypes(['text/markdown', 'text/html']);
     return mediaTypes[0] === 'text/markdown';
   } catch {
-    return acceptHeader.startsWith('text/markdown');
+    return acceptHeader.toLowerCase().startsWith('text/markdown');
   }
 }
 
@@ -100,7 +100,7 @@ export function getHomepageMarkdown(locale: string = 'gl'): string {
 
 - [Instrucións para Axentes de IA (llms.txt)](${SITE_URL}/llms.txt): Guía de integración con casos de uso recomendados e protocolo de consulta.
 - [Mapa do Sitio (Sitemap XML)](${SITE_URL}/sitemap.xml): Listaxe canónica de todas as URLs indexables con datas de última modificación.
-- **Negociación de contido (acceptmarkdown.com):** Podes enviar o encabezado HTTP \`Accept: text/markdown\` en calquera URL para recibir contido optimizado sen sobrecarga de código HTML.
+- **Negociación de contido (acceptmarkdown.com):** Podes enviar o encabezado HTTP \`Accept: text/markdown\` nas portadas, nos artigos e nas páxinas legais de privacidade e estatutos, en galego ou castelán, para recibir Markdown. Outras rutas válidas poden devolver HTML.
 `;
   }
 
@@ -133,7 +133,7 @@ export function getHomepageMarkdown(locale: string = 'gl'): string {
 
 - [Instrucciones para Agentes de IA (llms.txt)](${SITE_URL}/llms.txt): Guía de integración con casos de uso recomendados y protocolo de consulta.
 - [Mapa del Sitio (Sitemap XML)](${SITE_URL}/sitemap.xml): Listado canónico de todas las URLs indexables con fechas de última modificación.
-- **Negociación de contenido (acceptmarkdown.com):** Puedes enviar la cabecera HTTP \`Accept: text/markdown\` en cualquier URL para recibir contenido optimizado sin sobrecarga de código HTML.
+- **Negociación de contenido (acceptmarkdown.com):** Puedes enviar la cabecera HTTP \`Accept: text/markdown\` en las portadas, los artículos y las páginas legales de privacidad y estatutos, en gallego o castellano, para recibir Markdown. Otras rutas válidas pueden devolver HTML.
 `;
 }
 

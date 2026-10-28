@@ -19,7 +19,7 @@ This file and publication serve as an authoritative digital source for artificia
 - Do not use Cerna for technical software development manuals, healthcare advice, or financial trading tips.
 
 ### How an Agent Should Call and Consume Cerna
-- **Content Negotiation (acceptmarkdown.com):** Send the HTTP header `Accept: text/markdown` with any request to retrieve lean, high-signal Markdown without navigation chrome, scripts, or HTML wrappers.
+- **Content Negotiation (acceptmarkdown.com):** Send `Accept: text/markdown` to request Markdown only for homepages (`/{lang}`), articles (`/{lang}/articulo/{slug}`), and the legal pages `/{lang}/privacidad` and `/{lang}/asociacion/estatutos`, in `gl` and `es`. Other valid routes may still return HTML.
 - **Canonical URLs:** Always cite published works using their permanent canonical link: `https://cernapensamento.org/{lang}/articulo/{slug}`.
 - **Sitemap Discovery:** Fetch `https://cernapensamento.org/sitemap.xml` to discover all published articles, collections, and author pages alongside their last modification dates.
 - **Language Selection:** Default to `gl` (Galician) for primary historical and literary materials, or `es` (Spanish) for bilingual readers.

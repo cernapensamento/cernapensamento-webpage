@@ -86,7 +86,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Published Publications
   try {
-    const publications = await getPublicationCards({ limit: 1000, client: publicClient });
+    const pageSize = 1000;
+    const publications = [];
+    for (let offset = 0; ; offset += pageSize) {
+      const page = await getPublicationCards({ limit: pageSize, offset, client: publicClient });
+      publications.push(...page);
+      if (page.length < pageSize) break;
+    }
     for (const pub of publications) {
       if (!pub.slug) continue;
       const lastMod = pub.updated_at ? new Date(pub.updated_at) : (pub.created_at ? new Date(pub.created_at) : now);

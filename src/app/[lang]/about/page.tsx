@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const dict = await getDictionary(lang as Locale);
   return {
     title: `${dict.nav.asociacion} | Cerna Pensamento`,
-    description: dict.associationAndNews?.description || 'O proxecto e manifesto fundacional de Cerna Pensamento.',
+    description: dict.associationAndNews.description,
   };
 }
 
