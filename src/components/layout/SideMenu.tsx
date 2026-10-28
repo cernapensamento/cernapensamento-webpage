@@ -51,7 +51,7 @@ export default function SideMenu() {
       <button 
         onClick={() => setIsOpen(!isOpen)} 
         className={`w-10 h-10 relative focus:outline-none z-[60] flex items-center justify-center border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300 ${isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-        aria-label="Toggle Menu"
+        aria-label={dict.nav.toggleMenu || 'Menu'}
       >
         <div className="block w-5 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
           <span aria-hidden="true" className={`block absolute h-0.5 w-5 bg-current transform transition duration-300 ease-in-out -translate-y-1.5`}></span>
@@ -71,9 +71,9 @@ export default function SideMenu() {
         
         {/* Sidebar Header with Logo */}
         <div className="py-2 flex justify-between items-center px-8 sm:px-12 border-b border-lines shrink-0">
-          <Link href="/" className="inline-block hover:opacity-80 transition-opacity" onClick={() => setIsOpen(false)}>
+          <Link href={`/${lang}`} className="inline-block hover:opacity-80 transition-opacity" onClick={() => setIsOpen(false)}>
             <Image 
-              src="/images/logo/cernawhite.png" 
+              src="/images/logo/cernawhite.webp" 
               alt={SITE_NAME} 
               width={300} 
               height={75} 
@@ -81,7 +81,7 @@ export default function SideMenu() {
               priority
             />
             <Image 
-              src="/images/logo/cernablack.png" 
+              src="/images/logo/cernablack.webp" 
               alt={SITE_NAME} 
               width={300} 
               height={75} 
@@ -91,8 +91,8 @@ export default function SideMenu() {
           </Link>
           <button 
             onClick={() => setIsOpen(false)} 
-            className="w-10 h-10 flex shrink-0 focus:outline-none items-center justify-center border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300"
-            aria-label="Cerrar Menú"
+            className="w-10 h-10 flex shrink-0 focus:outline-none items-center justify-center border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300 cursor-pointer"
+            aria-label={dict.nav.closeMenu || 'Pechar menú'}
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -134,7 +134,7 @@ export default function SideMenu() {
             
             <div>
               <Link href={`/${lang}/contacto`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
-                Contacto
+                {dict.nav.contacto || dict.nav.contactar || 'Contacto'}
               </Link>
             </div>
 

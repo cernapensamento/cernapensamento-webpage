@@ -1,32 +1,54 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
 import type { UserRole } from '@/lib/db/types';
+import { formatDbError } from '@/lib/db/formatDbError';
 
 export type Profile = {
   role: UserRole;
   avatar_url: string | null;
+  full_name?: string | null;
   // Backwards compatibility alias
   rol: string;
+  nombre?: string | null;
 } | null;
 
+const hasSupabaseConfig = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+/**
+ * Tracks the browser session and asynchronously loads its profile, including
+ * legacy `rol` and `nombre` aliases. Session loading can finish before the
+ * profile request completes. Auth changes and `profile_updated` refresh state;
+ * subscriptions are removed on unmount. Without Supabase configuration, returns
+ * null user/profile with loading false and makes no auth requests.
+ */
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(hasSupabaseConfig);
 
   useEffect(() => {
+    if (!hasSupabaseConfig) return;
+
     let isMounted = true;
-    const supabase = createClient();
+    let supabase: ReturnType<typeof createClient>;
+    try {
+      supabase = createClient();
+    } catch (err) {
+      console.warn('[useAuth] Supabase client initialization skipped:', err);
+      return;
+    }
 
     async function fetchUserProfile(userId: string, jwtRole?: string) {
       try {
         const { data } = await supabase
           .from(DB_TABLES.USERS)
-          .select(`${USER_COLS.ROLE}, ${USER_COLS.AVATAR_URL}`)
+          .select(`${USER_COLS.ROLE}, ${USER_COLS.AVATAR_URL}, ${USER_COLS.FULL_NAME}`)
           .eq(USER_COLS.ID, userId)
           .single();
 
@@ -35,11 +57,13 @@ export function useAuth() {
           setProfile({
             role,
             avatar_url: data.avatar_url,
+            full_name: data.full_name || null,
             rol: role,
+            nombre: data.full_name || null,
           });
         }
       } catch (err) {
-        console.error('Error fetching user profile:', err);
+        console.warn('[useAuth] Failed to fetch user profile:', formatDbError(err));
       }
     }
 

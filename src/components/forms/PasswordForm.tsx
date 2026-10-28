@@ -1,9 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { useParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 
 export default function PasswordForm() {
+  const params = useParams();
+  const lang = (params?.lang as string) || 'gl';
+  const dict = lang === 'es' ? esDict : glDict;
+  const pf = dict.dashboard.passwordForm;
+
   const [isOpen, setIsOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,13 +32,13 @@ export default function PasswordForm() {
     setMessage('');
 
     if (password !== confirmPassword) {
-      setMessage('Las contraseñas no coinciden.');
+      setMessage(pf.mismatch || 'Os contrasinais non coinciden.');
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setMessage('La contraseña debe tener al menos 6 caracteres.');
+      setMessage(pf.tooShort || 'O contrasinal debe ter polo menos 6 caracteres.');
       setLoading(false);
       return;
     }
@@ -42,12 +50,12 @@ export default function PasswordForm() {
 
       if (error) throw error;
 
-      setMessage('Contraseña actualizada con éxito.');
+      setMessage(pf.success || 'Contrasinal actualizado con éxito.');
       setPassword('');
       setConfirmPassword('');
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Error desconocido';
-      setMessage(`Error al actualizar la contraseña: ${msg}`);
+      const msg = error instanceof Error ? error.message : 'Error';
+      setMessage(msg);
     } finally {
       setLoading(false);
     }
@@ -58,9 +66,9 @@ export default function PasswordForm() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="px-6 py-3 bg-transparent text-charcoal border border-charcoal hover:bg-charcoal hover:text-parchment transition-colors font-semibold text-xs uppercase tracking-widest"
+        className="px-6 py-3 bg-transparent text-charcoal border border-charcoal hover:bg-charcoal hover:text-parchment transition-colors font-semibold text-xs uppercase tracking-widest cursor-pointer"
       >
-        Cambiar Contraseña
+        {pf.button || 'Cambiar Contrasinal'}
       </button>
 
       {isOpen && (
@@ -68,17 +76,17 @@ export default function PasswordForm() {
           <div className="bg-parchment p-8 w-full max-w-md relative border border-lines shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <button type="button" 
               onClick={handleClose}
-              className="absolute top-4 right-4 text-charcoal/40 hover:text-charcoal transition-colors material-symbols-outlined"
-              aria-label="Cerrar"
+              className="absolute top-4 right-4 text-charcoal/40 hover:text-charcoal transition-colors material-symbols-outlined cursor-pointer"
+              aria-label={pf.close || 'Pechar'}
             >
               close
             </button>
             
-            <h3 className="font-serif text-2xl text-charcoal mb-6 pr-6">Actualizar Contraseña</h3>
+            <h3 className="font-serif text-2xl text-charcoal mb-6 pr-6">{pf.modalTitle || 'Actualizar Contrasinal'}</h3>
             
             <form onSubmit={handleUpdatePassword} className="space-y-6">
               <div>
-                <label htmlFor="new_password" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Nueva Contraseña</label>
+                <label htmlFor="new_password" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">{pf.newPassword || 'Novo Contrasinal'}</label>
                 <input
                   id="new_password"
                   type="password"
@@ -89,7 +97,7 @@ export default function PasswordForm() {
                 />
               </div>
               <div>
-                <label htmlFor="confirm_password" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">Confirmar Nueva Contraseña</label>
+                <label htmlFor="confirm_password" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">{pf.confirmPassword || 'Confirmar Novo Contrasinal'}</label>
                 <input
                   id="confirm_password"
                   type="password"
@@ -101,7 +109,7 @@ export default function PasswordForm() {
               </div>
 
               {message && (
-                <div className={`p-4 text-sm ${message.includes('Error') || message.includes('no coinciden') || message.includes('caracteres') ? 'border border-red-200 bg-red-50 text-red-800' : 'border border-green-200 bg-green-50 text-green-800'}`}>
+                <div className={`p-4 text-sm ${message.includes('Error') || message.includes('non coinciden') || message.includes('no coinciden') || message.includes('caracteres') ? 'border border-red-200 bg-red-50 text-red-800' : 'border border-green-200 bg-green-50 text-green-800'}`}>
                   {message}
                 </div>
               )}
@@ -109,9 +117,9 @@ export default function PasswordForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full px-6 py-3 bg-charcoal text-parchment hover:bg-gold transition-colors font-semibold text-xs uppercase tracking-widest disabled:opacity-50"
+                className="w-full px-6 py-3 bg-charcoal text-parchment hover:bg-gold transition-colors font-semibold text-xs uppercase tracking-widest disabled:opacity-50 cursor-pointer"
               >
-                {loading ? 'Actualizando...' : 'Guardar Nueva Contraseña'}
+                {loading ? (pf.updating || 'Actualizando...') : (pf.save || 'Gardar Novo Contrasinal')}
               </button>
             </form>
           </div>

@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -71,6 +71,23 @@ export default function LoginPage() {
     return null;
   });
 
+  const handleGoogleAuth = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : loginDict.googleAuthError);
+      setLoading(false);
+    }
+  }, [supabase, loginDict]);
+
   const handleIdTokenSuccess = useCallback(async (response: GoogleCredentialResponse) => {
     if (!response.credential) return;
     setLoading(true);
@@ -103,11 +120,17 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : '';
+      if (errorMsg.includes('Unacceptable audience') || errorMsg.toLowerCase().includes('audience')) {
+        console.warn('Google One-Tap audience mismatch. Falling back to standard Google OAuth...', err);
+        await handleGoogleAuth();
+        return;
+      }
       setError(err instanceof Error ? err.message : loginDict.googleAuthError);
     } finally {
       setLoading(false);
     }
-  }, [supabase, router, lang, loginDict]);
+  }, [supabase, router, lang, loginDict, handleGoogleAuth]);
 
   const initGoogleIdentity = useCallback(() => {
     if (typeof window === 'undefined' || !googleClientId || !window.google?.accounts?.id) return;
@@ -135,23 +158,6 @@ export default function LoginPage() {
   useEffect(() => {
     initGoogleIdentity();
   }, [initGoogleIdentity]);
-
-  const handleGoogleAuth = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) throw error;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : loginDict.googleAuthError);
-      setLoading(false);
-    }
-  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,7 +201,7 @@ export default function LoginPage() {
           router.refresh();
         }
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -204,6 +210,14 @@ export default function LoginPage() {
           }
         });
         if (error) throw error;
+
+        // Supabase returns an empty identities array if user already exists
+        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+          setError(loginDict.userAlreadyExists);
+          setLoading(false);
+          return;
+        }
+
         setError(null);
         setSuccessMessage(loginDict.signupSuccess);
         setIsLogin(true);
@@ -244,184 +258,187 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-parchment">
-      <div className="w-full max-w-sm relative">
+    <div className="flex-1 flex flex-col items-center justify-center pt-6 pb-12 md:pt-10 md:pb-20 px-4 sm:px-6 bg-parchment">
+      <div className="w-full max-w-md flex flex-col items-center">
         
-        <Link href={`/${lang}`} className="absolute -top-6 left-0 text-charcoal/40 hover:text-charcoal transition-colors font-serif text-4xl" aria-label={loginDict.backToHome}>
-          ←
-        </Link>
-
-        <div className="text-center mb-12 flex flex-col items-center">
-          <div className="relative mb-6">
+        {/* Prominent Editorial Header & Doubled Logo */}
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="relative mb-4">
             <Image 
-              src="/images/logo/cernawhite.png" 
+              src="/images/logo/cernawhite.webp" 
               alt="Cerna Pensamento" 
-              width={400} 
-              height={100} 
-              className="h-16 md:h-20 w-auto object-contain block dark:hidden"
+              width={800} 
+              height={200} 
+              className="h-32 md:h-40 w-auto object-contain block dark:hidden"
               priority
             />
             <Image 
-              src="/images/logo/cernablack.png" 
+              src="/images/logo/cernablack.webp" 
               alt="Cerna Pensamento" 
-              width={400} 
-              height={100} 
-              className="h-16 md:h-20 w-auto object-contain hidden dark:block"
+              width={800} 
+              height={200} 
+              className="h-32 md:h-40 w-auto object-contain hidden dark:block"
               priority
             />
           </div>
-          <p className="text-sm text-charcoal/60 uppercase tracking-widest font-semibold">
+          <p className="text-xs font-mono uppercase tracking-[0.2em] text-charcoal/60 font-semibold">
             {isLogin ? loginDict.loginTitle : loginDict.signupTitle}
           </p>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-6">
-          {!isLogin && (
+        {/* The Styled Cage */}
+        <div className="w-full bg-surface border border-lines p-8 sm:p-10 shadow-sm relative overflow-hidden">
+          {/* Subtle top gold accent line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gold" aria-hidden="true" />
+
+          <form onSubmit={handleAuth} className="space-y-6">
+            {!isLogin && (
+              <div>
+                <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="nombre">
+                  {loginDict.fullName}
+                </label>
+                <input
+                  id="nombre"
+                  name="nombre"
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-parchment border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
+                  placeholder={loginDict.namePlaceholder}
+                />
+              </div>
+            )}
+
             <div>
-              <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="nombre">
-                {loginDict.fullName}
+              <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="email">
+                {loginDict.email}
               </label>
               <input
-                id="nombre"
-                name="nombre"
-                type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                id="email"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-surface border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
-                placeholder={loginDict.namePlaceholder}
+                className="w-full px-4 py-3 bg-parchment border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
+                placeholder="tu@correo.com"
               />
             </div>
-          )}
 
-          <div>
-            <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="email">
-              {loginDict.email}
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-surface border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
-              placeholder="tu@correo.com"
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="password">
+                {loginDict.password}
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full px-4 py-3 bg-parchment border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
+                placeholder="••••••••"
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="password">
-              {loginDict.password}
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-4 py-3 bg-surface border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
-              placeholder="••••••••"
-            />
-          </div>
-
-          {error && (
-            <div role="alert" aria-live="polite" className="p-4 rounded border border-red-200 bg-red-50 flex flex-col gap-3 text-sm animate-in fade-in duration-300 shadow-sm">
-              <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-red-500 shrink-0 text-lg" data-icon="error">error</span>
-                <p className="text-red-800 font-sans mt-0.5">{error}</p>
+            {error && (
+              <div role="alert" aria-live="polite" className="p-4 rounded border border-red-200 bg-red-50 flex flex-col gap-3 text-sm animate-in fade-in duration-300 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-red-500 shrink-0 text-lg" data-icon="error">error</span>
+                  <p className="text-red-800 font-sans mt-0.5">{error}</p>
+                </div>
+                {showResend && (
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={loading}
+                    className="self-end text-xs font-semibold text-red-700 underline hover:text-red-900 disabled:opacity-50 cursor-pointer"
+                  >
+                    {loginDict.resendBtn}
+                  </button>
+                )}
               </div>
-              {showResend && (
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={loading}
-                  className="self-end text-xs font-semibold text-red-700 underline hover:text-red-900 disabled:opacity-50 cursor-pointer"
-                >
-                  {loginDict.resendBtn}
-                </button>
-              )}
-            </div>
-          )}
-
-          {successMessage && (
-            <div role="alert" aria-live="polite" className="p-4 rounded border border-green-200 bg-green-50 flex items-start gap-3 text-sm animate-in fade-in duration-300 shadow-sm">
-              <span className="material-symbols-outlined text-green-500 shrink-0 text-lg" data-icon="check_circle">check_circle</span>
-              <p className="text-green-800 font-sans mt-0.5">{successMessage}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 px-6 bg-charcoal text-parchment hover:bg-gold hover:text-parchment hover:border-gold transition-all duration-300 disabled:opacity-50 flex justify-center items-center font-semibold text-sm uppercase tracking-widest border border-charcoal cursor-pointer active:scale-99"
-          >
-            {loading ? (
-              <span className="animate-pulse">{loginDict.processing}</span>
-            ) : isLogin ? (
-              loginDict.loginBtn
-            ) : (
-              loginDict.signupBtn
             )}
-          </button>
 
-          {isLogin && (
-            <div className="text-center mt-4">
-              <Link
-                href={`/${lang}/recuperar-password`}
-                className="text-xs text-charcoal/60 hover:text-charcoal transition-colors underline font-sans"
-              >
-                {loginDict.forgotPassword}
-              </Link>
-            </div>
-          )}
+            {successMessage && (
+              <div role="alert" aria-live="polite" className="p-4 rounded border border-green-200 bg-green-50 flex items-start gap-3 text-sm animate-in fade-in duration-300 shadow-sm">
+                <span className="material-symbols-outlined text-green-500 shrink-0 text-lg" data-icon="check_circle">check_circle</span>
+                <p className="text-green-800 font-sans mt-0.5">{successMessage}</p>
+              </div>
+            )}
 
-          <div className="relative flex items-center justify-center mt-6 mb-6">
-            <span className="absolute bg-parchment px-4 text-xs font-semibold uppercase tracking-widest text-charcoal/50">{loginDict.or}</span>
-            <div className="w-full h-px bg-lines"></div>
-          </div>
-
-          <div className="relative w-full group">
             <button
-              type="button"
-              onClick={!googleClientId ? handleGoogleAuth : undefined}
+              type="submit"
               disabled={loading}
-              className="w-full py-4 px-6 bg-transparent text-charcoal group-hover:bg-charcoal/5 transition-all duration-300 disabled:opacity-50 flex justify-center items-center gap-3 font-semibold text-sm uppercase tracking-widest border border-lines cursor-pointer active:scale-99"
+              className="w-full py-4 px-6 bg-charcoal text-parchment hover:bg-gold hover:text-parchment hover:border-gold transition-all duration-300 disabled:opacity-50 flex justify-center items-center font-semibold text-xs uppercase tracking-widest border border-charcoal cursor-pointer active:scale-99"
             >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" aria-hidden="true">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-              </svg>
-              {loginDict.continueWithGoogle}
+              {loading ? (
+                <span className="animate-pulse">{loginDict.processing}</span>
+              ) : isLogin ? (
+                loginDict.loginBtn
+              ) : (
+                loginDict.signupBtn
+              )}
             </button>
 
-            {googleClientId && (
-              <div 
-                id="google-signin-btn-container" 
-                className="absolute inset-0 opacity-[0.0001] overflow-hidden cursor-pointer flex justify-center items-center scale-110 z-10"
-              />
+            {isLogin && (
+              <div className="text-center mt-3">
+                <Link
+                  href={`/${lang}/recuperar-password`}
+                  className="text-xs text-charcoal/60 hover:text-charcoal transition-colors underline font-sans"
+                >
+                  {loginDict.forgotPassword}
+                </Link>
+              </div>
             )}
-          </div>
-        </form>
 
-        <div className="mt-8 text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError(null);
-              setShowResend(false);
-            }}
-            className="text-xs text-gold hover:text-charcoal transition-colors uppercase tracking-widest font-semibold"
-          >
-            {isLogin
-              ? loginDict.noAccount
-              : loginDict.alreadyAccount}
-          </button>
+            <div className="relative flex items-center justify-center my-6">
+              <span className="absolute bg-surface px-4 text-xs font-semibold uppercase tracking-widest text-charcoal/50">{loginDict.or}</span>
+              <div className="w-full h-px bg-lines"></div>
+            </div>
+
+            <div className="relative w-full group">
+              <button
+                type="button"
+                onClick={!googleClientId ? handleGoogleAuth : undefined}
+                disabled={loading}
+                className="w-full py-4 px-6 bg-transparent text-charcoal group-hover:bg-charcoal/5 transition-all duration-300 disabled:opacity-50 flex justify-center items-center gap-3 font-semibold text-xs uppercase tracking-widest border border-lines cursor-pointer active:scale-99"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" aria-hidden="true">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                </svg>
+                {loginDict.continueWithGoogle}
+              </button>
+
+              {googleClientId && (
+                <div 
+                  id="google-signin-btn-container" 
+                  className="absolute inset-0 opacity-[0.0001] overflow-hidden cursor-pointer flex justify-center items-center scale-110 z-10"
+                />
+              )}
+            </div>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-lines text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError(null);
+                setShowResend(false);
+              }}
+              className="text-xs text-gold hover:text-charcoal transition-colors uppercase tracking-widest font-semibold cursor-pointer"
+            >
+              {isLogin
+                ? loginDict.noAccount
+                : loginDict.alreadyAccount}
+            </button>
+          </div>
         </div>
 
         {googleClientId && (

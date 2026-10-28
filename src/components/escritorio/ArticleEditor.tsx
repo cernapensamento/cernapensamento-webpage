@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import NextImage from 'next/image';
 import { ARTICLE_STATES } from '@/lib/constants';
 import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL, ARTICLE_TYPES } from '@/lib/constants';
+import FormattedDate from '@/components/ui/FormattedDate';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Figure } from '@/lib/editor/FigureExtension';
@@ -19,12 +21,20 @@ import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
 import { getHeadingsFromHtml, generateIndex, stripIndex } from '@/lib/editor/generateIndex';
 import { ArticleIndex } from '@/lib/editor/ArticleIndexExtension';
 import { useParams } from 'next/navigation';
+import { useToast, useConfirm, usePrompt } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import TagManager from '@/components/escritorio/TagManager';
 import type { LocalizedString } from '@/lib/db/types';
-import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
+import { DB_TABLES, USER_COLS, USER_ROLES, PUBLICATION_STATUSES, PUBLICATION_TYPES } from '@/lib/db/schema';
+import {
+  uploadStorageImage,
+  removeStorageImages,
+  extractInlineStoragePaths,
+  extractStoragePathFromUrl,
+  STORAGE_CATEGORIES,
+} from '@/lib/storage';
 
 
 const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -58,20 +68,27 @@ export interface ArticleData {
     idioma_original?: string;
 }
 
-export type EditorAction = 'draft' | 'publish' | 'submit_approval' | 'approve' | 'reject' | 'revoke_approval';
+export type EditorAction = typeof PUBLICATION_STATUSES.DRAFT | 'publish' | 'submit_approval' | 'approve' | 'reject' | 'revoke_approval';
+
+export type OnSaveResult = boolean | { success: boolean } | void;
 
 interface ArticleEditorProps {
     initialData?: ArticleData;
-    onSave: (data: ArticleData, action: EditorAction) => Promise<void>;
+    onSave: (data: ArticleData, action: EditorAction) => Promise<OnSaveResult>;
     isPublishing: boolean;
     mode: 'create' | 'edit';
     userRole?: string;
 }
 
-export default function ArticleEditor({ mode = 'create', initialData, onSave, isPublishing , userRole = 'usuario'}: ArticleEditorProps) {
+export default function ArticleEditor({ mode = 'create', initialData, onSave, isPublishing , userRole = USER_ROLES.READER}: ArticleEditorProps) {
     const params = useParams();
-    const routeLang = (params?.lang as string) || 'es';
+    const routeLang = (params?.lang as string) || 'gl';
     const dict = routeLang === 'gl' ? glDict.articleEditor : esDict.articleEditor;
+    const storageDict = routeLang === 'gl' ? glDict.escritorio.storage : esDict.escritorio.storage;
+    const toast = useToast();
+    const confirm = useConfirm();
+    const prompt = usePrompt();
+    const docTypes = (routeLang === 'gl' ? glDict.documentTypes : esDict.documentTypes) as Record<string, string>;
 
     const [showPublishModal, setShowPublishModal] = useState(false);
     
@@ -94,17 +111,25 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     }, [activeLang]);
 
     const initialType = initialData?.type || initialData?.tipo;
-    const [tipo, setTipo] = useState(initialType || 'artigo');
+    const [tipo, setTipo] = useState(initialType || PUBLICATION_TYPES.ARTICLE);
     const [coverImageUrl, setCoverImageUrl] = useState(initialData?.cover_image_url || initialData?.imagen_url || '');
     const [tematicas, setTematicas] = useState<string[]>(initialData?.tags || initialData?.tematicas || []);
-        const [showPreview, setShowPreview] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
     const isUploadingCover = useRef(false);
     const isUploadingInline = useRef(false);
     const uploadedInlineImages = useRef<string[]>([]);
+    const uploadedCoverImages = useRef<string[]>([]);
+    const savedCoverUrlRef = useRef<string | null>(initialData?.cover_image_url || initialData?.imagen_url || null);
     const coverInputRef = useRef<HTMLInputElement>(null);
     const inlineImageRef = useRef<HTMLInputElement>(null);
     const previewContainerRef = useRef<HTMLDivElement>(null);
     const [authorProfile, setAuthorProfile] = useState<{ nombre: string; avatar_url?: string; bio?: string } | null>(null);
+
+    useEffect(() => {
+        if (initialData?.cover_image_url || initialData?.imagen_url) {
+            savedCoverUrlRef.current = initialData.cover_image_url || initialData.imagen_url || null;
+        }
+    }, [initialData?.cover_image_url, initialData?.imagen_url]);
     
     const supabase = createClient();
 
@@ -179,11 +204,11 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             MathKit,
             ArticleIndex,
         ],
-        content: initialData?.contenido_gl || (mode === 'create' ? '<p>La naturaleza del pensamiento contemporáneo exige una pausa deliberada...</p>' : ''),
+        content: initialData?.content?.gl || initialData?.contenido_gl || (mode === 'create' ? '<p>La naturaleza del pensamiento contemporáneo exige una pausa deliberada...</p>' : ''),
         immediatelyRender: false,
         editorProps: {
             attributes: {
-                class: 'w-full border-none bg-transparent font-sans text-lg text-charcoal focus:outline-none min-h-[400px] outline-none prose prose-p:my-4 break-words [overflow-wrap:anywhere] [&_a]:break-all [&_a]:[overflow-wrap:anywhere] [&_h1+p]:mt-2 [&_h2+p]:mt-2 [&_h3+p]:mt-2 prose-img:my-8 prose-h1:font-serif prose-h1:font-bold prose-h1:text-4xl prose-h1:md:text-5xl prose-h1:text-charcoal prose-h1:mt-12 prose-h1:mb-0 prose-h1:tracking-tight prose-h2:font-serif prose-h2:font-bold prose-h2:text-3xl prose-h2:md:text-4xl prose-h2:text-charcoal/90 prose-h2:mt-10 prose-h2:mb-0 prose-h2:tracking-tight prose-h3:font-serif prose-h3:font-bold prose-h3:text-2xl prose-h3:md:text-3xl prose-h3:text-charcoal/80 prose-h3:mt-8 prose-h3:mb-0 prose-h3:tracking-tight [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_span[data-type="inline-math"]]:bg-lines/30 [&_span[data-type="inline-math"]]:px-1.5 [&_span[data-type="inline-math"]]:py-0.5 [&_span[data-type="inline-math"]]:rounded [&_div[data-type="block-math"]]:bg-lines/20 [&_div[data-type="block-math"]]:p-4 [&_div[data-type="block-math"]]:my-6 [&_div[data-type="block-math"]]:rounded [&_div[data-type="block-math"]]:text-center',
+                class: 'w-full border-none bg-transparent font-sans text-xl text-charcoal focus:outline-none min-h-[400px] outline-none article-content',
             },
         },
         onUpdate: ({ editor }) => {
@@ -270,11 +295,12 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 }
             }
             
-            if (initialData?.contenido_gl) {
-                editor.commands.setContent(initialData.contenido_gl);
+            const savedContentGl = initialData?.content?.gl || initialData?.contenido_gl;
+            if (savedContentGl) {
+                editor.commands.setContent(savedContentGl);
             }
         }
-    }, [editor, draftKey, activeLang, initialData?.contenido_gl]);
+    }, [editor, draftKey, activeLang, initialData?.content?.gl, initialData?.contenido_gl]);
 
     const handleChangeCoverImage = () => {
         coverInputRef.current?.click();
@@ -284,47 +310,44 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-            alert('Solo se permiten imágenes JPG, PNG o WebP');
-            return;
-        }
-        if (file.size > 4 * 1024 * 1024) {
-            alert(activeLang === 'gl' ? 'A imaxe non pode superar os 4 MB' : 'La imagen no puede superar los 4 MB');
-            return;
-        }
-
         isUploadingCover.current = true;
         const localPreview = URL.createObjectURL(file);
         setCoverImageUrl(localPreview);
 
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { isUploadingCover.current = false; return; }
-
-        const ext = file.name.split('.').pop();
-        const path = `portadas/${user.id}/${Date.now()}.${ext}`;
-
-        const { error } = await supabase.storage
-            .from('imagenes-articulos')
-            .upload(path, file, {});
-
-        if (error) {
-            alert('Error al subir la imagen: ' + error.message);
-            setCoverImageUrl('');
-        } else {
-            if (coverImageUrl && coverImageUrl.includes('supabase.co/storage/v1/object/public/imagenes-articulos/')) {
-                const oldPath = coverImageUrl.split('imagenes-articulos/')[1];
-                if (oldPath) supabase.storage.from('imagenes-articulos').remove([oldPath]).catch(console.error);
-            }
-
-            const { data: urlData } = supabase.storage
-                .from('imagenes-articulos')
-                .getPublicUrl(path);
-            setCoverImageUrl(urlData.publicUrl);
+        if (!user) {
+            toast.error(storageDict.sessionRequired);
+            isUploadingCover.current = false;
+            URL.revokeObjectURL(localPreview);
+            return;
         }
 
-        URL.revokeObjectURL(localPreview);
-        isUploadingCover.current = false;
-        if (coverInputRef.current) coverInputRef.current.value = '';
+        try {
+            const { publicUrl } = await uploadStorageImage({
+                supabase,
+                file,
+                category: STORAGE_CATEGORIES.PUBLICATION_COVER,
+                userId: user.id,
+            });
+
+            uploadedCoverImages.current.push(publicUrl);
+            setCoverImageUrl(publicUrl);
+        } catch (err: unknown) {
+            const errorMsg = err instanceof Error ? err.message : '';
+            if (errorMsg === 'INVALID_FORMAT') {
+                toast.error(storageDict.invalidFormat);
+            } else if (errorMsg.startsWith('FILE_TOO_LARGE:')) {
+                const maxMb = errorMsg.split(':')[1] || '8';
+                toast.error(storageDict.fileTooLarge.replace('{max}', maxMb));
+            } else {
+                toast.error(storageDict.uploadError.replace('{error}', errorMsg || 'Error'));
+            }
+            setCoverImageUrl(initialData?.cover_image_url || '');
+        } finally {
+            URL.revokeObjectURL(localPreview);
+            isUploadingCover.current = false;
+            if (coverInputRef.current) coverInputRef.current.value = '';
+        }
     };
 
     const insertImage = () => {
@@ -335,28 +358,25 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         const file = e.target.files?.[0];
         if (!file || !editor) return;
 
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-            alert('Solo se permiten imágenes JPG, PNG o WebP');
-            return;
-        }
-        if (file.size > 4 * 1024 * 1024) {
-            alert(activeLang === 'gl' ? 'A imaxe non pode superar os 4 MB' : 'La imagen no puede superar los 4 MB');
-            return;
-        }
-
         isUploadingInline.current = true;
         const localUrl = URL.createObjectURL(file);
-        
-        const caption = window.prompt('Opcional: Añade una leyenda o pie de foto para esta imagen:');
-        
-        (editor.chain().focus() as unknown as { setFigure: (options: { src: string; caption?: string }) => { run: () => void } }).setFigure({ 
-            src: localUrl, 
-            caption: caption || undefined 
+
+        const caption = await prompt({
+            title: dict.captionPrompt.title,
+            description: dict.captionPrompt.description,
+            placeholder: dict.captionPrompt.placeholder,
+            confirmLabel: dict.insert,
+            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+        });
+
+        (editor.chain().focus() as unknown as { setFigure: (options: { src: string; caption?: string }) => { run: () => void } }).setFigure({
+            src: localUrl,
+            caption: caption || undefined,
         }).run();
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-            alert('Debes iniciar sesión para subir imágenes');
+            toast.error(storageDict.sessionRequired);
             editor.state.doc.descendants((node, pos) => {
                 if (node.type.name === 'figure' && node.attrs.src === localUrl) {
                     editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
@@ -367,38 +387,29 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             return;
         }
 
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = `contenido/${user.id}/${Date.now()}-${safeName}`;
-
-        const { error } = await supabase.storage
-            .from('imagenes-articulos')
-            .upload(path, file, {});
-
-        if (error) {
-            alert('Error al subir la imagen: ' + error.message);
-            editor.state.doc.descendants((node, pos) => {
-                if (node.type.name === 'figure' && node.attrs.src === localUrl) {
-                    editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
-                }
+        try {
+            const { publicUrl } = await uploadStorageImage({
+                supabase,
+                file,
+                category: STORAGE_CATEGORIES.PUBLICATION_INLINE,
+                userId: user.id,
+                originalFilename: file.name,
             });
-        } else {
-            const { data: urlData } = supabase.storage
-                .from('imagenes-articulos')
-                .getPublicUrl(path);
-            uploadedInlineImages.current.push(urlData.publicUrl);
-            
+
+            uploadedInlineImages.current.push(publicUrl);
+
             let replaced = false;
             editor.state.doc.descendants((node, pos) => {
                 if (node.type.name === 'figure' && node.attrs.src === localUrl) {
                     editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, {
                         ...node.attrs,
-                        src: urlData.publicUrl
+                        src: publicUrl,
                     }));
                     replaced = true;
                 }
             });
             if (!replaced) {
-                const html = editor.getHTML().replaceAll(localUrl, urlData.publicUrl);
+                const html = editor.getHTML().replaceAll(localUrl, publicUrl);
                 editor.commands.setContent(html);
             }
             const updatedHtml = editor.getHTML();
@@ -407,25 +418,62 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             } else {
                 setContenidoEs(updatedHtml);
             }
+        } catch (err: unknown) {
+            const errorMsg = err instanceof Error ? err.message : '';
+            if (errorMsg === 'INVALID_FORMAT') {
+                toast.error(storageDict.invalidFormat);
+            } else if (errorMsg.startsWith('FILE_TOO_LARGE:')) {
+                const maxMb = errorMsg.split(':')[1] || '8';
+                toast.error(storageDict.fileTooLarge.replace('{max}', maxMb));
+            } else {
+                toast.error(storageDict.uploadError.replace('{error}', errorMsg || 'Error'));
+            }
+            editor.state.doc.descendants((node, pos) => {
+                if (node.type.name === 'figure' && node.attrs.src === localUrl) {
+                    editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
+                }
+            });
+        } finally {
+            URL.revokeObjectURL(localUrl);
+            isUploadingInline.current = false;
+            if (inlineImageRef.current) inlineImageRef.current.value = '';
         }
-
-        URL.revokeObjectURL(localUrl);
-        isUploadingInline.current = false;
-        if (inlineImageRef.current) inlineImageRef.current.value = '';
     };
 
-    const insertYoutube = () => {
-        const url = window.prompt('URL del vídeo de YouTube:');
-        if (url && editor) {
+    const insertYoutube = async () => {
+        if (!editor) return;
+        const url = await prompt({
+            title: dict.youtubePrompt.title,
+            description: dict.youtubePrompt.description,
+            placeholder: dict.youtubePrompt.placeholder,
+            confirmLabel: dict.insert,
+            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+            validate: (val) => {
+                if (!val.trim()) return dict.youtubePrompt.emptyUrl;
+                return null;
+            },
+        });
+        if (url && url.trim() && editor) {
             editor.commands.setYoutubeVideo({
-                src: url,
+                src: url.trim(),
             });
         }
     };
 
-    const insertMath = () => {
+    const insertMath = async () => {
         if (!editor) return;
-        const latex = window.prompt('Introduce a fórmula matemática en LaTeX / Introduce la fórmula matemática en LaTeX:\n(ex: \\int_0^\\infty e^{-x} dx = 1)');
+        const latex = await prompt({
+            title: dict.latexPrompt.title,
+            description: dict.latexPrompt.description,
+            placeholder: dict.latexPrompt.placeholder,
+            multiline: true,
+            confirmLabel: dict.insert,
+            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+            validate: (val) => {
+                if (!val.trim()) return dict.latexPrompt.emptyFormula;
+                return null;
+            },
+        });
         if (latex && latex.trim()) {
             (editor.chain().focus() as unknown as { insertBlockMath: (opts: { latex: string }) => { run: () => boolean } }).insertBlockMath({ latex: latex.trim() }).run();
         }
@@ -441,11 +489,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         const rawHtml = editor.getHTML();
         const items = getHeadingsFromHtml(rawHtml);
         if (!items.length) {
-            alert(
-                activeLang === 'gl'
-                    ? 'Non se atoparon seccións (H1, H2, H3) no artigo.'
-                    : 'No se encontraron secciones (H1, H2, H3) en el artículo.'
-            );
+            toast.warning(dict.noHeadingsFound);
             return;
         }
 
@@ -520,17 +564,25 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             if (data.htmlContent) {
                 if (targetLang === 'gl') setContenidoGl(data.htmlContent); else setContenidoEs(data.htmlContent);
             }
-            alert('Traducción generada correctamente. Puedes cambiar de idioma en las pestañas para revisarla.');
+            toast.success(dict.translateSuccess);
         } catch (e: unknown) {
             console.error(e);
-            alert((e instanceof Error ? e.message : String(e)) || 'Error al traducir el contenido. Revisa la consola o tu API KEY.');
+            toast.error((e instanceof Error ? e.message : String(e)) || dict.translateError);
         } finally {
             setIsTranslating(false);
         }
     };
 
-    const handleClearAll = () => {
-        if (window.confirm('¿Estás seguro de que quieres borrar todo el contenido de este artículo? Se perderán todos los cambios en gallego y en castellano.')) {
+    const handleClearAll = async () => {
+        const ok = await confirm({
+            title: dict.clearAllTitle,
+            description: dict.clearAllConfirm,
+            confirmLabel: dict.clear,
+            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+            variant: 'danger',
+        });
+
+        if (ok) {
             setTituloGl('');
             setTituloEs('');
             setSubtituloGl('');
@@ -564,19 +616,15 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 }
                 const byteArray = new Uint8Array(byteNumbers);
                 const blob = new Blob([byteArray], { type: `image/${m.format === 'jpg' ? 'jpeg' : m.format}` });
-                const path = `contenido/${userId}/pasted-${Date.now()}-${i}.${m.format}`;
-                const { error: uploadErr } = await supabase.storage
-                    .from('imagenes-articulos')
-                    .upload(path, blob, { upsert: true });
-                if (!uploadErr) {
-                    const { data: urlData } = supabase.storage
-                        .from('imagenes-articulos')
-                        .getPublicUrl(path);
-                    if (urlData?.publicUrl) {
-                        cleaned = cleaned.replace(m.fullMatch, urlData.publicUrl);
-                        uploadedInlineImages.current.push(urlData.publicUrl);
-                    }
-                }
+                const { publicUrl } = await uploadStorageImage({
+                    supabase,
+                    file: blob,
+                    category: STORAGE_CATEGORIES.PUBLICATION_INLINE,
+                    userId,
+                    originalFilename: `pasted-${i}`,
+                });
+                cleaned = cleaned.replace(m.fullMatch, publicUrl);
+                uploadedInlineImages.current.push(publicUrl);
             } catch (err) {
                 console.error('Error uploading pasted base64 image:', err);
             }
@@ -586,7 +634,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
 
     const handleSubmit = async (action: EditorAction = 'publish') => {
         if (isUploadingCover.current || isUploadingInline.current) {
-            alert(activeLang === 'gl' ? 'Por favor, agarda a que rematen de subirse as imaxes.' : 'Por favor, espera a que terminen de subirse las imágenes.');
+            toast.warning(storageDict.uploadWait);
             return;
         }
 
@@ -600,59 +648,89 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         finalGl = await sanitizeBase64Images(finalGl, userId);
         finalEs = await sanitizeBase64Images(finalEs, userId);
         
-        // --- LIMPIEZA DE IMÁGENES INLINE (GARBAGE COLLECTION) ---
-        const supabaseRegex = /https:\/\/[a-zA-Z0-9.-]+\.supabase\.co\/storage\/v1\/object\/public\/imagenes-articulos\/contenido\/[a-zA-Z0-9-]+\/[^"'\s]+/g;
-        
-        const oldUrls: string[] = [
-            ...(initialData?.contenido_gl?.match(supabaseRegex) || []),
-            ...(initialData?.contenido_es?.match(supabaseRegex) || [])
+        // --- LIMPIEZA DE IMÁGENES (GARBAGE COLLECTION) ---
+        // 1. Inline images
+        const oldInlinePaths = [
+            ...extractInlineStoragePaths(initialData?.content?.gl || initialData?.contenido_gl),
+            ...extractInlineStoragePaths(initialData?.content?.es || initialData?.contenido_es)
         ];
-        const newUrls: string[] = [
-            ...(finalGl.match(supabaseRegex) || []),
-            ...(finalEs.match(supabaseRegex) || [])
+        const newInlinePaths = new Set([
+            ...extractInlineStoragePaths(finalGl),
+            ...extractInlineStoragePaths(finalEs)
+        ]);
+        const uploadedInlinePaths = uploadedInlineImages.current
+            .map(url => extractStoragePathFromUrl(url))
+            .filter((p): p is string => Boolean(p));
+
+        const inlinePathsToDelete = [
+            ...oldInlinePaths.filter(p => !newInlinePaths.has(p)),
+            ...uploadedInlinePaths.filter(p => !newInlinePaths.has(p))
         ];
-        
-        const newUrlsSet = new Set(newUrls);
-        const urlsToDelete = oldUrls.filter(url => !newUrlsSet.has(url));
-        const uploadedButDeleted = uploadedInlineImages.current.filter(url => !newUrlsSet.has(url));
-        
-        const allUrlsToDelete = Array.from(new Set([...urlsToDelete, ...uploadedButDeleted]));
-        
-        if (allUrlsToDelete.length > 0) {
-            const pathsToDelete = allUrlsToDelete.flatMap(url => {
-                const parts = url.split('imagenes-articulos/');
-                return parts[1] ? [parts[1]] : [];
-            });
-            
-            if (pathsToDelete.length > 0) {
-                supabase.storage.from('imagenes-articulos').remove(pathsToDelete).catch(console.error);
+
+        // 2. Cover image: compare saved cover URL with the new cover
+        const savedCoverPath = extractStoragePathFromUrl(savedCoverUrlRef.current);
+        const newCoverPath = extractStoragePathFromUrl(coverImageUrl);
+        const uploadedCoverPaths = uploadedCoverImages.current
+            .map(url => extractStoragePathFromUrl(url))
+            .filter((p): p is string => Boolean(p));
+
+        const coverPathsToDelete = [
+            ...(savedCoverPath && savedCoverPath !== newCoverPath ? [savedCoverPath] : []),
+            ...uploadedCoverPaths.filter(p => p !== newCoverPath)
+        ];
+
+        const pathsToDelete = Array.from(new Set([
+            ...inlinePathsToDelete,
+            ...coverPathsToDelete,
+        ]));
+        // -------------------------------------------------
+
+        try {
+            const saveResult = await onSave({
+                title: { gl: tituloGl, es: tituloEs },
+                subtitle: { gl: subtituloGl, es: subtituloEs },
+                content: { gl: finalGl, es: finalEs },
+                cover_image_url: coverImageUrl,
+                tags: tematicas,
+                type: tipo,
+                original_language: idiomaOriginal,
+                titulo_gl: tituloGl,
+                titulo_es: tituloEs,
+                subtitulo_gl: subtituloGl,
+                subtitulo_es: subtituloEs,
+                contenido_gl: finalGl,
+                contenido_es: finalEs,
+                imagen_url: coverImageUrl,
+                tematicas: tematicas,
+                tipo: tipo,
+                idioma_original: idiomaOriginal
+            }, action);
+
+            const isSuccess =
+                saveResult === false ||
+                (typeof saveResult === 'object' && saveResult !== null && 'success' in saveResult && !saveResult.success)
+                    ? false
+                    : true;
+
+            if (!isSuccess) {
+                return;
             }
+
+            // Only remove superseded images after save succeeds
+            if (pathsToDelete.length > 0) {
+                removeStorageImages(supabase, pathsToDelete).catch(console.error);
+            }
+
+            savedCoverUrlRef.current = coverImageUrl;
+            uploadedCoverImages.current = [];
+            uploadedInlineImages.current = [];
+
+            localStorage.removeItem(draftKey);
+            setHasUnsavedChanges(false);
+            setShowPublishModal(false);
+        } catch (saveError) {
+            console.error('Error saving article:', saveError);
         }
-        // ---------------------------------------------------------
-
-        await onSave({
-            title: { gl: tituloGl, es: tituloEs },
-            subtitle: { gl: subtituloGl, es: subtituloEs },
-            content: { gl: finalGl, es: finalEs },
-            cover_image_url: coverImageUrl,
-            tags: tematicas,
-            type: tipo,
-            original_language: idiomaOriginal,
-            titulo_gl: tituloGl,
-            titulo_es: tituloEs,
-            subtitulo_gl: subtituloGl,
-            subtitulo_es: subtituloEs,
-            contenido_gl: finalGl,
-            contenido_es: finalEs,
-            imagen_url: coverImageUrl,
-            tematicas: tematicas,
-            tipo: tipo,
-            idioma_original: idiomaOriginal
-        }, action);
-
-        localStorage.removeItem(draftKey);
-        setHasUnsavedChanges(false);
-        setShowPublishModal(false);
     };
 
     
@@ -698,6 +776,18 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     {/* Floating Toolbar */}
                     <div className="sticky top-0 z-30 border-b border-lines bg-parchment/80 backdrop-blur-sm px-4 md:px-8 py-3 flex flex-col xl:flex-row items-center justify-between gap-3 xl:gap-0">
                         <div className="flex items-center gap-1 text-charcoal/80 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
+                            {/* Back to author's articles button */}
+                            <Link
+                                href={`/${routeLang}/escritorio`}
+                                className="flex items-center gap-1.5 h-10 px-3 mr-1 text-charcoal/70 hover:text-charcoal hover:bg-lines/40 border border-lines transition-colors text-xs font-sans uppercase tracking-wider shrink-0 cursor-pointer"
+                                title={dict.backToArticles || 'Volver a publicacións'}
+                                aria-label={dict.backToArticles || 'Volver a publicacións'}
+                            >
+                                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                                <span className="hidden sm:inline font-semibold">{dict.backToArticles || 'Artigos'}</span>
+                            </Link>
+                            <div className="h-6 w-[1px] shrink-0 bg-lines mx-1 mr-2"></div>
+
                             <button type="button" aria-label="Negrita" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('bold') ? 'bg-lines/30' : ''}`} title="Negrita" onClick={() => editor?.chain().focus().toggleBold().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_bold</span></button>
                             <button type="button" aria-label="Cursiva" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('italic') ? 'bg-lines/30' : ''}`} title="Cursiva" onClick={() => editor?.chain().focus().toggleItalic().run()}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_italic</span></button>
                             <select
@@ -756,9 +846,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         <div className="flex items-center gap-2 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
                             <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50 italic hidden xl:block shrink-0"></span>
                             {(() => {
-                                const isDirectPublisher = userRole === 'admin' || userRole === 'founder' || userRole === 'escritor';
-                                const isPending = initialData?.status === 'in_review' || initialData?.estado === ARTICLE_STATES.PENDING;
-                                const isPublished = initialData?.status === 'published' || initialData?.estado === ARTICLE_STATES.PUBLISHED;
+                                const isDirectPublisher = userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.FOUNDER || userRole === 'escritor';
+                                const isPending = initialData?.status === PUBLICATION_STATUSES.IN_REVIEW || initialData?.estado === ARTICLE_STATES.PENDING;
+                                const isPublished = initialData?.status === PUBLICATION_STATUSES.PUBLISHED || initialData?.estado === ARTICLE_STATES.PUBLISHED;
                                 const canApprove = isDirectPublisher;
                                 const isReviewRole = !isDirectPublisher;
 
@@ -788,14 +878,14 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                 return (
                                     <>
                                         {mode === 'edit' && isPublished ? (
-                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('draft')}>
-                                                <span className="hidden sm:inline">Despublicar</span>
-                                                <span className="sm:hidden">Despublicar</span>
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(PUBLICATION_STATUSES.DRAFT)}>
+                                                <span className="hidden sm:inline">{dict.unpublish || 'Despublicar'}</span>
+                                                <span className="sm:hidden">{dict.unpublish || 'Despublicar'}</span>
                                             </button>
                                         ) : (
-                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('draft')}>
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(PUBLICATION_STATUSES.DRAFT)}>
                                                 <span className="hidden sm:inline">{dict.saveDraft || 'Guardar Borrador'}</span>
-                                                <span className="sm:hidden">Borrador</span>
+                                                <span className="sm:hidden">{dict.saveDraft ? dict.saveDraft.replace('Guardar ', '') : 'Borrador'}</span>
                                             </button>
                                         )}
                                         <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => {
@@ -814,7 +904,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     </div>
 
                     {/* Editor Area */}
-                    <div className="max-w-[800px] mx-auto py-8 px-8 editor-container [&_h1+p]:mt-2 [&_h2+p]:mt-2 [&_h3+p]:mt-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gold [&_blockquote]:pl-6 [&_blockquote]:italic [&_blockquote]:text-charcoal/80 [&_blockquote]:my-6 [&_ul]:list-disc [&_ul]:ml-8 [&_ul]:my-4 [&_ol]:list-decimal [&_ol]:ml-8 [&_ol]:my-4 [&_li]:my-2 [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:my-8 [&_div[data-youtube-video]]:w-full [&_div[data-youtube-video]]:flex [&_div[data-youtube-video]]:justify-center [&_h1]:font-serif [&_h1]:font-bold [&_h1]:text-4xl [&_h1]:md:text-5xl [&_h1]:text-charcoal [&_h1]:mt-12 [&_h1]:mb-0 [&_h1]:tracking-tight [&_h2]:font-serif [&_h2]:font-bold [&_h2]:text-3xl [&_h2]:md:text-4xl [&_h2]:text-charcoal/90 [&_h2]:mt-10 [&_h2]:mb-0 [&_h2]:tracking-tight [&_h3]:font-serif [&_h3]:font-bold [&_h3]:text-2xl [&_h3]:md:text-3xl [&_h3]:text-charcoal/80 [&_h3]:mt-8 [&_h3]:mb-0 [&_h3]:tracking-tight [&_table]:w-full [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_span[data-type=inline-math]]:bg-lines/30 [&_span[data-type=inline-math]]:px-1.5 [&_span[data-type=inline-math]]:py-0.5 [&_span[data-type=inline-math]]:rounded [&_div[data-type=block-math]]:bg-lines/20 [&_div[data-type=block-math]]:p-4 [&_div[data-type=block-math]]:my-6 [&_div[data-type=block-math]]:rounded [&_div[data-type=block-math]]:text-center">
+                    <div className="max-w-[800px] mx-auto py-8 px-8 editor-container">
                         <div className="flex flex-wrap items-center justify-between mb-8 pb-4 border-b border-lines">
                             <div className="flex gap-4">
                                 <button type="button"                                     onClick={() => { 
@@ -857,15 +947,18 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                         onChange={(e) => setTipo(e.target.value)}
                                         style={{ colorScheme: 'light dark' }}
                                     >
-                                        {ARTICLE_TYPES.map((type) => (
-                                        <option 
-                                            key={type} 
-                                            value={type} 
-                                            style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}
-                                        >
-                                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                                        </option>
-                                    ))}
+                                        {ARTICLE_TYPES.map((type) => {
+                                            const label = docTypes[type.toLowerCase()] || type.charAt(0).toUpperCase() + type.slice(1);
+                                            return (
+                                                <option 
+                                                    key={type} 
+                                                    value={type} 
+                                                    style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}
+                                                >
+                                                    {label}
+                                                </option>
+                                            );
+                                        })}
                                     </select>
 
                                     <select 
@@ -918,7 +1011,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             {showPreview && (
                 <div 
                     ref={previewContainerRef}
-                    className="fixed inset-0 z-50 overflow-y-auto bg-parchment"
+                    className="fixed inset-0 z-[150] overflow-y-auto bg-parchment animate-in fade-in duration-200"
                     onClick={(e) => {
                         const target = (e.target as HTMLElement).closest('a');
                         if (target && target.hash && target.hash.startsWith('#')) {
@@ -961,18 +1054,44 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     }}
                 >
                     {/* Preview TopBar */}
-                    <div className="sticky top-0 z-50 border-b border-lines bg-parchment/95 backdrop-blur-sm px-8 py-4 flex items-center justify-between">
-                        <span className="font-sans text-[10px] text-gold uppercase tracking-[0.2em]">{dict.previewHeader}</span>
-                        <button type="button" className="flex items-center gap-2 px-4 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer" onClick={() => setShowPreview(false)}>
-                            <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
-                            Cerrar Vista Previa
-                        </button>
+                    <div className="sticky top-0 z-[160] border-b border-lines bg-parchment/95 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4 shadow-sm">
+                        {/* Botón a la izquierda para retornar al panel de edición */}
+                        <div className="flex items-center">
+                            <button
+                                type="button"
+                                className="group flex items-center gap-2 px-4 py-2 border border-lines bg-surface hover:bg-lines/50 text-charcoal font-sans text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-xs"
+                                onClick={() => setShowPreview(false)}
+                                title={dict.backToEditor || 'Volver ao Editor'}
+                                aria-label={dict.backToEditor || 'Volver ao Editor'}
+                            >
+                                <span className="material-symbols-outlined text-[18px] transition-transform duration-200 group-hover:-translate-x-1" style={{ fontFamily: 'Material Symbols Outlined' }}>arrow_back</span>
+                                <span className="font-semibold">{dict.backToEditor || 'Volver ao Editor'}</span>
+                            </button>
+                        </div>
+
+                        {/* Banner arriba a la derecha aclarando que es una preview del artículo */}
+                        <div className="flex items-center">
+                            <div className="flex items-center px-4 py-2 border border-gold/40 bg-gold/10 text-gold font-sans text-xs uppercase tracking-wider shadow-xs select-none">
+                                <span className="font-semibold">
+                                    {dict.previewHeader || 'Vista Previa de Publicación'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Preview Content Simulating Article View */}
                     <div className="w-full pb-24">
                         <header className="w-full max-w-3xl px-5 md:px-0 pt-20 pb-12 mx-auto text-center">
-                            <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">{tipo || 'Artículo'}</span>
+                            {(() => {
+                                const previewDocTypes = (activeLang === 'es' ? esDict.documentTypes : glDict.documentTypes) as Record<string, string>;
+                                const rawType = (tipo || 'artigo').toLowerCase();
+                                const typeLabel = previewDocTypes[rawType] || (rawType === 'news' ? (activeLang === 'gl' ? 'Nova' : 'Noticia') : (tipo || 'Artigo'));
+                                return (
+                                    <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">
+                                        {typeLabel}
+                                    </span>
+                                );
+                            })()}
                             <h1 className="font-serif text-4xl md:text-6xl text-charcoal mb-6 max-w-4xl mx-auto leading-tight">
                                 {activeLang === 'gl' ? (tituloGl || 'Sin título') : (tituloEs || 'Sin título')}
                             </h1>
@@ -993,9 +1112,12 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                     {authorProfile?.nombre || 'Autor del Artículo'}
                                 </span>
                                 <span className="font-serif text-lines">—</span>
-                                <time className="uppercase tracking-widest">
-                                    {new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                </time>
+                                <FormattedDate
+                                    date={new Date()}
+                                    lang={activeLang}
+                                    format="long"
+                                    className="uppercase tracking-widest"
+                                />
                             </div>
                         </header>
 
@@ -1005,27 +1127,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             </div>
                         )}
 
-                        <article className={`w-full max-w-2xl px-5 md:px-0 mx-auto font-sans text-xl text-charcoal leading-relaxed flex flex-col gap-2 break-words [overflow-wrap:anywhere] min-w-0 ${tipo?.toLowerCase() === 'ensaio' ? 'text-justify' : ''}`}>
+                        <article className="w-full max-w-2xl px-5 md:px-0 mx-auto min-w-0">
                             <div 
-                                className={`prose prose-lg max-w-none text-charcoal break-words [overflow-wrap:anywhere]
-                        ${tipo?.toLowerCase() === 'ensaio' ? '[&>p]:text-justify [&_p]:[text-align:justify] [&_p]:[text-justify:inter-word]' : ''}
-                        [&>p]:mb-6 [&>p]:leading-relaxed
-                        [&_h1]:font-serif [&_h1]:font-bold [&_h1]:text-4xl [&_h1]:md:text-5xl [&_h1]:text-charcoal [&_h1]:mt-12 [&_h1]:mb-6 [&_h1]:tracking-tight [&_h1]:leading-tight [&_h1]:scroll-mt-36
-                        [&_h2]:font-serif [&_h2]:font-bold [&_h2]:text-3xl [&_h2]:md:text-4xl [&_h2]:text-charcoal/90 [&_h2]:mt-10 [&_h2]:mb-6 [&_h2]:tracking-tight [&_h2]:leading-snug [&_h2]:scroll-mt-36
-                        [&_h3]:font-serif [&_h3]:font-bold [&_h3]:text-2xl [&_h3]:md:text-3xl [&_h3]:text-charcoal/80 [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:tracking-tight [&_h3]:leading-snug [&_h3]:scroll-mt-36
-                        [&>blockquote]:border-l-4 [&>blockquote]:border-gold [&>blockquote]:pl-6 [&>blockquote]:font-serif [&>blockquote]:text-2xl [&>blockquote]:italic [&>blockquote]:text-charcoal/80 [&>blockquote]:my-10
-                        [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4
-                        [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4
-                        [&_li]:my-1.5 [&_li>p]:my-0.5
-                        [&>figure]:my-10 [&>figure]:mx-0 [&>figure]:w-full [&>figure>img]:w-full [&>figure>img]:h-auto [&>figure>img]:border [&>figure>img]:border-lines
-                        [&_figure_figcaption]:mt-4 [&_figure_figcaption]:text-base [&_figure_figcaption]:text-charcoal/60 [&_figure_figcaption]:italic [&_figure_figcaption]:text-center
-                        [&_a]:text-gold [&_a]:underline [&_a]:underline-offset-4 [&_a]:break-all [&_a]:[overflow-wrap:anywhere] hover:[&_a]:text-gold/80
-                        [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:my-8 [&_td]:border [&_td]:border-lines [&_td]:p-3 [&_th]:border [&_th]:border-lines [&_th]:p-3 [&_th]:bg-charcoal/5 [&_th]:font-bold [&_th]:text-left [&_.katex-display]:my-6 [&_.katex-display]:text-center [&_.katex-display]:overflow-x-auto [&_.katex-display]:overflow-y-hidden [&_.katex-display]:max-w-full [&_.katex-display]:py-2 [&_.katex]:text-charcoal
-                        [&_[data-type='article-index']]:border-l-4 [&_[data-type='article-index']]:border-gold [&_[data-type='article-index']]:!px-8 [&_[data-type='article-index']]:!py-6 [&_[data-type='article-index']]:bg-surface [&_[data-type='article-index']]:mb-10 [&_[data-type='article-index']]:rounded-r
-                        [&_[data-type='article-index']_.index-label]:text-xs [&_[data-type='article-index']_.index-label]:font-semibold [&_[data-type='article-index']_.index-label]:uppercase [&_[data-type='article-index']_.index-label]:tracking-widest [&_[data-type='article-index']_.index-label]:text-charcoal/50 [&_[data-type='article-index']_.index-label]:mb-3
-                        [&_[data-type='article-index']_ul]:!list-none [&_[data-type='article-index']_ul]:!pl-0 [&_[data-type='article-index']_ul]:!my-0
-                        [&_[data-type='article-index']_li]:!py-0.5 [&_[data-type='article-index']_li]:!my-0
-                        [&_[data-type='article-index']_a:hover]:underline`}
+                                className={`article-content ${(tipo?.toLowerCase() === 'ensaio' || tipo?.toLowerCase() === PUBLICATION_TYPES.ESSAY) ? 'article-content-essay' : ''}`}
                                 dangerouslySetInnerHTML={{ __html: renderHeadingAnchors(renderMathInHtml(activeLang === 'gl' ? contenidoGl : contenidoEs)) }}
                             />
                         </article>
@@ -1035,9 +1139,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                     <NextImage className="object-cover" alt="Avatar del Autor" src={authorProfile?.avatar_url || DEFAULT_AVATAR_URL} fill sizes="48px"/>
                                 </div>
                                 <div>
-                                    <h3 className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2" id="preview-author-heading">Sobre el autor</h3>
+                                    <h3 className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-2" id="preview-author-heading">{dict.aboutTheAuthor || 'Sobre o autor'}</h3>
                                     <p className="font-sans text-lg text-charcoal/80">
-                                        <strong>{authorProfile?.nombre || 'Autor del Artículo'}</strong> {authorProfile?.bio || 'es un columnista y colaborador activo.'}
+                                        <strong>{authorProfile?.nombre || dict.defaultAuthorName || 'Autor do Artigo'}</strong> {authorProfile?.bio || dict.defaultBio || 'é un columnista e colaborador activo.'}
                                     </p>
                                 </div>
                             </div>

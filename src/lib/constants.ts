@@ -46,3 +46,13 @@ export const USER_ROLES = {
 } as const;
 
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+
+export const ERROR_CODES = {
+  BAD_REQUEST: '400',
+  UNAUTHORIZED: '401',
+  FORBIDDEN: '403',
+  NOT_FOUND: '404',
+  SERVER_ERROR: '500',
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

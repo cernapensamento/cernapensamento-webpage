@@ -1,9 +1,38 @@
 "use server";
 
-import { getAuthenticatedUser } from '@/utils/auth';
-import { updatePublicationStatus } from '@/lib/db/queries/publications';
-import type { PublicationStatus } from '@/lib/db/types';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { updatePublicationStatus, getPublicationCards, formatDbError } from '@/lib/db';
+import type { PublicationStatus, PublicationType, PublicationCardItem } from '@/lib/db';
 import { USER_ROLES } from '@/lib/db/schema';
+
+/**
+ * Loads another page of published cards, defaulting to 10 items from the supplied
+ * zero-based offset. DAL failures normally produce a successful empty page;
+ * exceptions reaching this action return `success: false` with an empty list and error.
+ */
+export async function fetchMoreArticlesAction(options: {
+  offset: number;
+  limit?: number;
+  type?: PublicationType;
+  tagSlugs?: string[];
+  searchQuery?: string;
+  lang?: string;
+}): Promise<{ success: boolean; publications: PublicationCardItem[]; error?: string }> {
+  try {
+    const publications = await getPublicationCards({
+      offset: options.offset,
+      limit: options.limit ?? 10,
+      type: options.type,
+      tagSlugs: options.tagSlugs,
+      searchQuery: options.searchQuery,
+      lang: options.lang,
+    });
+    return { success: true, publications };
+  } catch (err: unknown) {
+    console.warn('[Action:fetchMoreArticles] Failed:', formatDbError(err));
+    return { success: false, publications: [], error: 'Error al cargar más publicaciones' };
+  }
+}
 
 export async function updateArticleState(
   publicationId: string,

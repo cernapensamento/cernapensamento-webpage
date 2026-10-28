@@ -1,0 +1,45 @@
+# Cerna Pensamento
+
+> Cerna Pensamento (https://cernapensamento.org) é unha revista dixital galega e asociación civil independente dedicada ao ensaio, a filosofía política, a economía (incluíndo a tradición da Escola Austríaca de economía), o debate intelectual e a creación literaria en lingua galega e castelá.
+
+Cerna é unha publicación bilingüe (galego como idioma orixinal e castelán) editada polo Consello Editorial de Cerna Pensamento en Galicia. A plataforma proporciona artigos de acceso aberto, ensaios monográficos, columnas semanais, proxectos editoriais de narrativa e poesía, e documentos constitutivos da asociación.
+
+## Páxina Principal
+
+- [Portada (Galego)](https://cernapensamento.org/gl): Portada principal da revista dixital con artigos destacados, mosaico editorial, columnas e temas.
+- [Portada (Castelán)](https://cernapensamento.org/es): Portada principal en versión bilingüe en castelán.
+
+## Publicacións e Coleccións
+
+- [Arquivo Xeral](https://cernapensamento.org/gl/articulos): Índice completo de todas as publicacións catalogadas con filtros temáticos.
+- [Artigos de Opinión](https://cernapensamento.org/gl/articulos?tipo=artigo): Columnas de opinión, análise de políticas públicas e crítica cultural.
+- [Ensaios Filosóficos e Económicos](https://cernapensamento.org/gl/articulos?tipo=ensaio): Monográficos extensos con rigor académico sobre filosofía política, teoría do valor e dereito.
+- [Colección Artigos](https://cernapensamento.org/gl/asociacion/coleccion-articulos): Proxecto editorial dedicado aos artigos de actualidade e opinión.
+- [Colección Ensaios](https://cernapensamento.org/gl/asociacion/coleccion-ensayos): Proxecto editorial centrado en ensaios e monográficos de fondo.
+- [Colección Narrativa](https://cernapensamento.org/gl/asociacion/coleccion-narrativa): Proxecto editorial dedicado á ficción e prosa contemporánea.
+- [Colección Poesía](https://cernapensamento.org/gl/asociacion/coleccion-poesia): Proxecto editorial dedicado á creación poética e lírica.
+
+## A Asociación
+
+- [O Proxecto e Manifesto](https://cernapensamento.org/gl/asociacion): Manifesto fundacional, principios e fins da Asociación Cerna Pensamento.
+- [Estatutos Oficiais](https://cernapensamento.org/gl/asociacion/estatutos): Marco xurídico, réxime interno e gobernanza da asociación.
+- [Caderno de Novas](https://cernapensamento.org/gl/noticias): Axenda cultural, avisos editoriais e convocatorias abertas.
+
+## Autores
+
+- [Directorio de Autores](https://cernapensamento.org/gl/autores): Listado completo dos autores e autoras que publicaron en Cerna, con biografías, xéneros e últimas publicacións.
+- [Diego Araújo](https://cernapensamento.org/gl/autor/diego-araujo): Columnista e investigador en economía, teoría dos prezos e historia do pensamento.
+- [Anxo Pérez](https://cernapensamento.org/gl/autor/anxo-perez): Escritor e ensaísta sobre crítica cultural, literatura e pensamento galego.
+- [Héctor González](https://cernapensamento.org/gl/autor/hector-gonzalez): Autor especializado en teoría de xogos, socioloxía e toma de decisións.
+- [Denis Fernández](https://cernapensamento.org/gl/autor/denis-fernandez): Analista institucional e político.
+
+## Contacto e Colaboración
+
+- [Formulario de Contacto](https://cernapensamento.org/gl/contacto): Envío de propostas de publicación, cartas ao consello e solicitudes de asociación.
+- Correo electrónico: contacto@cernapensamento.org
+- Sede: Galicia / Santiago de Compostela, España.
+
+## Información Legal
+
+- [Política de Privacidade](https://cernapensamento.org/gl/privacidad): Información sobre o tratamento de datos persoais, bases xurídicas, conservación, cookies e dereitos das persoas usuarias.
+- [Política de Privacidad](https://cernapensamento.org/es/privacidad): Versión en castelán da política de privacidade.

@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -16,6 +17,7 @@ export default function ActualizarPasswordPage() {
   const params = useParams();
   const lang = (params.lang as string) || 'es';
   const supabase = createClient();
+  const toast = useToast();
   
   const dict = lang === 'es' ? esDict : glDict;
   const loginDict = dict.loginPage;
@@ -48,7 +50,7 @@ export default function ActualizarPasswordPage() {
       
       if (error) throw error;
       
-      alert(loginDict.updateSuccess);
+      toast.success(loginDict.updateSuccess);
       router.push(`/${lang}/escritorio`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : loginDict.genericAuthError);
@@ -65,7 +67,7 @@ export default function ActualizarPasswordPage() {
         <div className="text-center mb-12 flex flex-col items-center">
           <div className="relative mb-6">
             <Image 
-              src="/images/logo/cernawhite.png" 
+              src="/images/logo/cernawhite.webp" 
               alt="Cerna Pensamento" 
               width={400} 
               height={100} 
@@ -73,7 +75,7 @@ export default function ActualizarPasswordPage() {
               priority
             />
             <Image 
-              src="/images/logo/cernablack.png" 
+              src="/images/logo/cernablack.webp" 
               alt="Cerna Pensamento" 
               width={400} 
               height={100} 

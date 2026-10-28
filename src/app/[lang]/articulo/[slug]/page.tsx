@@ -1,16 +1,17 @@
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
-import { getAuthenticatedUser } from '@/utils/auth';
 import { PUBLICATION_STATUSES } from '@/lib/db/schema';
 import ReviewActionBar from '@/components/escritorio/ReviewActionBar';
 import Link from 'next/link';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import sanitizeHtml from 'sanitize-html';
 import 'katex/dist/katex.min.css';
 import { renderMathInHtml } from '@/lib/editor/renderMath';
 import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
+import FormattedDate from '@/components/ui/FormattedDate';
 import CommentsSection from '@/components/features/CommentsSection';
+import ArticleDownload from '@/components/features/ArticleDownload';
 import ArticleScrollManager from '@/components/features/ArticleScrollManager';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
@@ -54,7 +55,10 @@ export default async function ArticuloPage({
     notFound();
   }
 
-  const { profile } = await getAuthenticatedUser();
+  // Canonical slug auto-redirect if accessed via a legacy or renamed slug with the same unique suffix
+  if (publication.slug && publication.slug !== slug) {
+    permanentRedirect(`/${lang}/articulo/${publication.slug}`);
+  }
 
   const titulo = publication.title[lang] || publication.title.gl || publication.title.es;
   const subtitulo = publication.subtitle
@@ -62,12 +66,6 @@ export default async function ArticuloPage({
     : null;
   const contenido = publication.content[lang] || publication.content.gl || publication.content.es || '';
   const isEnsaio = publication.type === 'essay';
-
-  const fecha = new Date(publication.created_at).toLocaleDateString(lang === 'es' ? 'es-ES' : 'gl-ES', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
 
   const authorBio = publication.author.bio
     ? (typeof publication.author.bio === 'object'
@@ -82,8 +80,8 @@ export default async function ArticuloPage({
   return (
     <>
       <main className="flex-grow flex flex-col items-center w-full pb-30">
-        <header className="w-full max-w-3xl px-5 md:px-0 pt-24 pb-12 mx-auto text-center relative">
-          <span className="text-sm font-semibold text-gold uppercase tracking-widest block mb-6">
+        <header className="w-full max-w-3xl px-5 md:px-0 pt-8 sm:pt-12 pb-10 mx-auto text-center relative">
+          <span className="font-mono text-xs font-bold text-gold uppercase tracking-[0.22em] block mb-4">
             {typeLabel}
           </span>
           <h1 className="font-serif text-4xl md:text-6xl text-charcoal mb-6 max-w-4xl mx-auto leading-tight">
@@ -95,45 +93,56 @@ export default async function ArticuloPage({
             </p>
           )}
           <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal/40 mt-8 border-y border-lines py-3">
-            <span>{publication.author.full_name}</span>
+            <Link 
+              href={`/${lang}/autor/${publication.author.slug || publication.author.id}`}
+              className="text-charcoal/80 hover:text-gold transition-colors font-medium hover:underline"
+            >
+              {publication.author.full_name}
+            </Link>
             <span>•</span>
-            <time dateTime={publication.created_at}>{fecha}</time>
+            <FormattedDate date={publication.created_at} lang={lang} format="long" />
           </div>
+          {publication.original_language && publication.original_language !== lang && (
+            <div className="text-[10px] text-charcoal/60 uppercase tracking-[0.15em] mt-3">
+              {dict.article.originalLanguage}{' '}
+              <Link href={`/${publication.original_language}/articulo/${publication.slug}`} className="text-gold font-bold hover:underline transition-all">
+                {publication.original_language.toUpperCase()}
+              </Link>
+            </div>
+          )}
+          {publication.tags && publication.tags.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 mt-6">
+              {publication.tags.map((tag) => (
+                <Link
+                  key={tag.slug}
+                  href={`/${lang}/articulos?tema=${tag.slug}`}
+                  className="border border-lines dark:border-white/15 bg-surface dark:bg-[#1a1a1a] px-3.5 py-1.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] hover:border-gold hover:text-gold transition-all"
+                >
+                  {tag.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </header>
 
         {publication.cover_image_url && (
-          <div className="w-full max-w-5xl px-5 md:px-0 mb-16 mx-auto">
-            <div className="relative w-full aspect-video md:aspect-[21/9] overflow-hidden bg-lines/30">
-              <Image
-                src={publication.cover_image_url}
-                alt={titulo}
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 1200px) 100vw, 1200px"
-              />
-            </div>
+          <div className="w-full max-w-4xl px-5 md:px-0 mb-12 sm:mb-16 mx-auto flex justify-center">
+            <Image
+              src={publication.cover_image_url}
+              alt={titulo}
+              width={1400}
+              height={900}
+              priority
+              className="w-auto h-auto max-w-full max-h-[85vh] object-contain mx-auto"
+              sizes="(max-width: 1024px) 100vw, 1024px"
+            />
           </div>
         )}
 
-        <ArticleScrollManager>
-          <article className="w-full max-w-prose px-5 md:px-0 mx-auto">
-            {publication.tags && publication.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-8">
-                {publication.tags.map((tag) => (
-                  <Link
-                    key={tag.slug}
-                    href={`/${lang}/articulos?tema=${tag.slug}`}
-                    className="text-xs font-semibold uppercase tracking-wider text-charcoal/60 bg-lines/40 hover:bg-gold hover:text-parchment px-3 py-1 rounded-full transition-colors"
-                  >
-                    #{tag.name}
-                  </Link>
-                ))}
-              </div>
-            )}
-
+        <ArticleScrollManager className="w-full">
+          <article className="w-full max-w-2xl px-5 md:px-0 mx-auto min-w-0">
             <div 
-              className={`prose prose-lg prose-charcoal max-w-none font-serif leading-relaxed article-content text-charcoal/90 ${isEnsaio ? 'text-justify [text-align-last:left] hyphenate' : ''}`}
+              className={`article-content ${isEnsaio ? 'article-content-essay' : ''}`}
               dangerouslySetInnerHTML={{ 
                 __html: sanitizeHtml(renderHeadingAnchors(renderMathInHtml(contenido)), {
                   allowedTags: [
@@ -144,23 +153,25 @@ export default async function ArticuloPage({
                     'math', 'semantics', 'mrow', 'mi', 'mn', 'mo', 'ms', 'mspace', 'mtext',
                     'mfrac', 'msqrt', 'mroot', 'msub', 'msup', 'msubsup', 'munder', 'mover',
                     'munderover', 'mtable', 'mtr', 'mtd', 'mpadded', 'mphantom', 'annotation',
-                    'svg', 'path', 'line', 'nav'
+                    'svg', 'path', 'line', 'nav', 'u', 's', 'sub', 'sup',
+                    'rect', 'mstyle', 'menclose'
                   ],
                   allowedAttributes: {
                     ...sanitizeHtml.defaults.allowedAttributes,
                     '*': ['class', 'style', 'id', 'data-type', 'data-items', 'data-colwidth'],
-                    img: ['src', 'alt', 'title', 'width', 'height', 'loading', 'class', 'style'],
-                    iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'class', 'style'],
+                    img: ['src', 'srcset', 'alt', 'title', 'width', 'height', 'loading', 'class', 'style'],
+                    iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'class', 'style', 'title'],
                     figure: ['class', 'style'],
                     figcaption: ['class', 'style'],
-                    div: ['class', 'style'],
-                    span: ['class', 'style', 'aria-hidden'],
+                    div: ['class', 'style', 'data-youtube-video', 'role', 'data-latex'],
+                    span: ['class', 'style', 'aria-hidden', 'data-latex', 'id'],
                     table: ['class', 'style'],
                     th: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
                     td: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
-                    col: ['style', 'class'],
+                    col: ['style', 'class', 'width'],
                     colgroup: ['style', 'class'],
-                    math: ['xmlns', 'display'],
+                    math: ['xmlns', 'display', 'alttext'],
+                    mstyle: ['displaystyle', 'scriptlevel', 'mathsize', 'mathcolor', 'mathbackground'],
                     mfrac: ['linethickness'],
                     mspace: ['width', 'height', 'depth'],
                     mpadded: ['width', 'height', 'depth', 'lspace', 'voffset'],
@@ -169,11 +180,14 @@ export default async function ArticuloPage({
                     svg: ['xmlns', 'width', 'height', 'viewBox', 'style', 'preserveAspectRatio'],
                     path: ['d'],
                     line: ['x1', 'x2', 'y1', 'y2', 'stroke', 'stroke-width'],
+                    rect: ['x', 'y', 'width', 'height', 'fill', 'stroke'],
                     nav: ['data-type', 'data-items', 'lang', 'class', 'style', 'aria-label'],
                     p: ['class', 'style'],
-                    ul: ['style'],
-                    li: ['style'],
-                    a: [...(sanitizeHtml.defaults.allowedAttributes['a'] ?? ['href']), 'style', 'class'],
+                    ul: ['style', 'class'],
+                    ol: ['style', 'class'],
+                    li: ['style', 'class'],
+                    a: [...(sanitizeHtml.defaults.allowedAttributes['a'] ?? ['href']), 'style', 'class', 'target', 'rel'],
+                    u: ['style', 'class'],
                     h1: ['id', 'style', 'class'],
                     h2: ['id', 'style', 'class'],
                     h3: ['id', 'style', 'class'],
@@ -279,10 +293,18 @@ export default async function ArticuloPage({
             </div>
 
             <CommentsSection publicationId={publication.id} />
+
+            <ArticleDownload
+              href={`/api/articulo/${publication.slug}/pdf?lang=${lang}`}
+              eyebrow={dict.article.download.eyebrow}
+              title={dict.article.download.title}
+              description={dict.article.download.description}
+              cta={dict.article.download.cta}
+            />
           </article>
         </ArticleScrollManager>
-        {publication.status === PUBLICATION_STATUSES.IN_REVIEW && profile && ['admin', 'founder', 'escritor'].includes(profile.role) && (
-          <ReviewActionBar articuloId={publication.id} />
+        {publication.status === PUBLICATION_STATUSES.IN_REVIEW && (
+          <ReviewActionBar articuloId={publication.id} status={publication.status} />
         )}
       </main>
     </>

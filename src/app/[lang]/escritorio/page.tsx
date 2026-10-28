@@ -1,9 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getAuthenticatedUser } from '@/utils/auth';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
 import {
@@ -14,6 +14,8 @@ import {
   USER_ROLES,
 } from '@/lib/db/schema';
 import type { LocalizedString } from '@/lib/db/types';
+import { formatDbError } from '@/lib/db/formatDbError';
+import FormattedDate from '@/components/ui/FormattedDate';
 
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
 import PinArticleButton from '@/components/escritorio/PinArticleButton';
@@ -93,8 +95,17 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
     query = query.eq(PUBLICATION_COLS.AUTHOR_ID, user.id);
   }
 
-  const { data: publicationsRaw } = await query;
-  const allPublications = (publicationsRaw || []) as unknown as PublicationDashboardItem[];
+  let allPublications: PublicationDashboardItem[] = [];
+  try {
+    const { data: publicationsRaw, error: pubError } = await query;
+    if (pubError) {
+      console.warn('[Escritorio] Failed to fetch user publications:', formatDbError(pubError));
+    } else {
+      allPublications = (publicationsRaw || []) as unknown as PublicationDashboardItem[];
+    }
+  } catch (err) {
+    console.warn('[Escritorio] Unexpected error fetching publications:', formatDbError(err));
+  }
   
   // Client-side filter
   let filteredPublications = allPublications;
@@ -199,7 +210,12 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                           <div className="flex items-center gap-4 mb-2">
                             <span className="font-sans text-xs text-gold uppercase tracking-widest">{typeLabel}</span>
                             <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>
-                            <span className="font-sans text-xs text-charcoal/60">{new Date(articulo.created_at).toLocaleDateString(lang === 'gl' ? 'gl-ES' : 'es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                            <FormattedDate
+                              date={articulo.created_at}
+                              lang={lang}
+                              format="short"
+                              className="font-sans text-xs text-charcoal/60"
+                            />
                             {articulo.status === PUBLICATION_STATUSES.DRAFT && (
                               <>
                                 <span className="w-1 h-1 bg-charcoal/20 rounded-full"></span>

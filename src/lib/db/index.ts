@@ -9,6 +9,9 @@ export * from './schema';
 // Types & Interfaces
 export * from './types';
 
+// Error Handling Utilities
+export * from './formatDbError';
+
 // Query Services
 export * from './queries/publications';
 export * from './queries/users';

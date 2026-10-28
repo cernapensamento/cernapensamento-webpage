@@ -29,6 +29,7 @@ export const PUBLICATION_COLS = {
   CONTENT: 'content',
   CREATED_AT: 'created_at',
   UPDATED_AT: 'updated_at',
+  NEWSLETTER_SENT_AT: 'newsletter_sent_at',
 } as const;
 
 export const USER_COLS = {

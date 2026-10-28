@@ -1,8 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { useParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { DB_TABLES, TAG_COLS, TAG_TRANSLATION_COLS } from '@/lib/db/schema';
+import { useToast } from '@/components/ui/FeedbackProvider';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 
 interface TagManagerProps {
     selectedTags: string[]; // For backwards compatibility we can keep string[] for now, or object array
@@ -10,6 +14,12 @@ interface TagManagerProps {
 }
 
 export default function TagManager({ selectedTags, onChange }: TagManagerProps) {
+    const params = useParams();
+    const lang = (params?.lang as string) || 'gl';
+    const dict = lang === 'es' ? esDict : glDict;
+    const edDict = dict.articleEditor;
+    const toast = useToast();
+
     const supabase = createClient();
     const [allTags, setAllTags] = useState<{ id?: string | number; slug: string; tag_translations: { lang: string; name: string }[] }[]>([]);
     const [search, setSearch] = useState('');
@@ -62,7 +72,10 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
     };
 
     const handleCreateNew = async () => {
-        if (!newTagEs || !newTagGl) return alert('Debes completar ambos idiomas');
+        if (!newTagEs || !newTagGl) {
+            toast.warning(edDict.bothLangsRequired);
+            return;
+        }
         setIsSaving(true);
         try {
             // Generar slug del término en castellano
@@ -92,7 +105,7 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
             setNewTagEs('');
             setNewTagGl('');
         } catch (e: unknown) {
-            alert('Error al crear etiqueta: ' + (e instanceof Error ? e.message : String(e)));
+            toast.error(edDict.createTagError + (e instanceof Error ? e.message : String(e)));
         } finally {
             setIsSaving(false);
         }
@@ -108,9 +121,9 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
             <div className="flex flex-wrap gap-2 mb-3">
                 {selectedTags.map(slug => {
                     const tagObj = allTags.find(t => t.slug === slug);
-                    const name = tagObj ? getTranslatedName(tagObj, 'es') : slug;
+                    const name = tagObj ? getTranslatedName(tagObj, lang) : slug;
                     return (
-                        <button type="button" key={slug} className="flex items-center gap-1 px-3 py-1 bg-lines/30 text-charcoal text-[10px] uppercase tracking-[0.15em] rounded-sm group cursor-pointer hover:bg-red-500/10 hover:text-red-700 transition-colors" onClick={() => handleRemove(slug)} title="Eliminar temática">
+                        <button type="button" key={slug} className="flex items-center gap-1 px-3 py-1 bg-lines/30 text-charcoal text-[10px] uppercase tracking-[0.15em] rounded-sm group cursor-pointer hover:bg-red-500/10 hover:text-red-700 transition-colors" onClick={() => handleRemove(slug)} title={edDict.cancel || 'Eliminar'}>
                             {name}
                             <span className="material-symbols-outlined text-[12px] opacity-50 group-hover:opacity-100" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
                         </button>
@@ -121,7 +134,7 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
             <div className="relative">
                 <input 
                     className="w-full border border-lines bg-transparent font-sans text-xs text-charcoal tracking-widest uppercase focus:outline-none focus:border-gold p-2" 
-                    placeholder="BUSCAR O AÑADIR ETIQUETA..." 
+                    placeholder={edDict.searchTagPlaceholder || 'BUSCAR OU ENGADIR ETIQUETA...'} 
                     type="text" 
                     value={search} 
                     onChange={(e) => setSearch(e.target.value)} 
@@ -134,12 +147,12 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
                             t.tag_translations?.some((tr: { lang: string; name: string }) => tr.name.toLowerCase().includes(search.toLowerCase()))
                         ).map(t => (
                             <button type="button" key={t.slug} className="w-full text-left px-4 py-2 text-xs uppercase tracking-widest hover:bg-gold/10 hover:text-gold transition-colors" onClick={() => handleAddExisting(t.slug)}>
-                                {getTranslatedName(t, 'es')} <span className="text-[10px] text-charcoal/50">({getTranslatedName(t, 'gl')})</span>
+                                {getTranslatedName(t, lang)} <span className="text-[10px] text-charcoal/50">({getTranslatedName(t, lang === 'gl' ? 'es' : 'gl')})</span>
                             </button>
                         ))}
                         
                         <button type="button" className="w-full text-left px-4 py-2 text-xs uppercase tracking-widest text-gold hover:bg-gold hover:text-parchment transition-colors border-t border-lines" onClick={() => setShowModal(true)}>
-                            + CREAR NUEVA ETIQUETA &quot;{search}&quot;
+                            {edDict.createTagBtn || '+ CREAR NOVA ETIQUETA'} &quot;{search}&quot;
                         </button>
                     </div>
                 )}
@@ -148,26 +161,26 @@ export default function TagManager({ selectedTags, onChange }: TagManagerProps) 
             {showModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-charcoal/50 backdrop-blur-sm">
                     <div className="bg-surface p-8 max-w-md w-full border border-lines shadow-2xl">
-                        <h2 className="font-serif text-2xl text-charcoal mb-4">Nueva Etiqueta</h2>
+                        <h2 className="font-serif text-2xl text-charcoal mb-4">{edDict.newTagTitle || 'Nova Etiqueta'}</h2>
                         <p className="text-xs font-sans text-charcoal/70 mb-6 uppercase tracking-widest">
-                            Las etiquetas deben estar disponibles en ambos idiomas para la correcta traducción del sitio.
+                            {edDict.newTagNotice || 'As etiquetas deben estar dispoñibles en ambos idiomas para a correcta tradución do sitio.'}
                         </p>
                         
                         <div className="space-y-4 mb-8">
                             <div>
-                                <label className="block text-xs uppercase tracking-widest text-charcoal/70 mb-1">En Castellano</label>
-                                <input type="text" className="w-full border border-lines p-2 bg-transparent focus:border-gold outline-none" value={newTagEs} onChange={e => setNewTagEs(e.target.value)} placeholder="Ej: Medio Ambiente" />
+                                <label className="block text-xs uppercase tracking-widest text-charcoal/70 mb-1">{edDict.tagInSpanish || 'En Castelán'}</label>
+                                <input type="text" className="w-full border border-lines p-2 bg-transparent focus:border-gold outline-none" value={newTagEs} onChange={e => setNewTagEs(e.target.value)} placeholder="Ex: Medio Ambiente" />
                             </div>
                             <div>
-                                <label className="block text-xs uppercase tracking-widest text-charcoal/70 mb-1">En Galego</label>
-                                <input type="text" className="w-full border border-lines p-2 bg-transparent focus:border-gold outline-none" value={newTagGl} onChange={e => setNewTagGl(e.target.value)} placeholder="Ej: Medio Ambiente" />
+                                <label className="block text-xs uppercase tracking-widest text-charcoal/70 mb-1">{edDict.tagInGalician || 'En Galego'}</label>
+                                <input type="text" className="w-full border border-lines p-2 bg-transparent focus:border-gold outline-none" value={newTagGl} onChange={e => setNewTagGl(e.target.value)} placeholder="Ex: Medio Ambiente" />
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-4">
-                            <button type="button" className="px-6 py-2 font-sans text-xs uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors cursor-pointer" onClick={() => setShowModal(false)}>Cancelar</button>
+                            <button type="button" className="px-6 py-2 font-sans text-xs uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors cursor-pointer" onClick={() => setShowModal(false)}>{dict.common.cancel || 'Cancelar'}</button>
                             <button type="button" className="px-6 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer disabled:opacity-50" disabled={isSaving} onClick={handleCreateNew}>
-                                {isSaving ? 'Guardando...' : 'Crear'}
+                                {isSaving ? dict.dashboard.saving : edDict.create}
                             </button>
                         </div>
                     </div>

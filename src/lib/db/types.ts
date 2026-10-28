@@ -48,6 +48,7 @@ export interface PublicationRow {
   content: LocalizedString;
   created_at: string;
   updated_at: string;
+  newsletter_sent_at?: string | null;
 }
 
 export interface CommentRow {
@@ -178,4 +179,22 @@ export interface AuthorProfileDetail {
   avatar_url: string | null;
   role: UserRole;
   publications: PublicationCardItem[];
+}
+
+/**
+ * Author with at least one published publication (/autores).
+ * Aggregated from publication metadata only; never includes heavy content.
+ */
+export interface PublishedAuthorItem {
+  id: string;
+  full_name: string;
+  slug: string | null;
+  bio: LocalizedString | null;
+  avatar_url: string | null;
+  role: UserRole;
+  published_count: number;
+  latest_publication_at: string | null;
+  latest_publication_title: LocalizedString | null;
+  latest_publication_slug: string | null;
+  publication_types: PublicationType[];
 }

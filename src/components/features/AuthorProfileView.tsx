@@ -3,8 +3,11 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { Columnist } from '@/lib/columnists';
 import type { LocalizedString, TagItem } from '@/lib/db/types';
+import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import FormattedDate from '@/components/ui/FormattedDate';
 
 export interface ArticleData {
   id: string | number;
@@ -93,6 +96,10 @@ interface AuthorProfileViewProps {
       publicationPlural?: string;
       textSingular?: string;
       textPlural?: string;
+      breadcrumbsAria?: string;
+      typeFilterAria?: string;
+      featuredCoverAlt?: string;
+      thumbnailAlt?: string;
       [key: string]: unknown;
     };
     documentTypes?: Record<string, string>;
@@ -101,29 +108,6 @@ interface AuthorProfileViewProps {
     };
     [key: string]: unknown;
   };
-}
-
-const GL_MONTHS = [
-  'xaneiro', 'febreiro', 'marzo', 'abril', 'maio', 'xuño',
-  'xullo', 'agosto', 'setembro', 'outubro', 'novembro', 'decembro'
-];
-
-function formatDate(dateStr?: string | null, lang: string = 'gl'): string {
-  if (!dateStr) return '';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '';
-    if (lang === 'gl') {
-      return `${d.getDate()} de ${GL_MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
-    }
-    return d.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  } catch {
-    return '';
-  }
 }
 
 export default function AuthorProfileView({
@@ -162,7 +146,7 @@ export default function AuthorProfileView({
   const typesSummary = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const art of allArticles) {
-      const t = (art.type || art.tipo || 'article').toLowerCase();
+      const t = (art.type || art.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
       counts[t] = (counts[t] || 0) + 1;
     }
     return counts;
@@ -173,7 +157,7 @@ export default function AuthorProfileView({
   // Filter articles by type AND selected topic
   const filteredArticles = useMemo(() => {
     return allArticles.filter((a) => {
-      const artType = (a.type || a.tipo || 'article').toLowerCase();
+      const artType = (a.type || a.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
       const matchesType = selectedType === 'all' || artType === selectedType;
       const aTopics = a.tags ? a.tags.map((t) => t.slug) : (Array.isArray(a.tematicas) ? a.tematicas : []);
       const matchesTopic = !selectedTopic || aTopics.includes(selectedTopic);
@@ -189,7 +173,6 @@ export default function AuthorProfileView({
 
   // Dictionary strings
   const tAll = dict.authorPage?.allWorks || 'Todos';
-  const tReadingTime = dict.authorPage?.readingTime || 'min de lectura';
   const tReadFull = dict.authorPage?.readFullText || 'Ler texto completo';
   const tLatest = dict.authorPage?.latestWork || 'Última publicación';
   const tArchive = dict.authorPage?.archive || 'Arquivo de publicacións';
@@ -207,6 +190,10 @@ export default function AuthorProfileView({
   const tPubPlural = dict.authorPage?.publicationPlural || 'publicacións';
   const tTextSingular = dict.authorPage?.textSingular || 'texto';
   const tTextPlural = dict.authorPage?.textPlural || 'textos';
+  const tBreadcrumbsAria = dict.authorPage?.breadcrumbsAria || 'Ruta de navegación';
+  const tTypeFilterAria = dict.authorPage?.typeFilterAria || 'Filtro por tipo de publicación';
+  const tFeaturedCoverAlt = dict.authorPage?.featuredCoverAlt || 'Portada do artigo destacado';
+  const tThumbnailAlt = dict.authorPage?.thumbnailAlt || 'Miniatura do artigo';
 
   const getTypeLabel = (rawType?: string) => {
     if (!rawType) return dict.documentTypes?.artigo || 'Artigo';
@@ -233,12 +220,12 @@ export default function AuthorProfileView({
         <div className="max-w-[1160px] mx-auto px-5 sm:px-8 md:px-12">
           
           {/* Top Editorial Breadcrumbs */}
-          <nav aria-label="Migas de pan" className="flex items-center gap-2 text-xs font-sans text-charcoal/50 mb-8">
+          <nav aria-label={tBreadcrumbsAria} className="flex items-center gap-2 text-xs font-sans text-charcoal/50 mb-8">
             <Link href={`/${lang}`} className="hover:text-gold transition-colors">
               {tHome}
             </Link>
             <span className="text-charcoal/30 text-[10px]">/</span>
-            <Link href={`/${lang}#autores`} className="hover:text-gold transition-colors">
+            <Link href={`/${lang}/autores`} className="hover:text-gold transition-colors">
               {tAuthors}
             </Link>
             <span className="text-charcoal/30 text-[10px]">/</span>
@@ -373,7 +360,7 @@ export default function AuthorProfileView({
             {(hasMultipleTypes || selectedTopic) && (
               <div className="border-b border-lines">
                 <div className="flex flex-wrap items-center justify-between gap-4 -mb-px">
-                  <nav className="flex flex-wrap items-center gap-4 sm:gap-8" aria-label="Filtro por tipo de publicación">
+                  <nav className="flex flex-wrap items-center gap-4 sm:gap-8" aria-label={tTypeFilterAria}>
                     <button
                       type="button"
                       onClick={() => setSelectedType('all')}
@@ -461,90 +448,90 @@ export default function AuthorProfileView({
                   const subtitulo = featuredArticle.subtitle
                     ? (featuredArticle.subtitle[lang] || featuredArticle.subtitle.gl || featuredArticle.subtitle.es || null)
                     : (lang === 'es' ? featuredArticle.subtitulo_es : featuredArticle.subtitulo_gl) || featuredArticle.subtitulo_gl || featuredArticle.subtitulo_es || null;
-                  const dateStr = featuredArticle.updated_at || featuredArticle.created_at || featuredArticle.actualizado_en || featuredArticle.creado_en;
+                  const dateStr = featuredArticle.created_at || featuredArticle.creado_en || featuredArticle.updated_at || featuredArticle.actualizado_en;
                   const imageUrl = featuredArticle.cover_image_url || featuredArticle.imagen_url;
                   const articleTopics = featuredArticle.tags ? featuredArticle.tags.map((t) => t.slug) : (featuredArticle.tematicas || []);
-                  const rawType = featuredArticle.type || featuredArticle.tipo || 'article';
-                  const readingMins = 4;
+                  const rawType = featuredArticle.type || featuredArticle.tipo || PUBLICATION_TYPES.ARTICLE;
 
                   return (
-                    <article className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center bg-surface/40 border border-lines p-6 md:p-10 rounded-2xl group transition-all duration-500 hover:border-gold/50 hover:shadow-md">
-                      <Link
-                        href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}
-                        className="lg:col-span-6 relative w-full h-[260px] sm:h-[340px] rounded-xl overflow-hidden bg-lines/40 block shrink-0"
-                        aria-label={titulo}
-                      >
-                        {imageUrl ? (
-                          <Image
-                            src={imageUrl}
-                            alt={titulo || 'Portada do artigo destacado'}
-                            fill
-                            sizes="(max-width: 1024px) 100vw, 50vw"
-                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                            priority
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-lines/20 to-surface">
-                            <span className="text-7xl text-charcoal/15 font-serif select-none">§</span>
-                          </div>
-                        )}
-                      </Link>
-
-                      <div className="lg:col-span-6 flex flex-col justify-between h-full">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-3 mb-4">
-                            <span className="px-2.5 py-1 text-[11px] font-semibold text-gold bg-gold/10 rounded uppercase tracking-widest">
-                              {getTypeLabel(rawType)}
-                            </span>
-                            {dateStr && (
-                              <time dateTime={dateStr} className="text-xs text-charcoal/60 font-sans">
-                                {formatDate(dateStr, lang)}
-                              </time>
-                            )}
-                            <span className="text-xs text-charcoal/40">•</span>
-                            <span className="text-xs text-charcoal/60 font-sans">
-                              {readingMins} {tReadingTime}
-                            </span>
-                          </div>
-
-                          <Link href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}>
-                            <h2 className="font-serif text-3xl sm:text-4xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-tight mb-4">
-                              {titulo}
-                            </h2>
-                          </Link>
-
-                          {subtitulo && (
-                            <p className="font-sans text-base sm:text-lg text-charcoal/80 line-clamp-3 md:line-clamp-4 leading-relaxed mb-6">
-                              {subtitulo}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="pt-6 border-t border-lines/60 flex flex-wrap items-center justify-between gap-4">
-                          {articleTopics && articleTopics.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {articleTopics.slice(0, 3).map((tag, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => handleTopicClick(tag)}
-                                  className="text-[11px] uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
-                                >
-                                  #{getTopicDisplayName(tag)}
-                                </button>
-                              ))}
+                    <RevealOnScroll delayMs={50}>
+                      <article className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center bg-surface/40 border border-lines p-6 md:p-10 rounded-2xl group transition-all duration-500 hover:border-gold/50 hover:shadow-md">
+                        <Link
+                          href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}
+                          className="lg:col-span-6 relative w-full h-[260px] sm:h-[340px] rounded-xl overflow-hidden bg-lines/40 block shrink-0"
+                          aria-label={titulo}
+                        >
+                          {imageUrl ? (
+                            <Image
+                              src={imageUrl}
+                              alt={titulo || tFeaturedCoverAlt}
+                              fill
+                              sizes="(max-width: 1024px) 100vw, 50vw"
+                              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                              priority
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-lines/20 to-surface">
+                              <span className="text-7xl text-charcoal/15 font-serif select-none">§</span>
                             </div>
                           )}
-                          <Link
-                            href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}
-                            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal group-hover:text-gold transition-colors ml-auto"
-                          >
-                            <span>{tReadFull}</span>
-                            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-                          </Link>
+                        </Link>
+
+                        <div className="lg:col-span-6 flex flex-col justify-between h-full">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-3 mb-4">
+                              <span className="px-2.5 py-1 text-[11px] font-semibold text-gold bg-gold/10 rounded uppercase tracking-widest">
+                                {getTypeLabel(rawType)}
+                              </span>
+                              <FormattedDate
+                                date={dateStr}
+                                lang={lang}
+                                format="long"
+                                className="text-xs text-charcoal/60 font-sans"
+                              />
+                            </div>
+
+                            <Link href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}>
+                              <h2 className="font-serif text-3xl sm:text-4xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-tight mb-4">
+                                {titulo}
+                              </h2>
+                            </Link>
+
+                            {subtitulo && (
+                              <p className="font-sans text-base sm:text-lg text-charcoal/80 line-clamp-3 md:line-clamp-4 leading-relaxed mb-6">
+                                {subtitulo}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="pt-6 border-t border-lines/60 flex flex-wrap items-center justify-between gap-4">
+                            {articleTopics && articleTopics.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {articleTopics.slice(0, 3).map((tag, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => handleTopicClick(tag)}
+                                    className="text-[11px] uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
+                                  >
+                                    #{getTopicDisplayName(tag)}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <Link
+                              href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}
+                              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal group-hover:text-gold transition-colors ml-auto group/btn"
+                            >
+                              <span>{tReadFull}</span>
+                              <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover/btn:translate-x-1" aria-hidden="true">
+                                arrow_forward
+                              </span>
+                            </Link>
+                          </div>
                         </div>
-                      </div>
-                    </article>
+                      </article>
+                    </RevealOnScroll>
                   );
                 })()}
               </section>
@@ -564,95 +551,95 @@ export default function AuthorProfileView({
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {gridArticles.map((articulo) => {
+                  {gridArticles.map((articulo, idx) => {
                     const titulo = articulo.title
                       ? (articulo.title[lang] || articulo.title.gl || articulo.title.es || '')
                       : (lang === 'es' ? articulo.titulo_es : articulo.titulo_gl) || articulo.titulo_gl || articulo.titulo_es || '';
                     const subtitulo = articulo.subtitle
                       ? (articulo.subtitle[lang] || articulo.subtitle.gl || articulo.subtitle.es || null)
                       : (lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl) || articulo.subtitulo_gl || articulo.subtitulo_es || null;
-                    const dateStr = articulo.updated_at || articulo.created_at || articulo.actualizado_en || articulo.creado_en;
+                    const dateStr = articulo.created_at || articulo.creado_en || articulo.updated_at || articulo.actualizado_en;
                     const imageUrl = articulo.cover_image_url || articulo.imagen_url;
                     const articleTopics = articulo.tags ? articulo.tags.map((t) => t.slug) : (articulo.tematicas || []);
-                    const rawType = articulo.type || articulo.tipo || 'article';
-                    const readingMins = 4;
+                    const rawType = articulo.type || articulo.tipo || PUBLICATION_TYPES.ARTICLE;
 
                     return (
-                      <article
-                        key={articulo.id}
-                        className="group flex flex-col bg-surface/30 hover:bg-surface/70 border border-lines hover:border-gold/50 rounded-xl p-6 transition-all duration-300 hover:shadow-sm h-full"
-                      >
-                        {/* Optional thumbnail preview */}
-                        {imageUrl && (
-                          <Link
-                            href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
-                            className="relative w-full h-44 rounded-lg overflow-hidden bg-lines/30 mb-5 block"
-                            aria-label={titulo}
-                            tabIndex={-1}
-                          >
-                            <Image
-                              src={imageUrl}
-                              alt={titulo || 'Miniatura do artigo'}
-                              fill
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                              className="object-cover transition-transform duration-700 group-hover:scale-105"
-                            />
-                          </Link>
-                        )}
-
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <span className="text-xs font-semibold text-gold uppercase tracking-widest">
-                            {getTypeLabel(rawType)}
-                          </span>
-                          <span className="text-[11px] text-charcoal/50 font-sans">
-                            {readingMins} {tReadingTime}
-                          </span>
-                        </div>
-
-                        <Link href={`/${lang}/articulo/${articulo.slug || articulo.id}`}>
-                          <h4 className="font-serif text-xl sm:text-2xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-snug mb-3 line-clamp-3">
-                            {titulo}
-                          </h4>
-                        </Link>
-
-                        {subtitulo && (
-                          <p className="font-sans text-sm sm:text-base text-charcoal/70 line-clamp-3 leading-relaxed mb-4">
-                            {subtitulo}
-                          </p>
-                        )}
-
-                        {/* Labels / Temáticas: beneath subtitle, above publication date */}
-                        {articleTopics && articleTopics.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-5">
-                            {articleTopics.map((tag, i) => (
-                              <button
-                                key={i}
-                                type="button"
-                                onClick={() => handleTopicClick(tag)}
-                                className="text-[11px] font-sans uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
-                              >
-                                #{getTopicDisplayName(tag)}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Time of publication in card footer */}
-                        <div className="mt-auto pt-4 border-t border-lines/60 flex items-center justify-between text-xs text-charcoal/60">
-                          {dateStr && (
-                            <time dateTime={dateStr} className="font-sans">
-                              {formatDate(dateStr, lang)}
-                            </time>
+                      <RevealOnScroll key={articulo.id} delayMs={(idx % 3) * 100} className="h-full">
+                        <article
+                          className="group flex flex-col bg-surface/30 hover:bg-surface/70 border border-lines hover:border-gold/50 rounded-xl p-6 transition-all duration-300 hover:shadow-sm h-full"
+                        >
+                          {/* Optional thumbnail preview */}
+                          {imageUrl && (
+                            <Link
+                              href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
+                              className="relative w-full h-44 rounded-lg overflow-hidden bg-lines/30 mb-5 block"
+                              aria-label={titulo}
+                              tabIndex={-1}
+                            >
+                              <Image
+                                src={imageUrl}
+                                alt={titulo || tThumbnailAlt}
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                              />
+                            </Link>
                           )}
-                          <Link
-                            href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
-                            className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wider text-charcoal/60 group-hover:text-gold transition-colors font-medium ml-auto"
-                          >
-                            <span>{tReadFull}</span>
-                            <span className="transition-transform duration-300 group-hover:translate-x-0.5">→</span>
+
+                          <div className="flex items-center justify-between gap-2 mb-3">
+                            <span className="text-xs font-semibold text-gold uppercase tracking-widest">
+                              {getTypeLabel(rawType)}
+                            </span>
+                          </div>
+
+                          <Link href={`/${lang}/articulo/${articulo.slug || articulo.id}`}>
+                            <h4 className="font-serif text-xl sm:text-2xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-snug mb-3 line-clamp-3">
+                              {titulo}
+                            </h4>
                           </Link>
-                        </div>
-                      </article>
+
+                          {subtitulo && (
+                            <p className="font-sans text-sm sm:text-base text-charcoal/70 line-clamp-3 leading-relaxed mb-4">
+                              {subtitulo}
+                            </p>
+                          )}
+
+                          {/* Labels / Temáticas: beneath subtitle, above publication date */}
+                          {articleTopics && articleTopics.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-5">
+                              {articleTopics.map((tag, i) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => handleTopicClick(tag)}
+                                  className="text-[11px] font-sans uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
+                                >
+                                  #{getTopicDisplayName(tag)}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Time of publication in card footer */}
+                          <div className="mt-auto pt-4 border-t border-lines/60 flex items-center justify-between text-xs text-charcoal/60">
+                            <FormattedDate
+                              date={dateStr}
+                              lang={lang}
+                              format="long"
+                              className="font-sans"
+                            />
+                            <Link
+                              href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
+                              className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-charcoal/60 group-hover:text-gold transition-colors font-medium ml-auto group/read"
+                            >
+                              <span>{tReadFull}</span>
+                              <span className="material-symbols-outlined text-sm transition-transform duration-300 group-hover/read:translate-x-1" aria-hidden="true">
+                                arrow_forward
+                              </span>
+                            </Link>
+                          </div>
+                        </article>
+                      </RevealOnScroll>
                     );
                   })}
                 </div>

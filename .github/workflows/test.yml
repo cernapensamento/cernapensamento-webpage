@@ -1,0 +1,42 @@
+name: Quality & Test Pipeline
+
+on:
+  push:
+    branches: [development]
+  pull_request:
+    branches: [development, main]
+
+jobs:
+  test:
+    name: Lint, Test & Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run unit & component tests with coverage
+        run: npm run test:coverage
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock
+          RESEND_API_KEY: re_mock_ci_key
+
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14

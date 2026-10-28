@@ -1,5 +1,5 @@
 import React from 'react';
-import { EstatutosMarkdownRenderer } from '@/components/ui/EstatutosMarkdownRenderer';
+import { LegalDocumentMarkdownRenderer } from '@/components/ui/LegalDocumentMarkdownRenderer';
 import { getDocument } from '@/lib/content';
 
 // Metadatos para SEO
@@ -31,7 +31,7 @@ export default async function EstatutosPage({ params }: { params: Promise<{ lang
         {/* Document card */}
         <div className="max-w-275 mx-auto w-full">
           <div className="bg-surface border border-lines shadow-[0_4px_40px_rgba(0,0,0,0.07)] px-8 py-16 md:px-24 md:py-20">
-            <EstatutosMarkdownRenderer content={content} />
+            <LegalDocumentMarkdownRenderer content={content} />
           </div>
           {/* Bottom meta */}
           <p className="text-center text-xs text-charcoal/40 font-sans mt-8 tracking-wide">

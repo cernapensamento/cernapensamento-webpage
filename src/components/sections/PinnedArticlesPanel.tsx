@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { LocalizedString } from '@/lib/db/types';
+import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 
 interface PinnedArticleData {
   id: string | number;
@@ -38,11 +41,13 @@ interface PinnedArticlesPanelProps {
 export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArticlesPanelProps) {
   if (!articulos || articulos.length === 0) return null;
 
+  const fallbackDict = lang === 'es' ? esDict : glDict;
+
   return (
     <section className="border-t border-lines pt-12">
       <div className="flex items-center gap-3 mb-8">
         <span className="material-symbols-outlined text-gold" data-icon="push_pin">push_pin</span>
-        <h2 className="font-serif text-2xl md:text-3xl text-charcoal">{lang === 'es' ? 'Artículos Fijados' : 'Artigos Fixados'}</h2>
+        <h2 className="font-serif text-2xl md:text-3xl text-charcoal">{((dict?.mosaic as Record<string, string>)?.pinnedTitle) || (dict?.pinnedTitle as string) || fallbackDict.mosaic.pinnedTitle}</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {articulos.map((articulo) => {
@@ -58,11 +63,11 @@ export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArt
             ? (articulo.content[lang] || articulo.content.gl || articulo.content.es || '')
             : (articulo.contenido_gl || articulo.contenido_es || '');
 
-          const typeKey = (articulo.type || articulo.tipo || 'article').toLowerCase();
-          const typeLabel = dict?.documentTypes?.[typeKey] || dict?.documentTypes?.[typeKey === 'article' ? 'artigo' : typeKey] || typeKey;
+          const typeKey = (articulo.type || articulo.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
+          const typeLabel = dict?.documentTypes?.[typeKey] || dict?.documentTypes?.[typeKey === PUBLICATION_TYPES.ARTICLE ? 'artigo' : typeKey] || typeKey;
 
           const coverUrl = articulo.cover_image_url || articulo.imagen_url;
-          const authorName = articulo.author?.full_name || articulo.author?.nombre || articulo.perfiles?.nombre || 'Autor Descoñecido';
+          const authorName = articulo.author?.full_name || articulo.author?.nombre || articulo.perfiles?.nombre || (dict?.articles as Record<string, string>)?.unknownAuthor || fallbackDict.articles.unknownAuthor;
 
           return (
             <Link key={articulo.id} href={`/${lang}/articulo/${articulo.slug || articulo.id}`} className="group flex flex-col h-full cursor-pointer">
@@ -70,7 +75,7 @@ export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArt
                 {coverUrl ? (
                   <Image 
                     src={coverUrl} 
-                    alt={titulo || 'Publicación'} 
+                    alt={titulo || ''} 
                     fill 
                     className="object-cover group-hover:scale-105 transition-all duration-700" 
                     sizes="(max-width: 768px) 100vw, 25vw"

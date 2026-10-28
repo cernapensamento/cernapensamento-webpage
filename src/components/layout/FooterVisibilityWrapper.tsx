@@ -10,8 +10,12 @@ export default function FooterVisibilityWrapper({
 }) {
   const pathname = usePathname();
 
-  // Hide the footer on all escritorio (dashboard) routes
-  if (pathname?.includes('/escritorio')) {
+  // SiteFooter is visible across all routes (including /escritorio).
+  // Hidden only if specific recovery/auth routes require minimal layout.
+  if (
+    pathname?.includes('/actualizar-password') ||
+    pathname?.includes('/recuperar-password')
+  ) {
     return null;
   }
 

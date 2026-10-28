@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter, useParams } from 'next/navigation';
 import { DB_TABLES, PUBLICATION_COLS } from '@/lib/db/schema';
+import { useToast } from '@/components/ui/FeedbackProvider';
+import esDict from '@/dictionaries/es.json';
+import glDict from '@/dictionaries/gl.json';
 
 interface Props {
     id: string;
@@ -15,7 +18,12 @@ export default function PinArticleButton({ id, isPinned, fijado }: Props) {
     const currentPinned = isPinned ?? fijado ?? false;
     const [isToggling, setIsToggling] = useState(false);
     const router = useRouter();
+    const params = useParams();
+    const lang = (params?.lang as string) || 'gl';
+    const dict = lang === 'es' ? esDict : glDict;
+    const dashDict = dict.dashboard;
     const supabase = createClient();
+    const toast = useToast();
 
     const handleToggle = async () => {
         setIsToggling(true);
@@ -29,7 +37,7 @@ export default function PinArticleButton({ id, isPinned, fijado }: Props) {
                 if (countError) throw countError;
 
                 if (count !== null && count >= 8) {
-                    alert('Deben retirarse publicaciones del tablón para liberar espacio (límite máximo de 8).');
+                    toast.warning(dashDict.pinLimitReached);
                     setIsToggling(false);
                     return;
                 }
@@ -41,13 +49,13 @@ export default function PinArticleButton({ id, isPinned, fijado }: Props) {
                 .eq(PUBLICATION_COLS.ID, id);
 
             if (error) {
-                alert('Error al fijar/desfijar: ' + error.message);
+                toast.error(dashDict.pinError + ': ' + error.message);
             } else {
                 router.refresh();
             }
         } catch (error) {
             console.error(error);
-            alert('Error inesperado al verificar o actualizar.');
+            toast.error(dashDict.pinError);
         } finally {
             setIsToggling(false);
         }
@@ -58,10 +66,10 @@ export default function PinArticleButton({ id, isPinned, fijado }: Props) {
             onClick={handleToggle}
             disabled={isToggling}
             className={`flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50 ${currentPinned ? 'text-gold hover:text-charcoal/60' : 'text-charcoal/60 hover:text-gold'}`}
-            title={currentPinned ? "Desfijar de la portada" : "Fijar en portada"}
+            title={currentPinned ? dashDict.unpinArticle : dashDict.pinArticle}
         >
             <span className="material-symbols-outlined text-sm" data-icon="push_pin">push_pin</span>
-            <span className="font-sans text-xs">{isToggling ? 'Cambiando...' : (currentPinned ? 'Desfijar' : 'Fijar')}</span>
+            <span className="font-sans text-xs">{isToggling ? (dashDict.saving || 'Cambiando...') : (currentPinned ? dashDict.unpin : dashDict.pin)}</span>
         </button>
     );
 }

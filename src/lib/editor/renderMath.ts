@@ -43,7 +43,7 @@ export function renderMathInHtml(html: string): string {
   result = result.replace(blockRegex, (_, attrs) => {
     const rawLatex = decodeHtmlEntities(extractLatex(attrs));
     try {
-      return `<div class="katex-display-container my-6 text-center">${katex.renderToString(rawLatex, { displayMode: true, throwOnError: false })}</div>`;
+      return `<div class="katex-display-container my-4 text-center">${katex.renderToString(rawLatex, { displayMode: true, throwOnError: false })}</div>`;
     } catch {
       return `<div class="katex-error">$$${rawLatex}$$</div>`;
     }

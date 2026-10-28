@@ -71,14 +71,19 @@ cerna/
 │   │   └── ui/                   # Shared UI primitives (SocialLinks, ThemeToggle, LanguageToggle)
 │   ├── dictionaries/             # Canonical i18n JSONs: gl.json (default), es.json
 │   ├── hooks/                    # React hooks (useAuth, useLocale)
-│   ├── lib/                      # Editor extensions, KaTeX renderer, constants, columnist metadata
-│   │   └── db/                   # Strongly-Typed Data Access Layer (DAL)
-│   │       ├── schema.ts         # Constants: DB_TABLES, column names, enums
-│   │       ├── types.ts          # Table rows, aggregates, and view interfaces
-│   │       ├── queries/          # Modular typed query modules (publications, users, comments, tags)
-│   │       └── index.ts          # Barrel export for lib/db
-│   ├── proxy.ts                  # Perimeter Edge middleware (i18n, rate limiting, auth gating)
-│   └── utils/                    # Supabase SSR clients (server.ts, client.ts) and auth helpers
+│   ├── lib/                      # Unified library: Supabase clients, auth, DAL, editor, email, PDF
+│   │   ├── auth.ts               # Authenticated user & role resolver
+│   │   ├── supabase/             # Supabase SSR clients (server.ts, client.ts)
+│   │   ├── db/                   # Strongly-Typed Data Access Layer (DAL)
+│   │   │   ├── schema.ts         # Constants: DB_TABLES, column names, enums
+│   │   │   ├── types.ts          # Table rows, aggregates, and view interfaces
+│   │   │   ├── queries/          # Modular typed query modules (publications, users, comments, tags)
+│   │   │   └── index.ts          # Barrel export for lib/db
+│   │   ├── editor/               # TipTap extensions and KaTeX renderers
+│   │   ├── email/                # Newsletter email templates and token utilities
+│   │   ├── pdf/                  # Article PDF export generator
+│   │   └── storage/              # Unified storage service, WebP compression & path helpers
+│   └── proxy.ts                  # Perimeter Edge middleware (i18n, rate limiting, auth gating)
 ├── database/                     # PostgreSQL schema definitions
 │   └── full_schema.sql           # Complete canonical database schema dump (tables, RLS, functions)
 ├── docs/                         # Architecture codemaps and operational protocols
@@ -108,12 +113,26 @@ cerna/
   Keep components as Server Components unless interactivity, state, event listeners, or browser APIs require `'use client'`.
 
 ### 4.2. Internationalization (i18n) Rules
+* **Mandatory i18n Standard via Dictionaries:**  
+  Cerna is a bilingual platform (`gl` default, `es`). **All public UI text, menu labels, button text, badges, placeholders, and link descriptions must be retrieved strictly from `src/dictionaries/gl.json` and `src/dictionaries/es.json`**. Never hardcode raw user-facing strings in TSX components or pages.
 * **Bilingual Parity:**  
-  Every public UI string must exist in both `src/dictionaries/gl.json` and `src/dictionaries/es.json`. Never hardcode raw strings in components.
+  Every dictionary key added to `src/dictionaries/gl.json` must exist with its translation in `src/dictionaries/es.json`. Regressions where a key exists only in one language break the UI and are strictly disallowed.
+* **No Hardcoded URLs / Enforce Dynamic Locale Prefixing:**  
+  **Never write hardcoded, unlocalized URLs** (e.g. `<Link href="/articulos">`, `<Link href="/contacto">`, or `router.push('/login')`).  
+  All internal links and programmatic redirects must strictly use the active locale prefix:
+  ```tsx
+  // ❌ FORBIDDEN:
+  <Link href="/articulos">Arquivo</Link>
+  <Link href="/gl/articulos">Arquivo</Link> // Hardcoded locale
+
+  // ✅ CORRECT:
+  <Link href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
+  <Link href={`/${lang}/articulo/${slug}`}>{title}</Link>
+  ```
 * **Database Multilingual Fields:**  
-  Publications and user profiles use unified JSONB fields: `title` (`{ gl, es }`), `subtitle` (`{ gl, es }`), `content` (`{ gl, es }`), and `bio` (`{ gl, es }`). Always supply both language variants.
-* **Path Prefixing:**  
-  All localized routes must begin with `/${lang}/` (`/gl` or `/es`). Use the helper `LanguageToggle` or construct internal links using `/${lang}/...`.
+  Publications and user profiles use unified JSONB fields: `title` (`{ gl, es }`), `subtitle` (`{ gl, es }`), `content` (`{ gl, es }`), and `bio` (`{ gl, es }`). Always supply and handle both language variants.
+* **Path Prefixing & Middleware Routing:**  
+  All public and private app routes live under `src/app/[lang]/`. The perimeter edge middleware (`src/proxy.ts`) enforces locale detection and redirection to `/${lang}/...`. Components must never bypass this structure.
 
 ### 4.3. Data Access Layer (DAL) & Supabase Guardrails
 * **Zero Magic Strings:**  
@@ -137,12 +156,14 @@ cerna/
 * **Decouple Auth from Public Reader SSR:**  
   Public article pages (`/articulo/[slug]`) must not call `getAuthenticatedUser()` / `cookies()` during initial server render. Doing so disables static caching/ISR and triggers dynamic SSR on every bot/crawler hit. Keep reader rendering cached (ISR `revalidate = 60` or on-demand revalidation) and handle user-specific review actions on the client.
 * **Storage Bucket Rules:**  
-  * Use the single public bucket: `imagenes-articulos`.
-  * Standard paths:
-    * Covers: `portadas/{userId}/{timestamp}.{ext}`
-    * In-article images: `contenido/{userId}/{timestamp}-{safeName}`
-    * Avatars: `avatares/{userId}/{timestamp}.{ext}`
-  * Client-side compression must be enforced before uploading images (max 1600px width, WebP/JPEG quality 80%) to avoid exhausting storage egress quotas.
+  * Use the primary public bucket: `media` (with `imagenes-articulos` recognized for legacy assets).
+  * Standard canonical paths (via `@/lib/storage`):
+    * Profile avatars: `profiles/{userId}/avatar-{timestamp}-{slug}.webp` (max 512x512)
+    * Article covers: `publications/covers/{userId}/cover-{timestamp}-{slug}.webp` (max 1600x1200)
+    * In-article images: `publications/inline/{userId}/{name}-{timestamp}-{slug}.webp` (max 1400x1400)
+    * Legacy compatibility: `avatares/`, `portadas/`, and `contenido/` remain recognized for deletion/cleanup.
+  * Client-side WebP compression and dimension limits must always be enforced via `uploadStorageImage()` before uploading to avoid exhausting bandwidth egress quotas.
+  * Orphan prevention: Article covers and inline images must be purged via `cleanupPublicationImages()` when a publication is deleted.
 
 ### 4.4. TipTap Editor & HTML Sanitization Pipeline
 * **Rendering Order:**  
@@ -162,32 +183,74 @@ Always use semantic CSS variables via Tailwind classes to ensure dark mode works
 
 ---
 
-## 5. Agent Behavioral Protocol (How to Work on This Codebase)
+## 5. Agent Behavioral Protocol & Git Lifecycle (Mandatory)
 
-When tasked with fixing bugs, implementing features, or refactoring code in Cerna:
+Every agent working on this codebase must strictly adhere to the following 5-stage lifecycle for all tasks (features, bugfixes, refactoring, database changes, etc.):
 
-### 1. Plan Before Executing
-* Review existing components, DAL queries in `src/lib/db/`, and codemaps in `docs/CODEMAPS/` before introducing new abstractions.
-* If making multi-file modifications, formulate a clear, sequential plan.
+### Stage 1: Isolated Git Worktree Creation
+* **Never work directly on `development` or `main`**:
+  Always create an isolated Git worktree inside the dedicated, ignored `.worktrees/` directory on a separate branch branched off `development`:
+  ```bash
+  git worktree add .worktrees/<branch-name> -b <branch-name> development
+  cd .worktrees/<branch-name>
+  ln -snf ../../.env.local .env.local
+  ln -snf ../../node_modules node_modules
+  ```
+* All code editing, dependency installations, and local testing must take place strictly inside this dedicated worktree directory.
+* The `.worktrees/` directory is git-ignored and excluded from TypeScript to avoid language server conflicts or watcher pollution.
 
-### 2. Surgical, High-Cohesion Edits
-* Keep changes minimal and focused. Do not reformat unrelated code, reorder imports gratuitously, or remove existing comments and docstrings.
-* Maintain immutability: return new objects or arrays instead of mutating state in React components.
-
-### 3. Verify TypeScript & Linting
-* After code modifications, always verify with:
+### Stage 2: Surgical Implementation & Local Verification
+* **Plan before executing**: Review existing components, DAL queries in `src/lib/db/`, and codemaps in `docs/CODEMAPS/` before introducing new abstractions.
+* **Surgical, high-cohesion edits**: Keep changes minimal, focused, and immutable. Do not reformat unrelated code, reorder imports gratuitously, or remove existing comments and docstrings.
+* **Verify locally**: Always ensure the build and linter pass cleanly before presenting changes:
   ```bash
   npm run lint
   npm run build
   ```
-* Address any type errors (`@typescript-eslint/no-explicit-any`), unused variables, or React hook warnings immediately.
+  If touching database migrations, seed data, or schemas, also verify local DB reset:
+  ```bash
+  npm run db:reset
+  ```
 
-### 4. Branching & Git Guidelines
-* **Integration Branch:** The active integration branch is **`development`**. Production is on **`main`**.
-* **Atomic Commits:** Follow Conventional Commits (`feat:`, `fix:`, `refactor:`, `style:`, `chore:`, `docs:`).
-* **Never Run Massive Adds:** Do not run `git add .` or `git commit -am`. Add individual files per atomic commit.
-* **Remote Push & Release Protocol:**  
-  Push changes to `development` for ongoing work. When preparing a production release or client-facing milestone, adhere to [`docs/RELEASE_PROTOCOL.md`](docs/RELEASE_PROTOCOL.md).
+### Stage 3: Review Gating — Strict Zero Premature Commits
+* **CRITICAL RULE — ZERO COMMITS WITHOUT EXPLICIT APPROVAL**:
+  Under no circumstances may an agent run `git commit` autonomously during development.
+* All changes must remain unstaged or staged in the working tree for user review.
+* Present a concise, structured summary of modifications, files affected, and verification test results to the user.
+* Request explicit approval from the user before proceeding to commit. Wait for the user's explicit confirmation (e.g., "approve", "go ahead and commit").
+
+### Stage 4: Granular Micro-Commits
+* Once (and only once) the user explicitly approves:
+* Break the work down into **small, atomic micro-commits** organized by logical unit or file.
+* **NEVER run blanket commits**: `git add .` or `git commit -am "..."` are strictly forbidden.
+* Stage files individually:
+  ```bash
+  git add <specific-file-1>
+  git commit -m "feat(scope): concise description"
+
+  git add <specific-file-2>
+  git commit -m "style(scope): concise description"
+  ```
+* Adhere strictly to Conventional Commits format (`feat:`, `fix:`, `refactor:`, `style:`, `test:`, `docs:`, `chore:`).
+
+### Stage 5: Merge into Development & Worktree Cleanup
+* Once all micro-commits have been created on the feature branch:
+* Switch back to the primary repository root folder and checkout `development`:
+  ```bash
+  cd /home/pablo/Projects/Cerna
+  git checkout development
+  git merge <branch-name> --no-ff -m "merge: merge <branch-name> into development"
+  ```
+* Push `development` to remote so Vercel can automatically trigger and deploy the preview:
+  ```bash
+  git push origin development
+  ```
+* Remove the temporary worktree and clean up the local feature branch:
+  ```bash
+  git worktree remove .worktrees/<branch-name>
+  git branch -d <branch-name>
+  ```
+* For major production releases or client-facing milestones from `development` to `main`, adhere to [`docs/RELEASE_PROTOCOL.md`](docs/RELEASE_PROTOCOL.md).
 
 ---
 
@@ -208,16 +271,110 @@ npm run lint
 npm run build
 ```
 
+### Running Tests
+The project uses **Vitest** for unit, API, and component tests and **Playwright** for end-to-end user journeys:
+* **Unit & Component tests:**
+  ```bash
+  npm test
+  ```
+* **Watch mode:**
+  ```bash
+  npm run test:watch
+  ```
+* **Coverage report (v8):**
+  ```bash
+  npm run test:coverage
+  ```
+* **Database & RLS integration tests (requires local Supabase running via `npm run db:start`):**
+  ```bash
+  npm run test:db
+  ```
+* **End-to-End tests (Playwright):**
+  ```bash
+  npm run test:e2e
+  ```
+
+### Running GitHub Actions CI Locally with `act` (Optional but Recommended)
+Running GitHub Actions locally through [`nektos/act`](https://github.com/nektos/act) allows developers to validate the exact GitHub CI pipeline in a local Docker container before pushing code. It is **optional** for developers, but **highly recommended** when touching CI workflows or preparing releases.
+
+* **Prerequisites:**
+  - Docker daemon running (`systemctl start docker`).
+  - `act` installed via Arch Linux: `sudo pacman -S act` (or via your system's package manager).
+* **Commands:**
+  - **Syntax check / dry-run:**
+    ```bash
+    npm run act:check
+    ```
+  - **Simulate push CI pipeline (runs `.github/workflows/test.yml`):**
+    ```bash
+    npm run act:test
+    ```
+  - **Simulate pull request pipeline:**
+    ```bash
+    npm run act:pr
+    ```
+  - Configuration is persisted in `.actrc` mapping `ubuntu-latest` to optimized runner images (`catthehacker/ubuntu:act-latest`).
+
 ### Adding a New UI String / Translation
 1. Add the Galician key-value in `src/dictionaries/gl.json`.
 2. Add the corresponding Spanish key-value in `src/dictionaries/es.json`.
 3. In Server Components, retrieve via `const dict = await getDictionary(lang);`.
 4. In Client Components, retrieve via `getDictionaryClient(lang)` or pass down from the parent Server Component.
 
-### Applying Database Changes
-1. Dump or synchronize schema changes via the Supabase CLI:
-   ```bash
-   npx supabase db dump --project-ref <project-ref> -f database/full_schema.sql
-   ```
-2. Update constants in `src/lib/db/schema.ts` and types in `src/lib/db/types.ts`.
-3. Update relevant DAL queries in `src/lib/db/queries/`.
+### Local Database Development & Migration Workflow (Supabase CLI)
+
+To protect production and staging databases, **all database changes must be developed and tested locally** using the Supabase CLI Docker stack before being promoted to remote environments.
+
+#### 1. Managing the Local Supabase Stack
+* **Start local stack:** `npm run db:start` (starts PostgreSQL, GoTrue Auth, Storage, Studio, and Inbucket).
+* **Stop local stack:** `npm run db:stop`.
+* **Reset local database:** `npm run db:reset` (wipes local DB, applies all `supabase/migrations/` in sequence, and runs `supabase/seed.sql`).
+* **Check local status & keys:** `npm run db:status`.
+
+#### 2. Local Environment Endpoints
+* **API URL:** `http://127.0.0.1:54321`
+* **Local Studio Dashboard:** `http://127.0.0.1:54323`
+* **Local Inbucket (Email Inbox):** `http://127.0.0.1:54324` (captures confirmation and password recovery emails locally).
+* **Local DB Port:** `54322`
+
+#### 3. Local Seed & Test Accounts
+Running `npm run db:reset` populates `supabase/seed.sql` with the public taxonomy, sample publications, storage bucket `imagenes-articulos`, and pre-configured test users (password for all: `Password123!`):
+* **Diego Araújo (Founder):** `diegoaraujo@cernapensamento.org`
+* **Héctor González (Founder):** `hectorgonzalez@cernapensamento.org`
+* **Denís Fernández (Founder):** `denisfernandez@cernapensamento.org`
+* **Anxo Pérez (Founder):** `anxoperez@cernapensamento.org`
+* **Admin:** `admin@cernapensamento.org`
+* **Guest Author:** `lucia.vazquez@cerna.org`
+* **Member:** `martino.rodriguez@cerna.org`
+* **Reader:** `lector@cerna.org`
+
+#### 4. Applying Schema Changes (Local → Remote)
+1. **Create an incremental migration:**
+   * Either create an empty migration file:
+     ```bash
+     npx supabase migration new <descriptive_name>
+     ```
+   * Or apply changes in Local Studio (`http://127.0.0.1:54323`) and auto-generate the SQL diff:
+     ```bash
+     npx supabase db diff -f <descriptive_name>
+     ```
+2. **Verify locally:**
+   * Run `npm run db:reset` to ensure the new migration applies cleanly on an empty database alongside `supabase/seed.sql`.
+3. **Synchronize Codebase DAL:**
+   * Update schema constants in `src/lib/db/schema.ts` (`DB_TABLES`, column names, enums).
+   * Update row types and models in `src/lib/db/types.ts` (or run `npx supabase gen types typescript --local`).
+   * Update DAL queries in `src/lib/db/queries/`.
+   * Run `npm run lint` and `npm run build` to catch type or query regressions.
+4. **Deploy Migrations to Remote / Production:**
+   * Link to the remote project once:
+     ```bash
+     npx supabase link --project-ref <remote-project-ref>
+     ```
+   * Push pending migrations:
+     ```bash
+     npx supabase db push
+     ```
+   * Update the canonical schema dump:
+     ```bash
+     npx supabase db dump --local -f database/full_schema.sql
+     ```

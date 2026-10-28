@@ -1,60 +1,63 @@
-import FeaturedArticleHero from '@/components/sections/FeaturedArticleHero';
-import PinnedArticlesPanel from '@/components/sections/PinnedArticlesPanel';
-import ArticleCard from '@/components/features/ArticleCard';
+import { Suspense } from 'react';
+import HeroIntroSection from '@/components/sections/HeroIntroSection';
+import ArticlesMosaicLoader from '@/components/sections/ArticlesMosaicLoader';
+import ArticlesMosaicSkeleton from '@/components/sections/ArticlesMosaicSkeleton';
+import AssociationAndNewsSection from '@/components/sections/AssociationAndNewsSection';
 import ColumnistsSection from '@/components/sections/ColumnistsSection';
 import AboutUsSection from '@/components/sections/AboutUsSection';
 import ThemesSection from '@/components/sections/ThemesSection';
+import FAQSection from '@/components/sections/FAQSection';
 import ContactSection from '@/components/sections/ContactSection';
-import { getPublicationCards } from '@/lib/db/queries/publications';
+import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
+import { getAllTagsWithTranslations } from '@/lib/db';
 
 export const revalidate = 60;
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const dict = await getDictionary(lang as Locale);
-
-  // Fetch published publications using the typed Data Access Layer
-  const allArticles = await getPublicationCards({
-    limit: 20,
-    lang,
-  });
-
-  const pinnedArticles = allArticles.filter((a) => a.is_pinned).slice(0, 8);
-  const regularArticles = allArticles.filter((a) => !a.is_pinned);
-
-  const featuredArticle = regularArticles.length > 0 ? regularArticles[0] : null;
-  const otherArticles = regularArticles.length > 1 ? regularArticles.slice(1, 7) : [];
+  const tags = await getAllTagsWithTranslations({ lang });
+  const themesTags = tags.slice(0, 12);
 
   return (
     <>
-      <main className="flex-grow w-full max-w-[1120px] mx-auto px-5 md:px-16 pt-12 pb-[120px] flex flex-col gap-[120px]">
-        {featuredArticle && (
-          <FeaturedArticleHero articulo={featuredArticle} lang={lang} dict={dict} />
-        )}
+      {/* 1. HERO INTRO SECTION (White / Black: bg-parchment) */}
+      <HeroIntroSection lang={lang} dict={dict.hero} />
 
-        <section className="border-t border-lines pt-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-16">
-            {otherArticles && otherArticles.length > 0 ? (
-              otherArticles.map((articulo) => (
-                <ArticleCard key={articulo.id} articulo={articulo} lang={lang} dict={dict} />
-              ))
-            ) : (
-              <p className="font-sans text-charcoal/60">
-                {lang === 'es' ? 'No hay artículos adicionales publicados.' : 'Non hai artigos adicionais publicados.'}
-              </p>
-            )}
-          </div>
-        </section>
+      {/* 2. ARTICLES MOSAIC SECTION (Grey / Dark-Grey: bg-surface) */}
+      <section aria-label={dict.mosaic?.recentTitle || dict.articles?.title} className="flex-grow w-full bg-surface border-b border-lines py-16 sm:py-24">
+        <div className="max-w-[1120px] mx-auto px-5 md:px-16">
+          <Suspense fallback={<ArticlesMosaicSkeleton />}>
+            <ArticlesMosaicLoader lang={lang} dict={dict} />
+          </Suspense>
+        </div>
+      </section>
 
-        <PinnedArticlesPanel articulos={pinnedArticles} lang={lang} dict={dict} />
-      </main>
-      
+      {/* 3. ASSOCIATION & NEWS SECTION (White / Black: bg-parchment) */}
+      <AssociationAndNewsSection lang={lang} dict={dict.associationAndNews} />
+
+      {/* 4. ABOUT US SECTION (Grey / Dark-Grey: bg-surface) */}
       <AboutUsSection lang={lang} dict={dict.about} />
-      <ThemesSection lang={lang} dict={dict.themes} />
-      <ColumnistsSection lang={lang} dict={{ columnists: dict.columnists, authors: dict.authors }} />
-      <ContactSection dict={dict.contact} />
+
+      {/* 5. THEMES CAROUSEL OF TAGS (White / Black: bg-parchment) */}
+      <RevealOnScroll delayMs={50}>
+        <ThemesSection lang={lang} dict={dict.themes} tags={themesTags} />
+      </RevealOnScroll>
+
+      {/* 6. COLUMNISTS / AUTHORS SECTION (Grey / Dark-Grey: bg-surface) */}
+      <RevealOnScroll delayMs={50}>
+        <ColumnistsSection lang={lang} dict={{ columnists: dict.columnists, authors: dict.authors }} />
+      </RevealOnScroll>
+
+      {/* 7. FAQ SECTION (White / Black: bg-parchment) */}
+      <RevealOnScroll delayMs={50}>
+        <FAQSection dict={dict.faq} lang={lang} />
+      </RevealOnScroll>
+
+      {/* 8. CONTACT SECTION (Grey / Dark-Grey: bg-surface) */}
+      <ContactSection lang={lang} dict={dict.contact} />
     </>
   );
 }
