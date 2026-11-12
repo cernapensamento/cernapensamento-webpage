@@ -4,10 +4,10 @@ import ReviewActionBar from '@/components/escritorio/ReviewActionBar';
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound, permanentRedirect } from 'next/navigation';
-import sanitizeHtml from 'sanitize-html';
 import 'katex/dist/katex.min.css';
 import { renderMathInHtml } from '@/lib/editor/renderMath';
 import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
+import { sanitizeArticleHtml } from '@/lib/editor/sanitizeArticleHtml';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 import FormattedDate from '@/components/ui/FormattedDate';
 import CommentsSection from '@/components/features/CommentsSection';
@@ -144,115 +144,7 @@ export default async function ArticuloPage({
             <div 
               className={`article-content ${isEnsaio ? 'article-content-essay' : ''}`}
               dangerouslySetInnerHTML={{ 
-                __html: sanitizeHtml(renderHeadingAnchors(renderMathInHtml(contenido)), {
-                  allowedTags: [
-                    ...sanitizeHtml.defaults.allowedTags,
-                    'img', 'iframe', 'figure', 'figcaption',
-                    'span', 'div', 'hr', 'mark', 'code', 'pre', 'blockquote',
-                    'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'colgroup', 'col',
-                    'math', 'semantics', 'mrow', 'mi', 'mn', 'mo', 'ms', 'mspace', 'mtext',
-                    'mfrac', 'msqrt', 'mroot', 'msub', 'msup', 'msubsup', 'munder', 'mover',
-                    'munderover', 'mtable', 'mtr', 'mtd', 'mpadded', 'mphantom', 'annotation',
-                    'svg', 'path', 'line', 'nav', 'u', 's', 'sub', 'sup',
-                    'rect', 'mstyle', 'menclose'
-                  ],
-                  allowedAttributes: {
-                    ...sanitizeHtml.defaults.allowedAttributes,
-                    '*': ['class', 'style', 'id', 'data-type', 'data-items', 'data-colwidth'],
-                    img: ['src', 'srcset', 'alt', 'title', 'width', 'height', 'loading', 'class', 'style'],
-                    iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'class', 'style', 'title'],
-                    figure: ['class', 'style'],
-                    figcaption: ['class', 'style'],
-                    div: ['class', 'style', 'data-youtube-video', 'role', 'data-latex'],
-                    span: ['class', 'style', 'aria-hidden', 'data-latex', 'id'],
-                    table: ['class', 'style'],
-                    th: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
-                    td: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
-                    col: ['style', 'class', 'width'],
-                    colgroup: ['style', 'class'],
-                    math: ['xmlns', 'display', 'alttext'],
-                    mstyle: ['displaystyle', 'scriptlevel', 'mathsize', 'mathcolor', 'mathbackground'],
-                    mfrac: ['linethickness'],
-                    mspace: ['width', 'height', 'depth'],
-                    mpadded: ['width', 'height', 'depth', 'lspace', 'voffset'],
-                    mo: ['fence', 'separator', 'stretchy', 'symmetric', 'largeop', 'movablelimits', 'accent', 'lspace', 'rspace'],
-                    annotation: ['encoding'],
-                    svg: ['xmlns', 'width', 'height', 'viewBox', 'style', 'preserveAspectRatio'],
-                    path: ['d'],
-                    line: ['x1', 'x2', 'y1', 'y2', 'stroke', 'stroke-width'],
-                    rect: ['x', 'y', 'width', 'height', 'fill', 'stroke'],
-                    nav: ['data-type', 'data-items', 'lang', 'class', 'style', 'aria-label'],
-                    p: ['class', 'style'],
-                    ul: ['style', 'class'],
-                    ol: ['style', 'class'],
-                    li: ['style', 'class'],
-                    a: [...(sanitizeHtml.defaults.allowedAttributes['a'] ?? ['href']), 'style', 'class', 'target', 'rel'],
-                    u: ['style', 'class'],
-                    h1: ['id', 'style', 'class'],
-                    h2: ['id', 'style', 'class'],
-                    h3: ['id', 'style', 'class'],
-                  },
-                  allowedSchemes: ['http', 'https', 'mailto', 'data', 'blob'],
-                  allowedStyles: {
-                    '*': {
-                      'scroll-margin-top': [/./],
-                      'height': [/./],
-                      'width': [/./],
-                      'min-width': [/./],
-                      'max-width': [/./],
-                      'top': [/./],
-                      'bottom': [/./],
-                      'left': [/./],
-                      'right': [/./],
-                      'vertical-align': [/./],
-                      'position': [/./],
-                      'overflow': [/./],
-                      'font-size': [/./],
-                      'background-color': [/./],
-                      'text-align': [/./],
-                      'font-weight': [/./],
-                      'font-family': [/./],
-                      'font-variant-numeric': [/./],
-                      'letter-spacing': [/./],
-                      'text-transform': [/./],
-                      'text-decoration': [/./],
-                      'color': [/./],
-                      'opacity': [/./],
-                      'display': [/./],
-                      'flex-direction': [/./],
-                      'align-items': [/./],
-                      'gap': [/./],
-                      'padding': [/./],
-                      'padding-top': [/./],
-                      'padding-bottom': [/./],
-                      'padding-left': [/./],
-                      'padding-right': [/./],
-                      'margin': [/./],
-                      'margin-top': [/./],
-                      'margin-bottom': [/./],
-                      'margin-left': [/./],
-                      'margin-right': [/./],
-                      'border': [/./],
-                      'border-top': [/./],
-                      'border-bottom': [/./],
-                      'border-left': [/./],
-                      'border-right': [/./],
-                      'border-width': [/./],
-                      'border-top-width': [/./],
-                      'border-bottom-width': [/./],
-                      'border-left-width': [/./],
-                      'border-right-width': [/./],
-                      'border-color': [/./],
-                      'border-style': [/./],
-                      'border-radius': [/./],
-                      'flex-shrink': [/./],
-                      'line-height': [/./],
-                      'list-style': [/./],
-                      'transition': [/./],
-                    },
-                  },
-                  allowedIframeHostnames: ['www.youtube.com', 'www.youtube-nocookie.com', 'youtu.be']
-                }) 
+                __html: sanitizeArticleHtml(renderHeadingAnchors(renderMathInHtml(contenido)))
               }}
             />
 

@@ -18,6 +18,7 @@ import { CustomTable, TableRow, CustomTableCell, CustomTableHeader } from '@/lib
 import TableControls from '@/components/escritorio/TableControls';
 import { renderMathInHtml } from '@/lib/editor/renderMath';
 import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
+import { sanitizeArticleHtml } from '@/lib/editor/sanitizeArticleHtml';
 import { getHeadingsFromHtml, generateIndex, stripIndex } from '@/lib/editor/generateIndex';
 import { ArticleIndex } from '@/lib/editor/ArticleIndexExtension';
 import { useParams } from 'next/navigation';
@@ -124,6 +125,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const inlineImageRef = useRef<HTMLInputElement>(null);
     const previewContainerRef = useRef<HTMLDivElement>(null);
     const [authorProfile, setAuthorProfile] = useState<{ nombre: string; avatar_url?: string; bio?: string } | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
     useEffect(() => {
         if (initialData?.cover_image_url || initialData?.imagen_url) {
@@ -134,7 +136,9 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const supabase = createClient();
 
     // Auto-save logic
-    const draftKey = `cerna_draft_${initialData?.id || 'new'}`;
+    const draftKey = initialData?.id
+        ? `cerna_draft_${initialData.id}`
+        : `cerna_draft_${currentUserId ? `${currentUserId}_new` : 'new'}`;
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const isInitialized = useRef(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -159,6 +163,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         const fetchProfile = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
+                setCurrentUserId(user.id);
                 const { data } = await supabase
                     .from(DB_TABLES.USERS)
                     .select(`${USER_COLS.FULL_NAME}, ${USER_COLS.AVATAR_URL}, ${USER_COLS.BIO}`)
@@ -1130,7 +1135,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         <article className="w-full max-w-2xl px-5 md:px-0 mx-auto min-w-0">
                             <div 
                                 className={`article-content ${(tipo?.toLowerCase() === 'ensaio' || tipo?.toLowerCase() === PUBLICATION_TYPES.ESSAY) ? 'article-content-essay' : ''}`}
-                                dangerouslySetInnerHTML={{ __html: renderHeadingAnchors(renderMathInHtml(activeLang === 'gl' ? contenidoGl : contenidoEs)) }}
+                                dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(renderHeadingAnchors(renderMathInHtml(activeLang === 'gl' ? contenidoGl : contenidoEs))) }}
                             />
                         </article>
 
