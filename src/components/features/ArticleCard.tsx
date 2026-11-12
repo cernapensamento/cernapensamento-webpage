@@ -21,6 +21,8 @@ export interface ArticleCardData {
   contenido_es?: string;
   contenido_gl?: string;
   created_at?: string;
+  updated_at?: string;
+  published_at?: string | null;
   creado_en?: string;
   is_pinned?: boolean | null;
   fijado?: boolean | null;
@@ -97,7 +99,7 @@ export default function ArticleCard({
   const authorAvatar = articulo.author?.avatar_url || articulo.perfiles?.avatar_url || null;
 
   // Resolve date
-  const rawDate = articulo.created_at || articulo.creado_en;
+  const rawDate = articulo.published_at || articulo.created_at || articulo.creado_en;
 
   // Resolve cover image
   const coverUrl = articulo.cover_image_url || articulo.imagen_url || null;

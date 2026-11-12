@@ -3,21 +3,13 @@ import ArticlesArchiveList from '@/components/features/ArticlesArchiveList';
 import ArticlesFilterBar from '@/components/features/ArticlesFilterBar';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
-import { getAllTagsWithTranslations, getPublicationCards, type PublicationType } from '@/lib/db';
+import {
+  getAllTagsWithTranslations,
+  getPublicationCards,
+  parsePublicationType,
+} from '@/lib/db';
 
 export const revalidate = 60;
-
-function normalizePublicationType(raw: string | string[] | undefined): PublicationType | undefined {
-  if (!raw || Array.isArray(raw)) return undefined;
-  const val = raw.toLowerCase().trim();
-  if (val === 'artigo' || val === 'articulo' || val === 'article') return 'article' as PublicationType;
-  if (val === 'ensaio' || val === 'ensayo' || val === 'essay') return 'essay' as PublicationType;
-  if (val === 'poesia' || val === 'poesía' || val === 'poetry') return 'poetry' as PublicationType;
-  if (val === 'columna' || val === 'narrativa' || val === 'column') return 'column' as PublicationType;
-  if (val === 'entrevista' || val === 'interview') return 'interview' as PublicationType;
-  if (val === 'reportaxe' || val === 'reportaje' || val === 'reportage') return 'reportage' as PublicationType;
-  return val as PublicationType;
-}
 
 export default async function ArticulosPage({
   params,
@@ -34,7 +26,7 @@ export default async function ArticulosPage({
   const temaRaw = resolvedParams.tema;
   const temasArray = Array.isArray(temaRaw) ? temaRaw : (typeof temaRaw === 'string' && temaRaw ? [temaRaw] : []);
   const tipoRaw = resolvedParams.tipo || resolvedParams.type;
-  const currentType = normalizePublicationType(tipoRaw);
+  const currentType = typeof tipoRaw === 'string' ? parsePublicationType(tipoRaw) : undefined;
 
   // 1. Get all available tags with localized names
   const availableTags = await getAllTagsWithTranslations({ lang });

@@ -96,11 +96,11 @@ function RecentArticleCard({
   const title = getLocalizedTitle(item, lang);
   const subtitle = getLocalizedSubtitle(item, lang);
   const labels = getLocalizedLabels(item, lang, dict);
-  const rawDate = item.created_at || item.creado_en;
+  const rawDate = item.published_at || item.created_at || item.creado_en;
   const coverUrl = item.cover_image_url || item.imagen_url;
   const hasCover = Boolean(coverUrl && coverUrl.trim().length > 0);
   const authorName = item.author?.full_name || item.author?.nombre || item.perfiles?.nombre || '';
-  const readLabel = dict?.mosaic?.readArticle || dict?.readArticle || (lang === 'gl' ? 'Ler texto' : 'Leer texto');
+  const readLabel = dict?.mosaic?.readArticle || dict?.readArticle || '';
   const href = `/${lang}/articulo/${item.slug || item.id}`;
 
   if (variant === 'large') {

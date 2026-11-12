@@ -100,7 +100,7 @@ export default async function ArticuloPage({
               {publication.author.full_name}
             </Link>
             <span>•</span>
-            <FormattedDate date={publication.created_at} lang={lang} format="long" />
+            <FormattedDate date={publication.published_at || publication.created_at} lang={lang} format="long" />
           </div>
           {publication.original_language && publication.original_language !== lang && (
             <div className="text-[10px] text-charcoal/60 uppercase tracking-[0.15em] mt-3">

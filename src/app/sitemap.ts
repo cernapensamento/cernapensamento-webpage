@@ -95,7 +95,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
     for (const pub of publications) {
       if (!pub.slug) continue;
-      const lastMod = pub.updated_at ? new Date(pub.updated_at) : (pub.created_at ? new Date(pub.created_at) : now);
+      const effectiveDate = pub.published_at || pub.updated_at || pub.created_at;
+      const lastMod = effectiveDate ? new Date(effectiveDate) : now;
       for (const lang of ['gl', 'es'] as const) {
         entries.push({
           url: `${SITE_URL}/${lang}/articulo/${pub.slug}`,
