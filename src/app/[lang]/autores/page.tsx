@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getDictionary } from '@/dictionaries';
 import { Locale } from '@/i18n-config';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import { getColumnistBySlug } from '@/lib/columnists';
 import { SITE_NAME } from '@/lib/constants';
 import { getPublishedAuthors } from '@/lib/db';
@@ -43,16 +44,11 @@ export default async function AutoresPage({ params }: Props) {
     const columnist = getColumnistBySlug(author.slug);
     const bio =
       (author.slug ? authorBios[author.slug] : '') ||
-      (author.bio
-        ? author.bio[language] || author.bio.gl || author.bio.es
-        : '') ||
-      columnist?.bio?.[language] ||
+      resolveLocalizedText(author.bio, language) ||
       '';
 
     const latestPublicationTitle = author.latest_publication_title
-      ? author.latest_publication_title[language] ||
-        author.latest_publication_title.gl ||
-        author.latest_publication_title.es
+      ? resolveLocalizedText(author.latest_publication_title, language)
       : null;
 
     return {

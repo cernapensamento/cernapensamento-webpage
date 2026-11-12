@@ -24,7 +24,7 @@ interface ColumnistsSectionProps {
 
 export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps) {
   const router = useRouter();
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
 
@@ -99,25 +99,25 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
     };
   }, []);
 
-  const handleMouseEnter = (id: string) => {
+  const handleMouseEnter = (slug: string) => {
     if (isDesktop) {
-      setActiveId(id);
+      setActiveSlug(slug);
     }
   };
 
   const handleMouseLeave = () => {
     if (isDesktop) {
-      setActiveId(null);
+      setActiveSlug(null);
     }
   };
 
   const handleCardClick = (columnist: Columnist) => {
-    const authorHref = `/${lang}/autor/${columnist.slug || columnist.id}`;
-    if (activeId === columnist.id) {
+    const authorHref = `/${lang}/autor/${columnist.slug}`;
+    if (activeSlug === columnist.slug) {
       // Second click on mobile or direct click while hovered on desktop
       router.push(authorHref);
     } else {
-      setActiveId(columnist.id);
+      setActiveSlug(columnist.slug);
     }
   };
 
@@ -140,7 +140,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
     }
   };
 
-  const isAnyActive = activeId !== null;
+  const isAnyActive = activeSlug !== null;
 
   return (
     <section 
@@ -184,8 +184,8 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
           aria-label={dict.columnists.title}
         >
           {columnists.map((columnist: Columnist, idx: number) => {
-            const isActive = activeId === columnist.id;
-            const authorBio = columnist.bio?.[lang as 'gl' | 'es'] || dict.authors[columnist.slug] || '';
+            const isActive = activeSlug === columnist.slug;
+            const authorBio = dict.authors?.[columnist.slug] || '';
 
             // Responsive flex calculation:
             // Default: 1 (equal distribution)
@@ -195,12 +195,12 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
 
             return (
               <div
-                key={columnist.id}
+                key={columnist.slug}
                 tabIndex={0}
                 role="button"
                 aria-expanded={isActive}
                 aria-label={`${columnist.name} - ${authorBio ? authorBio.substring(0, 80) : ''}`}
-                onMouseEnter={isDesktop ? () => handleMouseEnter(columnist.id) : undefined}
+                onMouseEnter={isDesktop ? () => handleMouseEnter(columnist.slug) : undefined}
                 onMouseLeave={isDesktop ? handleMouseLeave : undefined}
                 onTouchStart={handleTouchStart}
                 onTouchEnd={(e) => handleTouchEnd(e, columnist)}
