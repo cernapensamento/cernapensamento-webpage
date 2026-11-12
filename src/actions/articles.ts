@@ -3,7 +3,7 @@
 import { getAuthenticatedUser } from '@/lib/auth';
 import { updatePublicationStatus, getPublicationCards, formatDbError } from '@/lib/db';
 import type { PublicationStatus, PublicationType, PublicationCardItem } from '@/lib/db';
-import { USER_ROLES } from '@/lib/db/schema';
+import { USER_ROLES, PUBLICATION_STATUSES } from '@/lib/db/schema';
 
 /**
  * Loads another page of published cards, defaulting to 10 items from the supplied
@@ -54,6 +54,11 @@ export async function updateArticleState(
 
     if (!canManageStatus) {
       return { success: false, error: 'Permisos insuficientes' };
+    }
+
+    const validStatuses = Object.values(PUBLICATION_STATUSES) as string[];
+    if (!validStatuses.includes(newState)) {
+      return { success: false, error: 'Estado de publicación inválido' };
     }
 
     const { success, error } = await updatePublicationStatus(

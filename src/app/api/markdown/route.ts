@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     try {
       const publication = await getPublicationBySlug(slug, { lang, throwOnError: true });
 
-      if (!publication) {
+      if (!publication || publication.status !== 'published') {
         return new NextResponse(get404Markdown(lang), {
           status: 404,
           headers,

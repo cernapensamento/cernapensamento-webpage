@@ -32,24 +32,28 @@ vi.mock('@supabase/supabase-js', () => ({
         return {
           update: (...args: unknown[]) => {
             mockPublicationsUpdate(...args);
-            return {
+            interface MockQueryChain {
+              eq: (col: string, val: unknown) => MockQueryChain;
+              is: (isCol: string, isVal: unknown) => MockQueryChain;
+              select: (...sArgs: unknown[]) => MockQueryChain;
+              maybeSingle: typeof mockPublicationsMaybeSingle;
+            }
+            const chain: MockQueryChain = {
               eq: (col: string, val: unknown) => {
                 mockPublicationsEq(col, val);
-                return {
-                  is: (isCol: string, isVal: unknown) => {
-                    mockPublicationsIs(isCol, isVal);
-                    return {
-                      select: (...sArgs: unknown[]) => {
-                        mockPublicationsSelect(...sArgs);
-                        return {
-                          maybeSingle: mockPublicationsMaybeSingle,
-                        };
-                      },
-                    };
-                  },
-                };
+                return chain;
               },
+              is: (isCol: string, isVal: unknown) => {
+                mockPublicationsIs(isCol, isVal);
+                return chain;
+              },
+              select: (...sArgs: unknown[]) => {
+                mockPublicationsSelect(...sArgs);
+                return chain;
+              },
+              maybeSingle: mockPublicationsMaybeSingle,
             };
+            return chain;
           },
         };
       }
