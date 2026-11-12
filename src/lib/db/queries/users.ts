@@ -209,6 +209,7 @@ interface RawAuthorPublicationRow {
   id: string;
   type: PublicationType;
   created_at: string;
+  published_at?: string | null;
   slug: string | null;
   title: LocalizedString;
   author_id: string;
@@ -353,6 +354,7 @@ export async function getPublishedAuthors(
           ${PUBLICATION_COLS.ID},
           ${PUBLICATION_COLS.TYPE},
           ${PUBLICATION_COLS.CREATED_AT},
+          ${PUBLICATION_COLS.PUBLISHED_AT},
           ${PUBLICATION_COLS.SLUG},
           ${PUBLICATION_COLS.TITLE},
           ${PUBLICATION_COLS.AUTHOR_ID},
@@ -366,6 +368,7 @@ export async function getPublishedAuthors(
           )
         `)
         .eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.PUBLISHED)
+        .order(PUBLICATION_COLS.PUBLISHED_AT, { ascending: false, nullsFirst: false })
         .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
         .order(PUBLICATION_COLS.ID, { ascending: false })
         .range(offset, offset + pageSize - 1);
@@ -398,7 +401,7 @@ export async function getPublishedAuthors(
           avatar_url: author.avatar_url,
           role: author.role,
           published_count: 1,
-          latest_publication_at: row.created_at,
+          latest_publication_at: row.published_at || row.created_at,
           latest_publication_title: row.title,
           latest_publication_slug: row.slug,
           publication_types: [row.type],

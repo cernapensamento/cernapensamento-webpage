@@ -52,6 +52,7 @@ interface RawPublicationCard {
   is_pinned: boolean | null;
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
   author_id: string;
   author: {
     id: string;
@@ -106,6 +107,16 @@ function normalizeTags(
   }
 
   return result;
+}
+
+/**
+ * Retrieve a full publication detail by its primary UUID.
+ */
+export async function getPublicationById(
+  id: string,
+  options?: { client?: SupabaseClient; lang?: string; throwOnError?: boolean }
+): Promise<PublicationDetail | null> {
+  return await getPublicationBySlug(id, options);
 }
 
 /**
@@ -236,6 +247,7 @@ export async function getPublicationBySlug(
           is_pinned: activeLegacyData.fijado ?? false,
           created_at: activeLegacyData.creado_en,
           updated_at: activeLegacyData.actualizado_en,
+          published_at: activeLegacyData.creado_en,
           author: {
             id: pAuthor.id || activeLegacyData.autor_id,
             full_name: pAuthor.nombre || 'Anónimo',
@@ -270,6 +282,7 @@ export async function getPublicationBySlug(
       is_pinned: activeData.is_pinned ?? false,
       created_at: activeData.created_at,
       updated_at: activeData.updated_at,
+      published_at: activeData.published_at ?? activeData.created_at,
       author: normalizedAuthor,
       tags: normalizeTags(activeData.publication_tags, options?.lang),
     };
@@ -343,6 +356,7 @@ export async function getPublicationCards(
         ${PUBLICATION_COLS.IS_PINNED},
         ${PUBLICATION_COLS.CREATED_AT},
         ${PUBLICATION_COLS.UPDATED_AT},
+        ${PUBLICATION_COLS.PUBLISHED_AT},
         author:${DB_TABLES.USERS} (
           ${USER_COLS.ID},
           ${USER_COLS.FULL_NAME},
@@ -357,6 +371,7 @@ export async function getPublicationCards(
         )
       `)
       .eq(PUBLICATION_COLS.STATUS, status)
+      .order(PUBLICATION_COLS.PUBLISHED_AT, { ascending: false, nullsFirst: false })
       .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
       .order(PUBLICATION_COLS.ID, { ascending: false })
       .range(offset, offset + limit - 1);
@@ -432,6 +447,7 @@ export async function getPublicationCards(
             is_pinned: row.fijado ?? false,
             created_at: row.creado_en,
             updated_at: row.actualizado_en,
+            published_at: row.creado_en,
             author: {
               id: pAuthor.id || row.autor_id,
               full_name: pAuthor.nombre || 'Anónimo',
@@ -459,6 +475,7 @@ export async function getPublicationCards(
       is_pinned: row.is_pinned ?? false,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      published_at: row.published_at ?? row.created_at,
       author: row.author || {
         id: row.author_id,
         full_name: 'Anónimo',
@@ -577,9 +594,15 @@ export async function updatePublicationStatus(
   client?: SupabaseClient
 ): Promise<{ success: boolean; error: PostgrestError | null }> {
   const supabase = await resolveClient(client);
+  const updatePayload: Record<string, unknown> = {
+    [PUBLICATION_COLS.STATUS]: status,
+  };
+  if (status === PUBLICATION_STATUSES.DRAFT || status === PUBLICATION_STATUSES.IN_REVIEW) {
+    updatePayload[PUBLICATION_COLS.PUBLISHED_AT] = null;
+  }
   const { error } = await supabase
     .from(DB_TABLES.PUBLICATIONS)
-    .update({ [PUBLICATION_COLS.STATUS]: status })
+    .update(updatePayload)
     .eq(PUBLICATION_COLS.ID, id);
 
   return { success: !error, error };
