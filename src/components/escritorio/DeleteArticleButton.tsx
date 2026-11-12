@@ -47,13 +47,16 @@ export default function DeleteArticleButton({ id, titulo }: Props) {
                 .eq(PUBLICATION_COLS.ID, id)
                 .single();
 
-            const { error } = await supabase
+            const { data: deletedRows, error } = await supabase
                 .from(DB_TABLES.PUBLICATIONS)
                 .delete()
-                .eq(PUBLICATION_COLS.ID, id);
+                .eq(PUBLICATION_COLS.ID, id)
+                .select('id');
 
             if (error) {
                 toast.error(dashDict.deleteError + ': ' + error.message);
+            } else if (!deletedRows || deletedRows.length === 0) {
+                toast.error(dashDict.deleteError || 'Non se puido eliminar a publicación.');
             } else {
                 if (pubData) {
                     const content = pubData.content as { gl?: string; es?: string } | null;

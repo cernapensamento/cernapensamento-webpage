@@ -81,17 +81,24 @@ export default function NuevoArticulo() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from(DB_TABLES.USERS)
-          .select(USER_COLS.ROLE)
-          .eq(USER_COLS.ID, user.id)
-          .single();
-        if (data?.role) setUserRole(data.role);
+      if (!user) {
+        router.push(`/${lang}/login`);
+        return;
       }
+      const { data } = await supabase
+        .from(DB_TABLES.USERS)
+        .select(USER_COLS.ROLE)
+        .eq(USER_COLS.ID, user.id)
+        .single();
+      const role = data?.role;
+      if (!role || role === 'reader') {
+        router.push(`/${lang}/escritorio/perfil`);
+        return;
+      }
+      setUserRole(role);
     }
     fetchRole();
-  }, [supabase]);
+  }, [supabase, router, lang]);
 
   const handleSave = async (data: ArticleData, action: EditorAction): Promise<boolean> => {
     setIsPublishing(true);
