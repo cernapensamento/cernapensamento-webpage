@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
           .eq('id', user.id)
           .single()
         
-        const role = jwtRole || profile?.role;
-        const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || role === 'escritor';
+        const role = profile?.role || jwtRole || 'reader';
+        const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || role === 'guest' || role === 'escritor';
         const redirectPath = canAccessDesk ? '/escritorio' : '/escritorio/perfil'
         return NextResponse.redirect(`${origin}${redirectPath}`)
       }
