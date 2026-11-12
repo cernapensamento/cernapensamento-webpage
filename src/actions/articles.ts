@@ -313,6 +313,11 @@ export async function updateArticleState(
       return { success: false, error: edDict.onlyPrivilegedCanPublish };
     }
 
+    const validStatuses = Object.values(PUBLICATION_STATUSES) as string[];
+    if (!validStatuses.includes(newState)) {
+      return { success: false, error: 'Estado de publicación inválido' };
+    }
+
     const { success, error } = await updatePublicationStatus(
       publicationId,
       newState

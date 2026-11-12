@@ -36,7 +36,7 @@ export async function getAuthenticatedUser() {
     }
 
     const userProfile = (profile as UserRow | null) || null;
-    const role: UserRole = jwtRole || userProfile?.role || 'reader';
+    const role: UserRole = userProfile?.role || jwtRole || 'reader';
 
     // Support backwards-compatibility property .rol on profile if accessed
     const compatProfile = userProfile ? {

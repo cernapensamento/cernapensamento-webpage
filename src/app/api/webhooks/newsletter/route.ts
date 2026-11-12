@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
       .from(DB_TABLES.PUBLICATIONS)
       .update({ [PUBLICATION_COLS.NEWSLETTER_SENT_AT]: nowIso })
       .eq(PUBLICATION_COLS.ID, publication.id)
+      .eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.PUBLISHED)
       .is(PUBLICATION_COLS.NEWSLETTER_SENT_AT, null)
       .select('*')
       .maybeSingle();

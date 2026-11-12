@@ -683,17 +683,30 @@ function htmlToBlocks(html: string): Block[] {
 }
 
 /**
- * Accepts parseable HTTP(S) URLs except localhost, 0.0.0.0, and the listed private,
- * loopback, and link-local IPv4 prefixes. Does not resolve DNS or check redirects.
+ * Accepts parseable HTTP(S) URLs except localhost, 0.0.0.0, private IPv4/IPv6 prefixes,
+ * loopbacks, link-local addresses, and cloud metadata IPs.
  */
 function isFetchableUrl(value: string): boolean {
   try {
     const url = new URL(value);
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
-    const host = url.hostname;
-    return !(
+    const rawHost = url.hostname.toLowerCase();
+    const host = rawHost.startsWith('[') && rawHost.endsWith(']') ? rawHost.slice(1, -1) : rawHost;
+
+    if (
       host === 'localhost' ||
       host === '0.0.0.0' ||
+      host === '::' ||
+      host === '::1' ||
+      host.startsWith('::ffff:') ||
+      host.startsWith('fe80:') ||
+      host.startsWith('fc') ||
+      host.startsWith('fd')
+    ) {
+      return false;
+    }
+
+    return !(
       /^127\./.test(host) ||
       /^10\./.test(host) ||
       /^192\.168\./.test(host) ||
@@ -946,10 +959,15 @@ class ArticlePdfBuilder {
 
     if (!isFetchableUrl(url)) return null;
     if (this.imageCache.has(url)) return this.imageCache.get(url) ?? null;
+    if (this.imageCache.size >= 50) {
+      console.warn(`[PDF] Image cache size limit reached (50 images). Skipping: ${url}`);
+      return null;
+    }
 
     try {
       const response = await fetch(url, {
         signal: AbortSignal.timeout(9000),
+        redirect: 'error',
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 CernaBot/1.0',
@@ -962,8 +980,21 @@ class ArticlePdfBuilder {
         return null;
       }
 
+      const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
+      if (contentLength > 5 * 1024 * 1024) {
+        console.warn(`[PDF] Image exceeded 5MB size limit (${contentLength} bytes): ${url}`);
+        this.imageCache.set(url, null);
+        return null;
+      }
+
       const contentType = (response.headers.get('content-type') || '').toLowerCase();
-      const bytes = new Uint8Array(await response.arrayBuffer());
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > 5 * 1024 * 1024) {
+        console.warn(`[PDF] Image payload exceeded 5MB limit (${buffer.byteLength} bytes): ${url}`);
+        this.imageCache.set(url, null);
+        return null;
+      }
+      const bytes = new Uint8Array(buffer);
 
       const sigPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e;
       const sigJpeg = bytes[0] === 0xff && bytes[1] === 0xd8;

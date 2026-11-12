@@ -36,6 +36,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'send_failed' }, { status: 500 });
     }
 
+    const contentLength = parseInt(request.headers.get('content-length') || '0', 10);
+    if (contentLength > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'file_too_large' }, { status: 413 });
+    }
+
     const formData = await request.formData();
 
     // 1. Silent Honeypot: If the hidden 'website' field is populated, trap spam bots silently.

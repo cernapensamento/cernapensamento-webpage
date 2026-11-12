@@ -311,6 +311,10 @@ export interface GetPublicationCardsOptions {
   lang?: string;
 }
 
+function sanitizeSearchQuery(term: string): string {
+  return term.replace(/[,().%*"\\]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 /**
  * Fetch lightweight cards without full content, newest creation time first.
  * Defaults to 20 published items at zero-based offset 0. Filters can restrict type,
@@ -389,7 +393,7 @@ export async function getPublicationCards(
       query = query.eq(PUBLICATION_COLS.IS_PINNED, options.isPinned);
     }
     if (options?.searchQuery) {
-      const q = options.searchQuery.trim();
+      const q = sanitizeSearchQuery(options.searchQuery);
       if (q) {
         query = query.or(`title->>gl.ilike.%${q}%,title->>es.ilike.%${q}%,subtitle->>gl.ilike.%${q}%,subtitle->>es.ilike.%${q}%`);
       }
@@ -422,7 +426,7 @@ export async function getPublicationCards(
           legQuery = legQuery.eq('fijado', options.isPinned);
         }
         if (options?.searchQuery) {
-          const q = options.searchQuery.trim();
+          const q = sanitizeSearchQuery(options.searchQuery);
           if (q) {
             legQuery = legQuery.or(`titulo_gl.ilike.%${q}%,titulo_es.ilike.%${q}%,subtitulo_gl.ilike.%${q}%,subtitulo_es.ilike.%${q}%`);
           }

@@ -256,6 +256,8 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
                               <PinArticleButton id={articulo.id} isPinned={articulo.is_pinned || false} />
                             )}
                             {filtro !== 'para_aprobar' && (
+                              canReview || articulo.status !== PUBLICATION_STATUSES.PUBLISHED
+                            ) && (
                               <DeleteArticleButton id={articulo.id} titulo={titulo} />
                             )}
                           </div>

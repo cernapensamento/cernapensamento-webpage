@@ -90,7 +90,7 @@ describe('Markdown API Route (/api/markdown)', () => {
     ['https://example.org/a\\b', 'https://example.org/a%5Cb'],
   ])('preserves the complete link destination %s', async (href, expected) => {
     vi.mocked(getPublicationBySlug).mockResolvedValue({
-      slug: 'links', title: { gl: 'Links' }, content: { gl: `<p><a href="${href}"><strong>Read more</strong></a></p>` },
+      slug: 'links', status: 'published', title: { gl: 'Links' }, content: { gl: `<p><a href="${href}"><strong>Read more</strong></a></p>` },
     } as unknown as PublicationDetail);
     const response = await GET(new NextRequest('https://cernapensamento.org/api/markdown?type=article&slug=links&lang=gl'));
     const markdown = await response.text();

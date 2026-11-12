@@ -1,7 +1,21 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { USER_ROLES } from '@/lib/db/schema';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+const MAX_TITLE_LENGTH = 500;
+const MAX_SUBTITLE_LENGTH = 1000;
+const MAX_HTML_LENGTH = 150000;
+const ALLOWED_WRITER_ROLES = [
+  USER_ROLES.GUEST,
+  USER_ROLES.MEMBER,
+  USER_ROLES.FOUNDER,
+  USER_ROLES.ADMIN,
+  'escritor',
+  'admin',
+];
 
 const extractSection = (text: string, sectionMarker: string, nextMarker?: string) => {
   const startIndex = text.indexOf(sectionMarker);
@@ -13,10 +27,26 @@ const extractSection = (text: string, sectionMarker: string, nextMarker?: string
 
 export async function POST(req: Request) {
   try {
+    const { user, role } = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Autenticación requerida' }, { status: 401 });
+    }
+    if (!role || !ALLOWED_WRITER_ROLES.includes(role)) {
+      return NextResponse.json({ error: 'Permisos insuficientes para traducir' }, { status: 403 });
+    }
+
     const { title, subtitle, htmlContent, targetLanguage } = await req.json();
 
     if (!title && !subtitle && !htmlContent) {
       return NextResponse.json({ error: 'Missing content to translate' }, { status: 400 });
+    }
+
+    if (
+      (title && typeof title === 'string' && title.length > MAX_TITLE_LENGTH) ||
+      (subtitle && typeof subtitle === 'string' && subtitle.length > MAX_SUBTITLE_LENGTH) ||
+      (htmlContent && typeof htmlContent === 'string' && htmlContent.length > MAX_HTML_LENGTH)
+    ) {
+      return NextResponse.json({ error: 'Payload exceeds allowed size limits' }, { status: 413 });
     }
     
     if (!process.env.GEMINI_API_KEY) {
@@ -68,7 +98,7 @@ You MUST return the translated content using the EXACT SAME separators:
     const isRateLimit = errorStatus === 429 || errorMessage.includes('429') || errorMessage.includes('Quota exceeded');
     const isOverloaded = errorStatus === 503 || errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand');
     return NextResponse.json(
-      { error: 'Failed to translate', details: error instanceof Error ? error.message : String(error) },
+      { error: 'Failed to translate' },
       { status: isRateLimit ? 429 : (isOverloaded ? 503 : 500) }
     );
   }

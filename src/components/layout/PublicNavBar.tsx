@@ -12,6 +12,7 @@ import { getDictionaryClient } from '@/dictionaries/client';
 import { SITE_NAME } from '@/lib/constants';
 import { USER_ROLES } from '@/lib/db/schema';
 import { handleSignOut } from '@/actions/auth';
+import { clearClientDrafts } from '@/lib/editor/draftStorage';
 
 interface DropdownItem {
   title: string;
@@ -541,7 +542,7 @@ export default function PublicNavBar() {
 
                   {/* Divider and Logout */}
                   <div className="border-t border-lines/80 pt-1.5 px-2">
-                    <form action={handleSignOut} className="w-full">
+                    <form action={handleSignOut} onSubmit={clearClientDrafts} className="w-full">
                       <button
                         type="submit"
                         className="group w-full text-left px-3 py-2 text-sm font-sans flex items-center gap-3 text-charcoal/70 hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 cursor-pointer rounded-sm"
@@ -791,7 +792,7 @@ export default function PublicNavBar() {
                     </Link>
                   )}
 
-                  <form action={handleSignOut} className="pt-2">
+                  <form action={handleSignOut} onSubmit={clearClientDrafts} className="pt-2">
                     <button
                       type="submit"
                       className="w-full text-left py-2 text-sm font-sans flex items-center justify-between text-charcoal/60 hover:text-red-500 cursor-pointer"

@@ -8,6 +8,7 @@ import { useRouter, useParams } from 'next/navigation';
 import PasswordForm from '@/components/forms/PasswordForm';
 import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 import { handleSignOut } from '@/actions/auth';
+import { clearClientDrafts } from '@/lib/editor/draftStorage';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 import { DB_TABLES, USER_COLS, USER_ROLES } from '@/lib/db/schema';
@@ -289,7 +290,7 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
                 {!loading && <span className="material-symbols-outlined text-[14px] transition-transform duration-500 group-hover:translate-x-1">arrow_forward</span>}
               </span>
             </button>
-            <form action={handleSignOut} className="w-full sm:w-auto">
+            <form action={handleSignOut} onSubmit={clearClientDrafts} className="w-full sm:w-auto">
               <button
                 type="submit"
                 className="flex items-center justify-center gap-3 py-3 px-5 bg-transparent border border-lines/60 text-charcoal/60 hover:border-red-500/40 dark:hover:border-red-400/30 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 dark:hover:bg-red-500/15 transition-all duration-300 group w-full cursor-pointer shrink-0 rounded-sm font-medium"
