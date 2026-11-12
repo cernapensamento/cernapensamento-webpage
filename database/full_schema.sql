@@ -88,6 +88,36 @@ CREATE TYPE "public"."user_role" AS ENUM (
 ALTER TYPE "public"."user_role" OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."set_publication_published_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  IF NEW.status = 'published'::public.publication_status THEN
+    IF TG_OP = 'INSERT' AND NEW.published_at IS NULL THEN
+      NEW.published_at := timezone('utc'::text, now());
+    ELSIF TG_OP = 'UPDATE' THEN
+      IF OLD.status IS DISTINCT FROM 'published'::public.publication_status AND NEW.published_at IS NULL THEN
+        NEW.published_at := timezone('utc'::text, now());
+      ELSIF OLD.status = 'published'::public.publication_status THEN
+        NEW.published_at := COALESCE(OLD.published_at, NEW.published_at, timezone('utc'::text, now()));
+      END IF;
+    END IF;
+  ELSIF NEW.status IN ('draft'::public.publication_status, 'in_review'::public.publication_status) THEN
+    IF TG_OP = 'UPDATE' AND OLD.status = 'published'::public.publication_status THEN
+      NEW.published_at := NULL;
+    ELSIF TG_OP = 'INSERT' THEN
+      NEW.published_at := NULL;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."set_publication_published_at"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."check_publication_quotas"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -229,7 +259,7 @@ BEGIN
     ),
     NEW.raw_user_meta_data ->> 'avatar_url',
     'reader'::public.user_role,
-    TRUE
+    FALSE
   );
   RETURN NEW;
 END;
@@ -329,6 +359,7 @@ CREATE TABLE IF NOT EXISTS "public"."publications" (
     "title" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "subtitle" "jsonb" DEFAULT '{}'::"jsonb",
     "content" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "published_at" timestamp with time zone,
     "newsletter_sent_at" timestamp with time zone,
     CONSTRAINT "publications_content_bilingual_check" CHECK ((("content" ? 'gl'::"text") AND ("content" ? 'es'::"text") AND ("length"(TRIM(BOTH FROM ("content" ->> 'gl'::"text"))) > 0) AND ("length"(TRIM(BOTH FROM ("content" ->> 'es'::"text"))) > 0))),
     CONSTRAINT "publications_original_language_check" CHECK (("original_language" = ANY (ARRAY['gl'::"text", 'es'::"text"]))),
@@ -365,7 +396,7 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
     "full_name" "text" NOT NULL,
     "bio" "jsonb" DEFAULT '{}'::"jsonb",
     "avatar_url" "text",
-    "newsletter_subscribed" boolean DEFAULT true,
+    "newsletter_subscribed" boolean DEFAULT false,
     "role" "public"."user_role" DEFAULT 'reader'::"public"."user_role",
     "slug" "text"
 );
@@ -446,9 +477,13 @@ CREATE INDEX "idx_publications_author_id" ON "public"."publications" USING "btre
 
 CREATE INDEX "idx_publications_status_created" ON "public"."publications" USING "btree" ("status", "created_at" DESC);
 
+CREATE INDEX "idx_publications_status_published_at" ON "public"."publications" USING "btree" ("status", "published_at" DESC NULLS LAST, "created_at" DESC);
+
 
 
 CREATE OR REPLACE TRIGGER "before_insert_publication_quota" BEFORE INSERT ON "public"."publications" FOR EACH ROW EXECUTE FUNCTION "public"."check_publication_quotas"();
+
+CREATE OR REPLACE TRIGGER "set_publication_published_at_trigger" BEFORE INSERT OR UPDATE ON "public"."publications" FOR EACH ROW EXECUTE FUNCTION "public"."set_publication_published_at"();
 
 
 
