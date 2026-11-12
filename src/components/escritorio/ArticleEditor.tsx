@@ -27,7 +27,7 @@ import glDict from '@/dictionaries/gl.json';
 import { createClient } from '@/lib/supabase/client';
 import TagManager from '@/components/escritorio/TagManager';
 import type { LocalizedString } from '@/lib/db/types';
-import { DB_TABLES, USER_COLS, USER_ROLES, PUBLICATION_STATUSES, PUBLICATION_TYPES } from '@/lib/db/schema';
+import { DB_TABLES, USER_COLS, USER_ROLES, PUBLICATION_STATUSES, PUBLICATION_TYPES, EDITOR_ACTIONS, canPublishDirectly, type EditorAction } from '@/lib/db/schema';
 import {
   uploadStorageImage,
   removeStorageImages,
@@ -53,6 +53,7 @@ export interface ArticleData {
     status?: string;
     type?: string;
     original_language?: string;
+    published_at?: string | null;
     // Backwards compatibility aliases
     titulo_gl?: string;
     titulo_es?: string;
@@ -68,7 +69,7 @@ export interface ArticleData {
     idioma_original?: string;
 }
 
-export type EditorAction = typeof PUBLICATION_STATUSES.DRAFT | 'publish' | 'submit_approval' | 'approve' | 'reject' | 'revoke_approval';
+export { EDITOR_ACTIONS, type EditorAction };
 
 export type OnSaveResult = boolean | { success: boolean } | void;
 
@@ -694,6 +695,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 tags: tematicas,
                 type: tipo,
                 original_language: idiomaOriginal,
+                published_at: initialData?.published_at,
                 titulo_gl: tituloGl,
                 titulo_es: tituloEs,
                 subtitulo_gl: subtituloGl,
@@ -763,7 +765,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             <button type="button" className="px-6 py-2 font-sans text-xs uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors cursor-pointer" onClick={() => setShowPublishModal(false)}>
                                 Cancelar
                             </button>
-                            <button type="button" className="px-6 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('publish')}>
+                            <button type="button" className="px-6 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(EDITOR_ACTIONS.PUBLISH)}>
                                 {isPublishing ? (mode === 'create' ? dict.publishing : dict.saving) : dict.publish}
                             </button>
                         </div>
@@ -846,7 +848,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         <div className="flex items-center gap-2 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
                             <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50 italic hidden xl:block shrink-0"></span>
                             {(() => {
-                                const isDirectPublisher = userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.FOUNDER || userRole === 'escritor';
+                                const isDirectPublisher = canPublishDirectly(userRole);
                                 const isPending = initialData?.status === PUBLICATION_STATUSES.IN_REVIEW || initialData?.estado === ARTICLE_STATES.PENDING;
                                 const isPublished = initialData?.status === PUBLICATION_STATUSES.PUBLISHED || initialData?.estado === ARTICLE_STATES.PUBLISHED;
                                 const canApprove = isDirectPublisher;
@@ -855,11 +857,11 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                 if (isPending && canApprove && mode === 'edit') {
                                     return (
                                         <>
-                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('reject')}>
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(EDITOR_ACTIONS.REJECT)}>
                                                 <span className="hidden sm:inline">{dict.reject || 'Rechazar'}</span>
                                                 <span className="sm:hidden">{dict.reject || 'Rechazar'}</span>
                                             </button>
-                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-gold text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('approve')}>
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-gold text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(EDITOR_ACTIONS.APPROVE)}>
                                                 {dict.approveAndPublish || 'Aprobar y Publicar'}
                                             </button>
                                         </>
@@ -868,7 +870,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
 
                                 if (isPending && isReviewRole && mode === 'edit') {
                                     return (
-                                        <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit('revoke_approval')}>
+                                        <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(EDITOR_ACTIONS.REVOKE_APPROVAL)}>
                                             <span className="hidden sm:inline">{dict.revokeApproval || 'Volver a Borrador'}</span>
                                             <span className="sm:hidden">{dict.revokeApproval || 'Borrador'}</span>
                                         </button>
@@ -878,19 +880,19 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                 return (
                                     <>
                                         {mode === 'edit' && isPublished ? (
-                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(PUBLICATION_STATUSES.DRAFT)}>
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(EDITOR_ACTIONS.DRAFT)}>
                                                 <span className="hidden sm:inline">{dict.unpublish || 'Despublicar'}</span>
                                                 <span className="sm:hidden">{dict.unpublish || 'Despublicar'}</span>
                                             </button>
                                         ) : (
-                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(PUBLICATION_STATUSES.DRAFT)}>
+                                            <button type="button" className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50" disabled={isPublishing} onClick={() => handleSubmit(EDITOR_ACTIONS.DRAFT)}>
                                                 <span className="hidden sm:inline">{dict.saveDraft || 'Guardar Borrador'}</span>
                                                 <span className="sm:hidden">{dict.saveDraft ? dict.saveDraft.replace('Guardar ', '') : 'Borrador'}</span>
                                             </button>
                                         )}
                                         <button type="button" className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer" onClick={() => {
                                             if (isReviewRole) {
-                                                handleSubmit('submit_approval');
+                                                handleSubmit(EDITOR_ACTIONS.SUBMIT_APPROVAL);
                                             } else {
                                                 setShowPublishModal(true); // For normal publish
                                             }

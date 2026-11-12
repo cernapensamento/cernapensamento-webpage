@@ -70,7 +70,7 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
     (item.subtitle as Record<string, string>)?.es ||
     '';
   const category = getLocalizedCategory(item, lang, dict?.documentTypes);
-  const rawDate = item.created_at;
+  const rawDate = item.published_at || item.created_at;
   const hasCover = Boolean(item.cover_image_url);
   const byLabel = dict?.articles?.by || 'Por';
 

@@ -7,7 +7,11 @@ import { getPublicationBySlug } from '@/lib/db/queries/publications';
 import {
   USER_ROLES,
   PUBLICATION_STATUSES,
+  isReaderRole,
+  canPublishDirectly,
 } from '@/lib/db/schema';
+import { getDictionary } from '@/dictionaries';
+import type { Locale } from '@/i18n-config';
 
 interface Props {
   params: Promise<{ slug: string; lang: string }>;
@@ -18,7 +22,7 @@ export default async function EditarArticuloPage({ params }: Props) {
     params,
     getAuthenticatedUser(),
   ]);
-  const { slug, lang = 'es' } = resolvedParams;
+  const { slug, lang = 'gl' } = resolvedParams;
 
   if (!user || !profile) {
     redirect(`/${lang}/login`);
@@ -27,28 +31,36 @@ export default async function EditarArticuloPage({ params }: Props) {
   const roleStr = String(profile.role || profile.rol || USER_ROLES.READER);
 
   // Block reader role from writer desk
-  if (roleStr === USER_ROLES.READER || roleStr === 'usuario') {
+  if (isReaderRole(roleStr)) {
     redirect(`/${lang}/escritorio/perfil`);
   }
 
   const supabase = await createClient();
-  const publication = await getPublicationBySlug(slug, { client: supabase });
+  const [publication, dict] = await Promise.all([
+    getPublicationBySlug(slug, { client: supabase }),
+    getDictionary(lang as Locale),
+  ]);
 
   if (!publication) {
     notFound();
   }
 
-  // Verify that user is author, admin, or founder reviewing pending submission
+  // Verify that user is author, or privileged reviewer (admin/founder)
   const isAuthor = publication.author.id === user.id;
-  const isAdmin = roleStr === USER_ROLES.ADMIN || roleStr === 'admin';
+  const isPrivileged = canPublishDirectly(roleStr);
   const isReviewer =
-    (roleStr === USER_ROLES.FOUNDER || roleStr === 'escritor') &&
-    (publication.status === PUBLICATION_STATUSES.IN_REVIEW ||
-      (publication as unknown as { estado?: string }).estado === 'pendiente_aprobacion');
+    isPrivileged && publication.status === PUBLICATION_STATUSES.IN_REVIEW;
 
-  if (!isAuthor && !isAdmin && !isReviewer) {
+  if (!isAuthor && !isPrivileged && !isReviewer) {
     redirect(`/${lang}/escritorio`);
   }
 
-  return <EditarArticuloForm publication={publication} userRole={roleStr} />;
+  return (
+    <EditarArticuloForm
+      publication={publication}
+      userRole={roleStr}
+      lang={lang}
+      dict={dict.articleEditor}
+    />
+  );
 }

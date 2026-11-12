@@ -130,6 +130,40 @@ export async function setPublicationTags(
 }
 
 /**
+ * Synchronize publication tags by slug list.
+ * Resolves tag slugs to tag IDs and atomically syncs links via `setPublicationTags`.
+ */
+export async function syncPublicationTagsBySlugs(
+  publicationId: string,
+  tagSlugs: string[],
+  client?: SupabaseClient
+): Promise<{ success: boolean; error: PostgrestError | null }> {
+  try {
+    const supabase = await resolveClient(client);
+
+    if (!tagSlugs || tagSlugs.length === 0) {
+      return await setPublicationTags(publicationId, [], supabase);
+    }
+
+    const { data: tagRows, error: selectError } = await supabase
+      .from(DB_TABLES.TAGS)
+      .select(TAG_COLS.ID)
+      .in(TAG_COLS.SLUG, tagSlugs);
+
+    if (selectError) {
+      console.warn('[DAL:tags] Failed to resolve tag slugs:', formatDbError(selectError));
+      return { success: false, error: selectError };
+    }
+
+    const tagIds = tagRows?.map((t) => t.id) || [];
+    return await setPublicationTags(publicationId, tagIds, supabase);
+  } catch (err) {
+    console.warn('[DAL:tags] Unexpected error syncing tags by slugs:', formatDbError(err));
+    return { success: false, error: err as PostgrestError };
+  }
+}
+
+/**
  * Fetch distinct publication IDs matching any supplied tag slug.
  * Empty input, no matches, query errors, and caught exceptions return an empty
  * array. Uses the supplied client or a request-bound server client.

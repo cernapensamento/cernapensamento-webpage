@@ -28,6 +28,7 @@ export interface ArticleData {
   tematicas?: string[] | null;
   created_at?: string;
   updated_at?: string;
+  published_at?: string | null;
   creado_en?: string;
   actualizado_en?: string;
   publicado_en?: string | null;
@@ -448,7 +449,7 @@ export default function AuthorProfileView({
                   const subtitulo = featuredArticle.subtitle
                     ? (featuredArticle.subtitle[lang] || featuredArticle.subtitle.gl || featuredArticle.subtitle.es || null)
                     : (lang === 'es' ? featuredArticle.subtitulo_es : featuredArticle.subtitulo_gl) || featuredArticle.subtitulo_gl || featuredArticle.subtitulo_es || null;
-                  const dateStr = featuredArticle.created_at || featuredArticle.creado_en || featuredArticle.updated_at || featuredArticle.actualizado_en;
+                  const dateStr = featuredArticle.published_at || featuredArticle.publicado_en || featuredArticle.created_at || featuredArticle.creado_en || featuredArticle.updated_at || featuredArticle.actualizado_en;
                   const imageUrl = featuredArticle.cover_image_url || featuredArticle.imagen_url;
                   const articleTopics = featuredArticle.tags ? featuredArticle.tags.map((t) => t.slug) : (featuredArticle.tematicas || []);
                   const rawType = featuredArticle.type || featuredArticle.tipo || PUBLICATION_TYPES.ARTICLE;
@@ -558,7 +559,7 @@ export default function AuthorProfileView({
                     const subtitulo = articulo.subtitle
                       ? (articulo.subtitle[lang] || articulo.subtitle.gl || articulo.subtitle.es || null)
                       : (lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl) || articulo.subtitulo_gl || articulo.subtitulo_es || null;
-                    const dateStr = articulo.created_at || articulo.creado_en || articulo.updated_at || articulo.actualizado_en;
+                    const dateStr = articulo.published_at || articulo.publicado_en || articulo.created_at || articulo.creado_en || articulo.updated_at || articulo.actualizado_en;
                     const imageUrl = articulo.cover_image_url || articulo.imagen_url;
                     const articleTopics = articulo.tags ? articulo.tags.map((t) => t.slug) : (articulo.tematicas || []);
                     const rawType = articulo.type || articulo.tipo || PUBLICATION_TYPES.ARTICLE;

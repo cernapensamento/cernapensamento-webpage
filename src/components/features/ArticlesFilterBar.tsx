@@ -2,7 +2,11 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { PUBLICATION_TYPES, type PublicationTypeValue } from '@/lib/db/schema';
+import {
+  PUBLICATION_TYPES,
+  parsePublicationType,
+  type PublicationTypeValue,
+} from '@/lib/db/schema';
 
 const PUBLICATION_TYPE_OPTIONS: PublicationTypeValue[] = [
   PUBLICATION_TYPES.ESSAY,
@@ -12,18 +16,6 @@ const PUBLICATION_TYPE_OPTIONS: PublicationTypeValue[] = [
   PUBLICATION_TYPES.INTERVIEW,
   PUBLICATION_TYPES.REPORTAGE,
 ];
-
-function normalizePublicationType(raw: string | null | undefined): string {
-  if (!raw) return '';
-  const val = raw.toLowerCase().trim();
-  if (val === 'artigo' || val === 'articulo' || val === PUBLICATION_TYPES.ARTICLE) return PUBLICATION_TYPES.ARTICLE;
-  if (val === 'ensaio' || val === 'ensayo' || val === PUBLICATION_TYPES.ESSAY) return PUBLICATION_TYPES.ESSAY;
-  if (val === 'poesia' || val === 'poesía' || val === PUBLICATION_TYPES.POETRY) return PUBLICATION_TYPES.POETRY;
-  if (val === 'columna' || val === 'narrativa' || val === PUBLICATION_TYPES.COLUMN) return PUBLICATION_TYPES.COLUMN;
-  if (val === 'entrevista' || val === PUBLICATION_TYPES.INTERVIEW) return PUBLICATION_TYPES.INTERVIEW;
-  if (val === 'reportaxe' || val === 'reportaje' || val === PUBLICATION_TYPES.REPORTAGE) return PUBLICATION_TYPES.REPORTAGE;
-  return val;
-}
 
 interface ArticlesFilterBarProps {
   availableTags: { slug: string; name: string }[];
@@ -49,7 +41,7 @@ export default function ArticlesFilterBar({
   const currentQuery = searchParams.get('q') || '';
   const currentTags = searchParams.getAll('tema');
   const currentTagsSet = new Set(currentTags);
-  const currentType = normalizePublicationType(searchParams.get('tipo') || searchParams.get('type'));
+  const currentType = parsePublicationType(searchParams.get('tipo') || searchParams.get('type')) || '';
 
   const [query, setQuery] = useState(currentQuery);
   const createQueryStringRef = useRef<((name: string, value: string) => string) | null>(null);
@@ -130,7 +122,7 @@ export default function ArticlesFilterBar({
       {/* 1. Publication Type Filter Row */}
       <div className="flex flex-col items-center gap-3">
         <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-charcoal/50 font-semibold select-none">
-          {dict.filterByType || 'Tipo de publicación'}
+          {dict.filterByType}
         </span>
         <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
           <button
@@ -142,7 +134,7 @@ export default function ArticlesFilterBar({
                 : 'border-lines text-charcoal/70 bg-surface/50 hover:border-gold/60 hover:text-charcoal'
             }`}
           >
-            {dict.all || 'Todos'}
+            {dict.all}
           </button>
           {PUBLICATION_TYPE_OPTIONS.map((tKey) => {
             const label = documentTypes[tKey] || tKey;
@@ -168,7 +160,7 @@ export default function ArticlesFilterBar({
       {/* 2. Topic Taxonomy Filter Row */}
       <div className="flex flex-col items-center gap-3 pt-2 border-t border-lines/50">
         <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-charcoal/50 font-semibold select-none">
-          {dict.filterByTopic || 'Temática'}
+          {dict.filterByTopic}
         </span>
         <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
           <button
@@ -180,7 +172,7 @@ export default function ArticlesFilterBar({
                 : 'border-lines text-charcoal/70 bg-surface/50 hover:border-charcoal hover:text-charcoal'
             }`}
           >
-            {dict.all || 'Todas'}
+            {dict.all}
           </button>
           {availableTags.map((tag) => {
             const isSelected = currentTagsSet.has(tag.slug);

@@ -419,7 +419,7 @@
     "draft": "Borrador",
     "edit": "Editar",
     "noArticles": "Aínda non tes artigos. Crea a túa primeira publicación.",
-    "pending": "Pendientes",
+    "pending": "Pendentes",
     "toApprove": "Para Aprobar",
     "noPendingArticles": "Non hai publicacións pendentes de aprobación."
   },
@@ -535,7 +535,16 @@
       "title": "Pé de foto",
       "description": "Opcional: Engade unha lenda ou pé de foto para esta imaxe:",
       "placeholder": "Ex: Retrato do autor en Santiago..."
-    }
+    },
+    "unauthorized": "Non autorizado: sesión requirida.",
+    "insufficientRole": "Permisos insuficientes para xestionar publicacións.",
+    "onlyPrivilegedCanPublish": "Permisos insuficientes: só os fundadores e administradores poden publicar directamente.",
+    "publicationNotFound": "Publicación non atopada.",
+    "notAuthorOrPrivileged": "Non tes permiso para editar este artigo.",
+    "createDbError": "Erro ao crear a publicación na base de datos.",
+    "serverError": "Erro inesperado no servidor.",
+    "fetchMoreError": "Erro ao cargar máis publicacións.",
+    "statusUpdateError": "Erro ao actualizar o estado da publicación."
   },
   "contactForm": {
     "fullName": "Nome Completo",

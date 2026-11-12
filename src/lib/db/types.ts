@@ -48,6 +48,7 @@ export interface PublicationRow {
   content: LocalizedString;
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
   newsletter_sent_at?: string | null;
 }
 
@@ -115,6 +116,7 @@ export interface PublicationCardItem {
   is_pinned: boolean;
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
   author: AuthorSummary;
   tags: TagItem[];
 }
@@ -135,6 +137,7 @@ export interface PublicationDetail {
   is_pinned: boolean;
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
   author: AuthorSummary;
   tags: TagItem[];
 }

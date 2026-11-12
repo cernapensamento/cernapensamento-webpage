@@ -25,21 +25,23 @@ interface RouteContext {
  * attachment and shared-cache headers. Parameter resolution errors propagate.
  */
 export async function GET(request: Request, { params }: RouteContext) {
+  let lang: Locale = 'gl';
   try {
     const { slug } = await params;
     const { searchParams } = new URL(request.url);
-    const lang: Locale = searchParams.get('lang') === 'es' ? 'es' : 'gl';
+    lang = searchParams.get('lang') === 'es' ? 'es' : 'gl';
 
-    const publication = await getPublicationBySlug(slug, { lang });
+    const [publication, dict] = await Promise.all([
+      getPublicationBySlug(slug, { lang }),
+      getDictionary(lang),
+    ]);
 
     if (!publication || publication.status !== PUBLICATION_STATUSES.PUBLISHED) {
-      return new Response('Artigo non atopado', {
+      return new Response(lang === 'es' ? 'Artículo no encontrado' : 'Artigo non atopado', {
         status: 404,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
     }
-
-    const dict = await getDictionary(lang);
 
     const title = publication.title[lang] || publication.title.gl || publication.title.es;
     const subtitle = publication.subtitle
@@ -48,7 +50,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     const content =
       publication.content[lang] || publication.content.gl || publication.content.es || '';
 
-    const date = formatArticleDate(publication.created_at, lang, { format: 'long' });
+    const date = formatArticleDate(publication.published_at || publication.created_at, lang, { format: 'long' });
 
     const dbBio = publication.author.bio
       ? typeof publication.author.bio === 'object'
@@ -86,7 +88,8 @@ export async function GET(request: Request, { params }: RouteContext) {
     });
   } catch (error) {
     console.error('Error generating article PDF:', error);
-    return new Response('Non foi posible xerar o PDF', {
+    const errorMsg = lang === 'es' ? 'No fue posible generar el PDF' : 'Non foi posible xerar o PDF';
+    return new Response(errorMsg, {
       status: 500,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });

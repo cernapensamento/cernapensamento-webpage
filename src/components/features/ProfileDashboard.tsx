@@ -35,7 +35,7 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
   const [nombre, setNombre] = useState(profile?.full_name || profile?.nombre || '');
   const [bio, setBio] = useState(currentBio);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
-  const [recibirNewsletter, setRecibirNewsletter] = useState(profile?.newsletter_subscribed ?? profile?.recibir_newsletter ?? true);
+  const [recibirNewsletter, setRecibirNewsletter] = useState(profile?.newsletter_subscribed ?? profile?.recibir_newsletter ?? false);
   const [loading, setLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState('');
