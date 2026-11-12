@@ -535,7 +535,16 @@
       "title": "Pie de foto",
       "description": "Opcional: Añade una leyenda o pie de foto para esta imagen:",
       "placeholder": "Ej: Retrato del autor en Santiago..."
-    }
+    },
+    "unauthorized": "No autorizado: sesión requerida.",
+    "insufficientRole": "Permisos insuficientes para gestionar publicaciones.",
+    "onlyPrivilegedCanPublish": "Permisos insuficientes: solo los fundadores y administradores pueden publicar directamente.",
+    "publicationNotFound": "Publicación no encontrada.",
+    "notAuthorOrPrivileged": "No tienes permiso para editar este artículo.",
+    "createDbError": "Error al crear la publicación en la base de datos.",
+    "serverError": "Error inesperado en el servidor.",
+    "fetchMoreError": "Error al cargar más publicaciones.",
+    "statusUpdateError": "Error al actualizar el estado de la publicación."
   },
   "contactForm": {
     "fullName": "Nombre Completo",
