@@ -26,6 +26,7 @@ import { useToast, useConfirm, usePrompt } from '@/components/ui/FeedbackProvide
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 import { createClient } from '@/lib/supabase/client';
+import { i18n } from '@/i18n-config';
 import TagManager from '@/components/escritorio/TagManager';
 import type { LocalizedString } from '@/lib/db/types';
 import { DB_TABLES, USER_COLS, USER_ROLES, PUBLICATION_STATUSES, PUBLICATION_TYPES, EDITOR_ACTIONS, canPublishDirectly, type EditorAction } from '@/lib/db/schema';
@@ -914,22 +915,27 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     <div className="max-w-[800px] mx-auto py-8 px-8 editor-container">
                         <div className="flex flex-wrap items-center justify-between mb-8 pb-4 border-b border-lines">
                             <div className="flex gap-4">
-                                <button type="button"                                     onClick={() => { 
-                                        setActiveLang('gl'); 
-                                        setTimeout(() => editor?.commands.setContent(contenidoGl), 0);
-                                    }}
-                                    className={`font-sans text-xs uppercase tracking-widest font-bold pb-1 border-b-2 transition-colors ${activeLang === 'gl' ? 'border-charcoal text-charcoal' : 'border-transparent text-charcoal/40 hover:text-charcoal/70'}`}
-                                >
-                                    Galego
-                                </button>
-                                <button type="button"                                     onClick={() => { 
-                                        setActiveLang('es'); 
-                                        setTimeout(() => editor?.commands.setContent(contenidoEs), 0);
-                                    }}
-                                    className={`font-sans text-xs uppercase tracking-widest font-bold pb-1 border-b-2 transition-colors ${activeLang === 'es' ? 'border-charcoal text-charcoal' : 'border-transparent text-charcoal/40 hover:text-charcoal/70'}`}
-                                >
-                                    Castellano
-                                </button>
+                                {i18n.locales.map((loc) => {
+                                    const label = (i18n.localeLabels as Record<string, string>)[loc] || loc.toUpperCase();
+                                    const targetContent = loc === 'gl' ? contenidoGl : contenidoEs;
+                                    return (
+                                        <button
+                                            key={loc}
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveLang(loc as 'gl' | 'es');
+                                                setTimeout(() => editor?.commands.setContent(targetContent), 0);
+                                            }}
+                                            className={`font-sans text-xs uppercase tracking-widest font-bold pb-1 border-b-2 transition-colors ${
+                                                activeLang === loc
+                                                    ? 'border-charcoal text-charcoal'
+                                                    : 'border-transparent text-charcoal/40 hover:text-charcoal/70'
+                                            }`}
+                                        >
+                                            {label}
+                                        </button>
+                                    );
+                                })}
                             </div>
                             <button type="button"                                 onClick={handleTranslate}
                                 disabled={isTranslating}
