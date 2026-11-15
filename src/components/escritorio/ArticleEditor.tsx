@@ -19,8 +19,15 @@ import TableControls from '@/components/escritorio/TableControls';
 import { renderMathInHtml } from '@/lib/editor/renderMath';
 import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
 import { sanitizeArticleHtml } from '@/lib/editor/sanitizeArticleHtml';
-import { getHeadingsFromHtml, generateIndex, stripIndex } from '@/lib/editor/generateIndex';
-import { ArticleIndex } from '@/lib/editor/ArticleIndexExtension';
+import {
+    getHeadingsFromHtml,
+    stripIndex,
+    buildHierarchicalHeadings,
+    stripHeadingNumbering,
+    slugifyHeading,
+} from '@/lib/editor/generateIndex';
+import TableOfContents, { type TableOfContentData } from '@tiptap/extension-table-of-contents';
+import ArticleTableOfContents, { type ArticleTableOfContentsItem } from '@/components/features/ArticleTableOfContents';
 import { useParams } from 'next/navigation';
 import { useToast, useConfirm, usePrompt } from '@/components/ui/FeedbackProvider';
 import esDict from '@/dictionaries/es.json';
@@ -44,6 +51,42 @@ const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
     target.style.height = target.scrollHeight + 'px';
 };
 
+function buildLiveTocItems(
+    tocData: TableOfContentData,
+    fallbackHtml: string
+): ArticleTableOfContentsItem[] {
+    if (tocData.length === 0) {
+        return getHeadingsFromHtml(fallbackHtml);
+    }
+
+    const seen = new Map<string, number>();
+    const entries = tocData
+        .map((item) => {
+            const rawText = item.textContent.replace(/\s+/g, ' ').trim();
+            if (!rawText) return null;
+            const text = stripHeadingNumbering(rawText) || rawText;
+            const baseSlug = slugifyHeading(rawText) || slugifyHeading(text) || item.id;
+            const count = seen.get(baseSlug) ?? 0;
+            seen.set(baseSlug, count + 1);
+            const slug = count === 0 ? baseSlug : `${baseSlug}-${count + 1}`;
+            return {
+                entry: {
+                    level: Math.min(Math.max(item.originalLevel, 1), 3) as 1 | 2 | 3,
+                    text,
+                    slug: slug as ReturnType<typeof slugifyHeading>,
+                },
+                id: item.id,
+            };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+    const hierarchical = buildHierarchicalHeadings(entries.map((e) => e.entry));
+    return hierarchical.map((item, idx) => ({
+        ...item,
+        id: entries[idx]?.id,
+    }));
+}
+
 export interface ArticleData {
     id?: string;
     title?: LocalizedString;
@@ -54,6 +97,7 @@ export interface ArticleData {
     status?: string;
     type?: string;
     original_language?: string;
+    show_index?: boolean;
     published_at?: string | null;
     // Backwards compatibility aliases
     titulo_gl?: string;
@@ -100,8 +144,17 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const [tituloEs, setTituloEs] = useState(initialData?.title?.es || initialData?.titulo_es || '');
     const [subtituloGl, setSubtituloGl] = useState(initialData?.subtitle?.gl || initialData?.subtitulo_gl || '');
     const [subtituloEs, setSubtituloEs] = useState(initialData?.subtitle?.es || initialData?.subtitulo_es || '');
-    const [contenidoGl, setContenidoGl] = useState(initialData?.content?.gl || initialData?.contenido_gl || '');
-    const [contenidoEs, setContenidoEs] = useState(initialData?.content?.es || initialData?.contenido_es || '');
+    const rawInitialGl = initialData?.content?.gl || initialData?.contenido_gl || '';
+    const rawInitialEs = initialData?.content?.es || initialData?.contenido_es || '';
+    const [contenidoGl, setContenidoGl] = useState(stripIndex(rawInitialGl));
+    const [contenidoEs, setContenidoEs] = useState(stripIndex(rawInitialEs));
+    const initialHasLegacyIndex =
+        /data-type="article-index"/i.test(rawInitialGl) ||
+        /data-type="article-index"/i.test(rawInitialEs);
+    const [showIndex, setShowIndex] = useState<boolean>(
+        initialData?.show_index ?? initialHasLegacyIndex
+    );
+    const [tocData, setTocData] = useState<TableOfContentData>([]);
     const [isTranslating, setIsTranslating] = useState(false);
     const origLang = initialData?.original_language || initialData?.idioma_original;
     const [idiomaOriginal, setIdiomaOriginal] = useState((origLang && ['es', 'gl'].includes(origLang)) ? origLang : 'gl');
@@ -143,11 +196,11 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const isInitialized = useRef(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const stateRef = useRef({ tituloGl, tituloEs, subtituloGl, subtituloEs, contenidoGl, contenidoEs, coverImageUrl, tematicas, tipo });
+    const stateRef = useRef({ tituloGl, tituloEs, subtituloGl, subtituloEs, contenidoGl, contenidoEs, coverImageUrl, tematicas, tipo, showIndex });
 
     useEffect(() => {
-        stateRef.current = { tituloGl, tituloEs, subtituloGl, subtituloEs, contenidoGl, contenidoEs, coverImageUrl, tematicas, tipo };
-    }, [tituloGl, tituloEs, subtituloGl, subtituloEs, contenidoGl, contenidoEs, coverImageUrl, tematicas, tipo]);
+        stateRef.current = { tituloGl, tituloEs, subtituloGl, subtituloEs, contenidoGl, contenidoEs, coverImageUrl, tematicas, tipo, showIndex };
+    }, [tituloGl, tituloEs, subtituloGl, subtituloEs, contenidoGl, contenidoEs, coverImageUrl, tematicas, tipo, showIndex]);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -208,9 +261,14 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             CustomTableCell,
             CustomTableHeader,
             MathKit,
-            ArticleIndex,
+            TableOfContents.configure({
+                getId: (textContent) => slugifyHeading(textContent) || 'section',
+                onUpdate: (data) => {
+                    setTocData(data);
+                },
+            }),
         ],
-        content: initialData?.content?.gl || initialData?.contenido_gl || (mode === 'create' ? '<p>La naturaleza del pensamiento contemporáneo exige una pausa deliberada...</p>' : ''),
+        content: stripIndex(rawInitialGl) || (mode === 'create' ? '<p>La naturaleza del pensamiento contemporáneo exige una pausa deliberada...</p>' : ''),
         immediatelyRender: false,
         editorProps: {
             attributes: {
@@ -237,7 +295,8 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     contenidoEs: activeLangRef.current === 'es' ? html : state.contenidoEs,
                     imagen_url: state.coverImageUrl,
                     tematicas: state.tematicas,
-                    tipo: state.tipo
+                    tipo: state.tipo,
+                    show_index: state.showIndex
                 };
                 localStorage.setItem(draftKey, JSON.stringify(draft));
                 setHasUnsavedChanges(true);
@@ -259,13 +318,14 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 contenidoEs: state.contenidoEs,
                 imagen_url: state.coverImageUrl,
                 tematicas: state.tematicas,
-                tipo: state.tipo
+                tipo: state.tipo,
+                show_index: state.showIndex
             };
             localStorage.setItem(draftKey, JSON.stringify(draft));
             setHasUnsavedChanges(true);
         }, 1500);
         return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
-    }, [tituloGl, tituloEs, subtituloGl, subtituloEs, contenidoGl, contenidoEs, coverImageUrl, tematicas, tipo, draftKey, editor]);
+    }, [tituloGl, tituloEs, subtituloGl, subtituloEs, contenidoGl, contenidoEs, coverImageUrl, tematicas, tipo, showIndex, draftKey, editor]);
 
     useEffect(() => {
         if (editor && !isInitialized.current) {
@@ -284,13 +344,16 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             if (parsed.tipo && ARTICLE_TYPES.includes(parsed.tipo)) setTipo(parsed.tipo);
                             if (parsed.imagen_url) setCoverImageUrl(parsed.imagen_url);
                             if (parsed.tematicas) setTematicas(parsed.tematicas);
+                            if (typeof parsed.show_index === 'boolean') setShowIndex(parsed.show_index);
                             if (parsed.contenidoGl) {
-                                setContenidoGl(parsed.contenidoGl);
-                                if (activeLang === 'gl') editor.commands.setContent(parsed.contenidoGl);
+                                const cleanGl = stripIndex(parsed.contenidoGl);
+                                setContenidoGl(cleanGl);
+                                if (activeLang === 'gl') editor.commands.setContent(cleanGl);
                             }
                             if (parsed.contenidoEs) {
-                                setContenidoEs(parsed.contenidoEs);
-                                if (activeLang === 'es') editor.commands.setContent(parsed.contenidoEs);
+                                const cleanEs = stripIndex(parsed.contenidoEs);
+                                setContenidoEs(cleanEs);
+                                if (activeLang === 'es') editor.commands.setContent(cleanEs);
                             }
                             setHasUnsavedChanges(true);
                         }, 0);
@@ -301,7 +364,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 }
             }
             
-            const savedContentGl = initialData?.content?.gl || initialData?.contenido_gl;
+            const savedContentGl = stripIndex(initialData?.content?.gl || initialData?.contenido_gl || '');
             if (savedContentGl) {
                 editor.commands.setContent(savedContentGl);
             }
@@ -490,43 +553,8 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         (editor.chain().focus() as unknown as { insertTable: (opts: { rows: number; cols: number; withHeaderRow?: boolean }) => { run: () => boolean } }).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
     };
 
-    const handleInsertIndex = () => {
-        if (!editor) return;
-        const rawHtml = editor.getHTML();
-        const items = getHeadingsFromHtml(rawHtml);
-        if (!items.length) {
-            toast.warning(dict.noHeadingsFound);
-            return;
-        }
-
-        const editorWithIndex = editor as unknown as { commands?: { insertArticleIndex?: (args: { items: typeof items; lang: string }) => boolean } } | null;
-        if (typeof editorWithIndex?.commands?.insertArticleIndex === 'function') {
-            editorWithIndex.commands.insertArticleIndex({ items, lang: activeLang });
-        } else if (editor.state?.schema?.nodes?.articleIndex) {
-            const { state, view } = editor;
-            let existingPos: number | null = null;
-            let existingSize = 0;
-            state.doc.descendants((node, pos) => {
-                if (node.type.name === 'articleIndex') {
-                    existingPos = pos;
-                    existingSize = node.nodeSize;
-                    return false;
-                }
-            });
-
-            const indexNode = state.schema.nodes.articleIndex.create({ items, lang: activeLang });
-            const tr = state.tr;
-            if (existingPos !== null) {
-                tr.replaceWith(existingPos, existingPos + existingSize, indexNode);
-            } else {
-                tr.insert(0, indexNode);
-            }
-            view.dispatch(tr);
-        } else {
-            const stripped = stripIndex(rawHtml);
-            const indexHtml = generateIndex(stripped, activeLang);
-            editor.commands.setContent(indexHtml + '\n' + stripped);
-        }
+    const toggleShowIndex = () => {
+        setShowIndex((prev) => !prev);
     };
 
     const handleTranslate = async () => {
@@ -597,6 +625,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             setContenidoEs('');
             setCoverImageUrl('');
             setTematicas([]);
+            setShowIndex(false);
             if (editor) {
                 editor.commands.setContent('');
             }
@@ -648,8 +677,8 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
         const userId = currentUser?.id || 'general';
 
         const currentHtml = editor?.getHTML() || '';
-        let finalGl = activeLang === 'gl' ? currentHtml : contenidoGl;
-        let finalEs = activeLang === 'es' ? currentHtml : contenidoEs;
+        let finalGl = stripIndex(activeLang === 'gl' ? currentHtml : contenidoGl);
+        let finalEs = stripIndex(activeLang === 'es' ? currentHtml : contenidoEs);
 
         finalGl = await sanitizeBase64Images(finalGl, userId);
         finalEs = await sanitizeBase64Images(finalEs, userId);
@@ -700,6 +729,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                 tags: tematicas,
                 type: tipo,
                 original_language: idiomaOriginal,
+                show_index: showIndex,
                 published_at: initialData?.published_at,
                 titulo_gl: tituloGl,
                 titulo_es: tituloEs,
@@ -741,6 +771,11 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     };
 
     
+    const previewArticleDict = activeLang === 'es' ? esDict.article : glDict.article;
+    const activeHtml = stripIndex(activeLang === 'gl' ? contenidoGl : contenidoEs);
+    const liveTocItems = showIndex ? buildLiveTocItems(tocData, activeHtml) : [];
+    const previewTocItems = showIndex ? getHeadingsFromHtml(activeHtml) : [];
+
     return (
         <>
             <input 
@@ -844,7 +879,16 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             <div className="h-6 w-[1px] shrink-0 bg-lines mx-1"></div>
                             <button type="button" aria-label="Fórmula Matemática" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Fórmula Matemática (LaTeX)" onClick={insertMath}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>functions</span></button>
                             <button type="button" aria-label="Insertar Táboa" className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${editor?.isActive('table') ? 'bg-lines/30' : ''}`} title="Táboa / Tabla" onClick={insertTable}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>table_chart</span></button>
-                            <button type="button" aria-label="Insertar / Actualizar Índice" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Insertar / Actualizar Índice" onClick={handleInsertIndex}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_numbered</span></button>
+                            <button
+                                type="button"
+                                aria-label={dict.showIndexHint}
+                                aria-pressed={showIndex}
+                                className={`w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer ${showIndex ? 'bg-gold/20 text-gold' : ''}`}
+                                title={dict.showIndexHint}
+                                onClick={toggleShowIndex}
+                            >
+                                <span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>format_list_numbered</span>
+                            </button>
                             <div className="h-6 w-[1px] shrink-0 bg-lines mx-2"></div>
                             <button type="button" aria-label="Limpiar todo" className="w-10 h-10 shrink-0 flex items-center justify-center text-charcoal hover:bg-lines/30 transition-colors cursor-pointer" title="Limpiar Todo" onClick={handleClearAll}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>delete_sweep</span></button>
                             <button type="button" aria-label="Cambiar Imagen de Portada" className="w-10 h-10 shrink-0 flex items-center justify-center hover:bg-lines/30 transition-colors cursor-pointer" title="Portada" onClick={handleChangeCoverImage}><span className="material-symbols-outlined text-[20px]" style={{ fontFamily: 'Material Symbols Outlined' }}>add_a_photo</span></button>
@@ -915,16 +959,18 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         <div className="flex flex-wrap items-center justify-between mb-8 pb-4 border-b border-lines">
                             <div className="flex gap-4">
                                 <button type="button"                                     onClick={() => { 
-                                        setActiveLang('gl'); 
-                                        setTimeout(() => editor?.commands.setContent(contenidoGl), 0);
+                                        setActiveLang('gl');
+                                        setTocData([]);
+                                        setTimeout(() => editor?.commands.setContent(stripIndex(contenidoGl)), 0);
                                     }}
                                     className={`font-sans text-xs uppercase tracking-widest font-bold pb-1 border-b-2 transition-colors ${activeLang === 'gl' ? 'border-charcoal text-charcoal' : 'border-transparent text-charcoal/40 hover:text-charcoal/70'}`}
                                 >
                                     Galego
                                 </button>
                                 <button type="button"                                     onClick={() => { 
-                                        setActiveLang('es'); 
-                                        setTimeout(() => editor?.commands.setContent(contenidoEs), 0);
+                                        setActiveLang('es');
+                                        setTocData([]);
+                                        setTimeout(() => editor?.commands.setContent(stripIndex(contenidoEs)), 0);
                                     }}
                                     className={`font-sans text-xs uppercase tracking-widest font-bold pb-1 border-b-2 transition-colors ${activeLang === 'es' ? 'border-charcoal text-charcoal' : 'border-transparent text-charcoal/40 hover:text-charcoal/70'}`}
                                 >
@@ -978,6 +1024,25 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                                         <option value="gl" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>{dict.originalGl}</option>
                                         <option value="es" style={{ backgroundColor: 'var(--dynamic-surface)', color: 'var(--dynamic-charcoal)' }}>{dict.originalEs}</option>
                                     </select>
+
+                                    <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={showIndex}
+                                        aria-label={dict.showIndexLabel}
+                                        title={dict.showIndexHint}
+                                        onClick={toggleShowIndex}
+                                        className={`flex items-center gap-2 border px-3 py-2 text-xs font-sans uppercase tracking-widest font-bold transition-colors cursor-pointer ${
+                                            showIndex
+                                                ? 'border-gold bg-gold/10 text-gold'
+                                                : 'border-lines bg-transparent text-charcoal/60 hover:border-gold/60 hover:text-charcoal'
+                                        }`}
+                                    >
+                                        <span className="material-symbols-outlined text-[16px]" style={{ fontFamily: 'Material Symbols Outlined' }}>
+                                            {showIndex ? 'check_box' : 'check_box_outline_blank'}
+                                        </span>
+                                        <span>{dict.showIndexLabel}</span>
+                                    </button>
                                 </div>
                                 <textarea 
                                     className="w-full border-none bg-transparent font-serif text-4xl text-charcoal focus:ring-0 placeholder:text-charcoal/30 resize-none overflow-hidden outline-none" 
@@ -1005,6 +1070,29 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                             <div className="h-[1px] w-12 bg-gold opacity-30"></div>
                             {/* Body Content */}
                             <div className="space-y-8">
+                                {showIndex && (
+                                    liveTocItems.length > 0 ? (
+                                        <ArticleTableOfContents
+                                            items={liveTocItems}
+                                            label={previewArticleDict.indexLabel}
+                                            ariaLabel={previewArticleDict.indexAriaLabel}
+                                            onItemClick={(e, item) => {
+                                                e.preventDefault();
+                                                const match = tocData.find((d) => d.id === item.id);
+                                                if (match?.dom && typeof match.dom.scrollIntoView === 'function') {
+                                                    match.dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                }
+                                                if (typeof match?.pos === 'number') {
+                                                    editor?.commands.focus(match.pos);
+                                                }
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="border-y border-lines/70 bg-surface/50 py-5 px-6 mb-6 text-sm font-sans text-charcoal/60 italic">
+                                            {dict.noHeadingsFound}
+                                        </div>
+                                    )
+                                )}
                                 <EditorContent editor={editor} />
                                 <TableControls editor={editor} />
                             </div>
@@ -1135,9 +1223,16 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                         )}
 
                         <article className="w-full max-w-2xl px-5 md:px-0 mx-auto min-w-0">
+                            {showIndex && previewTocItems.length > 0 && (
+                                <ArticleTableOfContents
+                                    items={previewTocItems}
+                                    label={previewArticleDict.indexLabel}
+                                    ariaLabel={previewArticleDict.indexAriaLabel}
+                                />
+                            )}
                             <div 
                                 className={`article-content ${(tipo?.toLowerCase() === 'ensaio' || tipo?.toLowerCase() === PUBLICATION_TYPES.ESSAY) ? 'article-content-essay' : ''}`}
-                                dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(renderHeadingAnchors(renderMathInHtml(activeLang === 'gl' ? contenidoGl : contenidoEs))) }}
+                                dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(renderHeadingAnchors(renderMathInHtml(activeHtml))) }}
                             />
                         </article>
 

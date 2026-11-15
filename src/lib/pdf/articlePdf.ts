@@ -9,6 +9,7 @@ import {
 import { parseDocument } from 'htmlparser2';
 import type { ChildNode, Element } from 'domhandler';
 import { sanitizeStorageUrl } from '@/lib/storage/paths';
+import { getHeadingsFromHtml, stripIndex } from '@/lib/editor/generateIndex';
 
 /**
  * Server-side PDF typesetting for a published article.
@@ -29,6 +30,8 @@ export interface ArticlePdfInput {
   tags: string[];
   coverImageUrl: string | null;
   html: string;
+  showIndex?: boolean;
+  indexLabel?: string;
   siteName: string;
   siteUrl: string;
 }
@@ -1262,6 +1265,55 @@ class ArticlePdfBuilder {
     this.rule(0, 16);
   }
 
+  drawIndex(input: ArticlePdfInput): void {
+    if (!input.showIndex) return;
+    const items = getHeadingsFromHtml(input.html);
+    if (items.length === 0) return;
+
+    this.ensureSpace(46);
+
+    this.page.drawText(safeText(input.indexLabel || 'Índice').toUpperCase(), {
+      x: MARGIN.left,
+      y: this.y - 7,
+      font: this.fontSansBold,
+      size: 7.5,
+      color: GOLD,
+    });
+    this.y -= 20;
+
+    for (const item of items) {
+      const level = Math.min(Math.max(item.path.length, 1), 3);
+      const indent = (level - 1) * 14;
+      const num = `${item.path.join('.')}.`;
+      const fontSize = level === 1 ? 10.5 : level === 2 ? 10 : 9.5;
+      const lineHeight = 14.5;
+      const numWidth = level === 1 ? 22 : level === 2 ? 32 : 42;
+      const lines = this.layoutRuns(
+        [{ text: item.text, style: { bold: level === 1 } }],
+        fontSize,
+        CONTENT_WIDTH - indent - numWidth
+      );
+      if (lines.length === 0) continue;
+
+      this.ensureSpace(lines.length * lineHeight);
+      this.page.drawText(safeText(num), {
+        x: MARGIN.left + indent,
+        y: this.y,
+        font: this.fontSansBold,
+        size: 9,
+        color: GOLD,
+      });
+      this.drawLines(lines, {
+        x: MARGIN.left + indent + numWidth,
+        lineHeight,
+        color: level === 3 ? MUTED : INK,
+      });
+      this.y -= 2;
+    }
+
+    this.rule(8, 16);
+  }
+
   async drawAuthorNote(input: ArticlePdfInput): Promise<void> {
     if (!input.authorBio) return;
 
@@ -1498,8 +1550,9 @@ export async function buildArticlePdf(input: ArticlePdfInput): Promise<Uint8Arra
   builder.setSiteUrl(input.siteUrl);
 
   await builder.drawMasthead(input);
+  builder.drawIndex(input);
 
-  const blocks = htmlToBlocks(input.html);
+  const blocks = htmlToBlocks(stripIndex(input.html));
   await builder.drawBlocks(blocks);
   await builder.drawAuthorNote(input);
 

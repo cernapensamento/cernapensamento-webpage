@@ -8,11 +8,13 @@ import 'katex/dist/katex.min.css';
 import { renderMathInHtml } from '@/lib/editor/renderMath';
 import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
 import { sanitizeArticleHtml } from '@/lib/editor/sanitizeArticleHtml';
+import { getHeadingsFromHtml, stripIndex } from '@/lib/editor/generateIndex';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 import FormattedDate from '@/components/ui/FormattedDate';
 import CommentsSection from '@/components/features/CommentsSection';
 import ArticleDownload from '@/components/features/ArticleDownload';
 import ArticleScrollManager from '@/components/features/ArticleScrollManager';
+import ArticleTableOfContents from '@/components/features/ArticleTableOfContents';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
 
@@ -65,6 +67,8 @@ export default async function ArticuloPage({
     ? (publication.subtitle[lang] || publication.subtitle.gl || publication.subtitle.es)
     : null;
   const contenido = publication.content[lang] || publication.content.gl || publication.content.es || '';
+  const bodyHtml = stripIndex(contenido);
+  const tocItems = publication.show_index ? getHeadingsFromHtml(bodyHtml) : [];
   const isEnsaio = publication.type === 'essay';
 
   const authorBio = publication.author.bio
@@ -141,10 +145,17 @@ export default async function ArticuloPage({
 
         <ArticleScrollManager className="w-full">
           <article className="w-full max-w-2xl px-5 md:px-0 mx-auto min-w-0">
+            {publication.show_index && tocItems.length > 0 && (
+              <ArticleTableOfContents
+                items={tocItems}
+                label={dict.article.indexLabel}
+                ariaLabel={dict.article.indexAriaLabel}
+              />
+            )}
             <div 
               className={`article-content ${isEnsaio ? 'article-content-essay' : ''}`}
               dangerouslySetInnerHTML={{ 
-                __html: sanitizeArticleHtml(renderHeadingAnchors(renderMathInHtml(contenido)))
+                __html: sanitizeArticleHtml(renderHeadingAnchors(renderMathInHtml(bodyHtml)))
               }}
             />
 
