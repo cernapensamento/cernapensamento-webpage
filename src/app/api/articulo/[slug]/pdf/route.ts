@@ -5,6 +5,7 @@ import { buildArticlePdf } from '@/lib/pdf/articlePdf';
 import { formatArticleDate } from '@/lib/date';
 import { SITE_NAME } from '@/lib/constants';
 import type { Locale } from '@/i18n-config';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 
 export const runtime = 'nodejs';
 
@@ -43,20 +44,13 @@ export async function GET(request: Request, { params }: RouteContext) {
       });
     }
 
-    const title = publication.title[lang] || publication.title.gl || publication.title.es;
-    const subtitle = publication.subtitle
-      ? publication.subtitle[lang] || publication.subtitle.gl || publication.subtitle.es || null
-      : null;
-    const content =
-      publication.content[lang] || publication.content.gl || publication.content.es || '';
+    const title = resolveLocalizedText(publication.title, lang);
+    const subtitle = publication.subtitle ? resolveLocalizedText(publication.subtitle, lang) : null;
+    const content = resolveLocalizedText(publication.content, lang);
 
     const date = formatArticleDate(publication.published_at || publication.created_at, lang, { format: 'long' });
 
-    const dbBio = publication.author.bio
-      ? typeof publication.author.bio === 'object'
-        ? publication.author.bio[lang] || publication.author.bio.gl || publication.author.bio.es || ''
-        : String(publication.author.bio)
-      : '';
+    const dbBio = resolveLocalizedText(publication.author.bio, lang);
     const dictBio = publication.author.slug
       ? (dict.authors as Record<string, string>)[publication.author.slug]
       : '';

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import * as auth from '@/lib/auth';
+import type { User } from '@supabase/supabase-js';
 
 vi.mock('@google/genai', () => {
   return {
@@ -44,7 +45,7 @@ describe('POST /api/translate', () => {
 
   it('rejects reader role with 403', async () => {
     vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
-      user: { id: 'reader-1' } as unknown as auth.getAuthenticatedUser extends () => Promise<{ user: infer U }> ? U : never,
+      user: { id: 'reader-1' } as unknown as User,
       profile: null,
       role: 'reader',
     });
@@ -66,7 +67,7 @@ describe('POST /api/translate', () => {
 
   it('rejects oversized payload with 413', async () => {
     vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
-      user: { id: 'writer-1' } as unknown as auth.getAuthenticatedUser extends () => Promise<{ user: infer U }> ? U : never,
+      user: { id: 'writer-1' } as unknown as User,
       profile: null,
       role: 'member',
     });
@@ -86,7 +87,7 @@ describe('POST /api/translate', () => {
 
   it('allows authorized writer to translate', async () => {
     vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
-      user: { id: 'writer-1' } as unknown as auth.getAuthenticatedUser extends () => Promise<{ user: infer U }> ? U : never,
+      user: { id: 'writer-1' } as unknown as User,
       profile: null,
       role: 'member',
     });

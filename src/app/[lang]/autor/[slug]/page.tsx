@@ -3,6 +3,7 @@ import { getColumnistBySlug } from '@/lib/columnists';
 import { notFound } from 'next/navigation';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import type { Metadata } from 'next';
 import AuthorProfileView from '@/components/features/AuthorProfileView';
 import { getUserBySlugOrId, getAuthorProfileBySlugOrId } from '@/lib/db';
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const dict = await getDictionary(lang as Locale);
   const bio = (slug && dict.authors && (dict.authors as Record<string, string>)[slug])
-    || (user.bio ? (user.bio[lang] || user.bio.gl || user.bio.es) : '');
+    || resolveLocalizedText(user.bio, lang);
   const title = `${user.full_name} · ${SITE_NAME}`;
   const defaultMetaDesc = (dict.authorPage as Record<string, string> | undefined)?.defaultMetaDescription;
   const description = bio || (defaultMetaDesc
@@ -51,8 +52,7 @@ export default async function AutorPage({ params }: PageProps) {
   const columnist = getColumnistBySlug(profile.slug || '');
   const avatarSrc = columnist?.image || profile.avatar_url || DEFAULT_AVATAR_URL;
   const bio = (profile.slug && dict.authors && (dict.authors as Record<string, string>)[profile.slug])
-    || (profile.bio ? (profile.bio[lang] || profile.bio.gl || profile.bio.es) : '')
-    || '';
+    || resolveLocalizedText(profile.bio, lang);
 
   // Determine editorial role badge:
   // - 'admin' -> "Consejo Editorial" / "Consello Editorial"

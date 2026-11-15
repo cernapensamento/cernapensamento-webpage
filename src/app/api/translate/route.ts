@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { USER_ROLES } from '@/lib/db/schema';
+import { i18n } from '@/i18n-config';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -53,9 +54,21 @@ export async function POST(req: Request) {
        return NextResponse.json({ error: 'Missing GEMINI_API_KEY environment variable' }, { status: 500 });
     }
 
-    const langName = targetLanguage === 'es' ? 'Spanish' : 'Galician';
+    const langNames: Record<string, string> = {
+      es: 'Spanish',
+      gl: 'Galician',
+      pt: 'Portuguese',
+      en: 'English',
+      fr: 'French',
+      de: 'German',
+      it: 'Italian',
+    };
+    const langName =
+      langNames[targetLanguage] ||
+      (i18n.localeLabels as Record<string, string>)[targetLanguage] ||
+      targetLanguage;
     
-    const systemPrompt = `You are an expert bilingual translator specialized in literary and journalistic articles (Galician and Spanish). Translate the user's text to ${langName}. The user will provide their content with separators.
+    const systemPrompt = `You are an expert translator specialized in literary and journalistic articles. Translate the user's text to ${langName}. The user will provide their content with separators.
 CRITICAL: You MUST preserve ALL HTML tags, inline styles (such as style="text-align: justify;"), classes, ids, and attributes EXACTLY as they appear. Do not remove or alter any HTML formatting or style attributes.
 You MUST return the translated content using the EXACT SAME separators:
 ---TITLE---

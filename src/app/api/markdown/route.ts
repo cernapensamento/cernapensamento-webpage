@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
 import { getHomepageMarkdown, get404Markdown } from '@/lib/agent/markdown';
 import { getDocument } from '@/lib/content';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 
 /**
  * Strips HTML tags and preserves basic formatting in plain Markdown.
@@ -63,13 +64,9 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      const title =
-        publication.title[lang] || publication.title.gl || publication.title.es || '';
-      const subtitle = publication.subtitle
-        ? publication.subtitle[lang] || publication.subtitle.gl || publication.subtitle.es
-        : '';
-      const rawContent =
-        publication.content[lang] || publication.content.gl || publication.content.es || '';
+      const title = resolveLocalizedText(publication.title, lang);
+      const subtitle = resolveLocalizedText(publication.subtitle, lang);
+      const rawContent = resolveLocalizedText(publication.content, lang);
       const authorName = publication.author?.full_name || 'Cerna Pensamento';
       const canonicalUrl = `https://cernapensamento.org/${lang}/articulo/${publication.slug}`;
 

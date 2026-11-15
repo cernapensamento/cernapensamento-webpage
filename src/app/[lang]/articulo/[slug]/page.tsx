@@ -15,6 +15,7 @@ import ArticleDownload from '@/components/features/ArticleDownload';
 import ArticleScrollManager from '@/components/features/ArticleScrollManager';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 
 interface Props {
   params: Promise<{ slug: string; lang: string }>;
@@ -28,10 +29,8 @@ export async function generateMetadata({ params }: Props) {
     return { title: 'Artículo no encontrado' };
   }
 
-  const titulo = publication.title[lang] || publication.title.gl || publication.title.es;
-  const subtitulo = publication.subtitle
-    ? (publication.subtitle[lang] || publication.subtitle.gl || publication.subtitle.es)
-    : null;
+  const titulo = resolveLocalizedText(publication.title, lang);
+  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, lang) : null;
 
   return {
     title: titulo,
@@ -60,17 +59,13 @@ export default async function ArticuloPage({
     permanentRedirect(`/${lang}/articulo/${publication.slug}`);
   }
 
-  const titulo = publication.title[lang] || publication.title.gl || publication.title.es;
-  const subtitulo = publication.subtitle
-    ? (publication.subtitle[lang] || publication.subtitle.gl || publication.subtitle.es)
-    : null;
-  const contenido = publication.content[lang] || publication.content.gl || publication.content.es || '';
+  const titulo = resolveLocalizedText(publication.title, lang);
+  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, lang) : null;
+  const contenido = resolveLocalizedText(publication.content, lang);
   const isEnsaio = publication.type === 'essay';
 
   const authorBio = publication.author.bio
-    ? (typeof publication.author.bio === 'object'
-        ? (publication.author.bio[lang] || publication.author.bio.gl || publication.author.bio.es || '')
-        : String(publication.author.bio))
+    ? resolveLocalizedText(publication.author.bio, lang)
     : '';
 
   const authorBioFinal = (publication.author.slug && dict.authors && (dict.authors as Record<string, string>)[publication.author.slug]) || authorBio;
