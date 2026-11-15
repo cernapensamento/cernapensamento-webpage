@@ -4,7 +4,18 @@
     "ogImageAlt": "Cerna Pensamento · Revista de Ensayo y Filosofía",
     "description": "Revista digital y asociación cultural independiente en Galicia. Publicación periódica de ensayo, filosofía política, economía, crítica cultural, narrativa y poesía.",
     "organizationDescription": "Revista digital y asociación cultural independiente en Galicia dedicada al ensayo, la filosofía política, la economía y la creación literaria.",
-    "websiteDescription": "Revista cultural de ensayo, filosofía, economía y creación literaria."
+    "websiteDescription": "Revista cultural de ensayo, filosofía, economía y creación literaria.",
+    "keywords": [
+      "Cerna",
+      "Cerna Pensamento",
+      "Cerna revista literaria",
+      "revista literaria",
+      "ensayo gallego",
+      "filosofía política",
+      "escuela austríaca",
+      "Galicia",
+      "revista cultural Galicia"
+    ]
   },
   "loading": {
     "message": "Recopilando manuscritos..."
@@ -216,6 +227,7 @@
   "articles": {
     "tag": "Archivo Histórico",
     "title": "Todas las Publicaciones",
+    "description": "Archivo histórico de artículos, ensayos, columnas, narrativa, poesía y reportajes publicados en Cerna Pensamento.",
     "searchPlaceholder": "Buscar por título o contenido...",
     "all": "Todos",
     "by": "Por",
@@ -425,6 +437,7 @@
     "totalLimit": "Límite total",
     "createPost": "Crear nueva publicación",
     "limitReached": "Límite alcanzado",
+    "limitReachedNotice": "Has alcanzado el límite de publicaciones permitido para autores invitados.",
     "articles": "Artículos",
     "all": "Todos",
     "published": "Publicados",
@@ -668,6 +681,7 @@
       "title": "Proyecto Editorial",
       "description": "CERNA es un espacio de encuentro para el pensamiento crítico y la reflexión sosegada. Nuestro proyecto editorial se estructura en cuatro colecciones principales:",
       "readMore": "Leer más",
+      "collectionPrefix": "COL.",
       "collections": [
         {
           "id": "narrativa",
@@ -925,7 +939,48 @@
       "internalErrorMessage": "Error interno al tramitar la baja.",
       "returnHome": "Volver a la portada",
       "manageProfile": "Gestionar preferencias en el perfil"
+    },
+    "webhook": {
+      "configUnavailable": "Configuración no disponible",
+      "unauthorized": "No autorizado",
+      "invalidPayload": "Payload de publicación inválido",
+      "ignoredNotPublished": "No es un evento de publicación activa, ignorado.",
+      "ignoredAlreadySent": "Esta publicación ya fue notificada previamente a los suscriptores.",
+      "claimError": "Error al bloquear el estado de la publicación",
+      "alreadyClaimed": "La publicación ya fue reclamada o enviada por otro proceso concurrente.",
+      "subscribersError": "Error al obtener la lista de suscriptores",
+      "noActiveSubscribers": "No hay suscriptores activos para notificar.",
+      "allDispatchesFailed": "No se pudo enviar ningún correo de la newsletter",
+      "internalError": "Error interno del servidor"
     }
+  },
+  "contactEmail": {
+    "defaultSubject": "Sin Asunto",
+    "subjectPrefix": "[Contacto]",
+    "heading": "Nuevo contacto recibido a través del formulario de Cerna",
+    "nameLabel": "Nombre",
+    "emailLabel": "Email",
+    "subjectLabel": "Asunto",
+    "messageLabel": "Mensaje",
+    "defaultAttachmentName": "documento.pdf"
+  },
+  "translateApi": {
+    "unauthorized": "Autenticación requerida",
+    "forbidden": "Permisos insuficientes para traducir",
+    "missingContent": "Falta contenido para traducir",
+    "invalidLanguage": "Idioma de destino no soportado",
+    "payloadTooLarge": "El contenido supera el tamaño máximo permitido",
+    "serviceUnavailable": "Servicio de traducción no disponible",
+    "translateFailed": "No fue posible completar la traducción"
+  },
+  "markdown": {
+    "article": {
+      "authorLabel": "Autor",
+      "publicationLabel": "Publicación",
+      "serverError": "# 500 - Error interno del servidor"
+    },
+    "notFound": "# 404 - Página no encontrada (Not Found)\n\nEl recurso solicitado no existe o ha sido movido en Cerna Pensamento.\n\nPuedes consultar los siguientes recursos para navegar por la publicación y localizar el contenido:\n- [Portada de Cerna Pensamento]({siteUrl}/{lang})\n- [Archivo general de publicaciones]({siteUrl}/{lang}/articulos)\n- [Directorio de autores]({siteUrl}/{lang}/autores)\n- [Cuaderno de noticias y convocatorias]({siteUrl}/{lang}/noticias)\n- [Mapa del sitio (Sitemap XML)]({siteUrl}/sitemap.xml)\n- [Instrucciones para agentes de IA (llms.txt)]({siteUrl}/llms.txt)\n\nPara consultas editoriales o soporte técnico: contacto@cernapensamento.org\n",
+    "homepage": "# Cerna Pensamento · Revista Cultural de Ensayo, Filosofía y Creación Literaria\n\n> Revista digital y asociación cultural independiente en Galicia dedicada al ensayo, la filosofía política, la economía (incluida la tradición de la Escuela Austríaca de economía), el debate intelectual y la creación literaria en gallego y castellano.\n\n- **Sitio web:** {siteUrl}/{lang}\n- **Idioma principal:** Gallego (`gl`), con versión bilingüe en castellano (`es`)\n- **Sede editorial:** Santiago de Compostela, Galicia, España\n- **Contacto editorial:** contacto@cernapensamento.org\n\n---\n\n## Estructura de la Publicación y Secciones Principales\n\n- [Archivo General de Publicaciones]({siteUrl}/{lang}/articulos): Catálogo completo con filtros temáticos por ensayo, artículo de opinión, narrativa y poesía.\n- [Artículos de Opinión]({siteUrl}/{lang}/articulos?tipo=article): Columnas semanales, análisis de actualidad y crítica política.\n- [Ensayos Filosóficos y Económicos]({siteUrl}/{lang}/articulos?tipo=essay): Monográficos extensos sobre teoría del valor, derecho, economía y sociedad abierta.\n- [Cuaderno de Noticias]({siteUrl}/{lang}/noticias): Agenda cultural, convocatorias de ensayo y avisos editoriales.\n- [La Asociación Cerna]({siteUrl}/{lang}/asociacion): Manifiesto fundacional, objetivos e ideario de la asociación civil independiente.\n- [Estatutos Oficiales]({siteUrl}/{lang}/asociacion/estatutos): Marco legal, régimen interno y gobernanza de la asociación.\n- [Directorio de Autores y Columnistas]({siteUrl}/{lang}/autores): Perfiles de los autores, investigadores y miembros del consejo editorial.\n- [Contacto y Envío de Propuestas]({siteUrl}/{lang}/contacto): Canal oficial para propuestas de colaboración y cartas al consejo.\n- [Política de Privacidad]({siteUrl}/{lang}/privacidad): Tratamiento de datos personales, derechos e información legal.\n\n---\n\n## Guía y Recursos para Agentes de Inteligencia Artificial\n\n- [Instrucciones para Agentes de IA (llms.txt)]({siteUrl}/llms.txt): Guía de integración con casos de uso recomendados y protocolo de consulta.\n- [Mapa del Sitio (Sitemap XML)]({siteUrl}/sitemap.xml): Listado canónico de todas las URLs indexables con fechas de última modificación.\n- **Negociación de contenido (acceptmarkdown.com):** Puedes enviar la cabecera HTTP `Accept: text/markdown` en las portadas, los artículos y las páginas legales de privacidad y estatutos para recibir Markdown. Otras rutas válidas pueden devolver HTML.\n"
   },
   "comments": {
     "title": "Comentarios",
