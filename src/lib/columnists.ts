@@ -1,4 +1,5 @@
-import { USER_ROLES, type UserRole } from '@/lib/db';
+import { USER_ROLES } from '@/lib/db/schema';
+import type { UserRole } from '@/lib/db/types';
 
 export interface Columnist {
   slug: string;
