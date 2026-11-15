@@ -12,6 +12,26 @@ export function getNewsletterSecret(): string {
   return secret;
 }
 
+/**
+ * Verifies a Bearer authorization header against WEBHOOK_SECRET using timing-safe comparison.
+ */
+export function verifyWebhookSecret(authHeader: string | null, secret: string): boolean {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return false;
+  }
+  const token = authHeader.slice('Bearer '.length);
+  try {
+    const secretBuf = Buffer.from(secret);
+    const tokenBuf = Buffer.from(token);
+    if (secretBuf.length !== tokenBuf.length) {
+      return false;
+    }
+    return crypto.timingSafeEqual(secretBuf, tokenBuf);
+  } catch {
+    return false;
+  }
+}
+
 export function getUnsubscribeTokenSecret(): string {
   const secret = process.env.UNSUBSCRIBE_TOKEN_SECRET || process.env.WEBHOOK_SECRET;
   if (!secret) {
