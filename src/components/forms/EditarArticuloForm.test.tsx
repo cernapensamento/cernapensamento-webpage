@@ -12,6 +12,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  usePathname: () => '/gl/escritorio/editar/meu-artigo-123456',
 }));
 
 const mockToastSuccess = vi.fn();
@@ -203,6 +204,62 @@ describe('EditarArticuloForm', () => {
       expect(callArg.id).toBeUndefined();
       expect(mockToastSuccess).toHaveBeenCalled();
       expect(mockPush).toHaveBeenCalledWith('/gl/escritorio');
+    });
+  });
+
+  it('supports a 3rd locale via lang and dict props without binary language checks', async () => {
+    vi.mocked(articlesActions.saveArticleAction).mockResolvedValue({
+      success: true,
+      id: 'pub-test-123',
+      slug: 'meu-artigo-123456',
+    });
+
+    const enDict = {
+      draftUpdated: 'Draft updated in English!',
+      actionSuccess: 'Action succeeded in English!',
+      saveError: 'Save error in English',
+      unexpectedError: 'Unexpected error in English',
+    };
+
+    render(
+      <EditarArticuloForm
+        publication={mockPublication}
+        userRole="founder"
+        lang="en"
+        dict={enDict}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('publish-btn'));
+
+    await waitFor(() => {
+      expect(articlesActions.saveArticleAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'pub-test-123',
+          action: EDITOR_ACTIONS.PUBLISH,
+          lang: 'en',
+        })
+      );
+      expect(mockToastSuccess).toHaveBeenCalledWith('Action succeeded in English!');
+      expect(mockPush).toHaveBeenCalledWith('/en/escritorio');
+    });
+  });
+
+  it('falls back to useLocale and shows unexpectedError toast when saveArticleAction throws', async () => {
+    vi.mocked(articlesActions.saveArticleAction).mockRejectedValue(new Error('Network failure'));
+
+    render(
+      <EditarArticuloForm
+        publication={mockPublication}
+        userRole="founder"
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('publish-btn'));
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Produciuse un erro inesperado ao gardar.');
+      expect(mockPush).not.toHaveBeenCalled();
     });
   });
 });

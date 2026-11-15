@@ -1,32 +1,20 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import CommentForm from '@/components/forms/CommentForm';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { DB_TABLES, COMMENT_COLS, USER_COLS } from '@/lib/db/schema';
+import { useLocale } from '@/hooks/useLocale';
+import { getDictionaryClient } from '@/dictionaries/client';
+import {
+  getCommentsForPublication,
+  deleteComment,
+} from '@/lib/db';
+import type { CommentItem } from '@/lib/db/types';
 import FormattedDate from '@/components/ui/FormattedDate';
 import { useConfirm, useToast } from '@/components/ui/FeedbackProvider';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
-
-interface CommentAuthor {
-  full_name?: string;
-  nombre?: string;
-  avatar_url?: string | null;
-  slug?: string | null;
-}
-
-interface CommentViewItem {
-  id: string;
-  author_id: string;
-  content: string;
-  updated_at: string;
-  author?: CommentAuthor | null;
-}
 
 export default function CommentsSection({
   articuloId,
@@ -36,41 +24,20 @@ export default function CommentsSection({
   publicationId?: string;
 }) {
   const targetId = publicationId || articuloId || '';
-  const params = useParams();
-  const lang = (params?.lang as string) || 'gl';
-  const dict = lang === 'es' ? esDict : glDict;
+  const lang = useLocale();
+  const dict = getDictionaryClient(lang);
   const cDict = dict.comments;
   const confirm = useConfirm();
   const toast = useToast();
 
   const { user } = useAuth();
-  const [comentarios, setComentarios] = useState<CommentViewItem[]>([]);
-  const loading = useRef(true);
-  const supabase = createClient();
+  const [comentarios, setComentarios] = useState<CommentItem[]>([]);
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchComments = useCallback(async () => {
     if (!targetId) return;
-
-    const { data, error } = await supabase
-      .from(DB_TABLES.COMMENTS)
-      .select(`
-        ${COMMENT_COLS.ID},
-        ${COMMENT_COLS.AUTHOR_ID},
-        ${COMMENT_COLS.CONTENT},
-        ${COMMENT_COLS.UPDATED_AT},
-        author:${DB_TABLES.USERS} (
-          ${USER_COLS.FULL_NAME},
-          ${USER_COLS.AVATAR_URL},
-          ${USER_COLS.SLUG}
-        )
-      `)
-      .eq(COMMENT_COLS.PUBLICATION_ID, targetId)
-      .order(COMMENT_COLS.UPDATED_AT, { ascending: true });
-
-    if (!error && data) {
-      setComentarios(data as unknown as CommentViewItem[]);
-    }
-    loading.current = false;
+    const data = await getCommentsForPublication(targetId, supabase);
+    setComentarios(data);
   }, [targetId, supabase]);
 
   const handleDelete = async (comentarioId: string) => {
@@ -84,19 +51,14 @@ export default function CommentsSection({
     if (!ok) return;
 
     // Optimistic update
-    setComentarios(prev => prev.filter(c => c.id !== comentarioId));
+    setComentarios((prev) => prev.filter((c) => c.id !== comentarioId));
 
-    const { data, error } = await supabase
-      .from(DB_TABLES.COMMENTS)
-      .delete()
-      .eq(COMMENT_COLS.ID, comentarioId)
-      .select();
+    const { success, error } = await deleteComment(comentarioId, supabase);
 
-    if (error || !data || data.length === 0) {
-      console.error("Delete failed:", error || "No rows deleted (RLS blocked)");
+    if (!success) {
+      console.error('Delete failed:', error || 'No rows deleted (RLS blocked)');
       toast.error(cDict.deleteError);
-      const timer = setTimeout(() => fetchComments(), 0);
-      return () => clearTimeout(timer);
+      await fetchComments();
     }
   };
 
@@ -107,20 +69,22 @@ export default function CommentsSection({
 
   return (
     <section data-print="hide" className="w-full border-t border-lines pt-12 mt-8">
-      <h3 className="font-serif text-2xl text-charcoal mb-8">{cDict.title || 'Comentarios'} ({comentarios?.length || 0})</h3>
-      
+      <h3 className="font-serif text-2xl text-charcoal mb-8">
+        {cDict.title} ({comentarios.length})
+      </h3>
+
       <div className="flex flex-col gap-8 mb-12">
-        {comentarios?.map((comentario) => {
-          const authorName = comentario.author?.full_name || comentario.author?.nombre || cDict.unknownUser || 'Usuario';
+        {comentarios.map((comentario) => {
+          const authorName = comentario.author?.full_name || cDict.unknownUser;
           const avatarUrl = comentario.author?.avatar_url;
 
           return (
             <div key={comentario.id} className="flex gap-4">
               <div className="w-10 h-10 rounded-full bg-lines flex-shrink-0 border border-charcoal/10 overflow-hidden relative">
                 {avatarUrl ? (
-                  <Image 
-                    src={avatarUrl} 
-                    alt={authorName} 
+                  <Image
+                    src={avatarUrl}
+                    alt={authorName}
                     fill
                     sizes="40px"
                     className="object-cover"
@@ -144,12 +108,13 @@ export default function CommentsSection({
                     />
                   </div>
                   {user && user.id === comentario.author_id && (
-                    <button type="button" 
+                    <button
+                      type="button"
                       onClick={() => handleDelete(comentario.id)}
                       className="text-[10px] uppercase tracking-widest text-red-600/70 hover:text-red-600 transition-colors cursor-pointer"
-                      title={cDict.delete || 'Eliminar'}
+                      title={cDict.delete}
                     >
-                      {cDict.delete || 'Eliminar'}
+                      {cDict.delete}
                     </button>
                   )}
                 </div>
@@ -160,13 +125,13 @@ export default function CommentsSection({
             </div>
           );
         })}
-        {(!comentarios || comentarios.length === 0) && (
+        {comentarios.length === 0 && (
           <p className="font-sans text-sm text-charcoal/60 italic">{cDict.empty}</p>
         )}
       </div>
 
       {user ? (
-        comentarios?.some(c => c.author_id === user.id) ? (
+        comentarios.some((c) => c.author_id === user.id) ? (
           <div className="bg-surface border border-lines p-8 text-center mt-8">
             <p className="font-sans text-sm text-charcoal/70">{cDict.alreadyCommented}</p>
           </div>
@@ -176,7 +141,10 @@ export default function CommentsSection({
       ) : (
         <div className="bg-surface border border-lines p-8 text-center">
           <p className="font-sans text-sm text-charcoal/70 mb-4">{cDict.mustLogin}</p>
-          <Link href={`/${lang}/login`} className="inline-block px-6 py-3 border border-charcoal text-charcoal hover:bg-charcoal hover:text-parchment font-sans text-[10px] uppercase tracking-[0.2em] transition-colors duration-300">
+          <Link
+            href={`/${lang}/login`}
+            className="inline-block px-6 py-3 border border-charcoal text-charcoal hover:bg-charcoal hover:text-parchment font-sans text-[10px] uppercase tracking-[0.2em] transition-colors duration-300"
+          >
             {cDict.loginBtn}
           </Link>
         </div>

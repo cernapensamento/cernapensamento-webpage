@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatArticleDate } from '@/lib/date';
+import { i18n } from '@/i18n-config';
 
 export interface FormattedDateProps extends React.TimeHTMLAttributes<HTMLTimeElement> {
   date: string | Date | number | null | undefined;
@@ -15,7 +16,7 @@ export interface FormattedDateProps extends React.TimeHTMLAttributes<HTMLTimeEle
  */
 export default function FormattedDate({
   date,
-  lang = 'gl',
+  lang = i18n.defaultLocale,
   format = 'short',
   className,
   ...props

@@ -10,6 +10,7 @@ import { useLocale } from '@/hooks/useLocale';
 import { getDictionaryClient } from '@/dictionaries/client';
 import Image from 'next/image';
 import { SITE_NAME } from '@/lib/constants';
+import { COLUMNISTS } from '@/lib/columnists';
 
 export default function SideMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,20 +39,13 @@ export default function SideMenu() {
     setIsOpen(false);
   }
 
-  const authors = [
-    { name: 'Anxo Pérez', slug: 'anxo-perez' },
-    { name: 'Diego Araújo', slug: 'diego-araujo' },
-    { name: 'Héctor González', slug: 'hector-gonzalez' },
-    { name: 'Denis Fernández', slug: 'denis-fernandez' },
-  ];
-
   return (
     <>
       {/* Hamburger / Close Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)} 
         className={`w-10 h-10 relative focus:outline-none z-[60] flex items-center justify-center border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300 ${isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-        aria-label={dict.nav.toggleMenu || 'Menu'}
+        aria-label={dict.nav.toggleMenu}
       >
         <div className="block w-5 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
           <span aria-hidden="true" className={`block absolute h-0.5 w-5 bg-current transform transition duration-300 ease-in-out -translate-y-1.5`}></span>
@@ -92,7 +86,7 @@ export default function SideMenu() {
           <button 
             onClick={() => setIsOpen(false)} 
             className="w-10 h-10 flex shrink-0 focus:outline-none items-center justify-center border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300 cursor-pointer"
-            aria-label={dict.nav.closeMenu || 'Pechar menú'}
+            aria-label={dict.nav.closeMenu}
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -134,7 +128,7 @@ export default function SideMenu() {
             
             <div>
               <Link href={`/${lang}/contacto`} className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 inline-block">
-                {dict.nav.contacto || dict.nav.contactar || 'Contacto'}
+                {dict.nav.contacto || dict.nav.contactar}
               </Link>
             </div>
 
@@ -143,6 +137,7 @@ export default function SideMenu() {
               <div 
                 role="button"
                 tabIndex={0}
+                aria-expanded={authorsOpen}
                 onClick={() => setAuthorsOpen(!authorsOpen)}
                 onKeyDown={(e) => { if(e.key === 'Enter' || e.key === ' ') setAuthorsOpen(!authorsOpen); }}
                 className="font-serif text-3xl sm:text-4xl md:text-5xl tracking-tight hover:text-gold transition-colors duration-300 text-left inline-flex items-center gap-4 group w-full cursor-pointer outline-none"
@@ -155,7 +150,7 @@ export default function SideMenu() {
               
               <div className={`overflow-hidden transition-all duration-500 ease-in-out ${authorsOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
                 <ul className="flex flex-col gap-3 pl-4 border-l-2 border-lines ml-2">
-                  {authors.map((author) => (
+                  {COLUMNISTS.map((author) => (
                     <li key={author.slug}>
                       <Link 
                         href={`/${lang}/autor/${author.slug}`}
@@ -178,7 +173,12 @@ export default function SideMenu() {
           {/* Contact Section */}
             <div>
             <p className="text-sm uppercase tracking-widest text-charcoal/50 mb-4 font-sans font-semibold">{dict.nav.contactar}</p>
-            <SocialLinks className="flex items-center gap-4 pl-4 border-l-2 border-lines ml-2" itemClassName="bg-parchment" />
+            <SocialLinks
+              lang={lang}
+              contactLabel={dict.nav.contactByEmail}
+              className="flex items-center gap-4 pl-4 border-l-2 border-lines ml-2"
+              itemClassName="bg-parchment"
+            />
           </div>
 
           {/* Language Section */}

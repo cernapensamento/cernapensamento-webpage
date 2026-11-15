@@ -2,6 +2,12 @@
   "name": "cerna",
   "version": "0.1.0",
   "private": true,
+  "imports": {
+    "#supabase-default-client": {
+      "react-server": "./src/lib/supabase/server.ts",
+      "default": "./src/lib/supabase/client.ts"
+    }
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

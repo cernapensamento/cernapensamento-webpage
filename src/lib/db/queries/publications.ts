@@ -4,7 +4,7 @@
  * Enforces bandwidth egress guardrails (never selects full content on listing queries).
  */
 
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import { resolveClient } from '../resolveClient';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
 import { sanitizeStorageUrl } from '@/lib/storage/paths';
 import {
@@ -63,11 +63,6 @@ interface RawPublicationCard {
     avatar_url: string | null;
   } | null;
   publication_tags: RawTagRelation[] | null;
-}
-
-async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient> {
-  if (provided) return provided;
-  return await createServerClient();
 }
 
 /**
@@ -617,19 +612,97 @@ export async function updatePublicationStatus(
 }
 
 /**
- * Delete a publication.
+ * Fetch minimal asset metadata needed for cleaning up storage files before publication deletion.
+ */
+export async function getPublicationAssetsForCleanup(
+  id: string,
+  client?: SupabaseClient
+): Promise<{ cover_image_url: string | null; content: LocalizedString | null } | null> {
+  try {
+    const supabase = await resolveClient(client);
+    const { data, error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select(`${PUBLICATION_COLS.COVER_IMAGE_URL}, ${PUBLICATION_COLS.CONTENT}`)
+      .eq(PUBLICATION_COLS.ID, id)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      cover_image_url: (data.cover_image_url as string | null) ?? null,
+      content: (data.content as LocalizedString | null) ?? null,
+    };
+  } catch (err) {
+    console.warn('[DAL:publications] Failed to fetch publication assets for cleanup:', formatDbError(err));
+    return null;
+  }
+}
+
+/**
+ * Count the number of currently pinned publications.
+ */
+export async function countPinnedPublications(
+  client?: SupabaseClient
+): Promise<{ count: number; error: unknown | null }> {
+  try {
+    const supabase = await resolveClient(client);
+    const { count, error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select('*', { count: 'exact', head: true })
+      .eq(PUBLICATION_COLS.IS_PINNED, true);
+
+    return { count: count ?? 0, error };
+  } catch (err) {
+    return { count: 0, error: err };
+  }
+}
+
+/**
+ * Update the pinned state of a publication.
+ */
+export async function setPublicationPinned(
+  id: string,
+  isPinned: boolean,
+  client?: SupabaseClient
+): Promise<{ success: boolean; error: unknown | null }> {
+  try {
+    const supabase = await resolveClient(client);
+    const { error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .update({ [PUBLICATION_COLS.IS_PINNED]: isPinned })
+      .eq(PUBLICATION_COLS.ID, id);
+
+    return { success: !error, error };
+  } catch (err) {
+    return { success: false, error: err };
+  }
+}
+
+/**
+ * Delete a publication and verify at least one row was deleted (detecting silent RLS rejections).
  */
 export async function deletePublication(
   id: string,
   client?: SupabaseClient
-): Promise<{ success: boolean; error: PostgrestError | null }> {
+): Promise<{ success: boolean; error: unknown | null }> {
   const supabase = await resolveClient(client);
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from(DB_TABLES.PUBLICATIONS)
     .delete()
-    .eq(PUBLICATION_COLS.ID, id);
+    .eq(PUBLICATION_COLS.ID, id)
+    .select(PUBLICATION_COLS.ID);
 
-  return { success: !error, error };
+  if (error) {
+    return { success: false, error };
+  }
+
+  if (Array.isArray(data) && data.length === 0) {
+    return { success: false, error: new Error('RLS blocked deletion or row not found') };
+  }
+
+  return { success: true, error: null };
 }
 
 export interface GetDashboardPublicationsOptions {

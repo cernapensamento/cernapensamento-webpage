@@ -18,6 +18,10 @@ interface ColumnistsSectionProps {
 
 export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps) {
   const t = { ...getDictionaryClient(lang).columnists, ...dict.columnists };
+  const authorsDict: Record<string, string> = {
+    ...(getDictionaryClient(lang).authors as Record<string, string>),
+    ...(dict.authors ?? {}),
+  };
   const router = useRouter();
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -180,7 +184,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
         >
           {columnists.map((columnist: Columnist, idx: number) => {
             const isActive = activeSlug === columnist.slug;
-            const authorBio = dict.authors?.[columnist.slug] || '';
+            const authorBio = authorsDict[columnist.slug] || '';
 
             // Responsive flex calculation:
             // Default: 1 (equal distribution)
@@ -194,7 +198,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
                 tabIndex={0}
                 role="button"
                 aria-expanded={isActive}
-                aria-label={`${columnist.name} - ${authorBio ? authorBio.substring(0, 80) : ''}`}
+                aria-label={authorBio ? `${columnist.name} - ${authorBio.substring(0, 80)}` : columnist.name}
                 onMouseEnter={isDesktop ? () => handleMouseEnter(columnist.slug) : undefined}
                 onMouseLeave={isDesktop ? handleMouseLeave : undefined}
                 onTouchStart={handleTouchStart}
@@ -324,7 +328,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
             className="group inline-flex items-center gap-3 border border-lines bg-parchment px-6 py-3.5 font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-charcoal transition-all duration-300 hover:border-gold hover:text-gold"
           >
             {t.viewAllAuthors}
-            <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1">
+            <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
               arrow_forward
             </span>
           </Link>

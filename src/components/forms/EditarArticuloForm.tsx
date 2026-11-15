@@ -10,10 +10,11 @@ import type { LocalizedString, PublicationDetail } from '@/lib/db/types';
 import { useToast } from '@/components/ui/FeedbackProvider';
 import { saveArticleAction, type SaveArticleInput } from '@/actions/articles';
 import { isDraftAction } from '@/lib/db/schema';
-import { getDictionaryClient } from '@/dictionaries/client';
-import { i18n, resolveLocale, type Locale } from '@/i18n-config';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
+import { i18n, type Locale } from '@/i18n-config';
+import { useLocale } from '@/hooks/useLocale';
 
-type ArticleEditorDict = ReturnType<typeof getDictionaryClient>['articleEditor'];
+type ArticleEditorDict = Partial<Dictionary['articleEditor']>;
 
 export interface BuildEditorSaveInputOptions {
   id?: string;
@@ -95,12 +96,40 @@ interface Props {
   dict?: ArticleEditorDict;
 }
 
+function buildLocalizedField(
+  localized?: LocalizedString | null,
+  legacyValues?: Record<string, string | undefined>
+): LocalizedString {
+  const result: Record<string, string> = {};
+  for (const loc of i18n.locales) {
+    result[loc] = '';
+  }
+
+  if (localized) {
+    for (const [loc, value] of Object.entries(localized)) {
+      if (typeof value === 'string') {
+        result[loc] = value;
+      }
+    }
+  }
+
+  if (legacyValues) {
+    for (const [loc, value] of Object.entries(legacyValues)) {
+      if (!result[loc] && value) {
+        result[loc] = value;
+      }
+    }
+  }
+
+  return result;
+}
+
 export default function EditarArticuloForm({
   mode = 'edit',
   publication,
   articulo,
   userRole,
-  lang = i18n.defaultLocale,
+  lang: propLang,
   dict: propDict,
 }: Props) {
   const pub = publication || articulo;
@@ -108,8 +137,10 @@ export default function EditarArticuloForm({
     throw new Error('EditarArticuloForm requires a publication prop');
   }
 
-  const locale = resolveLocale(lang);
-  const dict = propDict || getDictionaryClient(locale).articleEditor;
+  const detectedLang = useLocale();
+  const routeLang = propLang || detectedLang;
+  const fallbackDict = getDictionaryClient(routeLang).articleEditor;
+  const dict = propDict ? { ...fallbackDict, ...propDict } : fallbackDict;
   const [isPublishing, setIsPublishing] = useState(false);
   const router = useRouter();
   const toast = useToast();
@@ -138,7 +169,7 @@ export default function EditarArticuloForm({
         buildEditorSaveInput(data, {
           ...(pub?.id ? { id: pub.id } : {}),
           action,
-          lang: locale,
+          lang: routeLang,
         })
       );
 
@@ -157,7 +188,7 @@ export default function EditarArticuloForm({
 
       toast.success(successMessage);
 
-      router.push(`/${locale}/escritorio`);
+      router.push(`/${routeLang}/escritorio`);
       return true;
     } catch (error: unknown) {
       console.error('[EditarArticuloForm] Unexpected error on save:', error);

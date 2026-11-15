@@ -5,11 +5,18 @@ import Link from 'next/link';
 import Image from 'next/image';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { ArticleCardData } from '@/components/features/ArticleCard';
-import { PUBLICATION_TYPES } from '@/lib/db/schema';
 import FormattedDate from '@/components/ui/FormattedDate';
-import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { getDictionaryClient } from '@/dictionaries/client';
+import {
+  resolvePublicationAuthor,
+  resolvePublicationCover,
+  resolvePublicationDate,
+  resolvePublicationHref,
+  resolvePublicationLabels,
+  resolvePublicationSubtitle,
+  resolvePublicationTitle,
+} from './publicationCardHelpers';
+import { MosaicCoverBackdrop, TopGoldHoverLine } from './MosaicPrimitives';
 
 interface RecentArticlesMosaicGridProps {
   articulos: ArticleCardData[];
@@ -17,6 +24,11 @@ interface RecentArticlesMosaicGridProps {
   dict?: {
     documentTypes?: Record<string, string>;
     readArticle?: string;
+    articles?: {
+      by?: string;
+      readArticle?: string;
+      [key: string]: unknown;
+    };
     mosaic?: {
       readArticle?: string;
       by?: string;
@@ -24,48 +36,6 @@ interface RecentArticlesMosaicGridProps {
     };
     [key: string]: unknown;
   };
-}
-
-function getLocalizedTitle(item: ArticleCardData, lang: string): string {
-  if (typeof item.title === 'object' && item.title !== null) {
-    return resolveLocalizedText(item.title, lang);
-  }
-  if (lang === 'es') return item.titulo_es || item.titulo_gl || '';
-  return item.titulo_gl || item.titulo_es || '';
-}
-
-function getLocalizedSubtitle(item: ArticleCardData, lang: string): string {
-  if (typeof item.subtitle === 'object' && item.subtitle !== null) {
-    return resolveLocalizedText(item.subtitle, lang);
-  }
-  if (lang === 'es') return item.subtitulo_es || item.subtitulo_gl || '';
-  return item.subtitulo_gl || item.subtitulo_es || '';
-}
-
-function getLocalizedLabels(
-  item: ArticleCardData,
-  lang: string,
-  dict?: { documentTypes?: Record<string, string> }
-): string[] {
-  // 1. If tags exist on the article, use all non-generic tags
-  if (item.tags && item.tags.length > 0) {
-    const validTags = item.tags
-      .map((t) => t?.name?.trim())
-      .filter((name): name is string => Boolean(name && name.toLowerCase() !== PUBLICATION_TYPES.NEWS && name.toLowerCase() !== PUBLICATION_TYPES.ARTICLE));
-
-    if (validTags.length > 0) {
-      return validTags.map((name) => name.toUpperCase());
-    }
-  }
-
-  // 2. Localized publication category from dictionary
-  const rawType = item.type || item.tipo || PUBLICATION_TYPES.ARTICLE;
-  const fromDict = dict?.documentTypes?.[rawType];
-  if (fromDict) return [fromDict.toUpperCase()];
-
-  const fallbackDict = (lang === 'es' ? esDict.documentTypes : glDict.documentTypes) as Record<string, string>;
-  const resolved = fallbackDict[rawType] || fallbackDict[PUBLICATION_TYPES.ARTICLE];
-  return [resolved.toUpperCase()];
 }
 
 interface RecentArticleCardProps {
@@ -74,16 +44,7 @@ interface RecentArticleCardProps {
   variant: 'large' | 'stacked' | 'tall';
   stackedStyle?: 'side' | 'background';
   showLabels?: boolean;
-  dict?: {
-    documentTypes?: Record<string, string>;
-    readArticle?: string;
-    mosaic?: {
-      readArticle?: string;
-      by?: string;
-      [key: string]: unknown;
-    };
-    [key: string]: unknown;
-  };
+  dict?: RecentArticlesMosaicGridProps['dict'];
 }
 
 function RecentArticleCard({
@@ -94,15 +55,20 @@ function RecentArticleCard({
   showLabels = true,
   dict,
 }: RecentArticleCardProps) {
-  const title = getLocalizedTitle(item, lang);
-  const subtitle = getLocalizedSubtitle(item, lang);
-  const labels = getLocalizedLabels(item, lang, dict);
-  const rawDate = item.published_at || item.created_at || item.creado_en;
-  const coverUrl = item.cover_image_url || item.imagen_url;
-  const hasCover = Boolean(coverUrl && coverUrl.trim().length > 0);
-  const authorName = item.author?.full_name || item.author?.nombre || item.perfiles?.nombre || '';
-  const readLabel = dict?.mosaic?.readArticle || dict?.readArticle || '';
-  const href = `/${lang}/articulo/${item.slug || item.id}`;
+  const fallbackDict = getDictionaryClient(lang);
+  const title = resolvePublicationTitle(item, lang);
+  const subtitle = resolvePublicationSubtitle(item, lang);
+  const labels = resolvePublicationLabels(item, {
+    documentTypes: dict?.documentTypes,
+    fallbackDict,
+  });
+  const rawDate = resolvePublicationDate(item);
+  const coverUrl = resolvePublicationCover(item);
+  const hasCover = Boolean(coverUrl);
+  const { name: authorName } = resolvePublicationAuthor(item, '');
+  const byLabel = dict?.mosaic?.by || dict?.articles?.by || fallbackDict.mosaic.by;
+  const readLabel = dict?.mosaic?.readArticle || dict?.articles?.readArticle || dict?.readArticle || fallbackDict.mosaic.readArticle;
+  const href = resolvePublicationHref(item, lang);
 
   if (variant === 'large') {
     return (
@@ -110,25 +76,15 @@ function RecentArticleCard({
         href={href}
         className="group relative flex flex-col justify-end p-7 sm:p-10 border border-lines bg-parchment overflow-hidden transition-all duration-300 hover:border-gold/60 hover:shadow-xl h-full min-h-[360px] sm:min-h-[440px]"
       >
-        {/* Top Gold Line on Hover */}
-        <span
-          aria-hidden="true"
-          className="absolute left-0 top-0 z-20 h-[2px] w-0 bg-gold transition-all duration-500 group-hover:w-full"
-        />
+        <TopGoldHoverLine />
 
-        {/* Cover image backdrop if available */}
-        {hasCover ? (
-          <>
-            <Image
-              src={coverUrl as string}
-              alt={title}
-              fill
-              sizes="(max-width: 1024px) 100vw, 65vw"
-              className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
-            />
-            {/* Adaptive protective gradient: light mode parchment tone, dark mode deep charcoal */}
-            <div className="absolute inset-0 bg-gradient-to-t from-parchment via-parchment/85 to-parchment/20 dark:from-black/95 dark:via-black/75 dark:to-black/30 transition-colors duration-300" />
-          </>
+        {coverUrl ? (
+          <MosaicCoverBackdrop
+            src={coverUrl}
+            alt={title}
+            sizes="(max-width: 1024px) 100vw, 65vw"
+            gradientToClass="dark:to-black/30"
+          />
         ) : (
           <span
             aria-hidden="true"
@@ -138,7 +94,6 @@ function RecentArticleCard({
           </span>
         )}
 
-        {/* Content Overlay */}
         <div className="relative z-10 flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1.5">
@@ -189,7 +144,7 @@ function RecentArticleCard({
             }`}
           >
             <span className={`font-sans text-xs ${hasCover ? 'text-charcoal/70 dark:text-white/75' : 'text-charcoal/60'}`}>
-              {authorName ? `Por ${authorName}` : ''}
+              {authorName ? `${byLabel} ${authorName}` : ''}
             </span>
             <span className="inline-flex items-center gap-1.5 font-sans text-xs font-bold uppercase tracking-[0.16em] text-gold">
               <span>{readLabel}</span>
@@ -212,17 +167,13 @@ function RecentArticleCard({
         href={href}
         className="group relative flex flex-col justify-between p-6 sm:p-7 border border-lines bg-parchment overflow-hidden transition-all duration-300 hover:border-gold/60 hover:shadow-lg h-full min-h-[380px]"
       >
-        <span
-          aria-hidden="true"
-          className="absolute left-0 top-0 z-20 h-[2px] w-0 bg-gold transition-all duration-500 group-hover:w-full"
-        />
+        <TopGoldHoverLine />
 
         <div className="flex flex-col gap-3">
-          {/* Top cover image if available */}
-          {hasCover && (
+          {coverUrl && (
             <div className="w-full aspect-[16/10] relative overflow-hidden bg-lines/30 mb-2 shrink-0 border border-lines/40">
               <Image
-                src={coverUrl as string}
+                src={coverUrl}
                 alt={title}
                 fill
                 sizes="(max-width: 1024px) 100vw, 33vw"
@@ -276,34 +227,22 @@ function RecentArticleCard({
     );
   }
 
-  // ====================================================
-  // STACKED VARIANT - OPTION A: IMAGE ON BACKGROUND (CIRCLED IN RED BY USER)
-  // ====================================================
+  // STACKED VARIANT - OPTION A: IMAGE ON BACKGROUND
   if (variant === 'stacked' && stackedStyle === 'background') {
     return (
       <Link
         href={href}
         className="group relative flex flex-col justify-between p-5 sm:p-6 border border-lines bg-parchment overflow-hidden transition-all duration-300 hover:border-gold/60 hover:shadow-xl h-full min-h-[175px]"
       >
-        {/* Top Gold Line on Hover */}
-        <span
-          aria-hidden="true"
-          className="absolute left-0 top-0 z-20 h-[2px] w-0 bg-gold transition-all duration-500 group-hover:w-full"
-        />
+        <TopGoldHoverLine />
 
-        {/* Cover image backdrop if available */}
-        {hasCover ? (
-          <>
-            <Image
-              src={coverUrl as string}
-              alt={title}
-              fill
-              sizes="(max-width: 1024px) 100vw, 33vw"
-              className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
-            />
-            {/* Adaptive protective gradient: light mode parchment tone, dark mode deep charcoal */}
-            <div className="absolute inset-0 bg-gradient-to-t from-parchment via-parchment/85 to-parchment/20 dark:from-black/95 dark:via-black/75 dark:to-black/30 transition-colors duration-300" />
-          </>
+        {coverUrl ? (
+          <MosaicCoverBackdrop
+            src={coverUrl}
+            alt={title}
+            sizes="(max-width: 1024px) 100vw, 33vw"
+            gradientToClass="dark:to-black/30"
+          />
         ) : (
           <span
             aria-hidden="true"
@@ -313,7 +252,6 @@ function RecentArticleCard({
           </span>
         )}
 
-        {/* Content Overlay */}
         <div className="relative z-10 flex flex-col justify-between h-full">
           <div>
             <div className="flex flex-wrap items-center justify-between gap-1.5">
@@ -372,18 +310,13 @@ function RecentArticleCard({
     );
   }
 
-  // ====================================================
   // STACKED VARIANT - OPTION B: SIDE THUMBNAIL (STANDARD)
-  // ====================================================
   return (
     <Link
       href={href}
       className="group relative flex flex-col justify-between p-5 sm:p-6 border border-lines bg-parchment overflow-hidden transition-all duration-300 hover:border-gold/60 hover:shadow-md h-full min-h-[175px]"
     >
-      <span
-        aria-hidden="true"
-        className="absolute left-0 top-0 z-20 h-[2px] w-0 bg-gold transition-all duration-500 group-hover:w-full"
-      />
+      <TopGoldHoverLine />
 
       <div className="flex gap-4 items-stretch h-full">
         <div className="flex-1 flex flex-col justify-between">
@@ -425,11 +358,10 @@ function RecentArticleCard({
           </div>
         </div>
 
-        {/* Thumbnail on side if article has cover image */}
-        {hasCover && (
+        {coverUrl && (
           <div className="w-20 sm:w-24 relative overflow-hidden shrink-0 border border-lines/40 aspect-square sm:aspect-auto">
             <Image
-              src={coverUrl as string}
+              src={coverUrl}
               alt={title}
               fill
               sizes="100px"
@@ -442,6 +374,39 @@ function RecentArticleCard({
   );
 }
 
+function StackedRecentPair({
+  first,
+  second,
+  firstDelayMs,
+  secondDelayMs,
+  lang,
+  dict,
+}: {
+  first?: ArticleCardData;
+  second?: ArticleCardData;
+  firstDelayMs: number;
+  secondDelayMs: number;
+  lang: string;
+  dict?: RecentArticlesMosaicGridProps['dict'];
+}) {
+  if (!first && !second) return null;
+
+  return (
+    <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-6 sm:gap-8 h-full justify-between">
+      {first && (
+        <RevealOnScroll delayMs={firstDelayMs} className="flex-1">
+          <RecentArticleCard item={first} lang={lang} variant="stacked" stackedStyle="background" showLabels={false} dict={dict} />
+        </RevealOnScroll>
+      )}
+      {second && (
+        <RevealOnScroll delayMs={secondDelayMs} className="flex-1">
+          <RecentArticleCard item={second} lang={lang} variant="stacked" stackedStyle="background" showLabels={false} dict={dict} />
+        </RevealOnScroll>
+      )}
+    </div>
+  );
+}
+
 export default function RecentArticlesMosaicGrid({
   articulos,
   lang,
@@ -451,39 +416,21 @@ export default function RecentArticlesMosaicGrid({
     return null;
   }
 
-  // 9 articles partitioned into 3 balanced asymmetric rows of 3 items each
-  const item0 = articulos[0];
-  const item1 = articulos[1]; // Circled in RED -> image on background
-  const item2 = articulos[2]; // Large
-  const item3 = articulos[3]; // Tall
-  const item4 = articulos[4]; // Tall
-  const item5 = articulos[5]; // Tall
-  const item6 = articulos[6]; // Large
-  const item7 = articulos[7]; // Circled in RED -> image on background
-  const item8 = articulos[8];
+  const [item0, item1, item2, item3, item4, item5, item6, item7, item8] = articulos;
 
   return (
     <div className="w-full flex flex-col gap-6 sm:gap-8">
-      
-      {/* ==================================================== */}
       {/* ROW 1 (3 items): 2 STACKED (LEFT, 4 cols) + 1 LARGE (RIGHT, 8 cols) */}
-      {/* ==================================================== */}
       {(item0 || item1 || item2) && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
-          {(item0 || item1) && (
-            <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-6 sm:gap-8 h-full justify-between">
-              {item0 && (
-                <RevealOnScroll delayMs={50} className="flex-1">
-                  <RecentArticleCard item={item0} lang={lang} variant="stacked" stackedStyle="background" showLabels={false} dict={dict} />
-                </RevealOnScroll>
-              )}
-              {item1 && (
-                <RevealOnScroll delayMs={100} className="flex-1">
-                  <RecentArticleCard item={item1} lang={lang} variant="stacked" stackedStyle="background" showLabels={false} dict={dict} />
-                </RevealOnScroll>
-              )}
-            </div>
-          )}
+          <StackedRecentPair
+            first={item0}
+            second={item1}
+            firstDelayMs={50}
+            secondDelayMs={100}
+            lang={lang}
+            dict={dict}
+          />
 
           {item2 && (
             <RevealOnScroll delayMs={150} className="lg:col-span-8 h-full">
@@ -493,9 +440,7 @@ export default function RecentArticlesMosaicGrid({
         </div>
       )}
 
-      {/* ==================================================== */}
       {/* ROW 2 (3 items): 3 TALL VERTICAL COLUMNS (4 cols + 4 cols + 4 cols) */}
-      {/* ==================================================== */}
       {(item3 || item4 || item5) && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
           {item3 && (
@@ -518,9 +463,7 @@ export default function RecentArticlesMosaicGrid({
         </div>
       )}
 
-      {/* ==================================================== */}
       {/* ROW 3 (3 items): 1 LARGE (LEFT, 8 cols) + 2 STACKED (RIGHT, 4 cols) */}
-      {/* ==================================================== */}
       {(item6 || item7 || item8) && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
           {item6 && (
@@ -529,23 +472,16 @@ export default function RecentArticlesMosaicGrid({
             </RevealOnScroll>
           )}
 
-          {(item7 || item8) && (
-            <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-6 sm:gap-8 h-full justify-between">
-              {item7 && (
-                <RevealOnScroll delayMs={400} className="flex-1">
-                  <RecentArticleCard item={item7} lang={lang} variant="stacked" stackedStyle="background" showLabels={false} dict={dict} />
-                </RevealOnScroll>
-              )}
-              {item8 && (
-                <RevealOnScroll delayMs={450} className="flex-1">
-                  <RecentArticleCard item={item8} lang={lang} variant="stacked" stackedStyle="background" showLabels={false} dict={dict} />
-                </RevealOnScroll>
-              )}
-            </div>
-          )}
+          <StackedRecentPair
+            first={item7}
+            second={item8}
+            firstDelayMs={400}
+            secondDelayMs={450}
+            lang={lang}
+            dict={dict}
+          />
         </div>
       )}
-
     </div>
   );
 }

@@ -138,7 +138,7 @@ describe('ReviewActionBar Component', () => {
     fireEvent.click(approveBtn);
 
     await waitFor(() => {
-      expect(articleActions.updateArticleState).toHaveBeenCalledWith('art-123', PUBLICATION_STATUSES.PUBLISHED);
+      expect(articleActions.updateArticleState).toHaveBeenCalledWith('art-123', PUBLICATION_STATUSES.PUBLISHED, 'gl');
       expect(mockToast.success).toHaveBeenCalled();
     });
   });
@@ -157,7 +157,7 @@ describe('ReviewActionBar Component', () => {
     fireEvent.click(rejectBtn);
 
     await waitFor(() => {
-      expect(articleActions.updateArticleState).toHaveBeenCalledWith('art-123', PUBLICATION_STATUSES.DRAFT);
+      expect(articleActions.updateArticleState).toHaveBeenCalledWith('art-123', PUBLICATION_STATUSES.DRAFT, 'gl');
       expect(mockToast.success).toHaveBeenCalled();
     });
   });

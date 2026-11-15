@@ -1,61 +1,95 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { useLocale } from '@/hooks/useLocale';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 
-export default function PasswordForm() {
-  const params = useParams();
-  const lang = (params?.lang as string) || 'gl';
-  const dict = lang === 'es' ? esDict : glDict;
-  const pf = dict.dashboard.passwordForm;
+const MIN_PASSWORD_LENGTH = 6;
+
+type StatusMessage = {
+  type: 'success' | 'error';
+  text: string;
+} | null;
+
+interface PasswordFormProps {
+  dict?: Partial<Dictionary['dashboard']>;
+  lang?: string;
+}
+
+function resolveErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string' &&
+    (error as { message: string }).message.trim().length > 0
+  ) {
+    return (error as { message: string }).message;
+  }
+  return fallback;
+}
+
+export default function PasswordForm({ dict: propDict, lang: propLang }: PasswordFormProps = {}) {
+  const detectedLang = useLocale();
+  const activeLang = propLang || detectedLang;
+  const fallbackDashboard = getDictionaryClient(activeLang).dashboard;
+  const dashboardDict = {
+    ...fallbackDashboard,
+    ...propDict,
+    passwordForm: {
+      ...fallbackDashboard.passwordForm,
+      ...propDict?.passwordForm,
+    },
+  };
+  const pf = dashboardDict.passwordForm;
 
   const [isOpen, setIsOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [statusMessage, setStatusMessage] = useState<StatusMessage>(null);
   const supabase = createClient();
 
   const handleClose = () => {
     setIsOpen(false);
-    setMessage('');
+    setStatusMessage(null);
     setPassword('');
     setConfirmPassword('');
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage('');
+    setStatusMessage(null);
 
     if (password !== confirmPassword) {
-      setMessage(pf.mismatch || 'Os contrasinais non coinciden.');
-      setLoading(false);
+      setStatusMessage({ type: 'error', text: pf.mismatch });
       return;
     }
 
-    if (password.length < 6) {
-      setMessage(pf.tooShort || 'O contrasinal debe ter polo menos 6 caracteres.');
-      setLoading(false);
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setStatusMessage({ type: 'error', text: pf.tooShort });
       return;
     }
+
+    setLoading(true);
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: password
+        password,
       });
 
       if (error) throw error;
 
-      setMessage(pf.success || 'Contrasinal actualizado con éxito.');
+      setStatusMessage({ type: 'success', text: pf.success });
       setPassword('');
       setConfirmPassword('');
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : 'Error';
-      setMessage(msg);
+      const msg = resolveErrorMessage(error, dashboardDict.unknownError);
+      setStatusMessage({ type: 'error', text: msg });
     } finally {
       setLoading(false);
     }
@@ -68,25 +102,31 @@ export default function PasswordForm() {
         onClick={() => setIsOpen(true)}
         className="px-6 py-3 bg-transparent text-charcoal border border-charcoal hover:bg-charcoal hover:text-parchment transition-colors font-semibold text-xs uppercase tracking-widest cursor-pointer"
       >
-        {pf.button || 'Cambiar Contrasinal'}
+        {pf.button}
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/80 backdrop-blur-sm">
           <div className="bg-parchment p-8 w-full max-w-md relative border border-lines shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <button type="button" 
+            <button
+              type="button"
               onClick={handleClose}
               className="absolute top-4 right-4 text-charcoal/40 hover:text-charcoal transition-colors material-symbols-outlined cursor-pointer"
-              aria-label={pf.close || 'Pechar'}
+              aria-label={pf.close}
             >
               close
             </button>
-            
-            <h3 className="font-serif text-2xl text-charcoal mb-6 pr-6">{pf.modalTitle || 'Actualizar Contrasinal'}</h3>
-            
+
+            <h3 className="font-serif text-2xl text-charcoal mb-6 pr-6">{pf.modalTitle}</h3>
+
             <form onSubmit={handleUpdatePassword} className="space-y-6">
               <div>
-                <label htmlFor="new_password" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">{pf.newPassword || 'Novo Contrasinal'}</label>
+                <label
+                  htmlFor="new_password"
+                  className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1"
+                >
+                  {pf.newPassword}
+                </label>
                 <input
                   id="new_password"
                   type="password"
@@ -97,7 +137,12 @@ export default function PasswordForm() {
                 />
               </div>
               <div>
-                <label htmlFor="confirm_password" className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1">{pf.confirmPassword || 'Confirmar Novo Contrasinal'}</label>
+                <label
+                  htmlFor="confirm_password"
+                  className="block font-sans text-[10px] text-charcoal/60 uppercase tracking-widest mb-1"
+                >
+                  {pf.confirmPassword}
+                </label>
                 <input
                   id="confirm_password"
                   type="password"
@@ -108,9 +153,16 @@ export default function PasswordForm() {
                 />
               </div>
 
-              {message && (
-                <div className={`p-4 text-sm ${message.includes('Error') || message.includes('non coinciden') || message.includes('no coinciden') || message.includes('caracteres') ? 'border border-red-200 bg-red-50 text-red-800' : 'border border-green-200 bg-green-50 text-green-800'}`}>
-                  {message}
+              {statusMessage && (
+                <div
+                  role={statusMessage.type === 'error' ? 'alert' : 'status'}
+                  className={`p-4 text-sm border ${
+                    statusMessage.type === 'error'
+                      ? 'border-red-200 bg-red-50 text-red-800'
+                      : 'border-green-200 bg-green-50 text-green-800'
+                  }`}
+                >
+                  {statusMessage.text}
                 </div>
               )}
 
@@ -119,7 +171,7 @@ export default function PasswordForm() {
                 disabled={loading}
                 className="w-full px-6 py-3 bg-charcoal text-parchment hover:bg-gold transition-colors font-semibold text-xs uppercase tracking-widest disabled:opacity-50 cursor-pointer"
               >
-                {loading ? (pf.updating || 'Actualizando...') : (pf.save || 'Gardar Novo Contrasinal')}
+                {loading ? pf.updating : pf.save}
               </button>
             </form>
           </div>

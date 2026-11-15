@@ -3,7 +3,8 @@
 import { useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useLocale } from '@/hooks/useLocale';
-import { i18n } from '@/i18n-config';
+import { i18n, isSupportedLocale } from '@/i18n-config';
+import { getDictionaryClient } from '@/dictionaries/client';
 
 export default function LanguageToggle() {
   const router = useRouter();
@@ -20,10 +21,11 @@ export default function LanguageToggle() {
     // Replace URL
     if (!pathname) return;
 
-    // Create new pathname by replacing the current locale
+    // Create new pathname by replacing the current locale segment when present
     const segments = pathname.split('/');
-    segments[1] = newLocale; // Assumes /[lang]/...
-    const newPathname = segments.join('/');
+    const newPathname = isSupportedLocale(segments[1])
+      ? [segments[0], newLocale, ...segments.slice(2)].join('/')
+      : `/${newLocale}${pathname === '/' ? '' : pathname}`;
 
     startTransition(() => {
       router.push(newPathname);
@@ -32,10 +34,12 @@ export default function LanguageToggle() {
 
   if (!currentLocale) return <div className="w-10 h-10 border border-lines bg-parchment" />; // Skeleton
 
-  const currentIndex = (i18n.locales as readonly string[]).indexOf(currentLocale);
+  const currentIndex = i18n.locales.indexOf(currentLocale);
   const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % i18n.locales.length : 0;
   const nextLocale = i18n.locales[nextIndex];
-  const nextLabel = (i18n.localeLabels as Record<string, string>)[nextLocale] || nextLocale.toUpperCase();
+  const nextLabel = i18n.localeLabels[nextLocale] || nextLocale.toUpperCase();
+  const dict = getDictionaryClient(currentLocale);
+  const switchLabel = `${dict.nav.switchLanguageTo} ${nextLabel}`;
 
   return (
     <button
@@ -43,8 +47,8 @@ export default function LanguageToggle() {
       onClick={() => switchLocale(nextLocale)}
       disabled={isPending}
       className="border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300 flex items-center justify-center w-10 h-10 shadow-lg text-xs font-serif font-bold tracking-widest focus:outline-none focus-visible:ring-2 focus-visible:ring-gold"
-      aria-label={`Cambiar a ${nextLabel}`}
-      title={`Cambiar a ${nextLabel}`}
+      aria-label={switchLabel}
+      title={switchLabel}
     >
       {currentLocale.toUpperCase()}
     </button>

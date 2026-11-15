@@ -37,7 +37,7 @@ describe('ArticleTableOfContents', () => {
   });
 
   it('invokes onItemClick handler when an item link is clicked', () => {
-    const handleClick = vi.fn((e: React.MouseEvent) => e.preventDefault());
+    const handleClick = vi.fn<(e: React.MouseEvent, item: unknown) => void>((e) => e.preventDefault());
     const item = { id: 'sec-1', path: [1], text: 'Sección Un', slug: 'seccion-un' as never };
 
     render(
@@ -51,6 +51,6 @@ describe('ArticleTableOfContents', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'Sección Un' }));
     expect(handleClick).toHaveBeenCalledTimes(1);
-    expect(handleClick.mock.calls[0][1]).toEqual(item);
+    expect(handleClick).toHaveBeenCalledWith(expect.anything(), item);
   });
 });
