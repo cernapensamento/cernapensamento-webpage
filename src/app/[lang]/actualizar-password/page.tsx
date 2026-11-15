@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/FeedbackProvider';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { getDictionaryClient } from '@/dictionaries/client';
+import { useLocale } from '@/hooks/useLocale';
 
 export default function ActualizarPasswordPage() {
   const [password, setPassword] = useState('');
@@ -14,12 +14,11 @@ export default function ActualizarPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const router = useRouter();
-  const params = useParams();
-  const lang = (params.lang as string) || 'es';
+  const lang = useLocale();
   const supabase = createClient();
   const toast = useToast();
-  
-  const dict = lang === 'es' ? esDict : glDict;
+
+  const dict = getDictionaryClient(lang);
   const loginDict = dict.loginPage;
 
   useEffect(() => {

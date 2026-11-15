@@ -1,23 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { getDictionaryClient } from '@/dictionaries/client';
+import { useLocale } from '@/hooks/useLocale';
 
 export default function RecuperarPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
-  const params = useParams();
-  const lang = (params.lang as string) || 'es';
+  const lang = useLocale();
   const supabase = createClient();
-  
-  const dict = lang === 'es' ? esDict : glDict;
+
+  const dict = getDictionaryClient(lang);
   const loginDict = dict.loginPage;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,7 +90,7 @@ export default function RecuperarPasswordPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-4 py-3 bg-surface border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
-                placeholder="tu@correo.com"
+                placeholder={loginDict.emailPlaceholder}
               />
             </div>
 
