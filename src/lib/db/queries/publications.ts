@@ -27,7 +27,6 @@ import type {
   LocalizedString,
   GuestPublicationQuota,
 } from '../types';
-export { createPublicAnonClient } from '../client';
 
 interface RawTagRelation {
   tag?: {

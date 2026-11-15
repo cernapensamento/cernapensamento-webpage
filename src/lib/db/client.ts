@@ -10,6 +10,10 @@ export function createPublicAnonClient(): SupabaseClient | undefined {
   if (!supabaseUrl || !supabaseAnonKey) return undefined;
 
   return createClient(supabaseUrl, supabaseAnonKey, {
-    auth: { persistSession: false },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
   });
 }

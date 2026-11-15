@@ -5,6 +5,7 @@
 
 import { createClient, type SupabaseClient, type PostgrestError } from '@supabase/supabase-js';
 import {
+  DB_RPCS,
   DB_TABLES,
   PUBLICATION_COLS,
   PUBLICATION_STATUSES,
@@ -41,7 +42,7 @@ export async function unsubscribeNewsletterByEmail(
   client?: SupabaseClient
 ): Promise<{ error: PostgrestError | null }> {
   const supabase = client ?? createNewsletterSupabaseClient(false);
-  const { error } = await supabase.rpc('unsubscribe_newsletter_by_email', {
+  const { error } = await supabase.rpc(DB_RPCS.UNSUBSCRIBE_NEWSLETTER_BY_EMAIL, {
     target_email: email.trim().toLowerCase(),
   });
   return { error };
@@ -53,10 +54,11 @@ export async function unsubscribeNewsletterByEmail(
  */
 export async function claimPublicationForNewsletter(
   publicationId: string,
-  client: SupabaseClient
+  client?: SupabaseClient
 ): Promise<{ data: PublicationRow | null; error: PostgrestError | null }> {
+  const supabase = client ?? createNewsletterSupabaseClient(true);
   const nowIso = new Date().toISOString();
-  const { data, error } = await client
+  const { data, error } = await supabase
     .from(DB_TABLES.PUBLICATIONS)
     .update({ [PUBLICATION_COLS.NEWSLETTER_SENT_AT]: nowIso })
     .eq(PUBLICATION_COLS.ID, publicationId)
@@ -70,15 +72,21 @@ export async function claimPublicationForNewsletter(
 
 /**
  * Releases the newsletter dispatch claim on a publication after a failed batch.
+ * Logs and swallows release errors so callers don't duplicate cleanup error handling.
  */
 export async function releasePublicationNewsletterClaim(
   publicationId: string,
-  client: SupabaseClient
+  client?: SupabaseClient
 ): Promise<void> {
-  await client
-    .from(DB_TABLES.PUBLICATIONS)
-    .update({ [PUBLICATION_COLS.NEWSLETTER_SENT_AT]: null })
-    .eq(PUBLICATION_COLS.ID, publicationId);
+  try {
+    const supabase = client ?? createNewsletterSupabaseClient(true);
+    await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .update({ [PUBLICATION_COLS.NEWSLETTER_SENT_AT]: null })
+      .eq(PUBLICATION_COLS.ID, publicationId);
+  } catch (releaseErr) {
+    console.error('[Newsletter DAL] Failed to release publication claim:', releaseErr);
+  }
 }
 
 /**
@@ -86,9 +94,10 @@ export async function releasePublicationNewsletterClaim(
  */
 export async function getNewsletterAuthorName(
   authorId: string,
-  client: SupabaseClient
+  client?: SupabaseClient
 ): Promise<string | null> {
-  const { data } = await client
+  const supabase = client ?? createNewsletterSupabaseClient(true);
+  const { data } = await supabase
     .from(DB_TABLES.USERS)
     .select(USER_COLS.FULL_NAME)
     .eq(USER_COLS.ID, authorId)
@@ -102,9 +111,10 @@ export async function getNewsletterAuthorName(
  */
 export async function getNewsletterSubscribers(
   webhookSecret: string,
-  client: SupabaseClient
+  client?: SupabaseClient
 ): Promise<{ data: SubscriberRecord[]; error: PostgrestError | null }> {
-  const { data, error } = await client.rpc('get_subscribers_emails', {
+  const supabase = client ?? createNewsletterSupabaseClient(true);
+  const { data, error } = await supabase.rpc(DB_RPCS.GET_SUBSCRIBERS_EMAILS, {
     webhook_secret: webhookSecret,
   });
 
