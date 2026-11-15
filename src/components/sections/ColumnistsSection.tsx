@@ -6,23 +6,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SITE_NAME } from '@/lib/constants';
 import { COLUMNISTS as columnists, type Columnist } from '@/lib/columnists';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 
 interface ColumnistsSectionProps {
   lang: string;
   dict: {
-    columnists: {
-      tag: string;
-      title: string;
-      publishedArticles: string;
-      emailLabel?: string;
-      instagramLabel?: string;
-      viewAllAuthors?: string;
-    };
+    columnists: Partial<Dictionary['columnists']>;
     authors: Record<string, string>;
   };
 }
 
 export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps) {
+  const t = { ...getDictionaryClient(lang).columnists, ...dict.columnists };
   const router = useRouter();
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -163,7 +158,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
           <div className="flex items-center justify-center gap-3 mb-3">
             <span className="w-6 h-[2px] bg-gold" aria-hidden="true" />
             <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
-              {dict.columnists.tag}
+              {t.tag}
             </span>
             <span className="w-6 h-[2px] bg-gold" aria-hidden="true" />
           </div>
@@ -171,7 +166,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
             id="authors-heading"
             className="font-serif text-3xl sm:text-4xl md:text-5xl text-charcoal font-bold tracking-tight"
           >
-            {dict.columnists.title} {SITE_NAME}
+            {t.title} {SITE_NAME}
           </h2>
         </div>
 
@@ -181,7 +176,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
         <div 
           className="flex flex-col md:flex-row gap-4 md:gap-3 w-full min-h-[550px] md:h-[550px] items-stretch"
           role="region"
-          aria-label={dict.columnists.title}
+          aria-label={t.title}
         >
           {columnists.map((columnist: Columnist, idx: number) => {
             const isActive = activeSlug === columnist.slug;
@@ -227,7 +222,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
                 <div className="absolute inset-0 w-full h-full overflow-hidden bg-lines/20">
                   <Image
                     src={columnist.image}
-                    alt={`Retrato de ${columnist.name}`}
+                    alt={`${t.portraitOf} ${columnist.name}`}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 40vw, 25vw"
                     priority={idx < 2}
@@ -295,10 +290,10 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
                         onClick={(e) => e.stopPropagation()}
                         onTouchEnd={(e) => e.stopPropagation()}
                         className="text-xs font-sans text-charcoal/80 dark:text-neutral-200 hover:text-gold dark:hover:text-gold border border-charcoal/20 dark:border-white/20 hover:border-gold dark:hover:border-gold py-1.5 px-3 flex items-center gap-1.5 transition-all bg-white/70 dark:bg-black/50 backdrop-blur-sm"
-                        aria-label={`Enviar correo a ${columnist.name}`}
+                        aria-label={`${t.sendEmailTo} ${columnist.name}`}
                       >
                         <span className="material-symbols-outlined text-[15px] text-gold" data-icon="mail">mail</span>
-                        <span>{dict.columnists.emailLabel || 'Correo'}</span>
+                        <span>{t.emailLabel}</span>
                       </a>
 
                       <a
@@ -308,10 +303,10 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
                         onClick={(e) => e.stopPropagation()}
                         onTouchEnd={(e) => e.stopPropagation()}
                         className="text-xs font-sans text-charcoal/80 dark:text-neutral-200 hover:text-gold dark:hover:text-gold border border-charcoal/20 dark:border-white/20 hover:border-gold dark:hover:border-gold py-1.5 px-3 flex items-center gap-1.5 transition-all bg-white/70 dark:bg-black/50 backdrop-blur-sm"
-                        aria-label={`Perfil de Instagram de ${columnist.name}`}
+                        aria-label={`${t.instagramProfileOf} ${columnist.name}`}
                       >
                         <span className="material-symbols-outlined text-[15px] text-gold" data-icon="photo_camera">photo_camera</span>
-                        <span>{dict.columnists.instagramLabel || 'Instagram'}</span>
+                        <span>{t.instagramLabel}</span>
                       </a>
                     </div>
                   </div>
@@ -328,7 +323,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
             href={`/${lang}/autores`}
             className="group inline-flex items-center gap-3 border border-lines bg-parchment px-6 py-3.5 font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-charcoal transition-all duration-300 hover:border-gold hover:text-gold"
           >
-            {dict.columnists.viewAllAuthors}
+            {t.viewAllAuthors}
             <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1">
               arrow_forward
             </span>

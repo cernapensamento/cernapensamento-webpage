@@ -1,14 +1,10 @@
 import React from 'react';
 import { getPublicationCards, getPinnedPublications } from '@/lib/db';
-import ArticlesMosaicSection from './ArticlesMosaicSection';
+import ArticlesMosaicSection, { type ArticlesMosaicDict } from './ArticlesMosaicSection';
 
 interface ArticlesMosaicLoaderProps {
   lang: string;
-  dict: {
-    documentTypes?: Record<string, string>;
-    readArticle?: string;
-    [key: string]: unknown;
-  };
+  dict: ArticlesMosaicDict;
 }
 
 export default async function ArticlesMosaicLoader({

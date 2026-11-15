@@ -2,25 +2,17 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 
 interface AboutUsSectionProps {
   lang: string;
-  dict: {
-    title: string;
-    subtitle: string;
-    paragraph1: string;
-    paragraph2: string;
-    paragraph3: string;
-    button: string;
-    pullQuote?: string;
-    pillars?: Array<{ num: string; title: string; desc: string }>;
-    secondaryButton?: string;
-    legalFramework?: string;
-  };
+  dict: Partial<Dictionary['about']>;
 }
 
 export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
   if (!dict) return null;
+
+  const t = { ...getDictionaryClient(lang).about, ...dict };
 
   return (
     <section 
@@ -42,7 +34,7 @@ export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
           <div className="flex items-center gap-3 mb-4">
             <span className="w-6 h-[2px] bg-gold" aria-hidden="true" />
             <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
-              {dict.title}
+              {t.title}
             </span>
           </div>
         </RevealOnScroll>
@@ -57,15 +49,15 @@ export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
                   id="about-heading"
                   className="font-serif text-3xl sm:text-4xl md:text-5xl text-charcoal font-bold tracking-tight leading-[1.15] mb-5"
                 >
-                  {dict.subtitle}
+                  {t.subtitle}
                 </h2>
               </RevealOnScroll>
 
-              {dict.pullQuote && (
+              {t.pullQuote && (
                 <RevealOnScroll delayMs={150}>
                   <div className="border-l-2 border-gold/70 pl-6 py-2 my-3">
                     <p className="font-serif italic text-lg sm:text-xl text-charcoal/90 leading-relaxed">
-                      &ldquo;{dict.pullQuote}&rdquo;
+                      &ldquo;{t.pullQuote}&rdquo;
                     </p>
                   </div>
                 </RevealOnScroll>
@@ -73,9 +65,9 @@ export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
             </div>
 
             {/* Editorial Pillars — Each animated with staggered reveal, positioned directly under pullquote */}
-            {dict.pillars && dict.pillars.length > 0 && (
+            {t.pillars && t.pillars.length > 0 && (
               <div className="pt-5 border-t border-lines flex flex-col gap-4">
-                {dict.pillars.map((pillar, idx) => (
+                {t.pillars.map((pillar, idx) => (
                   <RevealOnScroll key={pillar.num} delayMs={180 + idx * 80}>
                     <div className="flex items-start gap-4">
                       <span className="font-mono text-xs font-bold text-gold pt-0.5 select-none shrink-0">
@@ -119,15 +111,15 @@ export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
                       />
                     </span>
                     <span className="font-serif font-bold tracking-wider text-charcoal text-xl sm:text-2xl">ERNA</span>
-                    {dict.paragraph1.startsWith('CERNA') 
-                      ? dict.paragraph1.slice(5) 
-                      : dict.paragraph1}
+                    {t.paragraph1.startsWith('CERNA') 
+                      ? t.paragraph1.slice(5) 
+                      : t.paragraph1}
                   </p>
                   <p>
-                    {dict.paragraph2}
+                    {t.paragraph2}
                   </p>
                   <p>
-                    {dict.paragraph3}
+                    {t.paragraph3}
                   </p>
                 </div>
 
@@ -136,7 +128,7 @@ export default function AboutUsSection({ lang, dict }: AboutUsSectionProps) {
                     href={`/${lang}/asociacion`}
                     className="group inline-flex items-center justify-center gap-3 border border-lines bg-surface px-8 py-3.5 font-sans text-xs font-bold uppercase tracking-[0.2em] text-charcoal transition-all duration-300 hover:border-gold hover:text-gold shadow-sm"
                   >
-                    <span>{dict.button}</span>
+                    <span>{t.button}</span>
                     <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
                       arrow_forward
                     </span>

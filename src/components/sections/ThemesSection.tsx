@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import type { TagItem } from '@/lib/db/types';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 
 export interface ThemeDossierItem {
   id: string;
@@ -13,22 +14,14 @@ export interface ThemeDossierItem {
 
 interface ThemesSectionProps {
   lang: string;
-  dict: {
-    tag: string;
-    title: string;
-    description: string;
-    list: string[];
-    exploreButton: string;
-    continuousScroll?: string;
-    items?: ThemeDossierItem[];
-    cardAction?: string;
-    searchPrompt?: string;
-  };
+  dict: Partial<Dictionary['themes']>;
   tags?: TagItem[];
 }
 
 export default function ThemesSection({ lang, dict, tags }: ThemesSectionProps) {
   if (!dict) return null;
+
+  const t = { ...getDictionaryClient(lang).themes, ...dict };
 
   // If real database tags are supplied, use up to 12 database tags with their exact slug and localized name.
   // Otherwise fall back to dictionary list.
@@ -37,13 +30,13 @@ export default function ThemesSection({ lang, dict, tags }: ThemesSectionProps) 
         id: String(idx + 1).padStart(2, '0'),
         title: tag.name,
         slug: tag.slug,
-        desc: dict.description,
+        desc: t.description,
       }))
-    : (dict.items || dict.list.slice(0, 12).map((tema, idx) => ({
+    : (t.items || (t.list ?? []).slice(0, 12).map((tema, idx) => ({
         id: String(idx + 1).padStart(2, '0'),
         title: tema,
         slug: tema.toLowerCase().replace(/\s+/g, '-'),
-        desc: dict.description,
+        desc: t.description,
       })));
 
   // Duplicate items for continuous seamless loop
@@ -62,14 +55,14 @@ export default function ThemesSection({ lang, dict, tags }: ThemesSectionProps) 
             <div className="flex items-center gap-3 mb-2.5">
               <span className="w-5 h-[2px] bg-gold" aria-hidden="true" />
               <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
-                {dict.tag}
+                {t.tag}
               </span>
             </div>
             <h2 
               id="themes-heading"
               className="font-serif text-2xl sm:text-3xl md:text-4xl text-charcoal font-bold tracking-tight leading-tight"
             >
-              {dict.title}
+              {t.title}
             </h2>
           </div>
         </div>
@@ -111,9 +104,9 @@ export default function ThemesSection({ lang, dict, tags }: ThemesSectionProps) 
                 </p>
               </div>
 
-              {dict.cardAction && (
+              {t.cardAction && (
                 <div className="pt-2.5 mt-3 border-t border-lines/50 flex items-center justify-between text-[10px] font-sans font-semibold text-charcoal/60 group-hover/card:text-gold transition-colors">
-                  <span>{dict.cardAction}</span>
+                  <span>{t.cardAction}</span>
                   <span>§</span>
                 </div>
               )}
@@ -125,14 +118,14 @@ export default function ThemesSection({ lang, dict, tags }: ThemesSectionProps) 
       <div className="max-w-[1120px] mx-auto px-5 md:px-16 relative z-10">
         {/* Bottom Archive CTA Link */}
         <div className="mt-8 pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-sans text-charcoal/65">
-          {dict.searchPrompt && (
-            <span>{dict.searchPrompt}</span>
+          {t.searchPrompt && (
+            <span>{t.searchPrompt}</span>
           )}
           <Link 
             href={`/${lang}/articulos`} 
             className="group font-bold text-charcoal hover:text-gold uppercase tracking-wider underline underline-offset-4 shrink-0 transition-colors inline-flex items-center gap-1.5"
           >
-            <span>{dict.exploreButton}</span>
+            <span>{t.exploreButton}</span>
             <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
               arrow_forward
             </span>
