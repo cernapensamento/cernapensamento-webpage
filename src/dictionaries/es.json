@@ -231,6 +231,8 @@
     "contributorOf": "es un colaborador de",
     "unknownAuthor": "Autor Desconocido",
     "originalLanguage": "Idioma original:",
+    "indexLabel": "Índice",
+    "indexAriaLabel": "Índice del artículo",
     "download": {
       "eyebrow": "Copia impresa",
       "title": "Lleva este texto contigo",
@@ -515,6 +517,8 @@
     "clearAllConfirm": "¿Estás seguro de que quieres borrar todo el contenido de este artículo? Se perderán todos los cambios en gallego y en castellano.",
     "clearAllTitle": "¿Borrar todo el contenido?",
     "noHeadingsFound": "No se encontraron secciones (H1, H2, H3) en el artículo.",
+    "showIndexLabel": "Índice automático",
+    "showIndexHint": "Mostrar tabla de contenidos generada a partir de los títulos H1–H3 al inicio del artículo.",
     "translateSuccess": "Traducción generada correctamente. Puedes cambiar de idioma en las pestañas para revisarla.",
     "translateError": "Error al traducir el contenido. Revisa la consola o tu API KEY.",
     "insert": "Insertar",
