@@ -1,6 +1,7 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Locale } from '@/i18n-config';
+import { resolveLocale } from '@/i18n-config';
 import { getDictionary } from '@/dictionaries';
 import { EstatutosCard } from '@/components/estatutos/EstatutosCard';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
@@ -9,10 +10,21 @@ interface Props {
   params: Promise<{ lang: string }>;
 }
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang } = await params;
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+
+  return {
+    title: `${dict.nav.asociacion} | Cerna Pensamento`,
+    description: dict.associationAndNews.description,
+  };
+}
+
 export default async function AsociacionPage({ params }: Props) {
   const { lang } = await params;
-  const typedLang = lang as Locale;
-  const dict = await getDictionary(typedLang);
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
   
   const { 
     title: mdTitle, 
@@ -160,7 +172,7 @@ export default async function AsociacionPage({ params }: Props) {
             {collections.map((col: { id: string | number; title: string; description: string }, idx: number) => (
               <RevealOnScroll key={idx} delayMs={100 + (idx % 2) * 100}>
                 <Link 
-                  href={`/${lang}/asociacion/coleccion-${col.id}`}
+                  href={`/${locale}/asociacion/coleccion-${col.id}`}
                   className="group flex flex-col p-8 sm:p-10 bg-surface border border-lines hover:border-gold transition-all duration-300 hover:shadow-md relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold h-full justify-between"
                 >
                   <div className="relative z-10">
@@ -232,7 +244,7 @@ export default async function AsociacionPage({ params }: Props) {
                 </div>
 
                 <Link
-                  href={`/${lang}/contacto`}
+                  href={`/${locale}/contacto`}
                   className="btn-primary text-xs tracking-[0.16em] font-bold inline-flex items-center gap-2.5 group shadow-sm"
                 >
                   <span>{dict.asociacion.joinButton}</span>
@@ -250,7 +262,7 @@ export default async function AsociacionPage({ params }: Props) {
         {/* ============================================================ */}
         {estatutosCard && (
           <EstatutosCard 
-            lang={lang}
+            lang={locale}
             title={estatutosCard.title}
             description={estatutosCard.description}
             readMoreText={readMore}

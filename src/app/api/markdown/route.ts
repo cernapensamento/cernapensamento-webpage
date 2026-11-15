@@ -1,44 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
-import { getHomepageMarkdown, get404Markdown } from '@/lib/agent/markdown';
+import { getHomepageMarkdown, get404Markdown, htmlToMarkdown } from '@/lib/agent/markdown';
 import { getDocument } from '@/lib/content';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
-
-/**
- * Strips HTML tags and preserves basic formatting in plain Markdown.
- */
-function htmlToMarkdown(html: string): string {
-  if (!html) return '';
-
-  return html
-    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n\n# $1\n\n')
-    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n\n## $1\n\n')
-    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '\n\n### $1\n\n')
-    .replace(/<h4[^>]*>(.*?)<\/h4>/gi, '\n\n#### $1\n\n')
-    .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '\n\n> $1\n\n')
-    .replace(/<li[^>]*>(.*?)<\/li>/gi, '\n- $1')
-    .replace(/<p[^>]*>(.*?)<\/p>/gi, '\n\n$1\n\n')
-    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
-    .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
-    .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
-    .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
-    .replace(/<hr\s*\/?>/gi, '\n\n---\n\n')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<a\b[^>]*href=(?:"([^"]*)"|'([^']*)')[^>]*>([\s\S]*?)<\/a>|<[^>]+>/gi,
-      (_match, doubleQuotedUrl: string | undefined, singleQuotedUrl: string | undefined, text: string) => {
-        const url = doubleQuotedUrl ?? singleQuotedUrl;
-        if (url === undefined) return '';
-        const destination = url.replace(/[<>\\\x00-\x20]/g, (character) => encodeURIComponent(character));
-        return `[${text.replace(/<[^>]+>/g, '')}](<${destination}>)`;
-      })
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
+import { i18n, isSupportedLocale, resolveLocale } from '@/i18n-config';
+import { PUBLICATION_STATUSES } from '@/lib/db/schema';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type') || 'home';
-  const lang = searchParams.get('lang') || 'gl';
+  const rawLang = searchParams.get('lang');
+  const lang = resolveLocale(rawLang);
   const slug = searchParams.get('slug');
 
   const headers = {
@@ -57,7 +29,7 @@ export async function GET(request: NextRequest) {
     try {
       const publication = await getPublicationBySlug(slug, { lang, throwOnError: true });
 
-      if (!publication || publication.status !== 'published') {
+      if (!publication || publication.status !== PUBLICATION_STATUSES.PUBLISHED) {
         return new NextResponse(get404Markdown(lang), {
           status: 404,
           headers,
@@ -92,11 +64,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  if (type === 'legal' && (slug === 'privacidad' || slug === 'estatutos') && (lang === 'gl' || lang === 'es')) {
+  const legalLang = rawLang || i18n.defaultLocale;
+  if (type === 'legal' && (slug === 'privacidad' || slug === 'estatutos') && isSupportedLocale(legalLang)) {
     try {
-      const doc = getDocument(slug, lang);
+      const doc = getDocument(slug, legalLang);
       if (!doc || !doc.content) {
-        return new NextResponse(get404Markdown(lang), {
+        return new NextResponse(get404Markdown(legalLang), {
           status: 404,
           headers,
         });
@@ -107,7 +80,7 @@ export async function GET(request: NextRequest) {
         headers,
       });
     } catch {
-      return new NextResponse(get404Markdown(lang), {
+      return new NextResponse(get404Markdown(legalLang), {
         status: 404,
         headers,
       });

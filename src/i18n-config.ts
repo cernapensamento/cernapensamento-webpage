@@ -5,11 +5,24 @@ export const i18n = {
     gl: 'Galego',
     es: 'Castellano',
   },
+  openGraphLocales: {
+    gl: 'gl_ES',
+    es: 'es_ES',
+  },
 } as const;
 
 export type Locale = (typeof i18n)['locales'][number];
 
 export function isSupportedLocale(locale: unknown): locale is Locale {
   return typeof locale === 'string' && (i18n.locales as readonly string[]).includes(locale);
+}
+
+export function resolveLocale(locale: unknown): Locale {
+  return isSupportedLocale(locale) ? locale : i18n.defaultLocale;
+}
+
+export function getOpenGraphLocale(locale: unknown): string {
+  const resolved = resolveLocale(locale);
+  return (i18n.openGraphLocales as Record<string, string>)[resolved] || `${resolved}_${resolved.toUpperCase()}`;
 }
 

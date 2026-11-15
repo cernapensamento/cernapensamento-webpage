@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
 import { createClient } from '@/lib/supabase/client';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { resolveClientDeskRedirectPath } from '@/lib/auth-client';
+import { getDictionaryClient } from '@/dictionaries/client';
+import { useLocale } from '@/hooks/useLocale';
 
 interface GoogleCredentialResponse {
   credential?: string;
@@ -56,17 +57,16 @@ export default function LoginPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showResend, setShowResend] = useState(false);
   const router = useRouter();
-  const params = useParams();
-  const lang = (params.lang as string) || 'es';
+  const lang = useLocale();
   const supabase = createClient();
-  const dict = lang === 'es' ? esDict : glDict;
+  const dict = getDictionaryClient(lang);
   const loginDict = dict.loginPage;
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const [error, setError] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search);
-      if (p.get('error') === 'invalid_token') return loginDict?.invalidToken || esDict.loginPage.invalidToken;
-      if (p.get('error') === 'auth_failed') return loginDict?.googleAuthError || esDict.loginPage.googleAuthError;
+      if (p.get('error') === 'invalid_token') return loginDict.invalidToken;
+      if (p.get('error') === 'auth_failed') return loginDict.googleAuthError;
     }
     return null;
   });
@@ -100,23 +100,11 @@ export default function LoginPage() {
       if (error) throw error;
 
       if (data.user) {
-        const jwtRole = data.user.app_metadata?.user_role;
-        const { data: profile } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-
-        const role = profile?.role || jwtRole || 'reader';
-        const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || role === 'guest' || (role as string) === 'escritor';
-        if (canAccessDesk) {
-          router.push(`/${lang}/escritorio`);
-        } else {
-          router.push(`/${lang}/escritorio/perfil`);
-        }
+        const redirectPath = await resolveClientDeskRedirectPath(data.user, supabase, lang);
+        router.push(redirectPath);
         router.refresh();
       } else {
-        router.push('/');
+        router.push(`/${lang}`);
         router.refresh();
       }
     } catch (err: unknown) {
@@ -181,23 +169,11 @@ export default function LoginPage() {
         if (error) throw error;
         
         if (data.user) {
-          const jwtRole = data.user.app_metadata?.user_role;
-          const { data: profile } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', data.user.id)
-            .single();
-            
-          const role = profile?.role || jwtRole || 'reader';
-          const canAccessDesk = role === 'founder' || role === 'admin' || role === 'member' || role === 'guest' || (role as string) === 'escritor';
-          if (canAccessDesk) {
-            router.push(`/${lang}/escritorio`);
-          } else {
-            router.push(`/${lang}/escritorio/perfil`);
-          }
+          const redirectPath = await resolveClientDeskRedirectPath(data.user, supabase, lang);
+          router.push(redirectPath);
           router.refresh();
         } else {
-          router.push('/');
+          router.push(`/${lang}`);
           router.refresh();
         }
       } else {
@@ -251,7 +227,7 @@ export default function LoginPage() {
       setSuccessMessage(loginDict.resendSuccess);
       setShowResend(false);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError(err instanceof Error ? err.message : loginDict.genericAuthError);
     } finally {
       setLoading(false);
     }
@@ -322,7 +298,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-4 py-3 bg-parchment border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
-                placeholder="tu@correo.com"
+                placeholder={loginDict.emailPlaceholder}
               />
             </div>
 

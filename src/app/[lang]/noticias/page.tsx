@@ -3,7 +3,7 @@ import NewsMosaicGrid from '@/components/features/NewsMosaicGrid';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getPublicationCards, PUBLICATION_TYPES } from '@/lib/db';
 import { getDictionary } from '@/dictionaries';
-import type { Locale } from '@/i18n-config';
+import { resolveLocale } from '@/i18n-config';
 
 export const revalidate = 60;
 
@@ -13,14 +13,17 @@ export default async function NoticiasPage({
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
+  const locale = resolveLocale(lang);
 
   // Directly fetch all news publications from the database without filters
-  const publications = await getPublicationCards({
-    type: PUBLICATION_TYPES.NEWS,
-    limit: 100,
-    lang,
-  });
+  const [dict, publications] = await Promise.all([
+    getDictionary(locale),
+    getPublicationCards({
+      type: PUBLICATION_TYPES.NEWS,
+      limit: 100,
+      lang: locale,
+    }),
+  ]);
 
   const pageEyebrow = dict.noticias.eyebrow;
   const pageTitle = dict.noticias.pageTitle;
@@ -50,7 +53,7 @@ export default async function NoticiasPage({
         </RevealOnScroll>
 
         {/* Architectural News Mosaic Grid (based on diagram) */}
-        <NewsMosaicGrid news={publications} lang={lang} dict={dict} />
+        <NewsMosaicGrid news={publications} lang={locale} dict={dict} />
 
       </div>
     </main>

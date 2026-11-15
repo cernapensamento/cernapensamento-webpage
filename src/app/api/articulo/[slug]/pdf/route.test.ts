@@ -16,7 +16,11 @@ vi.mock('@/lib/pdf/articlePdf', () => ({
 vi.mock('@/dictionaries', () => ({
   getDictionary: vi.fn().mockResolvedValue({
     documentTypes: { essay: 'Ensaio' },
-    article: { aboutAuthor: 'Sobre a autoría' },
+    article: {
+      aboutAuthor: 'Sobre a autoría',
+      notFoundTitle: 'Artigo non atopado',
+      pdfGenerationError: 'Non foi posible xerar o PDF',
+    },
     authors: {},
   }),
 }));

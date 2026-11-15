@@ -128,6 +128,22 @@ export function isGuestRole(role?: string | null): boolean {
   return GUEST_ROLES.has(role.toLowerCase().trim());
 }
 
+/**
+ * Checks whether a user role has access to the writer desk (everything except reader roles).
+ */
+export function canAccessWriterDesk(role?: string | null): boolean {
+  if (!role) return false;
+  return !isReaderRole(role);
+}
+
+/**
+ * Publication limits for guest authors.
+ */
+export const GUEST_PUBLICATION_LIMITS = {
+  YEARLY: 2,
+  TOTAL: 4,
+} as const;
+
 export const PUBLICATION_STATUSES = {
   DRAFT: 'draft',
   IN_REVIEW: 'in_review',

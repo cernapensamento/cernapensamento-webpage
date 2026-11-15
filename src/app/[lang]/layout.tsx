@@ -5,20 +5,30 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { FeedbackProvider } from "@/components/ui/FeedbackProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import SiteFooter from '@/components/layout/SiteFooter';
-
-import { SITE_NAME } from "@/lib/constants";
-
-export const metadata: Metadata = {
-  title: SITE_NAME,
-  description: "A weekly literary and philosophical journal.",
-  icons: [
-    { rel: "icon", url: "/images/logo/screen.png" },
-    { rel: "apple-touch-icon", url: "/images/logo/screen.png" },
-  ],
-};
-
 import HeaderVisibilityWrapper from '@/components/layout/HeaderVisibilityWrapper';
 import PublicNavBar from '@/components/layout/PublicNavBar';
+import { getDictionary } from '@/dictionaries';
+import { resolveLocale } from '@/i18n-config';
+import { SITE_NAME } from "@/lib/constants";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+
+  return {
+    title: SITE_NAME,
+    description: dict.homepage.websiteDescription,
+    icons: [
+      { rel: "icon", url: "/images/logo/screen.png" },
+      { rel: "apple-touch-icon", url: "/images/logo/screen.png" },
+    ],
+  };
+}
 
 export default async function RootLayout({
   children,
@@ -28,10 +38,11 @@ export default async function RootLayout({
   params: Promise<{ lang: string }>;
 }>) {
   const { lang } = await params;
+  const locale = resolveLocale(lang);
 
   return (
     <html
-      lang={lang || "es"}
+      lang={locale}
       className={`${fontVariables} antialiased`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning

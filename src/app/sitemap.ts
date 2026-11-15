@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { createPublicAnonClient } from '@/lib/db';
 import { getPublicationCards } from '@/lib/db/queries/publications';
 import { getPublishedAuthors } from '@/lib/db/queries/users';
 import { COLUMNISTS } from '@/lib/columnists';
@@ -8,15 +8,6 @@ import { i18n } from '@/i18n-config';
 export const revalidate = 3600;
 
 const SITE_URL = 'https://cernapensamento.org';
-
-function getPublicClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseAnonKey) return undefined;
-  return createClient(supabaseUrl, supabaseAnonKey, {
-    auth: { persistSession: false },
-  });
-}
 
 function getLanguageAlternates(path: string = '') {
   const languages: Record<string, string> = {};
@@ -76,7 +67,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  const publicClient = getPublicClient();
+  const publicClient = createPublicAnonClient();
 
   // Published Publications
   try {

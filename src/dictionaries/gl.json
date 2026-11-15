@@ -1,8 +1,13 @@
 {
   "homepage": {
+    "title": "Cerna Pensamento · Revista Galega de Ensaio, Filosofía e Creación Literaria",
+    "ogImageAlt": "Cerna Pensamento · Revista de Ensaio e Filosofía",
     "description": "Revista dixital e asociación cultural independente en Galicia. Publicación periódica de ensaio, filosofía política, economía, crítica cultural, narrativa e poesía.",
     "organizationDescription": "Revista dixital e asociación cultural independente en Galicia dedicada ao ensaio, a filosofía política, a economía e a creación literaria.",
     "websiteDescription": "Revista galega de ensaio, filosofía, economía e creación literaria."
+  },
+  "loading": {
+    "message": "Recompilando manuscritos..."
   },
   "nav": {
     "inicio": "Inicio",
@@ -171,6 +176,9 @@
     "originalLanguage": "Idioma orixinal:",
     "indexLabel": "Índice",
     "indexAriaLabel": "Índice do artigo",
+    "notFoundTitle": "Artigo non atopado",
+    "defaultMetaDescription": "Un artigo de {author}",
+    "pdfGenerationError": "Non foi posible xerar o PDF",
     "download": {
       "eyebrow": "Copia impresa",
       "title": "Leva este texto contigo",
@@ -317,6 +325,7 @@
     "fullName": "Nome completo",
     "namePlaceholder": "O teu nome",
     "email": "Correo electrónico",
+    "emailPlaceholder": "ti@correo.com",
     "password": "Contrasinal",
     "processing": "Procesando...",
     "loginBtn": "Ingresar",
@@ -427,7 +436,9 @@
     "noArticles": "Aínda non tes artigos. Crea a túa primeira publicación.",
     "pending": "Pendentes",
     "toApprove": "Para Aprobar",
-    "noPendingArticles": "Non hai publicacións pendentes de aprobación."
+    "noPendingArticles": "Non hai publicacións pendentes de aprobación.",
+    "defaultAuthorName": "Editor",
+    "defaultCoverAlt": "Publicación"
   },
   "articleEditor": {
     "backToArticles": "Artigos",
@@ -608,6 +619,12 @@
     "lastUpdatedLabel": "Última actualización",
     "lastUpdated": "22 de outubro de 2026",
     "contactNote": "Para exercer os teus dereitos ou formular calquera consulta, escribe a"
+  },
+  "estatutosPage": {
+    "eyebrow": "Asociación Cerna Pensamento",
+    "title": "Estatutos",
+    "metaDescription": "Estatutos oficiais da Asociación Cerna Pensamento.",
+    "approvalNote": "Documento aprobado en Cambados, 28 de xullo de 2026"
   },
   "autoresPage": {
     "eyebrow": "Directorio de autores",

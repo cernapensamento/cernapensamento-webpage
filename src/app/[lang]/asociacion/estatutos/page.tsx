@@ -1,29 +1,41 @@
 import React from 'react';
+import type { Metadata } from 'next';
+import { getDictionary } from '@/dictionaries';
+import { resolveLocale } from '@/i18n-config';
 import { LegalDocumentMarkdownRenderer } from '@/components/ui/LegalDocumentMarkdownRenderer';
 import { getDocument } from '@/lib/content';
 
-// Metadatos para SEO
-export const metadata = {
-  title: 'Estatutos | Asociación Cerna Pensamento',
-  description: 'Estatutos oficiales de la Asociación Cerna Pensamento.',
-};
+interface Props {
+  params: Promise<{ lang: string }>;
+}
 
-export default async function EstatutosPage({ params }: { params: Promise<{ lang: string }> }) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const { content } = getDocument('estatutos', lang);
-  
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+
+  return {
+    title: `${dict.estatutosPage.title} | ${dict.estatutosPage.eyebrow}`,
+    description: dict.estatutosPage.metaDescription,
+  };
+}
+
+export default async function EstatutosPage({ params }: Props) {
+  const { lang } = await params;
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+  const { content } = getDocument('estatutos', locale);
+
   return (
     <div className="flex flex-col min-h-screen bg-parchment">
-      
-      
       <main className="px-4 md:px-12 pb-40 pt-16 flex flex-col flex-1">
         {/* Page header */}
         <header className="max-w-275 mx-auto w-full text-center mb-16">
           <p className="font-sans text-sm md:text-base text-gold uppercase tracking-[0.45em] font-semibold mb-5">
-            Asociación Cerna Pensamento
+            {dict.estatutosPage.eyebrow}
           </p>
           <h1 className="font-serif text-6xl md:text-8xl text-charcoal mb-0 leading-tight">
-            Estatutos
+            {dict.estatutosPage.title}
           </h1>
           <div className="w-12 h-0.5 bg-gold mx-auto mt-8" />
         </header>
@@ -35,11 +47,10 @@ export default async function EstatutosPage({ params }: { params: Promise<{ lang
           </div>
           {/* Bottom meta */}
           <p className="text-center text-xs text-charcoal/40 font-sans mt-8 tracking-wide">
-            Documento aprobado en Cambados, 28 de xullo de 2026
+            {dict.estatutosPage.approvalNote}
           </p>
         </div>
       </main>
-
     </div>
   );
 }

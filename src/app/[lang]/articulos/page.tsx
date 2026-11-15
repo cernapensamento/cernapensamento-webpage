@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import ArticlesArchiveList from '@/components/features/ArticlesArchiveList';
 import ArticlesFilterBar from '@/components/features/ArticlesFilterBar';
 import { getDictionary } from '@/dictionaries';
-import type { Locale } from '@/i18n-config';
+import { resolveLocale } from '@/i18n-config';
 import {
   getAllTagsWithTranslations,
   getPublicationCards,
@@ -18,9 +18,8 @@ export default async function ArticulosPage({
   params: Promise<{ lang: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
-  const resolvedParams = await searchParams;
+  const [{ lang }, resolvedParams] = await Promise.all([params, searchParams]);
+  const locale = resolveLocale(lang);
 
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : '';
   const temaRaw = resolvedParams.tema;
@@ -28,17 +27,19 @@ export default async function ArticulosPage({
   const tipoRaw = resolvedParams.tipo || resolvedParams.type;
   const currentType = typeof tipoRaw === 'string' ? parsePublicationType(tipoRaw) : undefined;
 
-  // 1. Get all available tags with localized names
-  const availableTags = await getAllTagsWithTranslations({ lang });
-
-  // 2. Fetch the 10 most recent articles plus teaser preview articles (limit: 14)
-  const publications = await getPublicationCards({
-    type: currentType,
-    tagSlugs: temasArray.length > 0 ? temasArray : undefined,
-    searchQuery: q,
-    limit: 14,
-    lang,
-  });
+  const [dict, availableTags, publications] = await Promise.all([
+    getDictionary(locale),
+    // 1. Get all available tags with localized names
+    getAllTagsWithTranslations({ lang: locale }),
+    // 2. Fetch the 10 most recent articles plus teaser preview articles (limit: 14)
+    getPublicationCards({
+      type: currentType,
+      tagSlugs: temasArray.length > 0 ? temasArray : undefined,
+      searchQuery: q,
+      limit: 14,
+      lang: locale,
+    }),
+  ]);
 
   const listKey = `${currentType || 'all'}-${temasArray.join(',')}-${q}`;
 
@@ -58,7 +59,7 @@ export default async function ArticulosPage({
           <ArticlesArchiveList
             key={listKey}
             initialArticles={publications}
-            lang={lang}
+            lang={locale}
             dict={dict}
             filterOptions={{
               type: currentType,

@@ -1,6 +1,12 @@
 import type { MetadataRoute } from 'next';
+import { i18n } from '@/i18n-config';
 
 export default function robots(): MetadataRoute.Robots {
+  const localizedDeskPaths = i18n.locales.flatMap((locale) => [
+    `/${locale}/escritorio`,
+    `/${locale}/escritorio/`,
+  ]);
+
   return {
     rules: {
       userAgent: '*',
@@ -8,10 +14,7 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         '/escritorio',
         '/escritorio/',
-        '/gl/escritorio',
-        '/gl/escritorio/',
-        '/es/escritorio',
-        '/es/escritorio/',
+        ...localizedDeskPaths,
         '/api/',
         '/auth/',
       ],

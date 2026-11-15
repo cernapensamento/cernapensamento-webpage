@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { DB_TABLES, USER_COLS, USER_ROLES } from '@/lib/db/schema';
+import { DB_TABLES, USER_COLS, USER_ROLES, canAccessWriterDesk } from '@/lib/db/schema';
 import type { AuthProfile, UserRole } from '@/lib/db/types';
 
 /**
@@ -29,4 +29,18 @@ export async function fetchClientAuthProfile(
   } catch {
     return null;
   }
+}
+
+/**
+ * Resolves the localized desk destination path after client-side sign-in.
+ */
+export async function resolveClientDeskRedirectPath(
+  user: { id: string; app_metadata?: Record<string, unknown> },
+  supabase: SupabaseClient,
+  lang: string
+): Promise<string> {
+  const jwtRole = user.app_metadata?.user_role as string | undefined;
+  const profile = await fetchClientAuthProfile(user.id, supabase);
+  const role = profile?.role || jwtRole || USER_ROLES.READER;
+  return canAccessWriterDesk(role) ? `/${lang}/escritorio` : `/${lang}/escritorio/perfil`;
 }

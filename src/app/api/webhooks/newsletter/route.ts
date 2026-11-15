@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { getDictionary } from '@/dictionaries';
-import { i18n, isSupportedLocale, type Locale } from '@/i18n-config';
+import { resolveLocale, type Locale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
-import { DB_TABLES, PUBLICATION_COLS, PUBLICATION_STATUSES, USER_COLS } from '@/lib/db/schema';
+import {
+  PUBLICATION_STATUSES,
+  PUBLICATION_TYPES,
+  createNewsletterSupabaseClient,
+  claimPublicationForNewsletter,
+  releasePublicationNewsletterClaim,
+  getNewsletterAuthorName,
+  getNewsletterSubscribers,
+} from '@/lib/db';
 import { renderNewsletterEmail } from '@/lib/email/newsletter-template';
 import { getNewsletterSecret, buildUnsubscribeUrl, getSiteBaseUrl } from '@/lib/email/newsletter';
-
-interface SubscriberRecord {
-  email: string;
-  full_name?: string | null;
-}
 
 /**
  * Authorizes a publication webhook with a Bearer secret, claims an unsent record
@@ -66,8 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Verify publication status: must be transition to or insert of 'published'
-    const currentStatus = publication.status || publication.estado;
-    if (currentStatus !== PUBLICATION_STATUSES.PUBLISHED) {
+    if (publication.status !== PUBLICATION_STATUSES.PUBLISHED) {
       return NextResponse.json(
         { message: 'Non é un evento de publicación activa, ignorado.' },
         { status: 200 }
@@ -92,19 +94,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Configuración non dispoñible' }, { status: 500 });
     }
 
-    supabase = createClient(supabaseUrl, serviceKey);
+    supabase = createNewsletterSupabaseClient(true);
     const resend = new Resend(resendApiKey);
 
     // 4. Atomically claim this publication dispatch: set newsletter_sent_at = now() WHERE newsletter_sent_at IS NULL
-    const nowIso = new Date().toISOString();
-    const { data: claimedPublication, error: claimError } = await supabase
-      .from(DB_TABLES.PUBLICATIONS)
-      .update({ [PUBLICATION_COLS.NEWSLETTER_SENT_AT]: nowIso })
-      .eq(PUBLICATION_COLS.ID, publication.id)
-      .eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.PUBLISHED)
-      .is(PUBLICATION_COLS.NEWSLETTER_SENT_AT, null)
-      .select('*')
-      .maybeSingle();
+    const { data: claimedPublication, error: claimError } = await claimPublicationForNewsletter(
+      publication.id,
+      supabase
+    );
 
     if (claimError) {
       console.error('[Newsletter Webhook] Claim update error:', claimError);
@@ -124,33 +121,22 @@ export async function POST(request: NextRequest) {
     const releaseClaim = async () => {
       if (!supabase || !claimedPublicationId) return;
       try {
-        await supabase
-          .from(DB_TABLES.PUBLICATIONS)
-          .update({ [PUBLICATION_COLS.NEWSLETTER_SENT_AT]: null })
-          .eq(PUBLICATION_COLS.ID, claimedPublicationId);
+        await releasePublicationNewsletterClaim(claimedPublicationId, supabase);
       } catch (releaseErr) {
         console.error('[Newsletter Webhook] Erro ao liberar o bloqueo da publicación:', releaseErr);
       }
     };
 
     // 5. Fetch Author Information (full_name) if available
-    let authorName: string | null = null;
-    if (claimedPublication.author_id) {
-      const { data: authorData } = await supabase
-        .from(DB_TABLES.USERS)
-        .select(USER_COLS.FULL_NAME)
-        .eq(USER_COLS.ID, claimedPublication.author_id)
-        .maybeSingle();
-
-      if (authorData && authorData.full_name) {
-        authorName = authorData.full_name;
-      }
-    }
+    const authorName = claimedPublication.author_id
+      ? await getNewsletterAuthorName(claimedPublication.author_id, supabase)
+      : null;
 
     // 6. Fetch Active Subscribers via RPC
-    const { data: rawSubscribers, error: subError } = await supabase.rpc('get_subscribers_emails', {
-      webhook_secret: WEBHOOK_SECRET,
-    });
+    const { data: subscribers, error: subError } = await getNewsletterSubscribers(
+      WEBHOOK_SECRET,
+      supabase
+    );
 
     if (subError) {
       console.error('[Newsletter Webhook] Error fetching subscribers:', subError);
@@ -158,7 +144,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Erro ao obter a lista de subscritores' }, { status: 500 });
     }
 
-    const subscribers = (rawSubscribers || []) as SubscriberRecord[];
     if (subscribers.length === 0) {
       return NextResponse.json(
         { message: 'Non hai subscritores activos para notificar.', count: 0 },
@@ -167,28 +152,22 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. Resolve Metadata & Editorial Strings
-    const originalLang = claimedPublication.original_language || i18n.defaultLocale;
-    const primaryLang: Locale = isSupportedLocale(originalLang) ? originalLang : i18n.defaultLocale;
+    const primaryLang: Locale = resolveLocale(claimedPublication.original_language);
     const dict = await getDictionary(primaryLang);
 
     const title =
       resolveLocalizedText(claimedPublication.title, primaryLang) ||
-      claimedPublication.titulo_gl ||
-      claimedPublication.titulo_es ||
       dict.newsletter.email.defaultTitle;
 
     const subtitle =
-      resolveLocalizedText(claimedPublication.subtitle, primaryLang) ||
-      claimedPublication.subtitulo_gl ||
-      claimedPublication.subtitulo_es ||
-      null;
+      resolveLocalizedText(claimedPublication.subtitle, primaryLang) || null;
 
     const siteUrl = getSiteBaseUrl();
     const articleSlug = claimedPublication.slug || claimedPublication.id;
     const articleUrl = `${siteUrl}/${primaryLang}/articulo/${articleSlug}`;
     const profileUrl = `${siteUrl}/${primaryLang}/escritorio/perfil`;
     const coverImageUrl = claimedPublication.cover_image_url || null;
-    const publicationType = claimedPublication.type || 'artigo';
+    const publicationType = claimedPublication.type || PUBLICATION_TYPES.ARTICLE;
 
     // 8. Prepare Email List with Personalized 1-Click Unsubscribe & RFC 8058 Headers
     const emailBatch = await Promise.all(
@@ -272,10 +251,7 @@ export async function POST(request: NextRequest) {
     console.error('[Newsletter Webhook] Erro crítico non controlado:', error);
     if (supabase && claimedPublicationId) {
       try {
-        await supabase
-          .from(DB_TABLES.PUBLICATIONS)
-          .update({ [PUBLICATION_COLS.NEWSLETTER_SENT_AT]: null })
-          .eq(PUBLICATION_COLS.ID, claimedPublicationId);
+        await releasePublicationNewsletterClaim(claimedPublicationId, supabase);
       } catch (releaseErr) {
         console.error('[Newsletter Webhook] Erro ao liberar o bloqueo tras excepción:', releaseErr);
       }

@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { getDictionary } from '@/dictionaries';
-import { i18n, isSupportedLocale, type Locale } from '@/i18n-config';
+import { resolveLocale, type Locale } from '@/i18n-config';
+import { unsubscribeNewsletterByEmail } from '@/lib/db';
 import { renderUnsubscribeHtml } from '@/lib/email/newsletter-template';
 import { verifyUnsubscribeToken, getSiteBaseUrl } from '@/lib/email/newsletter';
-
-/**
- * Creates an unsubscribe client using the service role key when available,
- * otherwise the public anon key. Missing/invalid configuration errors propagate.
- */
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  return createClient(supabaseUrl, supabaseKey);
-}
 
 /**
  * Unsubscribes immediately using email/token query parameters and returns HTML
@@ -25,8 +15,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const email = searchParams.get('email') || '';
   const token = searchParams.get('token') || '';
-  const rawLang = searchParams.get('lang');
-  const lang: Locale = isSupportedLocale(rawLang) ? rawLang : i18n.defaultLocale;
+  const lang: Locale = resolveLocale(searchParams.get('lang'));
   const siteUrl = getSiteBaseUrl();
   const dict = await getDictionary(lang);
 
@@ -39,10 +28,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase.rpc('unsubscribe_newsletter_by_email', {
-      target_email: email.trim().toLowerCase(),
-    });
+    const { error } = await unsubscribeNewsletterByEmail(email);
 
     if (error) {
       console.error('[Newsletter Unsubscribe] RPC error:', error);
@@ -109,10 +95,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase.rpc('unsubscribe_newsletter_by_email', {
-      target_email: email.trim().toLowerCase(),
-    });
+    const { error } = await unsubscribeNewsletterByEmail(email);
 
     if (error) {
       console.error('[Newsletter Unsubscribe POST] RPC error:', error);
