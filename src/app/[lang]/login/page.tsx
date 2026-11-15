@@ -6,7 +6,18 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
 import { createClient } from '@/lib/supabase/client';
-import { resolveClientDeskRedirectPath } from '@/lib/auth-client';
+import {
+  MIN_PASSWORD_LENGTH,
+  buildAuthCallbackUrl,
+  formatClientAuthError,
+  isUnconfirmedEmailError,
+  resendSignupConfirmationEmail,
+  resolveClientDeskRedirectPath,
+  signInWithEmailPassword,
+  signInWithGoogleIdToken,
+  signInWithGoogleOAuth,
+  signUpWithEmailPassword,
+} from '@/lib/auth-client';
 import { getDictionaryClient } from '@/dictionaries/client';
 import { useLocale } from '@/hooks/useLocale';
 
@@ -50,7 +61,7 @@ declare global {
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
-  const [nombre, setNombre] = useState('');
+  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -71,42 +82,39 @@ export default function LoginPage() {
     return null;
   });
 
+  const redirectAfterSignIn = useCallback(
+    async (user?: { id: string; app_metadata?: Record<string, unknown> } | null) => {
+      const redirectPath = user
+        ? await resolveClientDeskRedirectPath(user, supabase, lang)
+        : `/${lang}`;
+      router.push(redirectPath);
+      router.refresh();
+    },
+    [supabase, router, lang]
+  );
+
   const handleGoogleAuth = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
+      const redirectTo = buildAuthCallbackUrl(window.location.origin, lang);
+      const { error } = await signInWithGoogleOAuth(supabase, redirectTo);
       if (error) throw error;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : loginDict.googleAuthError);
+      setError(formatClientAuthError(err, loginDict, loginDict.googleAuthError));
       setLoading(false);
     }
-  }, [supabase, loginDict]);
+  }, [supabase, lang, loginDict]);
 
   const handleIdTokenSuccess = useCallback(async (response: GoogleCredentialResponse) => {
     if (!response.credential) return;
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: response.credential,
-      });
+      const { data, error } = await signInWithGoogleIdToken(supabase, response.credential);
       if (error) throw error;
 
-      if (data.user) {
-        const redirectPath = await resolveClientDeskRedirectPath(data.user, supabase, lang);
-        router.push(redirectPath);
-        router.refresh();
-      } else {
-        router.push(`/${lang}`);
-        router.refresh();
-      }
+      await redirectAfterSignIn(data.user);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : '';
       if (errorMsg.includes('Unacceptable audience') || errorMsg.toLowerCase().includes('audience')) {
@@ -114,11 +122,11 @@ export default function LoginPage() {
         await handleGoogleAuth();
         return;
       }
-      setError(err instanceof Error ? err.message : loginDict.googleAuthError);
+      setError(formatClientAuthError(err, loginDict, loginDict.googleAuthError));
     } finally {
       setLoading(false);
     }
-  }, [supabase, router, lang, loginDict, handleGoogleAuth]);
+  }, [supabase, loginDict, handleGoogleAuth, redirectAfterSignIn]);
 
   const initGoogleIdentity = useCallback(() => {
     if (typeof window === 'undefined' || !googleClientId || !window.google?.accounts?.id) return;
@@ -154,7 +162,7 @@ export default function LoginPage() {
     setSuccessMessage(null);
     setShowResend(false);
 
-    if (password.length < 6) {
+    if (password.length < MIN_PASSWORD_LENGTH) {
       setError(loginDict.passError);
       setLoading(false);
       return;
@@ -162,29 +170,19 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { data, error } = await signInWithEmailPassword(supabase, email, password);
         if (error) throw error;
-        
-        if (data.user) {
-          const redirectPath = await resolveClientDeskRedirectPath(data.user, supabase, lang);
-          router.push(redirectPath);
-          router.refresh();
-        } else {
-          router.push(`/${lang}`);
-          router.refresh();
-        }
+
+        await redirectAfterSignIn(data.user);
       } else {
-        const { data, error } = await supabase.auth.signUp({
+        const callbackUrl = buildAuthCallbackUrl(window.location.origin, lang);
+        const { data, error } = await signUpWithEmailPassword(
+          supabase,
           email,
           password,
-          options: {
-            data: { nombre },
-            emailRedirectTo: `${window.location.origin}/auth/callback`
-          }
-        });
+          fullName,
+          callbackUrl
+        );
         if (error) throw error;
 
         // Supabase returns an empty identities array if user already exists
@@ -199,12 +197,10 @@ export default function LoginPage() {
         setIsLogin(true);
       }
     } catch (err: unknown) {
-      let message = err instanceof Error ? err.message : loginDict.genericAuthError;
-      if (message.toLowerCase().includes('email not confirmed')) {
-        message = loginDict.unconfirmedEmail;
+      if (isUnconfirmedEmailError(err)) {
         setShowResend(true);
       }
-      setError(message);
+      setError(formatClientAuthError(err, loginDict));
     } finally {
       setLoading(false);
     }
@@ -216,18 +212,13 @@ export default function LoginPage() {
     setError(null);
     setSuccessMessage(null);
     try {
-      const { error: resendError } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        }
-      });
+      const callbackUrl = buildAuthCallbackUrl(window.location.origin, lang);
+      const { error: resendError } = await resendSignupConfirmationEmail(supabase, email, callbackUrl);
       if (resendError) throw resendError;
       setSuccessMessage(loginDict.resendSuccess);
       setShowResend(false);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : loginDict.genericAuthError);
+      setError(formatClientAuthError(err, loginDict));
     } finally {
       setLoading(false);
     }
@@ -270,15 +261,15 @@ export default function LoginPage() {
           <form onSubmit={handleAuth} className="space-y-6">
             {!isLogin && (
               <div>
-                <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="nombre">
+                <label className="block text-xs font-semibold text-charcoal/80 uppercase tracking-widest mb-2" htmlFor="fullName">
                   {loginDict.fullName}
                 </label>
                 <input
-                  id="nombre"
-                  name="nombre"
+                  id="fullName"
+                  name="fullName"
                   type="text"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                   className="w-full px-4 py-3 bg-parchment border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
                   placeholder={loginDict.namePlaceholder}
@@ -313,7 +304,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={MIN_PASSWORD_LENGTH}
                 className="w-full px-4 py-3 bg-parchment border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
                 placeholder="••••••••"
               />
