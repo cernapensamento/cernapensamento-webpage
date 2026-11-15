@@ -128,6 +128,42 @@ export function isGuestRole(role?: string | null): boolean {
   return GUEST_ROLES.has(role.toLowerCase().trim());
 }
 
+/**
+ * Resolves a localized display label for a user role (including legacy role aliases).
+ */
+export function resolveRoleLabel(
+  role?: string | null,
+  rolesDict?: {
+    admin?: string;
+    founder?: string;
+    writer?: string;
+    member?: string;
+    guest?: string;
+    reader?: string;
+  }
+): string {
+  const normalized = role?.toLowerCase().trim();
+  switch (normalized) {
+    case USER_ROLES.ADMIN:
+      return rolesDict?.admin || '';
+    case USER_ROLES.FOUNDER:
+    case 'fundador':
+    case 'escritor':
+      return rolesDict?.founder || rolesDict?.writer || '';
+    case USER_ROLES.MEMBER:
+      return rolesDict?.member || '';
+    case USER_ROLES.GUEST:
+    case 'invitado':
+    case 'convidado':
+      return rolesDict?.guest || '';
+    case USER_ROLES.READER:
+    case 'lector':
+    case 'usuario':
+    default:
+      return rolesDict?.reader || '';
+  }
+}
+
 export const PUBLICATION_STATUSES = {
   DRAFT: 'draft',
   IN_REVIEW: 'in_review',

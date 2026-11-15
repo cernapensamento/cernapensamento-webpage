@@ -3,7 +3,7 @@
  * Strongly-typed DAL queries for user profiles, columnists, and author pages.
  */
 
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import { resolveClient } from '../resolveClient';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
 import { i18n } from '@/i18n-config';
 import {
@@ -26,10 +26,6 @@ import { getPublicationCards } from './publications';
 import { formatDbError } from '../formatDbError';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient> {
-  return provided ?? (await createServerClient());
-}
 
 /**
  * Normalizes a biography into a LocalizedString map across all configured locales.
