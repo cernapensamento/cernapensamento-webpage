@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { PUBLICATION_STATUSES, PUBLICATION_TYPES } from '@/lib/db/schema';
 import { POST } from './route';
 
 const mockResendBatchSend = vi.fn();
@@ -98,7 +99,7 @@ describe('Newsletter Webhook API Route (/api/webhooks/newsletter)', () => {
         subtitle: { gl: 'Subtítulo', es: 'Subtítulo' },
         slug: 'slug-test',
         original_language: 'gl',
-        type: 'artigo',
+        type: PUBLICATION_TYPES.ARTICLE,
         author_id: 'author-uuid-1',
       },
       error: null,
@@ -140,11 +141,11 @@ describe('Newsletter Webhook API Route (/api/webhooks/newsletter)', () => {
   }
 
   it('rejects unauthorized requests with 401 when Authorization header is missing or invalid', async () => {
-    const reqNoAuth = createRequest({ record: { id: '1', status: 'published' } });
+    const reqNoAuth = createRequest({ record: { id: '1', status: PUBLICATION_STATUSES.PUBLISHED } });
     const resNoAuth = await POST(reqNoAuth);
     expect(resNoAuth.status).toBe(401);
 
-    const reqBadAuth = createRequest({ record: { id: '1', status: 'published' } }, 'Bearer wrong_token');
+    const reqBadAuth = createRequest({ record: { id: '1', status: PUBLICATION_STATUSES.PUBLISHED } }, 'Bearer wrong_token');
     const resBadAuth = await POST(reqBadAuth);
     expect(resBadAuth.status).toBe(401);
   });
@@ -152,7 +153,7 @@ describe('Newsletter Webhook API Route (/api/webhooks/newsletter)', () => {
   it('returns 500 without claiming when RESEND_API_KEY or SUPABASE_SERVICE_ROLE_KEY is missing', async () => {
     delete process.env.RESEND_API_KEY;
     const req = createRequest(
-      { record: { id: 'pub-1', status: 'published' } },
+      { record: { id: 'pub-1', status: PUBLICATION_STATUSES.PUBLISHED } },
       `Bearer ${WEBHOOK_SECRET}`
     );
 
@@ -165,7 +166,7 @@ describe('Newsletter Webhook API Route (/api/webhooks/newsletter)', () => {
 
   it('ignores event with 200 if publication is not in published status', async () => {
     const req = createRequest(
-      { record: { id: 'pub-1', status: 'draft' } },
+      { record: { id: 'pub-1', status: PUBLICATION_STATUSES.DRAFT } },
       `Bearer ${WEBHOOK_SECRET}`
     );
 
@@ -178,7 +179,7 @@ describe('Newsletter Webhook API Route (/api/webhooks/newsletter)', () => {
 
   it('ignores event with 200 if publication has already been notified (newsletter_sent_at set)', async () => {
     const req = createRequest(
-      { record: { id: 'pub-1', status: 'published', newsletter_sent_at: '2026-10-24T12:00:00Z' } },
+      { record: { id: 'pub-1', status: PUBLICATION_STATUSES.PUBLISHED, newsletter_sent_at: '2026-10-24T12:00:00Z' } },
       `Bearer ${WEBHOOK_SECRET}`
     );
 
@@ -196,7 +197,7 @@ describe('Newsletter Webhook API Route (/api/webhooks/newsletter)', () => {
     });
 
     const req = createRequest(
-      { record: { id: 'pub-1', status: 'published' } },
+      { record: { id: 'pub-1', status: PUBLICATION_STATUSES.PUBLISHED } },
       `Bearer ${WEBHOOK_SECRET}`
     );
 
@@ -213,7 +214,7 @@ describe('Newsletter Webhook API Route (/api/webhooks/newsletter)', () => {
     });
 
     const req = createRequest(
-      { record: { id: 'pub-uuid-1', status: 'published' } },
+      { record: { id: 'pub-uuid-1', status: PUBLICATION_STATUSES.PUBLISHED } },
       `Bearer ${WEBHOOK_SECRET}`
     );
 
@@ -236,7 +237,7 @@ describe('Newsletter Webhook API Route (/api/webhooks/newsletter)', () => {
     });
 
     const req = createRequest(
-      { record: { id: 'pub-uuid-1', status: 'published' } },
+      { record: { id: 'pub-uuid-1', status: PUBLICATION_STATUSES.PUBLISHED } },
       `Bearer ${WEBHOOK_SECRET}`
     );
 
@@ -253,7 +254,7 @@ describe('Newsletter Webhook API Route (/api/webhooks/newsletter)', () => {
 
   it('successfully dispatches emails, preserves claim, and returns 200', async () => {
     const req = createRequest(
-      { record: { id: 'pub-uuid-1', status: 'published' } },
+      { record: { id: 'pub-uuid-1', status: PUBLICATION_STATUSES.PUBLISHED } },
       `Bearer ${WEBHOOK_SECRET}`
     );
 

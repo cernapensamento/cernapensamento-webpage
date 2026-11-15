@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import * as auth from '@/lib/auth';
+import { USER_ROLES } from '@/lib/db/schema';
 import type { User } from '@supabase/supabase-js';
 
 vi.mock('@google/genai', () => {
@@ -47,7 +48,7 @@ describe('POST /api/translate', () => {
     vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
       user: { id: 'reader-1' } as unknown as User,
       profile: null,
-      role: 'reader',
+      role: USER_ROLES.READER,
     });
 
     const req = new Request('http://localhost:3000/api/translate', {
@@ -69,7 +70,7 @@ describe('POST /api/translate', () => {
     vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
       user: { id: 'writer-1' } as unknown as User,
       profile: null,
-      role: 'member',
+      role: USER_ROLES.MEMBER,
     });
 
     const req = new Request('http://localhost:3000/api/translate', {
@@ -89,7 +90,7 @@ describe('POST /api/translate', () => {
     vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
       user: { id: 'writer-1' } as unknown as User,
       profile: null,
-      role: 'member',
+      role: USER_ROLES.MEMBER,
     });
 
     const req = new Request('http://localhost:3000/api/translate', {

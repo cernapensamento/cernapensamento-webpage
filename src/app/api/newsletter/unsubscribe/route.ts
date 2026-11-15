@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDictionary } from '@/dictionaries';
+import { getDictionaryClient } from '@/dictionaries/client';
 import { resolveLocale, type Locale } from '@/i18n-config';
 import { unsubscribeNewsletterByEmail } from '@/lib/db';
 import { renderUnsubscribeHtml } from '@/lib/email/newsletter-template';
@@ -7,7 +8,7 @@ import { verifyUnsubscribeToken, getSiteBaseUrl } from '@/lib/email/newsletter';
 
 /**
  * Unsubscribes immediately using email/token query parameters and returns HTML
- * in Spanish only for `lang=es`, otherwise Galician. Returns 400 for invalid
+ * in the resolved locale (defaulting to Galician). Returns 400 for invalid
  * credentials, 200 when the RPC completes without error, or 500 for database
  * failures and caught exceptions. Dictionary loading errors propagate.
  */
@@ -71,12 +72,14 @@ export async function GET(request: NextRequest) {
 /**
  * Handles RFC 8058 one-click unsubscribe requests using email/token query
  * parameters, falling back to form fields for missing values. Invalid form
- * parsing is ignored. Returns JSON with 400 for invalid credentials, 200 when
- * the unsubscribe RPC completes without error, or 500 for database failures
- * and caught exceptions.
+ * parsing is ignored. Returns localized JSON with 400 for invalid credentials,
+ * 200 when the unsubscribe RPC completes without error, or 500 for database
+ * failures and caught exceptions.
  */
 export async function POST(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
+  const lang: Locale = resolveLocale(searchParams.get('lang'));
+  const messages = getDictionaryClient(lang).newsletter.unsubscribePage;
   let email = searchParams.get('email') || '';
   let token = searchParams.get('token') || '';
 
@@ -91,7 +94,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!email || !token || !verifyUnsubscribeToken(email, token)) {
-    return NextResponse.json({ error: 'Invalid or missing unsubscribe token' }, { status: 400 });
+    return NextResponse.json({ error: messages.errorMessage }, { status: 400 });
   }
 
   try {
@@ -99,12 +102,18 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[Newsletter Unsubscribe POST] RPC error:', error);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      return NextResponse.json({ error: messages.dbErrorMessage }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: 'Unsubscribed successfully' }, { status: 200 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: messages.successMessage.replace('{email}', email.trim().toLowerCase()),
+      },
+      { status: 200 }
+    );
   } catch (err) {
     console.error('[Newsletter Unsubscribe POST] Internal error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: messages.internalErrorMessage }, { status: 500 });
   }
 }

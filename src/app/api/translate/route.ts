@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { canAccessWriterDesk } from '@/lib/db/schema';
-import { i18n } from '@/i18n-config';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { i18n, isSupportedLocale, getTranslationLanguageName } from '@/i18n-config';
+import { getDictionaryClient } from '@/dictionaries/client';
 
 const MAX_TITLE_LENGTH = 500;
 const MAX_SUBTITLE_LENGTH = 1000;
@@ -19,19 +18,29 @@ const extractSection = (text: string, sectionMarker: string, nextMarker?: string
 };
 
 export async function POST(req: Request) {
+  const authMessages = getDictionaryClient(i18n.defaultLocale).translateApi;
+  let messages = authMessages;
+
   try {
     const { user, role } = await getAuthenticatedUser();
     if (!user) {
-      return NextResponse.json({ error: 'Autenticación requerida' }, { status: 401 });
+      return NextResponse.json({ error: authMessages.unauthorized }, { status: 401 });
     }
     if (!canAccessWriterDesk(role)) {
-      return NextResponse.json({ error: 'Permisos insuficientes para traducir' }, { status: 403 });
+      return NextResponse.json({ error: authMessages.forbidden }, { status: 403 });
     }
 
     const { title, subtitle, htmlContent, targetLanguage } = await req.json();
+    messages = getDictionaryClient(
+      isSupportedLocale(targetLanguage) ? targetLanguage : i18n.defaultLocale
+    ).translateApi;
 
     if (!title && !subtitle && !htmlContent) {
-      return NextResponse.json({ error: 'Missing content to translate' }, { status: 400 });
+      return NextResponse.json({ error: messages.missingContent }, { status: 400 });
+    }
+
+    if (!isSupportedLocale(targetLanguage)) {
+      return NextResponse.json({ error: messages.invalidLanguage }, { status: 400 });
     }
 
     if (
@@ -39,26 +48,17 @@ export async function POST(req: Request) {
       (subtitle && typeof subtitle === 'string' && subtitle.length > MAX_SUBTITLE_LENGTH) ||
       (htmlContent && typeof htmlContent === 'string' && htmlContent.length > MAX_HTML_LENGTH)
     ) {
-      return NextResponse.json({ error: 'Payload exceeds allowed size limits' }, { status: 413 });
-    }
-    
-    if (!process.env.GEMINI_API_KEY) {
-       return NextResponse.json({ error: 'Missing GEMINI_API_KEY environment variable' }, { status: 500 });
+      return NextResponse.json({ error: messages.payloadTooLarge }, { status: 413 });
     }
 
-    const langNames: Record<string, string> = {
-      es: 'Spanish',
-      gl: 'Galician',
-      pt: 'Portuguese',
-      en: 'English',
-      fr: 'French',
-      de: 'German',
-      it: 'Italian',
-    };
-    const langName =
-      langNames[targetLanguage] ||
-      (i18n.localeLabels as Record<string, string>)[targetLanguage] ||
-      targetLanguage;
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('[Translate API] Missing GEMINI_API_KEY environment variable');
+      return NextResponse.json({ error: messages.serviceUnavailable }, { status: 500 });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const langName = getTranslationLanguageName(targetLanguage);
     
     const systemPrompt = `You are an expert translator specialized in literary and journalistic articles. Translate the user's text to ${langName}. The user will provide their content with separators.
 CRITICAL: You MUST preserve ALL HTML tags, inline styles (such as style="text-align: justify;"), classes, ids, and attributes EXACTLY as they appear. Do not remove or alter any HTML formatting or style attributes.
@@ -82,18 +82,13 @@ You MUST return the translated content using the EXACT SAME separators:
     });
 
     const translatedText = response.text || '';
-    
-    try {
-      // Parse the separator-based format
-      return NextResponse.json({ 
-        title: extractSection(translatedText, '---TITLE---', '---SUBTITLE---'), 
-        subtitle: extractSection(translatedText, '---SUBTITLE---', '---HTMLCONTENT---'), 
-        htmlContent: extractSection(translatedText, '---HTMLCONTENT---') 
-      });
-    } catch {
-      console.error("Failed to parse response from Gemini", translatedText);
-      return NextResponse.json({ error: 'Invalid response from model' }, { status: 500 });
-    }
+
+    // Parse the separator-based format
+    return NextResponse.json({
+      title: extractSection(translatedText, '---TITLE---', '---SUBTITLE---'),
+      subtitle: extractSection(translatedText, '---SUBTITLE---', '---HTMLCONTENT---'),
+      htmlContent: extractSection(translatedText, '---HTMLCONTENT---'),
+    });
   } catch (error: unknown) {
     console.error('Translation error:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -103,7 +98,7 @@ You MUST return the translated content using the EXACT SAME separators:
     const isRateLimit = errorStatus === 429 || errorMessage.includes('429') || errorMessage.includes('Quota exceeded');
     const isOverloaded = errorStatus === 503 || errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand');
     return NextResponse.json(
-      { error: 'Failed to translate' },
+      { error: messages.translateFailed },
       { status: isRateLimit ? 429 : (isOverloaded ? 503 : 500) }
     );
   }
