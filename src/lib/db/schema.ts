@@ -15,6 +15,24 @@ export const DB_TABLES = {
 
 export type DbTableName = (typeof DB_TABLES)[keyof typeof DB_TABLES];
 
+export const DB_RPCS = {
+  UNSUBSCRIBE_NEWSLETTER_BY_EMAIL: 'unsubscribe_newsletter_by_email',
+  GET_SUBSCRIBERS_EMAILS: 'get_subscribers_emails',
+} as const;
+
+export const DESK_FILTERS = {
+  ALL: 'todos',
+  DRAFTS: 'borradores',
+  PUBLISHED: 'publicados',
+  IN_REVIEW: 'pendientes',
+  FOR_APPROVAL: 'para_aprobar',
+  VIEW_ALL: 'todo',
+} as const;
+
+export const DESK_ERRORS = {
+  LIMIT_REACHED: 'limite_alcanzado',
+} as const;
+
 export const PUBLICATION_COLS = {
   ID: 'id',
   SLUG: 'slug',

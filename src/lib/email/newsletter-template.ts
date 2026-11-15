@@ -43,7 +43,8 @@ export async function renderNewsletterEmail(
   const subject = `${emailDict.subjectPrefix}${cleanTitle}`;
 
   const typeKey = publicationType?.toLowerCase();
-  const localizedType = typeKey && emailDict.types?.[typeKey] ? emailDict.types[typeKey] : null;
+  const typeMap = emailDict.types as Record<string, string> | undefined;
+  const localizedType = typeKey && typeMap?.[typeKey] ? typeMap[typeKey] : null;
   const badgeText = localizedType || (publicationType ? publicationType.toUpperCase() : emailDict.defaultBadge);
 
   const brandLabel = emailDict.brand;

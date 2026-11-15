@@ -86,6 +86,7 @@ export function buildEditorSaveInput(
 }
 
 interface Props {
+  mode?: 'create' | 'edit';
   publication?: PublicationDetail;
   /** Backwards compatibility alias for publication */
   articulo?: PublicationDetail;
@@ -95,6 +96,7 @@ interface Props {
 }
 
 export default function EditarArticuloForm({
+  mode = 'edit',
   publication,
   articulo,
   userRole,
@@ -102,7 +104,7 @@ export default function EditarArticuloForm({
   dict: propDict,
 }: Props) {
   const pub = publication || articulo;
-  if (!pub) {
+  if (mode === 'edit' && !pub) {
     throw new Error('EditarArticuloForm requires a publication prop');
   }
 
@@ -111,44 +113,55 @@ export default function EditarArticuloForm({
   const [isPublishing, setIsPublishing] = useState(false);
   const router = useRouter();
   const toast = useToast();
+  const isCreate = mode === 'create';
 
-  const initialData: ArticleData = {
-    id: pub.id,
-    title: pub.title,
-    subtitle: pub.subtitle,
-    content: pub.content,
-    cover_image_url: pub.cover_image_url,
-    tags: pub.tags?.map((t) => t.slug) || [],
-    status: pub.status,
-    type: pub.type,
-    original_language: pub.original_language,
-    show_index: pub.show_index ?? false,
-    published_at: pub.published_at,
-  };
+  const initialData: ArticleData | undefined = pub
+    ? {
+        id: pub.id,
+        title: pub.title,
+        subtitle: pub.subtitle,
+        content: pub.content,
+        cover_image_url: pub.cover_image_url,
+        tags: pub.tags?.map((t) => t.slug) || [],
+        status: pub.status,
+        type: pub.type,
+        original_language: pub.original_language,
+        show_index: pub.show_index ?? false,
+        published_at: pub.published_at,
+      }
+    : undefined;
 
   const handleSave = async (data: ArticleData, action: EditorAction): Promise<boolean> => {
     setIsPublishing(true);
     try {
       const result = await saveArticleAction(
         buildEditorSaveInput(data, {
-          id: pub.id,
+          ...(pub?.id ? { id: pub.id } : {}),
           action,
           lang: locale,
         })
       );
 
       if (!result.success) {
-        toast.error(result.error || dict.saveError);
+        toast.error(result.error || (isCreate ? dict.publishError : dict.saveError));
         return false;
       }
 
-      toast.success(isDraftAction(action) ? dict.draftUpdated : dict.actionSuccess);
+      const successMessage = isDraftAction(action)
+        ? isCreate
+          ? dict.draftSaved
+          : dict.draftUpdated
+        : isCreate
+          ? dict.actionSuccessGeneric
+          : dict.actionSuccess;
+
+      toast.success(successMessage);
 
       router.push(`/${locale}/escritorio`);
       return true;
     } catch (error: unknown) {
       console.error('[EditarArticuloForm] Unexpected error on save:', error);
-      toast.error(dict.unexpectedError);
+      toast.error(isCreate ? dict.unexpectedPublishError : dict.unexpectedError);
       return false;
     } finally {
       setIsPublishing(false);
@@ -157,7 +170,7 @@ export default function EditarArticuloForm({
 
   return (
     <ArticleEditor
-      mode="edit"
+      mode={mode}
       initialData={initialData}
       onSave={handleSave}
       isPublishing={isPublishing}

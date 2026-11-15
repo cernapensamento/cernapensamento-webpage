@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { i18n } from '@/i18n-config';
+import { SITE_URL } from '@/lib/constants';
 
 export default function robots(): MetadataRoute.Robots {
   const localizedDeskPaths = i18n.locales.flatMap((locale) => [
@@ -19,6 +20,6 @@ export default function robots(): MetadataRoute.Robots {
         '/auth/',
       ],
     },
-    sitemap: 'https://cernapensamento.org/sitemap.xml',
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

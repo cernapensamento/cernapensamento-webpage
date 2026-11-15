@@ -12,6 +12,7 @@ import ContactSection from '@/components/sections/ContactSection';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getDictionary } from '@/dictionaries';
 import { getOpenGraphLocale, i18n, resolveLocale } from '@/i18n-config';
+import { SITE_FULL_NAME, SITE_URL } from '@/lib/constants';
 import { getAllTagsWithTranslations } from '@/lib/db';
 
 export const revalidate = 60;
@@ -24,8 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang } = await params;
   const locale = resolveLocale(lang);
   const dict = await getDictionary(locale);
-  const siteUrl = 'https://cernapensamento.org';
-  const pageUrl = `${siteUrl}/${locale}`;
+  const pageUrl = `${SITE_URL}/${locale}`;
 
   const title = dict.homepage.title;
   const description = dict.homepage.description;
@@ -33,35 +33,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
-    keywords: [
-      'Cerna',
-      'Cerna Pensamento',
-      'Cerna literary journal',
-      'revista literaria',
-      'ensaio galego',
-      'filosofía política',
-      'escola austríaca',
-      'Galicia',
-      'literary journal Galicia',
-      'cultural magazine',
-    ],
+    keywords: dict.homepage.keywords,
     alternates: {
       canonical: pageUrl,
       languages: {
-        ...Object.fromEntries(i18n.locales.map((loc) => [loc, `${siteUrl}/${loc}`])),
-        'x-default': `${siteUrl}/${i18n.defaultLocale}`,
+        ...Object.fromEntries(i18n.locales.map((loc) => [loc, `${SITE_URL}/${loc}`])),
+        'x-default': `${SITE_URL}/${i18n.defaultLocale}`,
       },
     },
     openGraph: {
       title,
       description,
       url: pageUrl,
-      siteName: 'Cerna Pensamento',
+      siteName: SITE_FULL_NAME,
       locale: getOpenGraphLocale(locale),
       type: 'website',
       images: [
         {
-          url: `${siteUrl}/images/logo/screen.png`,
+          url: `${SITE_URL}/images/logo/screen.png`,
           width: 1200,
           height: 630,
           alt: dict.homepage.ogImageAlt,
@@ -72,7 +61,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: 'summary_large_image',
       title,
       description,
-      images: [`${siteUrl}/images/logo/screen.png`],
+      images: [`${SITE_URL}/images/logo/screen.png`],
     },
   };
 }
@@ -85,7 +74,6 @@ export default async function HomePage({ params }: PageProps) {
     getAllTagsWithTranslations({ lang: locale }),
   ]);
   const themesTags = tags.slice(0, 12);
-  const siteUrl = 'https://cernapensamento.org';
 
   // Schema.org JSON-LD Structured Data (Organization + NewsMediaOrganization + Periodical + WebSite)
   const jsonLd = {
@@ -93,30 +81,30 @@ export default async function HomePage({ params }: PageProps) {
     '@graph': [
       {
         '@type': ['Organization', 'NewsMediaOrganization', 'Periodical'],
-        '@id': 'https://cernapensamento.org/#organization',
-        name: 'Asociación Cerna Pensamento',
+        '@id': `${SITE_URL}/#organization`,
+        name: `Asociación ${SITE_FULL_NAME}`,
         alternateName: [
           'Cerna',
-          'Cerna Pensamento',
+          SITE_FULL_NAME,
           'Cerna Revista Literaria',
           'Cerna Literary Journal',
         ],
-        url: 'https://cernapensamento.org',
+        url: SITE_URL,
         logo: {
           '@type': 'ImageObject',
-          url: 'https://cernapensamento.org/images/logo/cernablack.png',
+          url: `${SITE_URL}/images/logo/cernablack.png`,
           width: 430,
           height: 159,
         },
-        image: 'https://cernapensamento.org/images/logo/screen.png',
+        image: `${SITE_URL}/images/logo/screen.png`,
         description: dict.homepage.organizationDescription,
-        email: 'contacto@cernapensamento.org',
+        email: dict.contact.email,
         contactPoint: [
           {
             '@type': 'ContactPoint',
-            email: 'contacto@cernapensamento.org',
+            email: dict.contact.email,
             contactType: 'editorial',
-            availableLanguage: ['Galician', 'Spanish', 'English'],
+            availableLanguage: [...i18n.locales],
           },
         ],
         sameAs: [
@@ -125,18 +113,18 @@ export default async function HomePage({ params }: PageProps) {
         ],
         foundingLocation: {
           '@type': 'Place',
-          name: 'Galicia, España',
+          name: dict.footer.location,
         },
-        publishingPrinciples: `${siteUrl}/${locale}/asociacion`,
+        publishingPrinciples: `${SITE_URL}/${locale}/asociacion`,
       },
       {
         '@type': 'WebSite',
-        '@id': 'https://cernapensamento.org/#website',
-        url: 'https://cernapensamento.org',
-        name: 'Cerna Pensamento',
+        '@id': `${SITE_URL}/#website`,
+        url: SITE_URL,
+        name: SITE_FULL_NAME,
         description: dict.homepage.websiteDescription,
         publisher: {
-          '@id': 'https://cernapensamento.org/#organization',
+          '@id': `${SITE_URL}/#organization`,
         },
         inLanguage: [...i18n.locales],
       },
@@ -156,7 +144,7 @@ export default async function HomePage({ params }: PageProps) {
 
       {/* 2. ARTICLES MOSAIC SECTION (Grey / Dark-Grey: bg-surface) */}
       <section
-        aria-label={dict.mosaic?.recentTitle || dict.articles?.title}
+        aria-label={dict.mosaic.recentTitle}
         className="flex-grow w-full bg-surface border-b border-lines py-16 sm:py-24"
       >
         <div className="max-w-[1120px] mx-auto px-5 md:px-16">

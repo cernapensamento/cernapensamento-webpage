@@ -11,7 +11,7 @@ import type { LocalizedString } from '@/lib/db/types';
  * 4. Empty string.
  */
 export function resolveLocalizedText(
-  value: LocalizedString | Record<string, unknown> | null | undefined,
+  value: LocalizedString | Record<string, unknown> | string | null | undefined,
   lang?: string | null,
   fallbackLang: string = i18n.defaultLocale
 ): string {
@@ -39,4 +39,17 @@ export function resolveLocalizedText(
   }
 
   return '';
+}
+
+/**
+ * Resolves an author biography with optional static dictionary overrides taking
+ * precedence over the database LocalizedString `bio` field.
+ */
+export function resolveAuthorBio(
+  author: { slug?: string | null; bio?: LocalizedString | Record<string, unknown> | string | null },
+  dictAuthors: Record<string, string> | undefined,
+  locale: string
+): string {
+  const dictBio = author.slug && dictAuthors ? dictAuthors[author.slug] : '';
+  return dictBio || resolveLocalizedText(author.bio, locale);
 }

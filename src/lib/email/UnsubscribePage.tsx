@@ -11,7 +11,7 @@ import {
   Link,
   Tailwind,
 } from '@react-email/components';
-import { getDictionaryClient } from '@/dictionaries/client';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 import type { Locale } from '@/i18n-config';
 
 export interface UnsubscribePageProps {
@@ -20,8 +20,7 @@ export interface UnsubscribePageProps {
   siteUrl: string;
   success: boolean;
   errorMessage?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  dict?: any;
+  dict?: Dictionary;
 }
 
 export function UnsubscribePage({

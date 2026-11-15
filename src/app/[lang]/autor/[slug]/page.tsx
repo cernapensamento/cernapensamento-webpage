@@ -3,7 +3,7 @@ import { getColumnistBySlug } from '@/lib/columnists';
 import { notFound } from 'next/navigation';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
-import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
+import { resolveAuthorBio } from '@/lib/i18n/resolveLocalizedText';
 import type { Metadata } from 'next';
 import AuthorProfileView from '@/components/features/AuthorProfileView';
 import { getUserBySlugOrId, getAuthorProfileBySlugOrId } from '@/lib/db';
@@ -22,12 +22,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     getUserBySlugOrId(slug),
     getDictionary(locale),
   ]);
-  if (!user) return {};
+  if (!user) {
+    return { title: dict.article.notFoundTitle };
+  }
 
-  const authorKey = user.slug || slug;
-  const bio =
-    (authorKey && (dict.authors as Record<string, string>)[authorKey]) ||
-    resolveLocalizedText(user.bio, locale);
+  const bio = resolveAuthorBio(
+    { slug: user.slug || slug, bio: user.bio },
+    dict.authors,
+    locale
+  );
   const title = `${user.full_name} · ${SITE_NAME}`;
   const description =
     bio ||
@@ -61,9 +64,7 @@ export default async function AutorPage({ params }: PageProps) {
   // Cross-reference with predefined columnists data (local photos, emails, instagram)
   const columnist = getColumnistBySlug(profile.slug || '');
   const avatarSrc = columnist?.image || profile.avatar_url || DEFAULT_AVATAR_URL;
-  const bio =
-    (profile.slug && (dict.authors as Record<string, string>)[profile.slug]) ||
-    resolveLocalizedText(profile.bio, locale);
+  const bio = resolveAuthorBio(profile, dict.authors, locale);
 
   // Determine editorial role badge:
   // - USER_ROLES.ADMIN -> editorialBoard
@@ -91,7 +92,7 @@ export default async function AutorPage({ params }: PageProps) {
 
   const availableTopics = Object.values(topicCounts).sort((a, b) => {
     if (b.count !== a.count) return b.count - a.count;
-    return a.name.localeCompare(b.name);
+    return a.name.localeCompare(b.name, locale);
   });
 
   const totalWorks = profile.publications.length;

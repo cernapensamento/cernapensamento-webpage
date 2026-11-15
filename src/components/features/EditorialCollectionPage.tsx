@@ -52,7 +52,7 @@ export function EditorialCollectionPage({ slug, lang }: EditorialCollectionPageP
   const { data, content } = getDocument(slug, locale);
   const { title, responsable, correo, documento } = data as CollectionFrontmatter;
   const emailAddress = correo
-    ? correo.replace(/^Correo(?:\s+de\s+correo)?:\s*/i, '').trim()
+    ? correo.match(/[^\s:]+@[^\s:]+/)?.[0] || correo.trim()
     : '';
 
   return (

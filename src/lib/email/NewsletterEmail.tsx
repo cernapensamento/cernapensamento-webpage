@@ -13,7 +13,7 @@ import {
   Button,
   Tailwind,
 } from '@react-email/components';
-import { getDictionaryClient } from '@/dictionaries/client';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 import type { Locale } from '@/i18n-config';
 
 export interface NewsletterEmailProps {
@@ -26,8 +26,7 @@ export interface NewsletterEmailProps {
   unsubscribeUrl: string;
   lang: Locale | string;
   publicationType?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  dict?: any;
+  dict?: Dictionary;
 }
 
 export function NewsletterEmail({
@@ -50,7 +49,8 @@ export function NewsletterEmail({
   const cleanAuthor = authorName?.trim() || null;
 
   const typeKey = publicationType?.toLowerCase();
-  const localizedType = typeKey && emailDict.types?.[typeKey] ? emailDict.types[typeKey] : null;
+  const typeMap = emailDict.types as Record<string, string>;
+  const localizedType = typeKey && typeMap?.[typeKey] ? typeMap[typeKey] : null;
   const badgeText = localizedType || (publicationType ? publicationType.toUpperCase() : emailDict.defaultBadge);
 
   const brandLabel = emailDict.brand;

@@ -3,7 +3,6 @@
 import React from 'react';
 
 interface EscritorioShellProps {
-  role?: string;
   children: React.ReactNode;
 }
 

@@ -17,7 +17,7 @@ import ArticleScrollManager from '@/components/features/ArticleScrollManager';
 import ArticleTableOfContents from '@/components/features/ArticleTableOfContents';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
-import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
+import { resolveAuthorBio, resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 
 interface Props {
   params: Promise<{ slug: string; lang: string }>;
@@ -37,22 +37,19 @@ export async function generateMetadata({ params }: Props) {
 
   const titulo = resolveLocalizedText(publication.title, locale);
   const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, locale) : null;
+  const authorName = publication.author.full_name || dict.article.unknownAuthor;
 
   return {
     title: titulo,
     description:
       subtitulo ||
-      dict.article.defaultMetaDescription.replace('{author}', publication.author.full_name),
+      dict.article.defaultMetaDescription.replace('{author}', authorName),
   };
 }
 
 export const revalidate = 60;
 
-export default async function ArticuloPage({
-  params,
-}: {
-  params: Promise<{ lang: string; slug: string }>;
-}) {
+export default async function ArticuloPage({ params }: Props) {
   const { lang, slug } = await params;
   const locale = resolveLocale(lang);
   const [dict, publication] = await Promise.all([
@@ -76,11 +73,8 @@ export default async function ArticuloPage({
   const tocItems = publication.show_index ? getHeadingsFromHtml(bodyHtml) : [];
   const isEnsaio = publication.type === PUBLICATION_TYPES.ESSAY;
 
-  const authorBio = publication.author.bio
-    ? resolveLocalizedText(publication.author.bio, locale)
-    : '';
-
-  const authorBioFinal = (publication.author.slug && dict.authors && (dict.authors as Record<string, string>)[publication.author.slug]) || authorBio;
+  const authorName = publication.author.full_name || dict.article.unknownAuthor;
+  const authorBioFinal = resolveAuthorBio(publication.author, dict.authors, locale);
 
   const typeLabel = dict.documentTypes?.[publication.type] || publication.type;
 
@@ -104,7 +98,7 @@ export default async function ArticuloPage({
               href={`/${locale}/autor/${publication.author.slug || publication.author.id}`}
               className="text-charcoal/80 hover:text-gold transition-colors font-medium hover:underline"
             >
-              {publication.author.full_name}
+              {authorName}
             </Link>
             <span>•</span>
             <FormattedDate date={publication.published_at || publication.created_at} lang={locale} format="long" />
@@ -187,7 +181,7 @@ export default async function ArticuloPage({
                     className="hover:text-gold transition-colors font-serif font-bold text-charcoal"
                     aria-describedby="author-heading"
                   >
-                    {publication.author.full_name || dict.article.unknownAuthor}
+                    {authorName}
                   </Link> {dict.article.contributorOf} {SITE_NAME}.
                 </p>
                 {authorBioFinal && (

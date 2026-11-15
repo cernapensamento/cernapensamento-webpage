@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { i18n } from '@/i18n-config';
+import { SITE_URL } from '@/lib/constants';
 import sitemap from './sitemap';
 import type { PublicationCardItem, PublishedAuthorItem } from '@/lib/db/types';
 
@@ -27,13 +29,14 @@ describe('Sitemap Generator (src/app/sitemap.ts)', () => {
     expect(entries.length).toBeGreaterThan(10);
     const urls = entries.map((e) => e.url);
 
-    expect(urls).toContain('https://cernapensamento.org');
-    expect(urls).toContain('https://cernapensamento.org/gl');
-    expect(urls).toContain('https://cernapensamento.org/es');
-    expect(urls).toContain('https://cernapensamento.org/gl/articulos');
-    expect(urls).toContain('https://cernapensamento.org/gl/asociacion');
-    expect(urls).toContain('https://cernapensamento.org/gl/contacto');
-    expect(urls).toContain('https://cernapensamento.org/gl/privacidad');
+    expect(urls).toContain(SITE_URL);
+    for (const locale of i18n.locales) {
+      expect(urls).toContain(`${SITE_URL}/${locale}`);
+      expect(urls).toContain(`${SITE_URL}/${locale}/articulos`);
+      expect(urls).toContain(`${SITE_URL}/${locale}/asociacion`);
+      expect(urls).toContain(`${SITE_URL}/${locale}/contacto`);
+      expect(urls).toContain(`${SITE_URL}/${locale}/privacidad`);
+    }
 
     // Every entry must have a lastModified date
     for (const entry of entries) {
@@ -62,10 +65,10 @@ describe('Sitemap Generator (src/app/sitemap.ts)', () => {
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
 
-    expect(urls).toContain('https://cernapensamento.org/gl/articulo/ensaio-economico');
-    expect(urls).toContain('https://cernapensamento.org/es/articulo/ensaio-economico');
-    expect(urls).toContain('https://cernapensamento.org/gl/autor/diego-araujo');
-    expect(urls).toContain('https://cernapensamento.org/es/autor/diego-araujo');
+    for (const locale of i18n.locales) {
+      expect(urls).toContain(`${SITE_URL}/${locale}/articulo/ensaio-economico`);
+      expect(urls).toContain(`${SITE_URL}/${locale}/autor/diego-araujo`);
+    }
   });
 
   it('handles database errors gracefully and still returns static pages', async () => {
@@ -76,7 +79,9 @@ describe('Sitemap Generator (src/app/sitemap.ts)', () => {
 
     expect(entries.length).toBeGreaterThan(0);
     const urls = entries.map((e) => e.url);
-    expect(urls).toContain('https://cernapensamento.org/gl');
+    for (const locale of i18n.locales) {
+      expect(urls).toContain(`${SITE_URL}/${locale}`);
+    }
   });
 
   it.each([false, true])('includes pages beyond the first 1,000 publications (full last page: %s)', async (fullLastPage) => {
@@ -93,10 +98,11 @@ describe('Sitemap Generator (src/app/sitemap.ts)', () => {
 
     const entries = await sitemap();
     const lastSlug = fullLastPage ? 'article-999-next' : 'last-article';
-    expect(entries.map((entry) => entry.url)).toEqual(expect.arrayContaining([
-      `https://cernapensamento.org/gl/articulo/${lastSlug}`,
-      `https://cernapensamento.org/es/articulo/${lastSlug}`,
-    ]));
+    expect(entries.map((entry) => entry.url)).toEqual(
+      expect.arrayContaining(
+        i18n.locales.map((locale) => `${SITE_URL}/${locale}/articulo/${lastSlug}`)
+      )
+    );
     expect(getPublicationCards).toHaveBeenNthCalledWith(1, expect.objectContaining({ limit: 1000, offset: 0 }));
     expect(getPublicationCards).toHaveBeenNthCalledWith(2, expect.objectContaining({ limit: 1000, offset: 1000 }));
     expect(getPublicationCards).toHaveBeenCalledTimes(fullLastPage ? 3 : 2);

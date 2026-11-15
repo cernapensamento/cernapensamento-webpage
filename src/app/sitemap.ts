@@ -3,11 +3,10 @@ import { createPublicAnonClient } from '@/lib/db';
 import { getPublicationCards } from '@/lib/db/queries/publications';
 import { getPublishedAuthors } from '@/lib/db/queries/users';
 import { COLUMNISTS } from '@/lib/columnists';
+import { SITE_URL } from '@/lib/constants';
 import { i18n } from '@/i18n-config';
 
 export const revalidate = 3600;
-
-const SITE_URL = 'https://cernapensamento.org';
 
 function getLanguageAlternates(path: string = '') {
   const languages: Record<string, string> = {};

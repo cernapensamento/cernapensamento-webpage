@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET } from './route';
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
 import { buildArticlePdf } from '@/lib/pdf/articlePdf';
-import { PUBLICATION_STATUSES } from '@/lib/db/schema';
+import { PUBLICATION_STATUSES, PUBLICATION_TYPES } from '@/lib/db/schema';
 import type { PublicationDetail } from '@/lib/db/types';
 
 vi.mock('@/lib/db/queries/publications', () => ({
@@ -52,7 +52,7 @@ describe('PDF Export API Route (GET /api/articulo/[slug]/pdf)', () => {
       subtitle: null,
       content: { gl: 'Contido' },
       cover_image_url: null,
-      type: 'article',
+      type: PUBLICATION_TYPES.ARTICLE,
       original_language: 'gl',
       is_pinned: false,
       created_at: '2026-01-01T00:00:00Z',
@@ -87,7 +87,7 @@ describe('PDF Export API Route (GET /api/articulo/[slug]/pdf)', () => {
       subtitle: null,
       content: { gl: 'Contido' },
       cover_image_url: null,
-      type: 'essay',
+      type: PUBLICATION_TYPES.ESSAY,
       original_language: 'gl',
       is_pinned: false,
       created_at: '2026-01-01T00:00:00Z',
@@ -123,7 +123,7 @@ describe('PDF Export API Route (GET /api/articulo/[slug]/pdf)', () => {
       subtitle: { gl: 'Subtítulo', es: 'Subtítulo' },
       content: { gl: '<p>Texto completo</p>' },
       cover_image_url: null,
-      type: 'essay',
+      type: PUBLICATION_TYPES.ESSAY,
       original_language: 'gl',
       is_pinned: false,
       created_at: '2026-01-01T00:00:00Z',
@@ -160,7 +160,7 @@ describe('PDF Export API Route (GET /api/articulo/[slug]/pdf)', () => {
       subtitle: null,
       content: { gl: '<p>Crash</p>' },
       cover_image_url: null,
-      type: 'essay',
+      type: PUBLICATION_TYPES.ESSAY,
       original_language: 'gl',
       is_pinned: false,
       created_at: '2026-01-01T00:00:00Z',

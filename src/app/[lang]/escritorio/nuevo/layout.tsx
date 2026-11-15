@@ -7,6 +7,7 @@ import {
   getGuestPublicationQuota,
   isGuestRole,
 } from '@/lib/db';
+import { DESK_ERRORS } from '@/lib/db/schema';
 
 export default async function NuevoArticuloLayout({
   children,
@@ -33,7 +34,7 @@ export default async function NuevoArticuloLayout({
   if (isGuestRole(userRole)) {
     const quota = await getGuestPublicationQuota(user.id);
     if (!quota.canCreate) {
-      redirect(`/${lang}/escritorio?error=limite_alcanzado`);
+      redirect(`/${lang}/escritorio?error=${DESK_ERRORS.LIMIT_REACHED}`);
     }
   }
 

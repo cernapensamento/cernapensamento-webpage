@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
-import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
+import { resolveAuthorBio, resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import { getColumnistBySlug } from '@/lib/columnists';
 import { SITE_NAME } from '@/lib/constants';
 import { getPublishedAuthors } from '@/lib/db';
@@ -41,14 +41,9 @@ export default async function AutoresPage({ params }: Props) {
     getPublishedAuthors(),
   ]);
 
-  const authorBios = dict.authors as Record<string, string>;
-
   const authors: AuthorDirectoryItem[] = publishedAuthors.map((author) => {
     const columnist = getColumnistBySlug(author.slug);
-    const bio =
-      (author.slug ? authorBios[author.slug] : '') ||
-      resolveLocalizedText(author.bio, locale) ||
-      '';
+    const bio = resolveAuthorBio(author, dict.authors, locale);
 
     const latestPublicationTitle = author.latest_publication_title
       ? resolveLocalizedText(author.latest_publication_title, locale)
@@ -74,7 +69,7 @@ export default async function AutoresPage({ params }: Props) {
       authors={authors}
       lang={locale}
       dict={dict.autoresPage}
-      documentTypes={dict.documentTypes as Record<string, string>}
+      documentTypes={dict.documentTypes}
     />
   );
 }

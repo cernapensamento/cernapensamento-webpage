@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
-import { getHomepageMarkdown, get404Markdown, htmlToMarkdown } from '@/lib/agent/markdown';
+import { getHomepageMarkdown, get404Markdown, formatArticleMarkdown } from '@/lib/agent/markdown';
 import { getDocument } from '@/lib/content';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import { i18n, isSupportedLocale, resolveLocale } from '@/i18n-config';
 import { PUBLICATION_STATUSES } from '@/lib/db/schema';
+import { SITE_URL, SITE_FULL_NAME } from '@/lib/constants';
+import { getDictionaryClient } from '@/dictionaries/client';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -38,18 +40,18 @@ export async function GET(request: NextRequest) {
 
       const title = resolveLocalizedText(publication.title, lang);
       const subtitle = resolveLocalizedText(publication.subtitle, lang);
-      const rawContent = resolveLocalizedText(publication.content, lang);
-      const authorName = publication.author?.full_name || 'Cerna Pensamento';
-      const canonicalUrl = `https://cernapensamento.org/${lang}/articulo/${publication.slug}`;
+      const htmlContent = resolveLocalizedText(publication.content, lang);
+      const authorName = publication.author?.full_name || SITE_FULL_NAME;
+      const canonicalUrl = `${SITE_URL}/${lang}/articulo/${publication.slug}`;
 
-      let markdown = `# ${title}\n\n`;
-      if (subtitle) {
-        markdown += `> ${subtitle}\n\n`;
-      }
-      markdown += `*Autor:* ${authorName}  \n`;
-      markdown += `*Publicación:* [${canonicalUrl}](${canonicalUrl})  \n\n`;
-      markdown += `---\n\n`;
-      markdown += htmlToMarkdown(rawContent);
+      const markdown = formatArticleMarkdown({
+        title,
+        subtitle,
+        authorName,
+        canonicalUrl,
+        htmlContent,
+        lang,
+      });
 
       return new NextResponse(markdown, {
         status: 200,
@@ -57,7 +59,7 @@ export async function GET(request: NextRequest) {
       });
     } catch (err) {
       console.error('[API:Markdown] Failed to fetch article:', err);
-      return new NextResponse('# 500 - Internal Server Error', {
+      return new NextResponse(getDictionaryClient(lang).markdown.article.serverError, {
         status: 500,
         headers,
       });
@@ -66,22 +68,10 @@ export async function GET(request: NextRequest) {
 
   const legalLang = rawLang || i18n.defaultLocale;
   if (type === 'legal' && (slug === 'privacidad' || slug === 'estatutos') && isSupportedLocale(legalLang)) {
-    try {
-      const doc = getDocument(slug, legalLang);
-      if (!doc || !doc.content) {
-        return new NextResponse(get404Markdown(legalLang), {
-          status: 404,
-          headers,
-        });
-      }
-
+    const doc = getDocument(slug, legalLang);
+    if (doc?.content) {
       return new NextResponse(doc.content, {
         status: 200,
-        headers,
-      });
-    } catch {
-      return new NextResponse(get404Markdown(legalLang), {
-        status: 404,
         headers,
       });
     }
