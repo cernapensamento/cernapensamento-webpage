@@ -2,14 +2,20 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
-import type { PublicationCardItem } from '@/lib/db';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import type { PublicationCardItem } from '@/lib/db/types';
 import FormattedDate from '@/components/ui/FormattedDate';
-import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { getDictionaryClient } from '@/dictionaries/client';
+import {
+  resolvePublicationCover,
+  resolvePublicationDate,
+  resolvePublicationHref,
+  resolvePublicationLabels,
+  resolvePublicationSubtitle,
+  resolvePublicationTitle,
+} from './publicationCardHelpers';
+import { MosaicCoverBackdrop, TopGoldHoverLine } from './MosaicPrimitives';
 
 interface NewsMosaicGridProps {
   news: PublicationCardItem[];
@@ -29,28 +35,6 @@ interface NewsMosaicGridProps {
   };
 }
 
-function getLocalizedCategory(
-  item: PublicationCardItem,
-  lang: string,
-  documentTypes?: Record<string, string>
-): string {
-  // 1. Prefer localized tag if available
-  if (item.tags && item.tags.length > 0) {
-    const firstTag = item.tags[0];
-    if (firstTag.name && firstTag.name.toLowerCase() !== PUBLICATION_TYPES.NEWS && firstTag.name.toLowerCase() !== PUBLICATION_TYPES.ARTICLE) {
-      return firstTag.name.toUpperCase();
-    }
-  }
-
-  // 2. Localized publication category from dictionary
-  if (documentTypes && item.type && documentTypes[item.type]) {
-    return documentTypes[item.type].toUpperCase();
-  }
-
-  const fallbackDict = lang === 'es' ? esDict : glDict;
-  return (documentTypes?.[PUBLICATION_TYPES.NEWS] || fallbackDict.documentTypes[PUBLICATION_TYPES.NEWS]).toUpperCase();
-}
-
 interface NewsCardProps {
   item: PublicationCardItem;
   lang: string;
@@ -59,22 +43,29 @@ interface NewsCardProps {
   dict?: NewsMosaicGridProps['dict'];
 }
 
+const THEME_BG_CLASSES: Record<NewsCardProps['theme'], string> = {
+  charcoal: 'bg-parchment dark:bg-[#141414] border border-lines dark:border-white/10',
+  dark: 'bg-surface dark:bg-[#1a1a1a] border border-lines dark:border-white/10',
+  light: 'bg-surface dark:bg-[#202020] border border-lines dark:border-white/10',
+};
+
 function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
-  const title = resolveLocalizedText(item.title, lang);
-  const subtitle = resolveLocalizedText(item.subtitle, lang);
-  const category = getLocalizedCategory(item, lang, dict?.documentTypes);
-  const rawDate = item.published_at || item.created_at;
-  const hasCover = Boolean(item.cover_image_url);
-  const byLabel = dict?.articles?.by || 'Por';
+  const fallbackDict = getDictionaryClient(lang);
+  const title = resolvePublicationTitle(item, lang);
+  const subtitle = resolvePublicationSubtitle(item, lang);
+  const [category] = resolvePublicationLabels(item, {
+    documentTypes: dict?.documentTypes,
+    fallbackDict,
+    defaultType: PUBLICATION_TYPES.NEWS,
+    maxTags: 1,
+  });
+  const rawDate = resolvePublicationDate(item);
+  const coverUrl = resolvePublicationCover(item);
+  const hasCover = Boolean(coverUrl);
+  const byLabel = dict?.articles?.by || fallbackDict.articles.by;
+  const href = resolvePublicationHref(item, lang);
 
-  // Theme-adaptive styling with full light and dark mode parity
-  const bgClass =
-    theme === 'charcoal'
-      ? 'bg-parchment dark:bg-[#141414] border border-lines dark:border-white/10'
-      : theme === 'dark'
-        ? 'bg-surface dark:bg-[#1a1a1a] border border-lines dark:border-white/10'
-        : 'bg-surface dark:bg-[#202020] border border-lines dark:border-white/10';
-
+  const bgClass = THEME_BG_CLASSES[theme];
   const textHeadingClass = 'text-charcoal dark:text-[#f3f1ee] group-hover:text-gold dark:group-hover:text-gold transition-colors';
   const textMutedClass = 'text-charcoal/70 dark:text-[#c4c1ba]';
   const textAuthorClass = 'text-charcoal/60 dark:text-[#9e9b94]';
@@ -82,28 +73,18 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
   if (variant === 'large') {
     return (
       <Link
-        href={`/${lang}/articulo/${item.slug}`}
+        href={href}
         className={`group relative flex flex-col justify-end p-7 sm:p-10 overflow-hidden transition-all duration-300 hover:border-gold hover:shadow-xl dark:hover:border-gold/60 h-full min-h-[340px] sm:min-h-[420px] ${bgClass}`}
       >
-        {/* Cover image if available */}
-        {hasCover && (
-          <>
-            <Image
-              src={item.cover_image_url as string}
-              alt={title}
-              fill
-              sizes="(max-width: 1024px) 100vw, 65vw"
-              className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
-            />
-            {/* Adaptive protective gradient: light mode parchment tone, dark mode deep charcoal */}
-            <div className="absolute inset-0 bg-gradient-to-t from-parchment via-parchment/85 to-parchment/20 dark:from-black/95 dark:via-black/75 dark:to-black/25 transition-colors duration-300" />
-          </>
+        {coverUrl && (
+          <MosaicCoverBackdrop
+            src={coverUrl}
+            alt={title}
+            sizes="(max-width: 1024px) 100vw, 65vw"
+          />
         )}
 
-        <span
-          aria-hidden="true"
-          className="absolute left-0 top-0 z-20 h-[2px] w-0 bg-gold transition-all duration-500 group-hover:w-full"
-        />
+        <TopGoldHoverLine />
 
         {/* Content Overlay */}
         <div className="relative z-10 flex flex-col gap-3">
@@ -153,13 +134,10 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
   if (variant === 'tall') {
     return (
       <Link
-        href={`/${lang}/articulo/${item.slug}`}
+        href={href}
         className={`group relative flex flex-col justify-between p-6 sm:p-7 overflow-hidden transition-all duration-300 hover:border-gold hover:shadow-lg dark:hover:border-gold/60 h-full min-h-[300px] ${bgClass}`}
       >
-        <span
-          aria-hidden="true"
-          className="absolute left-0 top-0 z-20 h-[2px] w-0 bg-gold transition-all duration-500 group-hover:w-full"
-        />
+        <TopGoldHoverLine />
 
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
@@ -200,13 +178,10 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
   // Default 'stacked' (compact/square)
   return (
     <Link
-      href={`/${lang}/articulo/${item.slug}`}
+      href={href}
       className={`group relative flex flex-col justify-between p-5 sm:p-6 overflow-hidden transition-all duration-300 hover:border-gold hover:shadow-md dark:hover:border-gold/60 h-full min-h-[170px] ${bgClass}`}
     >
-      <span
-        aria-hidden="true"
-        className="absolute left-0 top-0 z-20 h-[2px] w-0 bg-gold transition-all duration-500 group-hover:w-full"
-      />
+      <TopGoldHoverLine />
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
@@ -238,8 +213,51 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
   );
 }
 
+function StackedNewsPair({
+  first,
+  second,
+  firstTheme,
+  secondTheme,
+  firstDelayMs,
+  secondDelayMs,
+  lang,
+  dict,
+}: {
+  first?: PublicationCardItem;
+  second?: PublicationCardItem;
+  firstTheme: NewsCardProps['theme'];
+  secondTheme: NewsCardProps['theme'];
+  firstDelayMs: number;
+  secondDelayMs: number;
+  lang: string;
+  dict: NewsMosaicGridProps['dict'];
+}) {
+  if (!first && !second) return null;
+
+  return (
+    <div className="lg:col-span-4 flex flex-col gap-6 sm:gap-8 h-full justify-between">
+      {first && (
+        <RevealOnScroll delayMs={firstDelayMs} className="flex-1">
+          <NewsCard item={first} lang={lang} variant="stacked" theme={firstTheme} dict={dict} />
+        </RevealOnScroll>
+      )}
+      {second && (
+        <RevealOnScroll delayMs={secondDelayMs} className="flex-1">
+          <NewsCard item={second} lang={lang} variant="stacked" theme={secondTheme} dict={dict} />
+        </RevealOnScroll>
+      )}
+    </div>
+  );
+}
+
 export default function NewsMosaicGrid({ news, lang, dict }: NewsMosaicGridProps) {
-  const d = dict || (lang === 'gl' ? glDict : esDict);
+  const fallbackDict = getDictionaryClient(lang);
+  const noticiasDict = {
+    ...fallbackDict.noticias,
+    ...dict?.noticias,
+  };
+  const resolvedDict = dict ?? fallbackDict;
+
   if (!news || news.length === 0) {
     return (
       <div className="text-center py-24 sm:py-32 border-t border-lines">
@@ -247,15 +265,13 @@ export default function NewsMosaicGrid({ news, lang, dict }: NewsMosaicGridProps
           newspaper
         </span>
         <p className="font-serif text-2xl text-charcoal/60 mb-6">
-          {d.noticias?.emptyMessage}
+          {noticiasDict.emptyMessage}
         </p>
         <Link
           href={`/${lang}/articulos`}
           className="group px-6 py-3 border border-charcoal text-xs font-sans uppercase tracking-[0.2em] text-charcoal hover:bg-charcoal hover:text-parchment transition-colors inline-flex items-center gap-2"
         >
-          <span>
-            {d.noticias?.exploreButton}
-          </span>
+          <span>{noticiasDict.exploreButton}</span>
           <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
             arrow_forward
           </span>
@@ -274,143 +290,93 @@ export default function NewsMosaicGrid({ news, lang, dict }: NewsMosaicGridProps
     <div className="w-full flex flex-col gap-12 sm:gap-16">
       {blocks.map((block, blockIndex) => {
         const isAlternate = blockIndex % 2 === 1;
+        const [item0, item1, item2, item3, item4, item5, item6] = block;
+        const hasBottomRow = Boolean(item3 || item4 || item5 || item6);
 
-        // Block elements
-        const item0 = block[0];
-        const item1 = block[1];
-        const item2 = block[2];
-        const item3 = block[3];
-        const item4 = block[4];
-        const item5 = block[5];
-        const item6 = block[6];
+        return (
+          <div key={`block-${blockIndex}`} className="flex flex-col gap-6 sm:gap-8">
+            {/* Top Row: Large (left, 8 cols) + 2 Stacked (right, 4 cols) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
+              {item0 && (
+                <RevealOnScroll delayMs={50} className="lg:col-span-8 h-full">
+                  <NewsCard item={item0} lang={lang} variant="large" theme="charcoal" dict={resolvedDict} />
+                </RevealOnScroll>
+              )}
 
-        if (!isAlternate) {
-          // Standard Block Pattern (Left panel in reference diagram):
-          // Top: Large (left, 8 cols) + 2 Stacked (right, 4 cols)
-          // Bottom: Tall (left, 4 cols) + 2 Stacked (center, 4 cols) + Tall (right, 4 cols)
-          return (
-            <div key={`block-${blockIndex}`} className="flex flex-col gap-6 sm:gap-8">
-              {/* Top Row: Large + 2 Stacked */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
-                {item0 && (
-                  <RevealOnScroll delayMs={50} className="lg:col-span-8 h-full">
-                    <NewsCard item={item0} lang={lang} variant="large" theme="charcoal" dict={d} />
+              <StackedNewsPair
+                first={item1}
+                second={item2}
+                firstTheme="dark"
+                secondTheme="light"
+                firstDelayMs={100}
+                secondDelayMs={150}
+                lang={lang}
+                dict={resolvedDict}
+              />
+            </div>
+
+            {/* Bottom Row: Standard (Tall + 2 Stacked + Tall) or Alternate (2 Stacked + Large/Tall + Tall) */}
+            {hasBottomRow && !isAlternate && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
+                {item3 && (
+                  <RevealOnScroll delayMs={200} className="lg:col-span-4 h-full">
+                    <NewsCard item={item3} lang={lang} variant="tall" theme="light" dict={resolvedDict} />
                   </RevealOnScroll>
                 )}
 
-                {(item1 || item2) && (
-                  <div className="lg:col-span-4 flex flex-col gap-6 sm:gap-8 h-full justify-between">
-                    {item1 && (
-                      <RevealOnScroll delayMs={100} className="flex-1">
-                        <NewsCard item={item1} lang={lang} variant="stacked" theme="dark" dict={d} />
-                      </RevealOnScroll>
-                    )}
-                    {item2 && (
-                      <RevealOnScroll delayMs={150} className="flex-1">
-                        <NewsCard item={item2} lang={lang} variant="stacked" theme="light" dict={d} />
-                      </RevealOnScroll>
-                    )}
-                  </div>
+                <StackedNewsPair
+                  first={item4}
+                  second={item5}
+                  firstTheme="dark"
+                  secondTheme="light"
+                  firstDelayMs={250}
+                  secondDelayMs={300}
+                  lang={lang}
+                  dict={resolvedDict}
+                />
+
+                {item6 && (
+                  <RevealOnScroll delayMs={350} className="lg:col-span-4 h-full">
+                    <NewsCard item={item6} lang={lang} variant="tall" theme="light" dict={resolvedDict} />
+                  </RevealOnScroll>
                 )}
               </div>
+            )}
 
-              {/* Bottom Row: 3 Columns (Tall, 2-Stacked, Tall) */}
-              {(item3 || item4 || item5 || item6) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
-                  {item3 && (
-                    <RevealOnScroll delayMs={200} className="lg:col-span-4 h-full">
-                      <NewsCard item={item3} lang={lang} variant="tall" theme="light" dict={d} />
-                    </RevealOnScroll>
-                  )}
+            {hasBottomRow && isAlternate && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
+                <StackedNewsPair
+                  first={item3}
+                  second={item4}
+                  firstTheme="light"
+                  secondTheme="dark"
+                  firstDelayMs={200}
+                  secondDelayMs={250}
+                  lang={lang}
+                  dict={resolvedDict}
+                />
 
-                  {(item4 || item5) && (
-                    <div className="lg:col-span-4 flex flex-col gap-6 sm:gap-8 h-full justify-between">
-                      {item4 && (
-                        <RevealOnScroll delayMs={250} className="flex-1">
-                          <NewsCard item={item4} lang={lang} variant="stacked" theme="dark" dict={d} />
-                        </RevealOnScroll>
-                      )}
-                      {item5 && (
-                        <RevealOnScroll delayMs={300} className="flex-1">
-                          <NewsCard item={item5} lang={lang} variant="stacked" theme="light" dict={d} />
-                        </RevealOnScroll>
-                      )}
-                    </div>
-                  )}
-
-                  {item6 && (
-                    <RevealOnScroll delayMs={350} className="lg:col-span-4 h-full">
-                      <NewsCard item={item6} lang={lang} variant="tall" theme="light" dict={d} />
-                    </RevealOnScroll>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        } else {
-          // Inverted / Variation Block Pattern (Right panel in reference diagram):
-          // Top: Large (left, 8 cols) + 2 Stacked (right, 4 cols)
-          // Bottom: 2 Stacked (left, 4 cols) + Large (right, 8 cols)
-          return (
-            <div key={`block-${blockIndex}`} className="flex flex-col gap-6 sm:gap-8">
-              {/* Top Row: Large + 2 Stacked */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
-                {item0 && (
-                  <RevealOnScroll delayMs={50} className="lg:col-span-8 h-full">
-                    <NewsCard item={item0} lang={lang} variant="large" theme="charcoal" dict={d} />
+                {item5 && (
+                  <RevealOnScroll delayMs={300} className={item6 ? 'lg:col-span-4 h-full' : 'lg:col-span-8 h-full'}>
+                    <NewsCard
+                      item={item5}
+                      lang={lang}
+                      variant={item6 ? 'tall' : 'large'}
+                      theme="charcoal"
+                      dict={resolvedDict}
+                    />
                   </RevealOnScroll>
                 )}
 
-                {(item1 || item2) && (
-                  <div className="lg:col-span-4 flex flex-col gap-6 sm:gap-8 h-full justify-between">
-                    {item1 && (
-                      <RevealOnScroll delayMs={100} className="flex-1">
-                        <NewsCard item={item1} lang={lang} variant="stacked" theme="dark" dict={d} />
-                      </RevealOnScroll>
-                    )}
-                    {item2 && (
-                      <RevealOnScroll delayMs={150} className="flex-1">
-                        <NewsCard item={item2} lang={lang} variant="stacked" theme="light" dict={d} />
-                      </RevealOnScroll>
-                    )}
-                  </div>
+                {item6 && (
+                  <RevealOnScroll delayMs={350} className="lg:col-span-4 h-full">
+                    <NewsCard item={item6} lang={lang} variant="tall" theme="light" dict={resolvedDict} />
+                  </RevealOnScroll>
                 )}
               </div>
-
-              {/* Bottom Row: 2-Stacked (Left, 4 cols) + Large (Right, 8 cols) or 3-Col layout when item6 exists */}
-              {(item3 || item4 || item5 || item6) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
-                  {(item3 || item4) && (
-                    <div className="lg:col-span-4 flex flex-col gap-6 sm:gap-8 h-full justify-between">
-                      {item3 && (
-                        <RevealOnScroll delayMs={200} className="flex-1">
-                          <NewsCard item={item3} lang={lang} variant="stacked" theme="light" dict={d} />
-                        </RevealOnScroll>
-                      )}
-                      {item4 && (
-                        <RevealOnScroll delayMs={250} className="flex-1">
-                          <NewsCard item={item4} lang={lang} variant="stacked" theme="dark" dict={d} />
-                        </RevealOnScroll>
-                      )}
-                    </div>
-                  )}
-
-                  {item5 && (
-                    <RevealOnScroll delayMs={300} className={item6 ? "lg:col-span-4 h-full" : "lg:col-span-8 h-full"}>
-                      <NewsCard item={item5} lang={lang} variant={item6 ? "tall" : "large"} theme="charcoal" dict={d} />
-                    </RevealOnScroll>
-                  )}
-
-                  {item6 && (
-                    <RevealOnScroll delayMs={350} className="lg:col-span-4 h-full">
-                      <NewsCard item={item6} lang={lang} variant="tall" theme="light" dict={d} />
-                    </RevealOnScroll>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        }
+            )}
+          </div>
+        );
       })}
     </div>
   );

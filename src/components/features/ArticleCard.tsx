@@ -1,56 +1,109 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import type { LocalizedString } from '@/lib/db/types';
-import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import { getDictionaryClient } from '@/dictionaries/client';
 import FormattedDate from '@/components/ui/FormattedDate';
-import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import {
+  resolvePublicationAuthor,
+  resolvePublicationContent,
+  resolvePublicationCover,
+  resolvePublicationDate,
+  resolvePublicationExcerpt,
+  resolvePublicationHref,
+  resolvePublicationLabels,
+  resolvePublicationSubtitle,
+  resolvePublicationTitle,
+  resolvePublicationTypeLabel,
+  type LocalizablePublication,
+} from './publicationCardHelpers';
 
-export interface ArticleCardData {
-  id: string | number;
-  slug?: string | null;
-  type?: string;
-  tipo?: string;
-  title?: LocalizedString;
-  subtitle?: LocalizedString | null;
-  content?: LocalizedString;
-  titulo_es?: string;
-  titulo_gl?: string;
-  subtitulo_es?: string;
-  subtitulo_gl?: string;
-  contenido_es?: string;
-  contenido_gl?: string;
-  created_at?: string;
-  updated_at?: string;
-  published_at?: string | null;
-  creado_en?: string;
+export type ArticleCardData = LocalizablePublication & {
   is_pinned?: boolean | null;
   fijado?: boolean | null;
-  author?: {
-    id?: string;
-    full_name?: string;
-    nombre?: string;
-    slug?: string | null;
-    avatar_url?: string | null;
-  } | null;
-  perfiles?: {
-    nombre?: string;
-    slug?: string | null;
-    avatar_url?: string | null;
-  } | null;
-  cover_image_url?: string | null;
-  imagen_url?: string | null;
-  tags?: Array<{ id?: string; name?: string; slug?: string }> | null;
-}
+};
 
 export interface ArticleCardProps {
   articulo: ArticleCardData;
   lang: string;
-  dict?: { documentTypes?: Record<string, string>; readArticle?: string; [key: string]: unknown };
+  dict?: {
+    documentTypes?: Record<string, string>;
+    readArticle?: string;
+    articles?: Record<string, unknown>;
+    mosaic?: Record<string, unknown>;
+    [key: string]: unknown;
+  };
   variant?: 'auto' | 'standard' | 'lead' | 'textOnly' | 'compact' | 'pinned';
   className?: string;
   priority?: boolean;
+}
+
+function AuthorAvatar({
+  avatar,
+  name,
+  size = 'sm',
+}: {
+  avatar: string | null;
+  name: string;
+  size?: 'sm' | 'md';
+}) {
+  const dimensionClass = size === 'md' ? 'w-10 h-10' : 'w-8 h-8';
+  const fallbackTextClass = size === 'md' ? 'text-sm' : 'text-xs';
+  const imageSizes = size === 'md' ? '40px' : '32px';
+
+  if (avatar) {
+    return (
+      <div className={`${dimensionClass} rounded-full overflow-hidden relative shrink-0 border border-lines`}>
+        <Image src={avatar} alt={name} fill className="object-cover" sizes={imageSizes} />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`${dimensionClass} rounded-full bg-lines/60 flex items-center justify-center ${fallbackTextClass} font-serif text-charcoal/70 shrink-0`}
+    >
+      {name.charAt(0)}
+    </div>
+  );
+}
+
+function CardTagBadges({
+  labels,
+  size = 'sm',
+  hoverBorder = false,
+}: {
+  labels: string[];
+  size?: 'sm' | 'md';
+  hoverBorder?: boolean;
+}) {
+  const sizeClass =
+    size === 'md'
+      ? 'text-xs px-3.5 py-1.5'
+      : 'text-[10px] sm:text-[11px] px-2.5 py-1';
+  const hoverClass = hoverBorder ? 'group-hover:border-gold/60 transition-all' : '';
+
+  return (
+    <div className={`flex flex-wrap items-center ${size === 'md' ? 'gap-2' : 'gap-1.5'}`}>
+      {labels.map((lbl) => (
+        <span
+          key={lbl}
+          className={`font-mono font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 ${sizeClass} ${hoverClass}`.trim()}
+        >
+          {lbl}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ForwardArrow() {
+  return (
+    <span
+      className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1"
+      aria-hidden="true"
+    >
+      arrow_forward
+    </span>
+  );
 }
 
 export default function ArticleCard({
@@ -63,53 +116,48 @@ export default function ArticleCard({
 }: ArticleCardProps) {
   if (!articulo) return null;
 
-  // Resolve localized title
-  const titulo = articulo.title
-    ? resolveLocalizedText(articulo.title, lang)
-    : (lang === 'es' ? articulo.titulo_es : articulo.titulo_gl) || articulo.titulo_gl || articulo.titulo_es || '';
+  const fallbackDict = getDictionaryClient(lang);
+  const articlesDict = dict?.articles as Record<string, string> | undefined;
+  const mosaicDict = dict?.mosaic as Record<string, string> | undefined;
 
-  // Resolve localized subtitle
-  const subtitulo = articulo.subtitle
-    ? resolveLocalizedText(articulo.subtitle, lang) || null
-    : (lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl) || articulo.subtitulo_gl || articulo.subtitulo_es || null;
+  const titulo = resolvePublicationTitle(articulo, lang);
+  const subtitulo = resolvePublicationSubtitle(articulo, lang);
+  const rawContent = resolvePublicationContent(articulo, lang);
+  const excerpt = resolvePublicationExcerpt(subtitulo, rawContent, 160);
 
-  // Resolve fallback content excerpt if subtitle is absent
-  const rawContent = articulo.content
-    ? resolveLocalizedText(articulo.content, lang)
-    : (lang === 'es' ? articulo.contenido_es : articulo.contenido_gl) || '';
+  const typeLabel = resolvePublicationTypeLabel(
+    articulo.type || articulo.tipo,
+    dict?.documentTypes,
+    fallbackDict
+  );
+  const displayLabels = resolvePublicationLabels(articulo, {
+    documentTypes: dict?.documentTypes,
+    fallbackDict,
+  });
 
-  const excerpt = subtitulo || (rawContent ? rawContent.replace(/<[^>]*>/g, '').substring(0, 160).trim() + '...' : '');
+  const unknownAuthor = articlesDict?.unknownAuthor || fallbackDict.articles.unknownAuthor;
+  const { name: authorName, avatar: authorAvatar } = resolvePublicationAuthor(
+    articulo,
+    unknownAuthor
+  );
 
-  // Resolve article type
-  const typeKey = (articulo.type || articulo.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
-  const typeLabel = dict?.documentTypes?.[typeKey] || dict?.documentTypes?.[typeKey === PUBLICATION_TYPES.ARTICLE ? 'artigo' : typeKey] || typeKey;
+  const byLabel =
+    mosaicDict?.by ||
+    articlesDict?.by ||
+    (dict as Record<string, string> | undefined)?.by ||
+    fallbackDict.articles.by;
+  const readLabel =
+    mosaicDict?.readArticle ||
+    articlesDict?.readArticle ||
+    dict?.readArticle ||
+    fallbackDict.articles.readArticle;
+  const readShortLabel = articlesDict?.readShort || fallbackDict.articles.readShort;
 
-  // Resolve article tags / labels (supports 1, 2, 3, 4, 5 tags)
-  const validTags = articulo.tags && articulo.tags.length > 0
-    ? articulo.tags
-        .map((t) => t?.name?.trim())
-        .filter((n): n is string => Boolean(n && n.toLowerCase() !== PUBLICATION_TYPES.NEWS && n.toLowerCase() !== PUBLICATION_TYPES.ARTICLE))
-    : [];
-  const displayLabels = validTags.length > 0 ? validTags.map((n) => n.toUpperCase()) : [typeLabel.toUpperCase()];
-
-  // Fallback dictionary
-  const fallbackDict = lang === 'es' ? esDict : glDict;
-
-  // Resolve author details
-  const authorName = articulo.author?.full_name || articulo.author?.nombre || articulo.perfiles?.nombre || (dict?.articles as Record<string, string>)?.unknownAuthor || fallbackDict.articles.unknownAuthor;
-  const authorAvatar = articulo.author?.avatar_url || articulo.perfiles?.avatar_url || null;
-
-  // Resolve date
-  const rawDate = articulo.published_at || articulo.created_at || articulo.creado_en;
-
-  // Resolve cover image
-  const coverUrl = articulo.cover_image_url || articulo.imagen_url || null;
-  const hasCover = Boolean(coverUrl && coverUrl.trim().length > 0);
-
-  // Determine actual display style
+  const rawDate = resolvePublicationDate(articulo);
+  const coverUrl = resolvePublicationCover(articulo);
+  const hasCover = Boolean(coverUrl);
   const effectiveVariant = variant === 'auto' ? (hasCover ? 'standard' : 'textOnly') : variant;
-
-  const href = `/${lang}/articulo/${articulo.slug || articulo.id}`;
+  const href = resolvePublicationHref(articulo, lang);
 
   // ==========================================
   // VARIANT: TEXT-ONLY EDITORIAL CARD
@@ -118,8 +166,8 @@ export default function ArticleCard({
     return (
       <article className={`group relative bg-transparent border border-lines p-7 sm:p-9 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-md overflow-hidden ${className}`}>
         {/* Subtle decorative background watermark */}
-        <span 
-          aria-hidden="true" 
+        <span
+          aria-hidden="true"
           className="absolute -right-3 -top-6 text-9xl font-serif text-charcoal/[0.04] dark:text-parchment/[0.04] select-none pointer-events-none transition-transform duration-500 group-hover:scale-105"
         >
           §
@@ -128,13 +176,7 @@ export default function ArticleCard({
         <div className="relative z-10">
           {/* Category & Date Header */}
           <div className="flex flex-wrap items-center justify-between gap-2.5 mb-4">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {displayLabels.map((lbl) => (
-                <span key={lbl} className="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-2.5 py-1">
-                  {lbl}
-                </span>
-              ))}
-            </div>
+            <CardTagBadges labels={displayLabels} />
             <FormattedDate
               date={rawDate}
               lang={lang}
@@ -161,25 +203,15 @@ export default function ArticleCard({
         {/* Author Footer */}
         <div className="pt-6 border-t border-lines flex items-center justify-between relative z-10 mt-auto">
           <div className="flex items-center gap-3">
-            {authorAvatar ? (
-              <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0 border border-lines">
-                <Image src={authorAvatar} alt={authorName} fill className="object-cover" sizes="32px" />
-              </div>
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-lines/60 flex items-center justify-center text-xs font-serif text-charcoal/70 shrink-0">
-                {authorName.charAt(0)}
-              </div>
-            )}
+            <AuthorAvatar avatar={authorAvatar} name={authorName} />
             <span className="text-xs font-bold text-charcoal uppercase tracking-wider">
               {authorName}
             </span>
           </div>
 
           <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/60 group-hover:text-gold transition-all flex items-center gap-1.5">
-            <span>Ler</span>
-            <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
-              arrow_forward
-            </span>
+            <span>{readShortLabel}</span>
+            <ForwardArrow />
           </Link>
         </div>
       </article>
@@ -190,14 +222,11 @@ export default function ArticleCard({
   // VARIANT: LEAD / SPOTLIGHT (HORIZONTAL HERO)
   // ==========================================
   if (effectiveVariant === 'lead') {
-    const byLabel = (dict?.mosaic as Record<string, string>)?.by || (dict?.articles as Record<string, string>)?.by || (dict as Record<string, string>)?.by || 'Por';
-    const readLabel = (dict?.mosaic as Record<string, string>)?.readArticle || (dict?.articles as Record<string, string>)?.readArticle || fallbackDict.articles.readArticle;
-
     if (!hasCover || !coverUrl) {
       return (
         <article className={`group relative bg-transparent border border-lines p-8 sm:p-12 md:p-16 flex flex-col justify-between transition-all duration-300 hover:border-gold/60 hover:shadow-md overflow-hidden ${className}`}>
-          <span 
-            aria-hidden="true" 
+          <span
+            aria-hidden="true"
             className="absolute -right-6 -bottom-10 text-[180px] md:text-[240px] font-serif text-charcoal/[0.04] dark:text-parchment/[0.04] select-none pointer-events-none transition-transform duration-500 group-hover:scale-105"
           >
             §
@@ -230,30 +259,15 @@ export default function ArticleCard({
 
             {/* Labels appended below subtitle for the main spotlight article */}
             {displayLabels.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 mb-8">
-                {displayLabels.map((lbl) => (
-                  <span
-                    key={lbl}
-                    className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-3.5 py-1.5 group-hover:border-gold/60 transition-all"
-                  >
-                    {lbl}
-                  </span>
-                ))}
+              <div className="mb-8">
+                <CardTagBadges labels={displayLabels} size="md" hoverBorder />
               </div>
             )}
           </div>
 
           <div className="pt-6 border-t border-lines dark:border-white/10 flex items-center justify-between relative z-10 mt-6">
             <div className="flex items-center gap-3.5">
-              {authorAvatar ? (
-                <div className="w-10 h-10 rounded-full overflow-hidden relative shrink-0 border border-lines">
-                  <Image src={authorAvatar} alt={authorName} fill className="object-cover" sizes="40px" />
-                </div>
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-lines/60 flex items-center justify-center text-sm font-serif text-charcoal/70 shrink-0">
-                  {authorName.charAt(0)}
-                </div>
-              )}
+              <AuthorAvatar avatar={authorAvatar} name={authorName} size="md" />
               <span className="text-xs font-bold text-charcoal dark:text-white uppercase tracking-wider">
                 {byLabel} {authorName}
               </span>
@@ -261,9 +275,7 @@ export default function ArticleCard({
 
             <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/80 dark:text-white/80 group-hover:text-gold transition-all flex items-center gap-1.5">
               <span>{readLabel}</span>
-              <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
-                arrow_forward
-              </span>
+              <ForwardArrow />
             </Link>
           </div>
         </article>
@@ -313,30 +325,15 @@ export default function ArticleCard({
 
             {/* Labels appended below subtitle for the main spotlight article */}
             {displayLabels.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 mb-6">
-                {displayLabels.map((lbl) => (
-                  <span
-                    key={lbl}
-                    className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-3.5 py-1.5 group-hover:border-gold/60 transition-all"
-                  >
-                    {lbl}
-                  </span>
-                ))}
+              <div className="mb-6">
+                <CardTagBadges labels={displayLabels} size="md" hoverBorder />
               </div>
             )}
           </div>
 
           <div className="pt-5 border-t border-lines dark:border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {authorAvatar ? (
-                <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0 border border-lines">
-                  <Image src={authorAvatar} alt={authorName} fill className="object-cover" sizes="32px" />
-                </div>
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-lines/60 flex items-center justify-center text-xs font-serif text-charcoal/70 shrink-0">
-                  {authorName.charAt(0)}
-                </div>
-              )}
+              <AuthorAvatar avatar={authorAvatar} name={authorName} />
               <span className="text-xs font-bold text-charcoal dark:text-white uppercase tracking-wider">
                 {byLabel} {authorName}
               </span>
@@ -344,9 +341,7 @@ export default function ArticleCard({
 
             <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/70 dark:text-white/75 group-hover:text-gold transition-all flex items-center gap-1.5">
               <span>{readLabel}</span>
-              <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
-                arrow_forward
-              </span>
+              <ForwardArrow />
             </Link>
           </div>
         </div>
@@ -358,9 +353,6 @@ export default function ArticleCard({
   // VARIANT: PINNED EDITORIAL CARD
   // ==========================================
   if (effectiveVariant === 'pinned') {
-    const byLabel = (dict?.mosaic as Record<string, string>)?.by || (dict?.articles as Record<string, string>)?.by || (dict as Record<string, string>)?.by || 'Por';
-    const readLabel = (dict?.mosaic as Record<string, string>)?.readArticle || (dict?.articles as Record<string, string>)?.readArticle || fallbackDict.articles.readArticle;
-
     return (
       <article className={`group flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-md ${className}`}>
         <div>
@@ -380,13 +372,7 @@ export default function ArticleCard({
 
           {/* Header metadata */}
           <div className="flex flex-wrap items-center gap-2.5 mb-3">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {displayLabels.map((lbl) => (
-                <span key={lbl} className="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-2.5 py-1">
-                  {lbl}
-                </span>
-              ))}
-            </div>
+            <CardTagBadges labels={displayLabels} />
             {rawDate && (
               <>
                 <span className="text-charcoal/30 select-none">•</span>
@@ -418,15 +404,7 @@ export default function ArticleCard({
         {/* Footer */}
         <div className="pt-5 border-t border-lines flex flex-wrap items-center justify-between gap-3 mt-auto">
           <div className="flex items-center gap-3">
-            {authorAvatar ? (
-              <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0 border border-lines">
-                <Image src={authorAvatar} alt={authorName} fill className="object-cover" sizes="32px" />
-              </div>
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-lines/60 flex items-center justify-center text-xs font-serif text-charcoal/70 shrink-0">
-                {authorName.charAt(0)}
-              </div>
-            )}
+            <AuthorAvatar avatar={authorAvatar} name={authorName} />
             <span className="text-xs font-bold text-charcoal uppercase tracking-wider">
               {byLabel} {authorName}
             </span>
@@ -434,9 +412,7 @@ export default function ArticleCard({
 
           <Link href={href} className="text-xs font-bold uppercase tracking-widest text-charcoal/70 group-hover:text-gold transition-all flex items-center gap-1.5 shrink-0">
             <span>{readLabel}</span>
-            <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
-              arrow_forward
-            </span>
+            <ForwardArrow />
           </Link>
         </div>
       </article>
@@ -508,13 +484,7 @@ export default function ArticleCard({
 
       {/* Meta Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {displayLabels.map((lbl) => (
-            <span key={lbl} className="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-2.5 py-1">
-              {lbl}
-            </span>
-          ))}
-        </div>
+        <CardTagBadges labels={displayLabels} />
         <FormattedDate
           date={rawDate}
           lang={lang}
@@ -543,9 +513,7 @@ export default function ArticleCard({
           {authorName}
         </span>
         <span aria-hidden="true" className="text-xs text-charcoal/40 group-hover:text-gold transition-all">
-          <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1">
-            arrow_forward
-          </span>
+          <ForwardArrow />
         </span>
       </div>
     </article>
