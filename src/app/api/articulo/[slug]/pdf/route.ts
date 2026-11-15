@@ -1,30 +1,28 @@
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
 import { PUBLICATION_STATUSES } from '@/lib/db/schema';
 import { getDictionary, type Dictionary } from '@/dictionaries';
-import { getDictionaryClient } from '@/dictionaries/client';
 import { buildArticlePdf } from '@/lib/pdf/articlePdf';
 import { formatArticleDate } from '@/lib/date';
 import { SITE_NAME } from '@/lib/constants';
+import { getSiteBaseUrl } from '@/lib/email/newsletter';
 import { i18n, resolveLocale, type Locale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 
 export const runtime = 'nodejs';
-
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://cernapensamento.org').replace(/\/$/, '');
 
 interface RouteContext {
   params: Promise<{ slug: string }>;
 }
 
 /**
- * Renders the article as a downloadable PDF.
+ * Renders the publication as a downloadable PDF.
  *
  * The PDF is generated server-side so the reader receives a real file with
  * selectable text instead of opening the browser print dialog.
- * Uses Spanish only for `lang=es`, otherwise Galician, with content fallback to
- * the other locale. Returns 404 when lookup produces no publication (including
- * DAL failures) or 500 for caught generation errors; successful PDFs have
- * attachment and shared-cache headers. Parameter resolution errors propagate.
+ * Resolves the requested locale (defaulting to Galician), with content fallback
+ * across locales. Returns 404 when lookup produces no published publication
+ * (including DAL failures) or 500 for caught errors; successful PDFs have
+ * attachment and shared-cache headers.
  */
 export async function GET(request: Request, { params }: RouteContext) {
   let lang: Locale = i18n.defaultLocale;
@@ -41,13 +39,10 @@ export async function GET(request: Request, { params }: RouteContext) {
     dict = loadedDict;
 
     if (!publication || publication.status !== PUBLICATION_STATUSES.PUBLISHED) {
-      return new Response(
-        dict?.article?.notFoundTitle || getDictionaryClient(lang).article.notFoundTitle,
-        {
-          status: 404,
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-        }
-      );
+      return new Response(dict.article.notFoundTitle, {
+        status: 404,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      });
     }
 
     const title = resolveLocalizedText(publication.title, lang);
@@ -75,7 +70,7 @@ export async function GET(request: Request, { params }: RouteContext) {
       showIndex: publication.show_index,
       indexLabel: dict.article.indexLabel,
       siteName: SITE_NAME,
-      siteUrl: SITE_URL,
+      siteUrl: getSiteBaseUrl(),
     });
 
     const filename = `cerna-${slug.replace(/[^a-zA-Z0-9-]/g, '-')}.pdf`;
@@ -90,8 +85,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     });
   } catch (error) {
     console.error('Error generating article PDF:', error);
-    const errorMsg =
-      dict?.article?.pdfGenerationError || getDictionaryClient(lang).article.pdfGenerationError;
+    const errorMsg = (dict ?? (await getDictionary(lang))).article.pdfGenerationError;
     return new Response(errorMsg, {
       status: 500,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },

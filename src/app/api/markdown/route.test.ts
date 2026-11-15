@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import Markdown from 'react-markdown';
 import { getDocument } from '@/lib/content';
 import { NextRequest } from 'next/server';
+import { i18n } from '@/i18n-config';
+import { PUBLICATION_STATUSES, PUBLICATION_TYPES } from '@/lib/db/schema';
 import type { PublicationDetail } from '@/lib/db/types';
 
 vi.mock('@/lib/db/queries/publications', () => ({
@@ -56,8 +58,8 @@ describe('Markdown API Route (/api/markdown)', () => {
       title: { gl: 'A Liberdade Individual', es: 'La Libertad Individual' },
       subtitle: { gl: 'Un ensaio sobre o valor', es: 'Un ensayo sobre el valor' },
       content: { gl: '<p>Contido do ensaio filosófico sobre a liberdade.</p>', es: '' },
-      type: 'essay',
-      status: 'published',
+      type: PUBLICATION_TYPES.ESSAY,
+      status: PUBLICATION_STATUSES.PUBLISHED,
       author: { full_name: 'Diego Araújo', slug: 'diego-araujo' },
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-02T00:00:00Z',
@@ -90,7 +92,7 @@ describe('Markdown API Route (/api/markdown)', () => {
     ['https://example.org/a\\b', 'https://example.org/a%5Cb'],
   ])('preserves the complete link destination %s', async (href, expected) => {
     vi.mocked(getPublicationBySlug).mockResolvedValue({
-      slug: 'links', status: 'published', title: { gl: 'Links' }, content: { gl: `<p><a href="${href}"><strong>Read more</strong></a></p>` },
+      slug: 'links', status: PUBLICATION_STATUSES.PUBLISHED, title: { gl: 'Links' }, content: { gl: `<p><a href="${href}"><strong>Read more</strong></a></p>` },
     } as unknown as PublicationDetail);
     const response = await GET(new NextRequest('https://cernapensamento.org/api/markdown?type=article&slug=links&lang=gl'));
     const markdown = await response.text();
@@ -99,7 +101,7 @@ describe('Markdown API Route (/api/markdown)', () => {
     expect(rendered).toContain('<strong>Read more</strong></a>');
   });
 
-  it.each(['gl', 'es'])('serves only approved legal documents in %s', async (lang) => {
+  it.each(i18n.locales)('serves only approved legal documents in %s', async (lang) => {
     for (const slug of ['privacidad', 'estatutos']) {
       const response = await GET(new NextRequest(`https://cernapensamento.org/api/markdown?type=legal&slug=${slug}&lang=${lang}`));
       expect(response.status).toBe(200);
