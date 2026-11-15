@@ -2,19 +2,16 @@
 
 import React from 'react';
 import type { Editor } from '@tiptap/react';
-import { useParams } from 'next/navigation';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { useLocale } from '@/hooks/useLocale';
+import { getDictionaryClient } from '@/dictionaries/client';
 
 interface TableControlsProps {
   editor: Editor | null;
 }
 
 export default function TableControls({ editor }: TableControlsProps) {
-  const params = useParams();
-  const lang = (params?.lang as string) || 'gl';
-  const dict = lang === 'es' ? esDict : glDict;
-  const tc = dict.articleEditor.tableControls;
+  const lang = useLocale();
+  const tc = getDictionaryClient(lang).articleEditor.tableControls;
 
   if (!editor || !editor.isActive('table')) {
     return null;
@@ -29,7 +26,7 @@ export default function TableControls({ editor }: TableControlsProps) {
   ];
 
   return (
-    <div 
+    <div
       className="sticky bottom-4 z-20 mx-auto w-full max-w-[800px] mt-4 p-3 bg-surface/95 backdrop-blur-md border border-lines shadow-lg flex flex-wrap items-center justify-between gap-2 text-charcoal text-xs animate-in fade-in slide-in-from-bottom-2 duration-200"
       role="toolbar"
       aria-label={tc.toolbarLabel}
@@ -48,7 +45,7 @@ export default function TableControls({ editor }: TableControlsProps) {
             onClick={() => editor.chain().focus().addColumnAfter().run()}
             title={tc.addColumn}
           >
-            + Col
+            {tc.addColumnShort}
           </button>
           <div className="w-[1px] h-4 bg-lines"></div>
           <button
@@ -57,7 +54,7 @@ export default function TableControls({ editor }: TableControlsProps) {
             onClick={() => editor.chain().focus().deleteColumn().run()}
             title={tc.deleteColumn}
           >
-            − Col
+            {tc.deleteColumnShort}
           </button>
         </div>
 
@@ -69,7 +66,7 @@ export default function TableControls({ editor }: TableControlsProps) {
             onClick={() => editor.chain().focus().addRowAfter().run()}
             title={tc.addRow}
           >
-            + Fila
+            {tc.addRowShort}
           </button>
           <div className="w-[1px] h-4 bg-lines"></div>
           <button
@@ -78,7 +75,7 @@ export default function TableControls({ editor }: TableControlsProps) {
             onClick={() => editor.chain().focus().deleteRow().run()}
             title={tc.deleteRow}
           >
-            − Fila
+            {tc.deleteRowShort}
           </button>
         </div>
 
@@ -116,16 +113,17 @@ export default function TableControls({ editor }: TableControlsProps) {
               type="button"
               className={`w-5 h-5 rounded-full border ${item.border} ${item.bg || 'bg-transparent'} hover:scale-110 transition-transform cursor-pointer relative`}
               title={item.label}
+              aria-label={item.label}
               onClick={() => {
-                if (!item.color) {
-                  editor.chain().focus().setCellAttribute('backgroundColor', null).run();
-                } else {
-                  editor.chain().focus().setCellAttribute('backgroundColor', item.color).run();
-                }
+                editor
+                  .chain()
+                  .focus()
+                  .setCellAttribute('backgroundColor', item.color || null)
+                  .run();
               }}
             >
               {!item.color && (
-                <span className="absolute inset-0 flex items-center justify-center text-[10px] text-charcoal/40 font-bold">
+                <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center text-[10px] text-charcoal/40 font-bold">
                   ✕
                 </span>
               )}

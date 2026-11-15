@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ArticleEditor from './ArticleEditor';
+import { parseDraft, serializeDraft } from './articleEditorUtils';
 import * as storage from '@/lib/storage';
 
 vi.mock('@/lib/supabase/client', () => ({
@@ -334,5 +335,59 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     const savedPayload = onSave.mock.calls[0][0];
     expect(savedPayload.show_index).toBe(true);
     expect(savedPayload.content?.gl).not.toContain('data-type="article-index"');
+  });
+
+  it('switches locale tabs dynamically and saves updated localized titles', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'art-i18n-1',
+          title: { gl: 'Título Galego', es: 'Título Español' },
+          content: { gl: '<p>Contido</p>', es: '<p>Contenido</p>' },
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    const esTab = screen.getByRole('button', { name: /^castellano$/i });
+    fireEvent.click(esTab);
+
+    const titleInput = screen.getByDisplayValue('Título Español');
+    fireEvent.change(titleInput, { target: { value: 'Título Actualizado ES' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: { gl: 'Título Galego', es: 'Título Actualizado ES' },
+        }),
+        'draft'
+      );
+    });
+  });
+
+  it('parses both canonical and legacy localStorage drafts cleanly', () => {
+    const legacyParsed = parseDraft(JSON.stringify({ tituloGl: 'Borrador legado', tipo: 'essay' }));
+    expect(legacyParsed?.titles).toEqual({ gl: 'Borrador legado' });
+    expect(legacyParsed?.type).toBe('essay');
+
+    const serialized = serializeDraft({
+      title: { gl: 'Novo', es: 'Nuevo' },
+      subtitle: { gl: 'Sub', es: 'Sub ES' },
+      content: { gl: '<p>A</p>', es: '<p>B</p>' },
+      cover_image_url: '',
+      tags: ['etica'],
+      type: 'article',
+      original_language: 'gl',
+      show_index: true,
+    });
+    const canonicalParsed = parseDraft(serialized);
+    expect(canonicalParsed?.titles).toEqual({ gl: 'Novo', es: 'Nuevo' });
+    expect(canonicalParsed?.tags).toEqual(['etica']);
+    expect(canonicalParsed?.showIndex).toBe(true);
   });
 });

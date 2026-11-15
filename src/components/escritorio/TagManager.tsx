@@ -1,191 +1,275 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { DB_TABLES, TAG_COLS, TAG_TRANSLATION_COLS } from '@/lib/db/schema';
+import {
+  getAllTagsWithAllTranslations,
+  createTagWithTranslations,
+  formatDbError,
+  type TagWithAllTranslations,
+} from '@/lib/db';
 import { useToast } from '@/components/ui/FeedbackProvider';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { useLocale } from '@/hooks/useLocale';
+import { getDictionaryClient } from '@/dictionaries/client';
+import { i18n, type Locale } from '@/i18n-config';
 
 interface TagManagerProps {
-    selectedTags: string[]; // For backwards compatibility we can keep string[] for now, or object array
-    onChange: (tags: string[]) => void;
+  selectedTags: string[];
+  onChange: (tags: string[]) => void;
+}
+
+function createEmptyTagTranslations(): Record<Locale, string> {
+  return Object.fromEntries(
+    i18n.locales.map((loc) => [loc, ''])
+  ) as Record<Locale, string>;
+}
+
+function getTranslatedName(tag: TagWithAllTranslations, targetLang: string): string {
+  const match = tag.tag_translations?.find((t) => t.lang === targetLang);
+  if (match?.name) return match.name;
+  const fallback = tag.tag_translations?.find((t) => t.lang === i18n.defaultLocale);
+  return fallback?.name || tag.tag_translations?.[0]?.name || tag.slug;
+}
+
+function slugifyTagName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export default function TagManager({ selectedTags, onChange }: TagManagerProps) {
-    const params = useParams();
-    const lang = (params?.lang as string) || 'gl';
-    const dict = lang === 'es' ? esDict : glDict;
-    const edDict = dict.articleEditor;
-    const toast = useToast();
+  const lang = useLocale();
+  const dict = getDictionaryClient(lang);
+  const edDict = dict.articleEditor;
+  const toast = useToast();
 
-    const supabase = createClient();
-    const [allTags, setAllTags] = useState<{ id?: string | number; slug: string; tag_translations: { lang: string; name: string }[] }[]>([]);
-    const [search, setSearch] = useState('');
-    const [showModal, setShowModal] = useState(false);
-    
-    const [newTagEs, setNewTagEs] = useState('');
-    const [newTagGl, setNewTagGl] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
+  const supabase = useMemo(() => createClient(), []);
+  const [allTags, setAllTags] = useState<TagWithAllTranslations[]>([]);
+  const [search, setSearch] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
-    const fetchTags = useCallback(async () => {
-        try {
-            const { data, error } = await supabase
-                .from(DB_TABLES.TAGS)
-                .select(`${TAG_COLS.SLUG}, ${DB_TABLES.TAG_TRANSLATIONS}(${TAG_TRANSLATION_COLS.LANG}, ${TAG_TRANSLATION_COLS.NAME})`);
-            
-            if (!error && data) {
-                setAllTags(data as unknown as { id?: string | number; slug: string; tag_translations: { lang: string; name: string }[] }[]);
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    }, [supabase]);
+  const [newTagNames, setNewTagNames] = useState<Record<Locale, string>>(
+    createEmptyTagTranslations
+  );
+  const [isSaving, setIsSaving] = useState(false);
 
-    useEffect(() => {
-        let isMounted = true;
-        const load = async () => {
-            const { data, error } = await supabase
-                .from(DB_TABLES.TAGS)
-                .select(`${TAG_COLS.SLUG}, ${DB_TABLES.TAG_TRANSLATIONS}(${TAG_TRANSLATION_COLS.LANG}, ${TAG_TRANSLATION_COLS.NAME})`);
-            
-            if (isMounted && !error && data) {
-                setAllTags(data as unknown as { id?: string | number; slug: string; tag_translations: { lang: string; name: string }[] }[]);
-            }
-        };
-        load();
-        return () => {
-            isMounted = false;
-        };
-    }, [supabase]);
+  const fetchTags = useCallback(async () => {
+    const data = await getAllTagsWithAllTranslations(supabase);
+    setAllTags(data);
+  }, [supabase]);
 
-    const handleAddExisting = (slug: string) => {
-        if (!selectedTags.includes(slug)) {
-            onChange([...selectedTags, slug]);
-        }
-        setSearch('');
+  useEffect(() => {
+    let isMounted = true;
+    getAllTagsWithAllTranslations(supabase).then((data) => {
+      if (isMounted) {
+        setAllTags(data);
+      }
+    });
+    return () => {
+      isMounted = false;
     };
+  }, [supabase]);
 
-    const handleRemove = (slug: string) => {
-        onChange(selectedTags.filter(t => t !== slug));
-    };
+  const handleAddExisting = (slug: string) => {
+    if (!selectedTags.includes(slug)) {
+      onChange([...selectedTags, slug]);
+    }
+    setSearch('');
+  };
 
-    const handleCreateNew = async () => {
-        if (!newTagEs || !newTagGl) {
-            toast.warning(edDict.bothLangsRequired);
-            return;
-        }
-        setIsSaving(true);
-        try {
-            // Generar slug del término en castellano
-            const slug = newTagEs.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-');
-            
-            // Insertar tag
-            const { data: tag, error: tagError } = await supabase
-                .from(DB_TABLES.TAGS)
-                .insert({ [TAG_COLS.SLUG]: slug })
-                .select().single();
-                
-            if (tagError) throw tagError;
-            
-            // Insertar traducciones
-            const { error: transError } = await supabase
-                .from(DB_TABLES.TAG_TRANSLATIONS)
-                .insert([
-                    { [TAG_TRANSLATION_COLS.TAG_ID]: tag.id, [TAG_TRANSLATION_COLS.LANG]: 'es', [TAG_TRANSLATION_COLS.NAME]: newTagEs },
-                    { [TAG_TRANSLATION_COLS.TAG_ID]: tag.id, [TAG_TRANSLATION_COLS.LANG]: 'gl', [TAG_TRANSLATION_COLS.NAME]: newTagGl }
-                ]);
-                
-            if (transError) throw transError;
-            
-            await fetchTags();
-            handleAddExisting(slug);
-            setShowModal(false);
-            setNewTagEs('');
-            setNewTagGl('');
-        } catch (e: unknown) {
-            toast.error(edDict.createTagError + (e instanceof Error ? e.message : String(e)));
-        } finally {
-            setIsSaving(false);
-        }
-    };
+  const handleRemove = (slug: string) => {
+    onChange(selectedTags.filter((t) => t !== slug));
+  };
 
-    const getTranslatedName = (tag: { slug: string; tag_translations: { lang: string; name: string }[] }, targetLang: string) => {
-        const trans = tag.tag_translations?.find((t: { lang: string; name: string }) => t.lang === targetLang);
-        return trans ? trans.name : tag.slug;
-    };
+  const handleCreateNew = async () => {
+    const hasMissing = i18n.locales.some((loc) => !newTagNames[loc]?.trim());
+    if (hasMissing) {
+      toast.warning(edDict.allLangsRequired);
+      return;
+    }
 
-    return (
-        <div className="w-full">
-            <div className="flex flex-wrap gap-2 mb-3">
-                {selectedTags.map(slug => {
-                    const tagObj = allTags.find(t => t.slug === slug);
-                    const name = tagObj ? getTranslatedName(tagObj, lang) : slug;
-                    return (
-                        <button type="button" key={slug} className="flex items-center gap-1 px-3 py-1 bg-lines/30 text-charcoal text-[10px] uppercase tracking-[0.15em] rounded-sm group cursor-pointer hover:bg-red-500/10 hover:text-red-700 transition-colors" onClick={() => handleRemove(slug)} title={edDict.cancel || 'Eliminar'}>
-                            {name}
-                            <span className="material-symbols-outlined text-[12px] opacity-50 group-hover:opacity-100" style={{ fontFamily: 'Material Symbols Outlined' }}>close</span>
-                        </button>
-                    );
-                })}
+    const baseName =
+      newTagNames[i18n.defaultLocale] ||
+      Object.values(newTagNames).find((v) => v.trim()) ||
+      '';
+    const slug = slugifyTagName(baseName);
+    if (!slug) {
+      toast.warning(edDict.allLangsRequired);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const translations = i18n.locales.map((loc) => ({
+        lang: loc,
+        name: newTagNames[loc].trim(),
+      }));
+
+      const { success, error } = await createTagWithTranslations(
+        slug,
+        translations,
+        supabase
+      );
+
+      if (!success || error) {
+        const message = error ? formatDbError(error) : dict.dashboard.unknownError;
+        toast.error(edDict.createTagError + message);
+        return;
+      }
+
+      await fetchTags();
+      handleAddExisting(slug);
+      setShowModal(false);
+      setNewTagNames(createEmptyTagTranslations());
+    } catch (e: unknown) {
+      toast.error(
+        edDict.createTagError + (e instanceof Error ? e.message : String(e))
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const normalizedSearch = search.toLowerCase();
+  const otherLocales = i18n.locales.filter((loc) => loc !== lang);
+
+  return (
+    <div className="w-full">
+      <div className="flex flex-wrap gap-2 mb-3">
+        {selectedTags.map((slug) => {
+          const tagObj = allTags.find((t) => t.slug === slug);
+          const name = tagObj ? getTranslatedName(tagObj, lang) : slug;
+          return (
+            <button
+              type="button"
+              key={slug}
+              className="flex items-center gap-1 px-3 py-1 bg-lines/30 text-charcoal text-[10px] uppercase tracking-[0.15em] rounded-sm group cursor-pointer hover:bg-red-500/10 hover:text-red-700 transition-colors"
+              onClick={() => handleRemove(slug)}
+              title={dict.feedback.delete}
+            >
+              {name}
+              <span
+                className="material-symbols-outlined text-[12px] opacity-50 group-hover:opacity-100"
+                style={{ fontFamily: 'Material Symbols Outlined' }}
+              >
+                close
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="relative">
+        <input
+          className="w-full border border-lines bg-transparent font-sans text-xs text-charcoal tracking-widest uppercase focus:outline-none focus:border-gold p-2"
+          placeholder={edDict.searchTagPlaceholder}
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        {search && (
+          <div className="absolute top-full left-0 w-full mt-1 bg-surface border border-lines shadow-lg z-50 max-h-48 overflow-y-auto">
+            {allTags
+              .filter(
+                (t) =>
+                  t.slug.includes(normalizedSearch) ||
+                  t.tag_translations?.some((tr) =>
+                    tr.name.toLowerCase().includes(normalizedSearch)
+                  )
+              )
+              .map((t) => {
+                const otherNames = otherLocales
+                  .map((loc) => getTranslatedName(t, loc))
+                  .join(' / ');
+                return (
+                  <button
+                    type="button"
+                    key={t.slug}
+                    className="w-full text-left px-4 py-2 text-xs uppercase tracking-widest hover:bg-gold/10 hover:text-gold transition-colors"
+                    onClick={() => handleAddExisting(t.slug)}
+                  >
+                    {getTranslatedName(t, lang)}{' '}
+                    {otherNames && (
+                      <span className="text-[10px] text-charcoal/50">
+                        ({otherNames})
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+
+            <button
+              type="button"
+              className="w-full text-left px-4 py-2 text-xs uppercase tracking-widest text-gold hover:bg-gold hover:text-parchment transition-colors border-t border-lines"
+              onClick={() => setShowModal(true)}
+            >
+              {edDict.createTagBtn} &quot;{search}&quot;
+            </button>
+          </div>
+        )}
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-charcoal/50 backdrop-blur-sm">
+          <div className="bg-surface p-8 max-w-md w-full border border-lines shadow-2xl">
+            <h2 className="font-serif text-2xl text-charcoal mb-4">
+              {edDict.newTagTitle}
+            </h2>
+            <p className="text-xs font-sans text-charcoal/70 mb-6 uppercase tracking-widest">
+              {edDict.newTagNotice}
+            </p>
+
+            <div className="space-y-4 mb-8">
+              {i18n.locales.map((loc) => {
+                const localeLabel = i18n.localeLabels[loc] || loc.toUpperCase();
+                return (
+                  <div key={loc}>
+                    <label className="block text-xs uppercase tracking-widest text-charcoal/70 mb-1">
+                      {edDict.tagTranslationIn} {localeLabel}
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border border-lines p-2 bg-transparent focus:border-gold outline-none"
+                      value={newTagNames[loc]}
+                      onChange={(e) =>
+                        setNewTagNames((prev) => ({
+                          ...prev,
+                          [loc]: e.target.value,
+                        }))
+                      }
+                      placeholder={edDict.tagExamplePlaceholder}
+                    />
+                  </div>
+                );
+              })}
             </div>
-            
-            <div className="relative">
-                <input 
-                    className="w-full border border-lines bg-transparent font-sans text-xs text-charcoal tracking-widest uppercase focus:outline-none focus:border-gold p-2" 
-                    placeholder={edDict.searchTagPlaceholder || 'BUSCAR OU ENGADIR ETIQUETA...'} 
-                    type="text" 
-                    value={search} 
-                    onChange={(e) => setSearch(e.target.value)} 
-                />
-                
-                {search && (
-                    <div className="absolute top-full left-0 w-full mt-1 bg-surface border border-lines shadow-lg z-50 max-h-48 overflow-y-auto">
-                        {allTags.filter(t => 
-                            t.slug.includes(search.toLowerCase()) || 
-                            t.tag_translations?.some((tr: { lang: string; name: string }) => tr.name.toLowerCase().includes(search.toLowerCase()))
-                        ).map(t => (
-                            <button type="button" key={t.slug} className="w-full text-left px-4 py-2 text-xs uppercase tracking-widest hover:bg-gold/10 hover:text-gold transition-colors" onClick={() => handleAddExisting(t.slug)}>
-                                {getTranslatedName(t, lang)} <span className="text-[10px] text-charcoal/50">({getTranslatedName(t, lang === 'gl' ? 'es' : 'gl')})</span>
-                            </button>
-                        ))}
-                        
-                        <button type="button" className="w-full text-left px-4 py-2 text-xs uppercase tracking-widest text-gold hover:bg-gold hover:text-parchment transition-colors border-t border-lines" onClick={() => setShowModal(true)}>
-                            {edDict.createTagBtn || '+ CREAR NOVA ETIQUETA'} &quot;{search}&quot;
-                        </button>
-                    </div>
-                )}
+
+            <div className="flex justify-end gap-4">
+              <button
+                type="button"
+                className="px-6 py-2 font-sans text-xs uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors cursor-pointer"
+                onClick={() => setShowModal(false)}
+              >
+                {dict.common.cancel}
+              </button>
+              <button
+                type="button"
+                className="px-6 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer disabled:opacity-50"
+                disabled={isSaving}
+                onClick={handleCreateNew}
+              >
+                {isSaving ? dict.dashboard.saving : edDict.create}
+              </button>
             </div>
-
-            {showModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-charcoal/50 backdrop-blur-sm">
-                    <div className="bg-surface p-8 max-w-md w-full border border-lines shadow-2xl">
-                        <h2 className="font-serif text-2xl text-charcoal mb-4">{edDict.newTagTitle || 'Nova Etiqueta'}</h2>
-                        <p className="text-xs font-sans text-charcoal/70 mb-6 uppercase tracking-widest">
-                            {edDict.newTagNotice || 'As etiquetas deben estar dispoñibles en ambos idiomas para a correcta tradución do sitio.'}
-                        </p>
-                        
-                        <div className="space-y-4 mb-8">
-                            <div>
-                                <label className="block text-xs uppercase tracking-widest text-charcoal/70 mb-1">{edDict.tagInSpanish || 'En Castelán'}</label>
-                                <input type="text" className="w-full border border-lines p-2 bg-transparent focus:border-gold outline-none" value={newTagEs} onChange={e => setNewTagEs(e.target.value)} placeholder="Ex: Medio Ambiente" />
-                            </div>
-                            <div>
-                                <label className="block text-xs uppercase tracking-widest text-charcoal/70 mb-1">{edDict.tagInGalician || 'En Galego'}</label>
-                                <input type="text" className="w-full border border-lines p-2 bg-transparent focus:border-gold outline-none" value={newTagGl} onChange={e => setNewTagGl(e.target.value)} placeholder="Ex: Medio Ambiente" />
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-4">
-                            <button type="button" className="px-6 py-2 font-sans text-xs uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors cursor-pointer" onClick={() => setShowModal(false)}>{dict.common.cancel || 'Cancelar'}</button>
-                            <button type="button" className="px-6 py-2 bg-charcoal text-parchment font-sans text-xs uppercase tracking-widest hover:bg-gold transition-colors cursor-pointer disabled:opacity-50" disabled={isSaving} onClick={handleCreateNew}>
-                                {isSaving ? dict.dashboard.saving : edDict.create}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 }
