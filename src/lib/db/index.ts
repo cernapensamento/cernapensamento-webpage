@@ -12,9 +12,13 @@ export * from './types';
 // Error Handling Utilities
 export * from './formatDbError';
 
+// Client Helpers
+export * from './client';
+
 // Query Services
 export * from './queries/publications';
 export * from './queries/users';
 export * from './queries/comments';
 export * from './queries/tags';
 export * from './queries/composite';
+export * from './queries/newsletter';

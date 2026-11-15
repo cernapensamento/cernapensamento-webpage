@@ -210,3 +210,37 @@ export interface PublishedAuthorItem {
   latest_publication_slug: string | null;
   publication_types: PublicationType[];
 }
+
+/**
+ * Lightweight publication item for the writer desk dashboard.
+ * Never includes heavy content fields.
+ */
+export interface PublicationDashboardItem {
+  id: string;
+  slug: string;
+  title: LocalizedString;
+  subtitle: LocalizedString | null;
+  cover_image_url: string | null;
+  type: PublicationType;
+  status: PublicationStatus;
+  is_pinned: boolean | null;
+  created_at: string;
+  updated_at: string;
+  published_at?: string | null;
+  author_id: string;
+  author: {
+    id: string;
+    full_name: string;
+  } | null;
+}
+
+/**
+ * Computed publication quota status for guest authors.
+ */
+export interface GuestPublicationQuota {
+  totalCount: number;
+  yearlyCount: number;
+  totalLimit: number;
+  yearlyLimit: number;
+  canCreate: boolean;
+}

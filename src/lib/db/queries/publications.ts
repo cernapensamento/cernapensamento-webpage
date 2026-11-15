@@ -12,19 +12,22 @@ import {
   PUBLICATION_COLS,
   USER_COLS,
   PUBLICATION_STATUSES,
+  GUEST_PUBLICATION_LIMITS,
 } from '../schema';
 import { getPublicationIdsByTagSlugs } from './tags';
 import { formatDbError } from '../formatDbError';
 import type {
-
   PublicationRow,
   PublicationCardItem,
+  PublicationDashboardItem,
   PublicationDetail,
   PublicationType,
   PublicationStatus,
   TagItem,
   LocalizedString,
+  GuestPublicationQuota,
 } from '../types';
+export { createPublicAnonClient } from '../client';
 
 interface RawTagRelation {
   tag?: {
@@ -628,4 +631,116 @@ export async function deletePublication(
     .eq(PUBLICATION_COLS.ID, id);
 
   return { success: !error, error };
+}
+
+export interface GetDashboardPublicationsOptions {
+  authorId: string;
+  forApproval?: boolean;
+  client?: SupabaseClient;
+}
+
+/**
+ * Fetch lightweight publication records for the writer desk dashboard.
+ * Returns either publications awaiting approval (when `forApproval` is true)
+ * or the author's own publications, ordered newest creation time first.
+ * Never selects heavy content fields.
+ */
+export async function getDashboardPublications(
+  options: GetDashboardPublicationsOptions
+): Promise<PublicationDashboardItem[]> {
+  try {
+    const supabase = await resolveClient(options.client);
+
+    let query = supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select(`
+        ${PUBLICATION_COLS.ID},
+        ${PUBLICATION_COLS.SLUG},
+        ${PUBLICATION_COLS.TITLE},
+        ${PUBLICATION_COLS.SUBTITLE},
+        ${PUBLICATION_COLS.COVER_IMAGE_URL},
+        ${PUBLICATION_COLS.TYPE},
+        ${PUBLICATION_COLS.STATUS},
+        ${PUBLICATION_COLS.IS_PINNED},
+        ${PUBLICATION_COLS.CREATED_AT},
+        ${PUBLICATION_COLS.UPDATED_AT},
+        ${PUBLICATION_COLS.PUBLISHED_AT},
+        ${PUBLICATION_COLS.AUTHOR_ID},
+        author:${DB_TABLES.USERS} (
+          ${USER_COLS.ID},
+          ${USER_COLS.FULL_NAME}
+        )
+      `)
+      .order(PUBLICATION_COLS.CREATED_AT, { ascending: false });
+
+    if (options.forApproval) {
+      query = query.eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.IN_REVIEW);
+    } else {
+      query = query.eq(PUBLICATION_COLS.AUTHOR_ID, options.authorId);
+    }
+
+    const { data, error } = await query;
+    if (error || !data) {
+      console.warn('[DAL:publications] Failed to fetch dashboard publications:', formatDbError(error));
+      return [];
+    }
+
+    const rows = data as unknown as PublicationDashboardItem[];
+    return rows.map((row) => ({
+      ...row,
+      cover_image_url: cleanImageUrl(row.cover_image_url),
+    }));
+  } catch (err) {
+    console.warn('[DAL:publications] Unexpected error fetching dashboard publications:', formatDbError(err));
+    return [];
+  }
+}
+
+/**
+ * Computes guest author publication quota from an existing list of publications.
+ */
+export function computeGuestPublicationQuota(
+  publications: Array<{ created_at: string }>
+): GuestPublicationQuota {
+  const currentYear = new Date().getFullYear();
+  const totalCount = publications.length;
+  const yearlyCount = publications.filter(
+    (p) => new Date(p.created_at).getFullYear() === currentYear
+  ).length;
+  const totalLimit = GUEST_PUBLICATION_LIMITS.TOTAL;
+  const yearlyLimit = GUEST_PUBLICATION_LIMITS.YEARLY;
+
+  return {
+    totalCount,
+    yearlyCount,
+    totalLimit,
+    yearlyLimit,
+    canCreate: totalCount < totalLimit && yearlyCount < yearlyLimit,
+  };
+}
+
+/**
+ * Queries an author's publication timestamps and returns guest quota status.
+ */
+export async function getGuestPublicationQuota(
+  authorId: string,
+  client?: SupabaseClient
+): Promise<GuestPublicationQuota> {
+  try {
+    const supabase = await resolveClient(client);
+    const { data, error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select(PUBLICATION_COLS.CREATED_AT)
+      .eq(PUBLICATION_COLS.AUTHOR_ID, authorId);
+
+    if (error || !data) {
+      console.warn('[DAL:publications] Failed to fetch guest quota:', formatDbError(error));
+      return computeGuestPublicationQuota([]);
+    }
+
+    return computeGuestPublicationQuota(data as Array<{ created_at: string }>);
+  } catch (err) {
+    console.warn('[DAL:publications] Unexpected error fetching guest quota:', formatDbError(err));
+    return computeGuestPublicationQuota([]);
+  }
 }
