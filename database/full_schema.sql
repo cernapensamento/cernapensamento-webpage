@@ -196,6 +196,7 @@ CREATE TABLE IF NOT EXISTS "public"."publications" (
     "content" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "newsletter_sent_at" timestamp with time zone,
     "published_at" timestamp with time zone,
+    "show_index" boolean DEFAULT false NOT NULL,
     CONSTRAINT "publications_content_bilingual_check" CHECK ((("content" ? 'gl'::"text") AND ("content" ? 'es'::"text") AND ("length"(TRIM(BOTH FROM ("content" ->> 'gl'::"text"))) > 0) AND ("length"(TRIM(BOTH FROM ("content" ->> 'es'::"text"))) > 0))),
     CONSTRAINT "publications_original_language_check" CHECK (("original_language" = ANY (ARRAY['gl'::"text", 'es'::"text"]))),
     CONSTRAINT "publications_subtitle_bilingual_check" CHECK ((("subtitle" IS NULL) OR ("subtitle" = '{}'::"jsonb") OR (("subtitle" ? 'gl'::"text") AND ("subtitle" ? 'es'::"text")))),
