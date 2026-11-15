@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
+import { useLocale } from '@/hooks/useLocale';
+import { getDictionaryClient } from '@/dictionaries/client';
 
 export default function Loading() {
-  const pathname = usePathname();
-  const lang = pathname?.startsWith('/gl') ? 'gl' : 'es';
-  const loadingText = lang === 'gl' ? 'Recompilando manuscritos...' : 'Recopilando manuscritos...';
+  const lang = useLocale();
+  const dict = getDictionaryClient(lang);
 
   return (
     <div className="fixed inset-0 z-40 bg-parchment flex flex-col items-center justify-center">
@@ -16,7 +16,7 @@ export default function Loading() {
           <span className="text-2xl font-serif">¶</span>
         </div>
         <p className="font-sans text-sm uppercase tracking-widest text-charcoal/60">
-          {loadingText}
+          {dict.loading.message}
         </p>
       </div>
     </div>

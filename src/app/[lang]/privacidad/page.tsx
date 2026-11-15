@@ -1,11 +1,9 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { getDictionary } from '@/dictionaries';
-import { Locale } from '@/i18n-config';
+import { resolveLocale } from '@/i18n-config';
 import { getDocument } from '@/lib/content';
 import { LegalDocumentMarkdownRenderer } from '@/components/ui/LegalDocumentMarkdownRenderer';
-
-const PRIVACY_CONTACT_EMAIL = 'contacto@cernapensamento.org';
 
 interface Props {
   params: Promise<{ lang: string }>;
@@ -13,18 +11,20 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
 
   return {
-    title: `${dict.privacyPage.title} | Asociación Cerna Pensamento`,
+    title: `${dict.privacyPage.title} | ${dict.privacyPage.eyebrow}`,
     description: dict.privacyPage.metaDescription,
   };
 }
 
 export default async function PrivacidadPage({ params }: Props) {
   const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
-  const { content } = getDocument('privacidad', lang);
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+  const { content } = getDocument('privacidad', locale);
 
   return (
     <div className="flex flex-col min-h-screen bg-parchment">
@@ -51,10 +51,10 @@ export default async function PrivacidadPage({ params }: Props) {
             <p>
               {dict.privacyPage.contactNote}{' '}
               <a
-                href={`mailto:${PRIVACY_CONTACT_EMAIL}`}
+                href={`mailto:${dict.contact.email}`}
                 className="text-gold hover:opacity-80 transition-opacity"
               >
-                {PRIVACY_CONTACT_EMAIL}
+                {dict.contact.email}
               </a>
             </p>
           </div>

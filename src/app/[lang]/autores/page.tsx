@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getDictionary } from '@/dictionaries';
-import { Locale } from '@/i18n-config';
+import { resolveLocale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import { getColumnistBySlug } from '@/lib/columnists';
 import { SITE_NAME } from '@/lib/constants';
@@ -17,7 +17,8 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
 
   const title = `${dict.autoresPage.eyebrow} | ${SITE_NAME}`;
 
@@ -34,21 +35,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function AutoresPage({ params }: Props) {
   const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
-  const publishedAuthors = await getPublishedAuthors();
+  const locale = resolveLocale(lang);
+  const [dict, publishedAuthors] = await Promise.all([
+    getDictionary(locale),
+    getPublishedAuthors(),
+  ]);
 
-  const language = lang === 'es' ? 'es' : 'gl';
   const authorBios = dict.authors as Record<string, string>;
 
   const authors: AuthorDirectoryItem[] = publishedAuthors.map((author) => {
     const columnist = getColumnistBySlug(author.slug);
     const bio =
       (author.slug ? authorBios[author.slug] : '') ||
-      resolveLocalizedText(author.bio, language) ||
+      resolveLocalizedText(author.bio, locale) ||
       '';
 
     const latestPublicationTitle = author.latest_publication_title
-      ? resolveLocalizedText(author.latest_publication_title, language)
+      ? resolveLocalizedText(author.latest_publication_title, locale)
       : null;
 
     return {
@@ -69,7 +72,7 @@ export default async function AutoresPage({ params }: Props) {
   return (
     <AuthorsDirectory
       authors={authors}
-      lang={lang}
+      lang={locale}
       dict={dict.autoresPage}
       documentTypes={dict.documentTypes as Record<string, string>}
     />

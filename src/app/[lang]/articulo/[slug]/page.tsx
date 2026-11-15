@@ -1,5 +1,5 @@
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
-import { PUBLICATION_STATUSES } from '@/lib/db/schema';
+import { PUBLICATION_STATUSES, PUBLICATION_TYPES } from '@/lib/db/schema';
 import ReviewActionBar from '@/components/escritorio/ReviewActionBar';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -16,7 +16,7 @@ import ArticleDownload from '@/components/features/ArticleDownload';
 import ArticleScrollManager from '@/components/features/ArticleScrollManager';
 import ArticleTableOfContents from '@/components/features/ArticleTableOfContents';
 import { getDictionary } from '@/dictionaries';
-import type { Locale } from '@/i18n-config';
+import { resolveLocale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 
 interface Props {
@@ -25,18 +25,24 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { slug, lang } = await params;
-  const publication = await getPublicationBySlug(slug, { lang });
+  const locale = resolveLocale(lang);
+  const [publication, dict] = await Promise.all([
+    getPublicationBySlug(slug, { lang: locale }),
+    getDictionary(locale),
+  ]);
 
   if (!publication) {
-    return { title: 'Artículo no encontrado' };
+    return { title: dict.article.notFoundTitle };
   }
 
-  const titulo = resolveLocalizedText(publication.title, lang);
-  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, lang) : null;
+  const titulo = resolveLocalizedText(publication.title, locale);
+  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, locale) : null;
 
   return {
     title: titulo,
-    description: subtitulo || `Un artículo de ${publication.author.full_name}`,
+    description:
+      subtitulo ||
+      dict.article.defaultMetaDescription.replace('{author}', publication.author.full_name),
   };
 }
 
@@ -48,9 +54,11 @@ export default async function ArticuloPage({
   params: Promise<{ lang: string; slug: string }>;
 }) {
   const { lang, slug } = await params;
-  const dict = await getDictionary(lang as Locale);
-  
-  const publication = await getPublicationBySlug(slug, { lang });
+  const locale = resolveLocale(lang);
+  const [dict, publication] = await Promise.all([
+    getDictionary(locale),
+    getPublicationBySlug(slug, { lang: locale }),
+  ]);
 
   if (!publication) {
     notFound();
@@ -58,18 +66,18 @@ export default async function ArticuloPage({
 
   // Canonical slug auto-redirect if accessed via a legacy or renamed slug with the same unique suffix
   if (publication.slug && publication.slug !== slug) {
-    permanentRedirect(`/${lang}/articulo/${publication.slug}`);
+    permanentRedirect(`/${locale}/articulo/${publication.slug}`);
   }
 
-  const titulo = resolveLocalizedText(publication.title, lang);
-  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, lang) : null;
-  const contenido = resolveLocalizedText(publication.content, lang);
+  const titulo = resolveLocalizedText(publication.title, locale);
+  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, locale) : null;
+  const contenido = resolveLocalizedText(publication.content, locale);
   const bodyHtml = stripIndex(contenido);
   const tocItems = publication.show_index ? getHeadingsFromHtml(bodyHtml) : [];
-  const isEnsaio = publication.type === 'essay';
+  const isEnsaio = publication.type === PUBLICATION_TYPES.ESSAY;
 
   const authorBio = publication.author.bio
-    ? resolveLocalizedText(publication.author.bio, lang)
+    ? resolveLocalizedText(publication.author.bio, locale)
     : '';
 
   const authorBioFinal = (publication.author.slug && dict.authors && (dict.authors as Record<string, string>)[publication.author.slug]) || authorBio;
@@ -93,15 +101,15 @@ export default async function ArticuloPage({
           )}
           <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal/40 mt-8 border-y border-lines py-3">
             <Link 
-              href={`/${lang}/autor/${publication.author.slug || publication.author.id}`}
+              href={`/${locale}/autor/${publication.author.slug || publication.author.id}`}
               className="text-charcoal/80 hover:text-gold transition-colors font-medium hover:underline"
             >
               {publication.author.full_name}
             </Link>
             <span>•</span>
-            <FormattedDate date={publication.published_at || publication.created_at} lang={lang} format="long" />
+            <FormattedDate date={publication.published_at || publication.created_at} lang={locale} format="long" />
           </div>
-          {publication.original_language && publication.original_language !== lang && (
+          {publication.original_language && publication.original_language !== locale && (
             <div className="text-[10px] text-charcoal/60 uppercase tracking-[0.15em] mt-3">
               {dict.article.originalLanguage}{' '}
               <Link href={`/${publication.original_language}/articulo/${publication.slug}`} className="text-gold font-bold hover:underline transition-all">
@@ -114,7 +122,7 @@ export default async function ArticuloPage({
               {publication.tags.map((tag) => (
                 <Link
                   key={tag.slug}
-                  href={`/${lang}/articulos?tema=${tag.slug}`}
+                  href={`/${locale}/articulos?tema=${tag.slug}`}
                   className="border border-lines dark:border-white/15 bg-surface dark:bg-[#1a1a1a] px-3.5 py-1.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] hover:border-gold hover:text-gold transition-all"
                 >
                   {tag.name}
@@ -156,7 +164,7 @@ export default async function ArticuloPage({
 
             <div className="mt-20 pt-8 border-t border-lines flex flex-col md:flex-row items-start gap-6">
               <Link 
-                href={`/${lang}/autor/${publication.author.slug || publication.author.id}`} 
+                href={`/${locale}/autor/${publication.author.slug || publication.author.id}`} 
                 className="w-16 h-16 rounded-full overflow-hidden border border-lines relative block shrink-0"
                 aria-hidden="true"
                 tabIndex={-1}
@@ -175,7 +183,7 @@ export default async function ArticuloPage({
                 </h3>
                 <p className="font-sans text-lg text-charcoal/80">
                   <Link 
-                    href={`/${lang}/autor/${publication.author.slug || publication.author.id}`} 
+                    href={`/${locale}/autor/${publication.author.slug || publication.author.id}`} 
                     className="hover:text-gold transition-colors font-serif font-bold text-charcoal"
                     aria-describedby="author-heading"
                   >
@@ -193,7 +201,7 @@ export default async function ArticuloPage({
             <CommentsSection publicationId={publication.id} />
 
             <ArticleDownload
-              href={`/api/articulo/${publication.slug}/pdf?lang=${lang}`}
+              href={`/api/articulo/${publication.slug}/pdf?lang=${locale}`}
               eyebrow={dict.article.download.eyebrow}
               title={dict.article.download.title}
               description={dict.article.download.description}
