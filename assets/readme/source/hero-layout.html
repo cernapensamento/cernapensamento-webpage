@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="gl">
+<head>
+<meta charset="utf-8" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 1200px;
+    height: 400px;
+    overflow: hidden;
+    background: #121212;
+    color: #fbf9f8;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'Liberation Sans', sans-serif;
+  }
+  .canvas {
+    position: relative;
+    width: 1200px;
+    height: 400px;
+    background: #121212;
+    border: 1px solid #2a2a2a;
+    padding: 48px 56px;
+    display: grid;
+    grid-template-columns: 520px 1fr;
+    align-items: center;
+    gap: 40px;
+  }
+  .watermark {
+    position: absolute;
+    left: 22px;
+    bottom: -36px;
+    font-family: 'Noto Serif', 'Liberation Serif', serif;
+    font-size: 260px;
+    line-height: 1;
+    color: rgba(251, 249, 248, 0.03);
+    pointer-events: none;
+    user-select: none;
+  }
+  .left {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #c5a059;
+  }
+  h1 {
+    font-family: 'Noto Serif', 'Liberation Serif', serif;
+    font-size: 52px;
+    line-height: 1.12;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: #fbf9f8;
+  }
+  h1 .highlight {
+    font-style: italic;
+    font-weight: 400;
+    color: #c5a059;
+    text-decoration: underline;
+    text-decoration-color: rgba(197, 160, 89, 0.4);
+    text-underline-offset: 8px;
+    text-decoration-thickness: 1.5px;
+  }
+  .desc {
+    font-size: 16.5px;
+    line-height: 1.55;
+    color: rgba(228, 226, 226, 0.78);
+    max-width: 490px;
+  }
+  .meta-strip {
+    margin-top: 4px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #2a2a2a;
+    background: #1a1a1a;
+    align-self: flex-start;
+  }
+  .meta-item {
+    padding: 8px 13px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #e4e2e2;
+    border-right: 1px solid #2a2a2a;
+  }
+  .meta-item:last-child {
+    border-right: none;
+    color: #c5a059;
+  }
+  .right {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .right img {
+    width: 540px;
+    height: auto;
+    display: block;
+  }
+</style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="watermark" aria-hidden="true">&para;</div>
+    <div class="left">
+      <div class="eyebrow">CERNAPENSAMENTO.ORG</div>
+      <h1>
+        Pensamento libre,<br />
+        <span class="highlight">ideas e debate</span>
+      </h1>
+      <p class="desc">
+        Revista cultural dixital e plataforma editorial bilingüe (GL / ES) dedicada á filosofía política, á economía austríaca, ao ensaio e á creación literaria.
+      </p>
+      <div class="meta-strip">
+        <span class="meta-item">Next.js 16</span>
+        <span class="meta-item">Supabase + RLS</span>
+        <span class="meta-item">TipTap 3</span>
+        <span class="meta-item">GL / ES</span>
+      </div>
+    </div>
+    <div class="right">
+      <img src="../../../public/images/hero/cerna-presentation-dark-last-frame.webp" alt="Cerna Logo" />
+    </div>
+  </div>
+</body>
+</html>
