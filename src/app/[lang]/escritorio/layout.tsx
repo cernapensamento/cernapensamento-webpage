@@ -11,7 +11,7 @@ export default async function EscritorioLayout({
   children: React.ReactNode;
   params: Promise<{ lang: string }>;
 }) {
-  const [{ user, profile, role }, resolvedParams] = await Promise.all([
+  const [{ user }, resolvedParams] = await Promise.all([
     getAuthenticatedUser(),
     params,
   ]);
@@ -22,7 +22,7 @@ export default async function EscritorioLayout({
   }
 
   return (
-    <EscritorioShell role={profile?.role || role}>
+    <EscritorioShell>
       {children}
     </EscritorioShell>
   );

@@ -30,32 +30,40 @@ vi.mock('@/actions/articles', () => ({
 // Mock ArticleEditor to easily inspect props and trigger onSave
 vi.mock('@/components/escritorio/ArticleEditor', () => ({
   default: ({
+    mode = 'edit',
     initialData,
     onSave,
     isPublishing,
   }: {
-    initialData: ArticleData;
+    mode?: 'create' | 'edit';
+    initialData?: ArticleData;
     onSave: (data: ArticleData, action: EditorAction) => Promise<boolean>;
     isPublishing: boolean;
-  }) => (
-    <div data-testid="article-editor">
-      <span data-testid="editor-mode">edit</span>
-      <span data-testid="editor-title-gl">{initialData?.title?.gl}</span>
-      <span data-testid="is-publishing">{String(isPublishing)}</span>
-      <button
-        data-testid="save-draft-btn"
-        onClick={() => onSave(initialData, EDITOR_ACTIONS.DRAFT)}
-      >
-        Save Draft
-      </button>
-      <button
-        data-testid="publish-btn"
-        onClick={() => onSave(initialData, EDITOR_ACTIONS.PUBLISH)}
-      >
-        Publish
-      </button>
-    </div>
-  ),
+  }) => {
+    const payload = initialData ?? {
+      title: { gl: 'Novo Artigo GL', es: 'Nuevo Artículo ES' },
+      content: { gl: '<p>Novo</p>', es: '<p>Nuevo</p>' },
+    };
+    return (
+      <div data-testid="article-editor">
+        <span data-testid="editor-mode">{mode}</span>
+        <span data-testid="editor-title-gl">{initialData?.title?.gl}</span>
+        <span data-testid="is-publishing">{String(isPublishing)}</span>
+        <button
+          data-testid="save-draft-btn"
+          onClick={() => onSave(payload, EDITOR_ACTIONS.DRAFT)}
+        >
+          Save Draft
+        </button>
+        <button
+          data-testid="publish-btn"
+          onClick={() => onSave(payload, EDITOR_ACTIONS.PUBLISH)}
+        >
+          Publish
+        </button>
+      </div>
+    );
+  },
 }));
 
 describe('EditarArticuloForm', () => {
@@ -162,6 +170,39 @@ describe('EditarArticuloForm', () => {
       expect(articlesActions.saveArticleAction).toHaveBeenCalled();
       expect(mockToastError).toHaveBeenCalledWith('Erro de permisos ao gardar');
       expect(mockPush).not.toHaveBeenCalled();
+    });
+  });
+
+  it('supports create mode without publication prop and submits without id', async () => {
+    vi.mocked(articlesActions.saveArticleAction).mockResolvedValue({
+      success: true,
+      id: 'new-pub-1',
+      slug: 'novo-artigo-gl-123456',
+    });
+
+    render(
+      <EditarArticuloForm
+        mode="create"
+        userRole="founder"
+        lang="gl"
+      />
+    );
+
+    expect(screen.getByTestId('editor-mode').textContent).toBe('create');
+    fireEvent.click(screen.getByTestId('save-draft-btn'));
+
+    await waitFor(() => {
+      expect(articlesActions.saveArticleAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: EDITOR_ACTIONS.DRAFT,
+          lang: 'gl',
+          title: { gl: 'Novo Artigo GL', es: 'Nuevo Artículo ES' },
+        })
+      );
+      const callArg = vi.mocked(articlesActions.saveArticleAction).mock.calls[0][0];
+      expect(callArg.id).toBeUndefined();
+      expect(mockToastSuccess).toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith('/gl/escritorio');
     });
   });
 });

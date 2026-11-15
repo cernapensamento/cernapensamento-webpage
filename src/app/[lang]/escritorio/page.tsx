@@ -13,15 +13,31 @@ import {
   canAccessWriterDesk,
   isGuestRole,
   canPublishDirectly,
+  type PublicationStatusValue,
 } from '@/lib/db';
+import { DESK_ERRORS, DESK_FILTERS } from '@/lib/db/schema';
 import FormattedDate from '@/components/ui/FormattedDate';
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
 import PinArticleButton from '@/components/escritorio/PinArticleButton';
 
 interface PageProps {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ ver?: string; filtro?: string }>;
+  searchParams: Promise<{ ver?: string; filtro?: string; error?: string }>;
 }
+
+const STATUS_BY_FILTER: Partial<Record<string, PublicationStatusValue>> = {
+  [DESK_FILTERS.DRAFTS]: PUBLICATION_STATUSES.DRAFT,
+  [DESK_FILTERS.PUBLISHED]: PUBLICATION_STATUSES.PUBLISHED,
+  [DESK_FILTERS.IN_REVIEW]: PUBLICATION_STATUSES.IN_REVIEW,
+};
+
+const VALID_TAB_FILTERS: ReadonlySet<string> = new Set([
+  DESK_FILTERS.ALL,
+  DESK_FILTERS.PUBLISHED,
+  DESK_FILTERS.DRAFTS,
+  DESK_FILTERS.IN_REVIEW,
+  DESK_FILTERS.FOR_APPROVAL,
+]);
 
 export default async function EscritorioPage({ params: routeParams, searchParams }: PageProps) {
   const [params, routeParamsResolved, { user, profile, role }] = await Promise.all([
@@ -31,8 +47,11 @@ export default async function EscritorioPage({ params: routeParams, searchParams
   ]);
   const lang = resolveLocale(routeParamsResolved?.lang);
   const dict = await getDictionary(lang);
-  const verTodo = params.ver === 'todo';
-  const filtro = params.filtro || 'todos';
+  const verTodo = params.ver === DESK_FILTERS.VIEW_ALL;
+  const filtro = params.filtro && VALID_TAB_FILTERS.has(params.filtro)
+    ? params.filtro
+    : DESK_FILTERS.ALL;
+  const isLimitReachedError = params.error === DESK_ERRORS.LIMIT_REACHED;
 
   if (!user) {
     redirect(`/${lang}/login`);
@@ -45,39 +64,59 @@ export default async function EscritorioPage({ params: routeParams, searchParams
 
   const isGuest = isGuestRole(userRole);
   const canReview = canPublishDirectly(userRole);
-  const forApproval = filtro === 'para_aprobar' && canReview;
+  const forApproval = filtro === DESK_FILTERS.FOR_APPROVAL && canReview;
 
   const allPublications = await getDashboardPublications({
     authorId: user.id,
     forApproval,
   });
 
-  // Client-side filter
-  let filteredPublications = allPublications;
-  if (filtro === 'borradores') {
-    filteredPublications = allPublications.filter((p) => p.status === PUBLICATION_STATUSES.DRAFT);
-  } else if (filtro === 'publicados') {
-    filteredPublications = allPublications.filter((p) => p.status === PUBLICATION_STATUSES.PUBLISHED);
-  } else if (filtro === 'pendientes') {
-    filteredPublications = allPublications.filter((p) => p.status === PUBLICATION_STATUSES.IN_REVIEW);
-  }
+  const filterStatus = STATUS_BY_FILTER[filtro];
+  const filteredPublications = filterStatus
+    ? allPublications.filter((p) => p.status === filterStatus)
+    : allPublications;
 
   const displayedPublications = verTodo ? filteredPublications : filteredPublications.slice(0, 3);
 
-  const guestQuota = computeGuestPublicationQuota(allPublications);
-  const canCreate = !isGuest || guestQuota.canCreate;
+  const guestQuota = isGuest ? computeGuestPublicationQuota(allPublications) : null;
+  const canCreate = !guestQuota || guestQuota.canCreate;
 
   const authorDisplayName = profile?.full_name || dict.escritorioPage.defaultAuthorName;
+
+  const filterTabs = [
+    { key: DESK_FILTERS.ALL, label: dict.escritorioPage.all, accent: false },
+    { key: DESK_FILTERS.PUBLISHED, label: dict.escritorioPage.published, accent: false },
+    { key: DESK_FILTERS.DRAFTS, label: dict.escritorioPage.drafts, accent: false },
+    canReview
+      ? { key: DESK_FILTERS.FOR_APPROVAL, label: dict.escritorioPage.toApprove, accent: true }
+      : { key: DESK_FILTERS.IN_REVIEW, label: dict.escritorioPage.pending, accent: false },
+  ];
 
   return (
     <main className="px-5 md:px-16 pb-24 flex flex-col flex-1">
       <div className="flex-1">
         <section className="mt-16 mb-16">
           <div className="max-w-280 mx-auto">
+            {isLimitReachedError && (
+              <div
+                role="alert"
+                className="mb-8 p-4 border border-gold/40 bg-gold/10 text-charcoal flex items-start gap-3 text-sm font-sans rounded-sm"
+              >
+                <span className="material-symbols-outlined text-gold shrink-0 text-lg" data-icon="warning">warning</span>
+                <div>
+                  <p className="font-semibold text-gold uppercase tracking-widest text-xs mb-1">
+                    {dict.escritorioPage.limitReached}
+                  </p>
+                  <p className="text-charcoal/80">
+                    {dict.escritorioPage.limitReachedNotice}
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div>
                 <h2 className="font-serif text-4xl mb-4">{dict.escritorioPage.welcome}{authorDisplayName}</h2>
-                {isGuest && (
+                {guestQuota && (
                   <div className="flex flex-col text-sm font-sans text-charcoal/80 bg-gold/10 p-4 border border-gold/20 rounded-sm mb-4 md:mb-0">
                     <p className="mb-1"><strong className="text-gold">{dict.escritorioPage.guest}</strong></p>
                     <p>{dict.escritorioPage.yearlyLimit}: {guestQuota.yearlyCount} / {guestQuota.yearlyLimit}</p>
@@ -108,20 +147,31 @@ export default async function EscritorioPage({ params: routeParams, searchParams
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
               <h3 className="font-serif text-2xl">{dict.escritorioPage.articles}</h3>
               <div className="flex flex-wrap items-center gap-2 font-sans text-xs uppercase tracking-widest">
-                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'todos' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=todos">{dict.escritorioPage.all}</Link>
-                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'publicados' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=publicados">{dict.escritorioPage.published}</Link>
-                <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'borradores' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=borradores">{dict.escritorioPage.drafts}</Link>
-                {!canReview ? (
-                  <Link className={`px-4 py-2 border border-lines rounded-full transition-colors ${filtro === 'pendientes' ? 'bg-charcoal text-parchment border-charcoal' : 'bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50'}`} href="?filtro=pendientes">{dict.escritorioPage.pending}</Link>
-                ) : (
-                  <Link className={`px-4 py-2 border border-gold/50 rounded-full transition-colors ${filtro === 'para_aprobar' ? 'bg-gold text-parchment border-gold' : 'bg-transparent text-gold hover:bg-gold/10 hover:border-gold'}`} href="?filtro=para_aprobar">{dict.escritorioPage.toApprove}</Link>
-                )}
+                {filterTabs.map((tab) => {
+                  const isActive = filtro === tab.key;
+                  const styleClass = tab.accent
+                    ? isActive
+                      ? 'border-gold bg-gold text-parchment'
+                      : 'border-gold/50 bg-transparent text-gold hover:bg-gold/10 hover:border-gold'
+                    : isActive
+                      ? 'border-charcoal bg-charcoal text-parchment'
+                      : 'border-lines bg-transparent text-charcoal/60 hover:text-charcoal hover:border-charcoal/50';
+                  return (
+                    <Link
+                      key={tab.key}
+                      className={`px-4 py-2 border rounded-full transition-colors ${styleClass}`}
+                      href={`/${lang}/escritorio?filtro=${tab.key}`}
+                    >
+                      {tab.label}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
             {!verTodo && filteredPublications.length > 3 ? (
-              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`?filtro=${filtro}&ver=todo`}>{dict.escritorioPage.viewAll}</Link>
+              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`/${lang}/escritorio?filtro=${filtro}&ver=${DESK_FILTERS.VIEW_ALL}`}>{dict.escritorioPage.viewAll}</Link>
             ) : verTodo ? (
-              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`?filtro=${filtro}`}>{dict.escritorioPage.viewRecent}</Link>
+              <Link className="font-sans text-xs text-charcoal/60 hover:text-gold uppercase tracking-widest underline decoration-1" href={`/${lang}/escritorio?filtro=${filtro}`}>{dict.escritorioPage.viewRecent}</Link>
             ) : null}
           </div>
           <div className="overflow-y-auto scrollbar-none pb-16" style={{ maxHeight: 'calc(100vh - 400px)' }}>
@@ -130,6 +180,12 @@ export default async function EscritorioPage({ params: routeParams, searchParams
                   const title = resolveLocalizedText(pub.title, lang);
                   const subtitle = pub.subtitle ? resolveLocalizedText(pub.subtitle, lang) : null;
                   const typeLabel = (dict.documentTypes as Record<string, string>)?.[pub.type] || pub.type;
+                  const slugOrId = pub.slug || pub.id;
+                  const readerHref = `/${lang}/articulo/${slugOrId}`;
+                  const editHref = `/${lang}/escritorio/editar/${slugOrId}`;
+                  const isPublished = pub.status === PUBLICATION_STATUSES.PUBLISHED;
+                  const titleHref = forApproval || isPublished ? readerHref : editHref;
+                  const actionHref = forApproval ? readerHref : editHref;
 
                   return (
                     <article className={`group ${pub.status === PUBLICATION_STATUSES.DRAFT ? 'opacity-80 hover:opacity-100 transition-opacity' : ''}`} key={pub.id}>
@@ -172,7 +228,7 @@ export default async function EscritorioPage({ params: routeParams, searchParams
                               </>
                             )}
                           </div>
-                          <Link href={`/${lang}/articulo/${pub.slug || pub.id}`}>
+                          <Link href={titleHref}>
                             <h4 className="font-serif text-2xl mb-3 group-hover:text-gold transition-colors cursor-pointer">{title}</h4>
                           </Link>
                           {subtitle && (
@@ -181,15 +237,15 @@ export default async function EscritorioPage({ params: routeParams, searchParams
                             </p>
                           )}
                           <div className="mt-4 flex items-center gap-6">
-                            <Link href={forApproval ? `/${lang}/articulo/${pub.slug || pub.id}` : `/${lang}/escritorio/editar/${pub.slug || pub.id}`} className={`flex items-center gap-1 transition-colors cursor-pointer ${forApproval ? 'text-gold hover:text-charcoal' : 'text-charcoal/60 hover:text-gold'}`}>
+                            <Link href={actionHref} className={`flex items-center gap-1 transition-colors cursor-pointer ${forApproval ? 'text-gold hover:text-charcoal' : 'text-charcoal/60 hover:text-gold'}`}>
                               <span className="material-symbols-outlined text-sm" data-icon={forApproval ? 'visibility' : 'edit'}>{forApproval ? 'visibility' : 'edit'}</span>
                               <span className={`font-sans text-xs ${forApproval ? 'font-bold uppercase tracking-widest' : ''}`}>{forApproval ? dict.escritorio.review : dict.escritorioPage.edit}</span>
                             </Link>
-                            {pub.status === PUBLICATION_STATUSES.PUBLISHED && (
+                            {isPublished && (
                               <PinArticleButton id={pub.id} isPinned={pub.is_pinned || false} />
                             )}
                             {!forApproval && (
-                              canReview || pub.status !== PUBLICATION_STATUSES.PUBLISHED
+                              canReview || !isPublished
                             ) && (
                               <DeleteArticleButton id={pub.id} titulo={title} />
                             )}
@@ -200,7 +256,7 @@ export default async function EscritorioPage({ params: routeParams, searchParams
                   );
                 }) : (
                   <p className="font-sans text-charcoal/60">
-                    {(forApproval || filtro === 'pendientes')
+                    {(forApproval || filtro === DESK_FILTERS.IN_REVIEW)
                       ? dict.escritorioPage.noPendingArticles
                       : dict.escritorioPage.noArticles}
                   </p>
