@@ -308,6 +308,43 @@ describe('saveArticleAction', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('No autorizado: sesión requerida');
   });
+
+  it('persists show_index and strips legacy <nav data-type="article-index"> blocks before saving', async () => {
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'founder-1' } as unknown as User,
+      profile: { id: 'founder-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
+      role: USER_ROLES.FOUNDER,
+    });
+
+    vi.mocked(dbModule.createPublication).mockResolvedValue({
+      data: { id: 'pub-idx-1' } as unknown as PublicationRow,
+      error: null,
+    });
+    vi.mocked(dbModule.syncPublicationTagsBySlugs).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+
+    const dirtyHtml = '<nav data-type="article-index"><div>Old TOC</div></nav><h1>Primeira Sección</h1><p>Texto</p>';
+
+    const result = await saveArticleAction({
+      ...baseInput,
+      content: { gl: dirtyHtml, es: dirtyHtml },
+      show_index: true,
+      action: EDITOR_ACTIONS.PUBLISH,
+    });
+
+    expect(result.success).toBe(true);
+    expect(dbModule.createPublication).toHaveBeenCalledWith(
+      expect.objectContaining({
+        show_index: true,
+        content: {
+          gl: '<h1>Primeira Sección</h1><p>Texto</p>',
+          es: '<h1>Primeira Sección</h1><p>Texto</p>',
+        },
+      })
+    );
+  });
 });
 
 describe('fetchMoreArticlesAction', () => {

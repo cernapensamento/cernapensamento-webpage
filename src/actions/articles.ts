@@ -32,6 +32,7 @@ import {
   generatePublicationSlug,
   updatePublicationSlugIfNeeded,
 } from '@/lib/utils/slug';
+import { stripIndex } from '@/lib/editor/generateIndex';
 
 export interface SaveArticleInput {
   id?: string;
@@ -42,6 +43,7 @@ export interface SaveArticleInput {
   tags?: string[];
   type?: PublicationTypeValue | string;
   original_language?: Locale | string;
+  show_index?: boolean;
   action: EditorAction;
   lang?: Locale | string;
 }
@@ -152,6 +154,11 @@ export async function saveArticleAction(
       input.subtitle?.gl || input.subtitle?.es
         ? { gl: input.subtitle?.gl || '', es: input.subtitle?.es || '' }
         : null;
+    const contentPayload = {
+      gl: stripIndex(input.content?.gl || ''),
+      es: stripIndex(input.content?.es || ''),
+    };
+    const showIndex = Boolean(input.show_index);
 
     if (input.id) {
       // --- UPDATE EXISTING PUBLICATION ---
@@ -183,16 +190,14 @@ export async function saveArticleAction(
         },
         [PUBLICATION_COLS.SUBTITLE]: subtitlePayload,
         [PUBLICATION_COLS.SLUG]: updatedSlug,
-        [PUBLICATION_COLS.CONTENT]: {
-          gl: input.content?.gl || '',
-          es: input.content?.es || '',
-        },
+        [PUBLICATION_COLS.CONTENT]: contentPayload,
         [PUBLICATION_COLS.COVER_IMAGE_URL]: input.cover_image_url || null,
         [PUBLICATION_COLS.STATUS]: targetStatus,
         [PUBLICATION_COLS.PUBLISHED_AT]: targetPublishedAt,
         [PUBLICATION_COLS.UPDATED_AT]: new Date().toISOString(),
         [PUBLICATION_COLS.TYPE]: pubType,
         [PUBLICATION_COLS.ORIGINAL_LANGUAGE]: origLang,
+        [PUBLICATION_COLS.SHOW_INDEX]: showIndex,
       };
 
       const { error: updateError } = await updatePublication(input.id, updatePayload);
@@ -224,16 +229,14 @@ export async function saveArticleAction(
         },
         [PUBLICATION_COLS.SUBTITLE]: subtitlePayload,
         [PUBLICATION_COLS.SLUG]: slug,
-        [PUBLICATION_COLS.CONTENT]: {
-          gl: input.content?.gl || '',
-          es: input.content?.es || '',
-        },
+        [PUBLICATION_COLS.CONTENT]: contentPayload,
         [PUBLICATION_COLS.AUTHOR_ID]: user.id,
         [PUBLICATION_COLS.COVER_IMAGE_URL]: input.cover_image_url || null,
         [PUBLICATION_COLS.STATUS]: targetStatus,
         [PUBLICATION_COLS.PUBLISHED_AT]: publishedAt,
         [PUBLICATION_COLS.TYPE]: pubType,
         [PUBLICATION_COLS.ORIGINAL_LANGUAGE]: origLang,
+        [PUBLICATION_COLS.SHOW_INDEX]: showIndex,
       };
 
       const { data: inserted, error: insertError } = await createPublication(insertPayload);
