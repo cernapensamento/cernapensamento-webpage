@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getDictionary } from '@/dictionaries';
+import { i18n, isSupportedLocale, type Locale } from '@/i18n-config';
 import { renderUnsubscribeHtml } from '@/lib/email/newsletter-template';
 import { verifyUnsubscribeToken, getSiteBaseUrl } from '@/lib/email/newsletter';
 
@@ -24,12 +25,13 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const email = searchParams.get('email') || '';
   const token = searchParams.get('token') || '';
-  const lang = (searchParams.get('lang') === 'es' ? 'es' : 'gl') as 'gl' | 'es';
+  const rawLang = searchParams.get('lang');
+  const lang: Locale = isSupportedLocale(rawLang) ? rawLang : i18n.defaultLocale;
   const siteUrl = getSiteBaseUrl();
   const dict = await getDictionary(lang);
 
   if (!email || !token || !verifyUnsubscribeToken(email, token)) {
-    const html = renderUnsubscribeHtml({ email, lang, siteUrl, success: false, dict });
+    const html = await renderUnsubscribeHtml({ email, lang, siteUrl, success: false, dict });
     return new NextResponse(html, {
       status: 400,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('[Newsletter Unsubscribe] RPC error:', error);
-      const html = renderUnsubscribeHtml({
+      const html = await renderUnsubscribeHtml({
         email,
         lang,
         siteUrl,
@@ -58,14 +60,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const html = renderUnsubscribeHtml({ email, lang, siteUrl, success: true, dict });
+    const html = await renderUnsubscribeHtml({ email, lang, siteUrl, success: true, dict });
     return new NextResponse(html, {
       status: 200,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   } catch (err) {
     console.error('[Newsletter Unsubscribe] Internal error:', err);
-    const html = renderUnsubscribeHtml({
+    const html = await renderUnsubscribeHtml({
       email,
       lang,
       siteUrl,
