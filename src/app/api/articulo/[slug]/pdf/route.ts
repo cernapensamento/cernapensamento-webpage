@@ -72,6 +72,8 @@ export async function GET(request: Request, { params }: RouteContext) {
       tags: publication.tags.map((tag) => tag.name),
       coverImageUrl: publication.cover_image_url,
       html: content,
+      showIndex: publication.show_index,
+      indexLabel: dict.article.indexLabel,
       siteName: SITE_NAME,
       siteUrl: SITE_URL,
     });
