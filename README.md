@@ -1,300 +1,200 @@
-# Cerna Pensamento
+<p align="center">
+  <img src="assets/readme/hero.svg" alt="Cerna Pensamento — Revista dixital de pensamento, filosofía política, economía austríaca e creación literaria construida con Next.js 16, React 19, Supabase, TipTap 3 e Tailwind CSS v4" width="100%" />
+</p>
 
-> **Revista semanal de pensamiento, literatura y filosofía.**
+<p align="center">
+  <a href="https://cernapensamento.org"><strong>cernapensamento.org</strong></a> ·
+  <a href="#arquitectura-e-stack">Arquitectura</a> ·
+  <a href="#documentacion-tecnica">Documentación</a> ·
+  <a href="#posta-en-marcha-local">Posta en Marcha</a> ·
+  <a href="AGENTS.md">AGENTS.md</a>
+</p>
 
-Cerna es una plataforma editorial bilingüe (gallego/castellano) construida como una revista literaria y de pensamiento moderno. Permite a sus escritores redactar, maquetar con fórmulas y tablas, y publicar artículos, ensayos, columnas, reportajes y poesía; y a sus lectores consumir contenido con navegación fluida, comentar y recibir boletines informativos.
-
-> [!IMPORTANT]
-> ### 🤖 Protocolo Obligatorio para Agentes de IA y Desarrolladores
-> Antes de planificar, refactorizar o ejecutar cualquier cambio en este repositorio, **es mandatorio consultar la documentación técnica**:
-> 1. **[`AGENTS.md`](AGENTS.md)**: Manual operativo indispensable con las invariantes críticas del proyecto:
->    * Convenciones asíncronas de **Next.js 16 App Router & React 19** (`await params`, `await cookies()`).
->    * **Estándar bilingüe estricto (i18n)**: Prohibición absoluta de URLs o textos hardcodeados; uso mandatorio de diccionarios (`src/dictionaries/{gl,es}.json`) y prefijado dinámico `/${lang}/...`.
->    * **Data Access Layer (DAL)** tipado con *Zero Magic Strings* (`src/lib/db/`).
->    * **Flujo de desarrollo local aislado con Supabase CLI** (`npm run db:start`, `npm run db:reset`).
-> 2. **Mapas de Código en [`docs/CODEMAPS/`](docs/CODEMAPS/INDEX.md)**: Planos arquitectónicos de cada subsistema (frontend, backend, editor, base de datos).
-> 
-> *No introduzcas abstracciones nuevas ni mutaciones de base de datos sin revisar primero estos documentos.*
+<p align="center">
+  <strong>Cerna Pensamento</strong> é unha revista cultural dixital e plataforma editorial bilingüe (<strong>galego <code>gl</code></strong> por defecto e <strong>castelán <code>es</code></strong>) dedicada ao ensaio, á filosofía política, á economía austríaca, á poesía e á narrativa. Combina lectura literaria con caché ISR, edición avanzada en TipTap 3, tradución asistida por IA, exportación PDF e boletíns automatizados desde PostgreSQL.
+</p>
 
 ---
 
-## Índice
+<p align="center">
+  <img src="assets/readme/section-capabilities.svg" alt="01 — Capacidades e fluxo de publicación editorial" width="100%" />
+</p>
 
-1. [Guía para Agentes de IA y Documentación](#-protocolo-obligatorio-para-agentes-de-ia-y-desarrolladores)
-2. [Arquitectura del Sistema](#arquitectura-del-sistema)
-3. [Stack Tecnológico](#stack-tecnológico)
-4. [Estructura del Proyecto](#estructura-del-proyecto)
-5. [Módulos y Características Clave](#módulos-y-características-clave)
-6. [Editor de Contenidos (TipTap Suite)](#editor-de-contenidos-tiptap-suite)
-7. [Seguridad y Rendimiento](#seguridad-y-rendimiento)
-8. [Desarrollo Local](#desarrollo-local)
-9. [Mapas de Código (Codemaps)](#mapas-de-código-codemaps)
-10. [Despliegue](#despliegue)
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Lectura Editorial &amp; Accesibilidade</h3>
+      <p>
+        Tipografía clásica (<code>Libre Caslon Text</code> e <code>Source Sans 3</code>), modo escuro con tokens semánticos (<code>parchment</code>, <code>charcoal</code>, <code>gold</code>), índice automático sincronizado co scroll, renderizado matemático <strong>KaTeX</strong> e descarga en <strong>PDF</strong> con caché CDN.
+      </p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Escritorio TipTap 3 &amp; Sanitización</h3>
+      <p>
+        Editor WYSIWYG para ensaios e artigos con fórmulas LaTeX, táboas con controis contextuais, figuras con pé de foto comprimidas no navegador a <strong>WebP</strong> e dobre canalización estrita mediante <code>sanitizeArticleHtml</code>.
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Bilingüismo Integral &amp; Tradución IA</h3>
+      <p>
+        Paridade completa de dicionarios (<code>src/dictionaries/gl.json</code> e <code>es.json</code>), campos JSONB multilingües na base de datos e tradución directa no escritorio mediante <strong>Google Gemini (<code>gemini-3.5-flash-lite</code>)</strong>.
+      </p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Workflow por Roles &amp; Newsletter</h3>
+      <p>
+        Control de acceso por roles en JWT e RLS (<code>reader</code>, <code>guest</code>, <code>member</code>, <code>founder</code>, <code>admin</code>), cotas de borrador, revisión editorial no cliente (sen romper o ISR) e envío automatizado por lotes con <strong>pg_net</strong>, <strong>pg_cron</strong> e <strong>Resend</strong>.
+      </p>
+    </td>
+  </tr>
+</table>
 
----
+<a id="arquitectura-e-stack"></a>
 
-## Arquitectura del Sistema
+<p align="center">
+  <img src="assets/readme/section-stack.svg" alt="02 — Arquitectura do sistema, stack tecnolóxico e referencias técnicas" width="100%" />
+</p>
 
-```mermaid
-graph TB
-    subgraph "Cliente (Navegador)"
-        U["👤 Lector / Escritor"]
-        SC["Sentry Client SDK"]
-    end
+<p align="center">
+  <img src="assets/readme/architecture.svg" alt="Diagrama de capas de Cerna Pensamento: Lector público e Editor TipTap 3 conectados ao Edge Proxy con Upstash Redis, Server Actions e Route Handlers de Next.js 16, e plataforma Supabase (Auth, PostgreSQL + RLS + pg_cron, Storage WebP)" width="100%" />
+</p>
 
-    subgraph "Vercel (Hosting, Edge & CDN)"
-        direction TB
-        PROXY["src/proxy.ts<br/>(i18n + Auth + Rate Limiting)"]
-        SSR["Next.js 16 App Router<br/>(Server Components + Layouts)"]
-        API_T["API /translate<br/>(Traducción Gemini)"]
-        API_C["API /contact<br/>(Formulario institucional)"]
-        API_W["API /webhooks/newsletter<br/>(Boletín automático)"]
-        AUTH_CB["Auth Callback<br/>(/auth/callback)"]
-        SENTRY_S["Sentry Server SDK"]
-    end
+### Cómo funciona o fluxo principal
 
-    subgraph "Servicios Externos"
-        direction TB
-        SB["Supabase<br/>(PostgreSQL + Auth + Storage + RLS)"]
-        REDIS["Upstash Redis<br/>(Rate Limiting REST)"]
-        RESEND["Resend<br/>(Emails transaccionales)"]
-        GOOGLE["Google OAuth 2.0<br/>(Login federado)"]
-        GEMINI["Google Gemini API<br/>(Traducción AI)"]
-        SENTRY["Sentry Cloud<br/>(Monitorización y Tracing)"]
-    end
+1. **Perímetro Edge (`src/proxy.ts`):** Detecta e forza o prefixo de idioma (`gl` / `es`), normaliza aliases (`/about`, `/privacy`, `/contact`), serve negociación `Accept: text/markdown` cara a `/api/markdown`, exclúe `/llms.txt` e `/agent-instructions.md` de redireccións e aplica rate limiting deslizante en **Upstash Redis** (`10 req/min` en `/api/*` agás webhooks; `30 req/min` en mutacións).
+2. **Lectura pública sen cookies (`src/app/[lang]/articulo/[slug]/page.tsx`):** Mantén `revalidate = 60` (ISR) ao non ler `cookies()` no servidor e executa a cadea estrita `stripIndex` → `renderMathInHtml` → `renderHeadingAnchors` → `sanitizeArticleHtml`.
+3. **Datos, Auth e Newsletter (`PostgreSQL` + `Supabase`):** As publicacións aprobadas (`published`) disparan un trigger que encola un webhook asinado vía **Vault** e `pg_net` cara a `/api/webhooks/newsletter`, con reintentos limitados (5 intentos con backoff exponencial en `pg_cron`), envío por lotes de 100 destinatarios con **React Email + Resend** e baixa 1-click conforme a **RFC 8058**.
 
-    U -->|"HTTPS"| PROXY
-    PROXY -->|"Comprobar sesión"| SB
-    PROXY -->|"Verificar límites"| REDIS
-    PROXY -->|"Ruta autorizada"| SSR
+### Stack Tecnolóxico
 
-    SSR -->|"Consultas SQL con RLS"| SB
-    SSR -->|"Renderizado HTML"| U
+| Capa | Tecnoloxía | Detalles |
+| :--- | :--- | :--- |
+| **Framework & UI** | Next.js `16.2`, React `19.2`, TypeScript `5` | App Router con rutas localizadas `app/[lang]/`, `strict` mode, React Server Components |
+| **Estilos & Tipografía** | Tailwind CSS `v4`, `next/font/google` | `Libre Caslon Text`, `Source Sans 3`, `Plus Jakarta Sans` e tokens `parchment` / `surface` / `gold` |
+| **Base de Datos & Auth** | Supabase PostgreSQL, `@supabase/ssr` | RLS, `custom_access_token_hook`, Storage `media` WebP, `pg_net`, `pg_cron` e pgTAP |
+| **Editor & Contido** | TipTap `3.27`, KaTeX `0.16`, `sanitize-html`, `pdf-lib` | Fórmulas matemáticas, táboas, figuras WebP, índice TOC e xerador PDF |
+| **Seguridade & Edge** | `src/proxy.ts`, `@upstash/ratelimit` | Rate limiting dual con Redis, protección de rutas e tokens HMAC-SHA256 |
+| **IA, Correo & Observ.** | `@google/genai`, `resend`, `@react-email/components`, `@sentry/nextjs` | `gemini-3.5-flash-lite`, envío transaccional/newsletter e telemetría |
+| **Testing & CI** | Vitest `3.2`, Playwright `1.61`, `act` | Tests unitarios, compoñentes, RLS en Supabase local e E2E |
 
-    API_T -->|"Traducción"| GEMINI
-    API_C -->|"Email de contacto"| RESEND
-    API_W -->|"Envío masivo"| RESEND
-    API_W -->|"Suscriptores activos"| SB
+<a id="documentacion-tecnica"></a>
 
-    AUTH_CB -->|"Intercambio de tokens"| SB
-    SB -->|"OAuth 2.0"| GOOGLE
-    SB -->|"Database Webhook (al publicar)"| API_W
+### Documentación Técnica (`docs/`)
 
-    SC -->|"Telemetría"| SENTRY
-    SENTRY_S -->|"Errores y trazas"| SENTRY
+Toda a documentación técnica colga directamente de [`docs/`](docs/INDEX.md), mantendo protocolos operativos e fluxos de Git/entrega centralizados en [`AGENTS.md`](AGENTS.md):
 
-    style SB fill:#3ecf8e,color:#fff
-    style REDIS fill:#dc2626,color:#fff
-    style RESEND fill:#000,color:#fff
-    style GOOGLE fill:#4285f4,color:#fff
-    style GEMINI fill:#8b5cf6,color:#fff
-    style SENTRY fill:#362d59,color:#fff
-    style PROXY fill:#f59e0b,color:#000
-    style SSR fill:#0070f3,color:#fff
-```
+| Documento | Contido |
+| :--- | :--- |
+| [`docs/INDEX.md`](docs/INDEX.md) | Visión xeral, puntos de entrada e árbore completa do repositorio |
+| [`docs/frontend.md`](docs/frontend.md) | App Router `[lang]`, layouts, rutas, tokens de deseño, compoñentes e i18n |
+| [`docs/editor.md`](docs/editor.md) | Suite TipTap 3, KaTeX, táboas, figuras, `ARTICLE_SANITIZER_CONFIG` e exportación PDF |
+| [`docs/backend.md`](docs/backend.md) | Edge middleware (`src/proxy.ts`), rate limiting, 6 Route Handlers e Server Actions |
+| [`docs/database.md`](docs/database.md) | Esquema relacional, RLS, retry de `newsletter_dispatches`, DAL (`src/lib/db/`) e Storage |
+| [`docs/integrations.md`](docs/integrations.md) | Supabase Auth/Vault, Upstash Redis, Resend, Gemini AI, Sentry, `llms.txt` e variables de contorno |
+| [`AGENTS.md`](AGENTS.md) | Regras críticas de desenvolvemento, worktrees illados, protocolo de commits e releases |
 
-### Flujo de Datos
-1. **Petición Entrante**: El cliente solicita una página. `src/proxy.ts` resuelve la localización (`/gl` o `/es`), valida la sesión y aplica rate-limiting en Edge con Upstash Redis.
-2. **Jerarquía de Layout**: `src/app/[lang]/layout.tsx` monta la barra de navegación persistente (`PublicNavBar`) y el proveedor de temas. Durante transiciones asíncronas, `loading.tsx` cubre la pantalla como overlay mientras la barra superior permanece fija.
-3. **Persistencia y Acciones**: Las mutaciones de artículos se realizan mediante Server Actions (`src/actions/articles.ts`) y se guardan en Supabase PostgreSQL bajo estrictas políticas RLS.
-4. **Automatización**: Al publicar un artículo, Supabase activa el webhook `/api/webhooks/newsletter` para notificar a los lectores vía Resend.
+> **Diagrama interactivo local:** Se xeras `docs/architecture.html` localmente coa skill `archify`, permanece excluído en `.gitignore` para non subir artefactos xerados ao repositorio.
 
----
+### Estrutura do Repositorio
 
-## Stack Tecnológico
-
-| Capa | Tecnología | Versión | Propósito |
-|---|---|---|---|
-| **Framework** | Next.js (App Router + Turbopack) | 16.2.9 | SSR, Streaming, Server Actions, API Routes |
-| **Biblioteca UI** | React | 19.2.4 | Componentes declarativos y Server Components |
-| **Estilos** | Tailwind CSS | 4.x | Sistema de diseño utility-first y modo oscuro nativo |
-| **Tipografía** | Google Fonts (Libre Caslon Text, Source Sans 3) | — | Identidad editorial serif y sans-serif |
-| **Lenguaje** | TypeScript | 5.x | Tipado estático estricto |
-| **Base de Datos & Auth** | Supabase (PostgreSQL + RLS) | — | Base de datos, autenticación, almacenamiento multimedia |
-| **Rate Limiting** | Upstash Redis (@upstash/ratelimit) | — | Protección contra abuso en Edge |
-| **Servicio de Email** | Resend | — | Formularios de contacto y boletín masivo |
-| **Traducción IA** | Google Gemini (@google/genai) | 2.5 | Asistente de traducción editorial GL↔ES |
-| **Editor WYSIWYG** | TipTap 3 (ProseMirror) | 3.x | Editor enriquecido para redactores |
-| **Fórmulas Matemáticas** | KaTeX | 0.16.x | Renderizado de expresiones LaTeX en editor y lectura |
-| **Seguridad HTML** | sanitize-html | 2.17.x | Sanitización estricta XSS para contenido editorial |
-| **Observabilidad** | Sentry (@sentry/nextjs) | 10.x | Monitorización de errores y session replays |
-| **Despliegue** | Vercel | — | Hosting global, Edge Middleware y CDN |
-
----
-
-## Estructura del Proyecto
-
-```
+```text
 cerna/
-├── database/
-│   └── full_schema.sql                  # Esquema DDL canónico de la base de datos
-├── supabase/                            # Entorno de desarrollo local aislado (Docker)
-│   ├── config.toml                      # Puertos locales (54321 API, 54323 Studio)
-│   ├── seed.sql                         # Datos de prueba (fundadores, tags, artículos)
-│   └── migrations/                      # Migraciones versionadas en orden cronológico
-├── docs/
-│   ├── CODEMAPS/                        # Mapas arquitectónicos modulares
-│   │   ├── INDEX.md                     # Índice de arquitectura
-│   │   ├── frontend.md                  # Layouts, UI tokens, theming, i18n
-│   │   ├── editor.md                    # TipTap, KaTeX, tablas, índice jerárquico
-│   │   ├── backend.md                   # Edge proxy, server actions, API routes
-│   │   ├── database.md                  # Esquema, RLS, storage buckets
-│   │   └── integrations.md              # Servicios externos (Resend, Upstash, etc.)
-│   └── *.md                             # Documentación institucional (estatutos, proyectos)
-├── public/
-│   └── images/                          # Logotipos y fotografías de autores
+├── AGENTS.md                 # Protocolo de axentes, regras críticas, git worktrees e release checklist
+├── assets/readme/            # Recursos visuais SVG puros para este README
+├── database/full_schema.sql  # Volcado canónico do esquema PostgreSQL e políticas RLS
+├── docs/                     # Documentación técnica (INDEX, frontend, editor, backend, database, integrations)
+├── public/                   # llms.txt, agent-instructions.md, logotipos e imaxes estáticas
 ├── src/
-│   ├── actions/                         # Server Actions autenticadas
-│   │   ├── articles.ts                  # Guardado, publicación y borrado de artículos
-│   │   └── auth.ts                      # Gestión de sesiones y credenciales
+│   ├── proxy.ts              # Middleware Edge (i18n, aliases, rate limits, auth gate, Markdown negotiation)
+│   ├── actions/              # Server Actions (articles.ts, auth.ts)
 │   ├── app/
-│   │   ├── api/                         # Route Handlers
-│   │   │   ├── contact/route.ts         # Formulario de contacto con Resend
-│   │   │   ├── translate/route.ts       # Traducción asistida con Gemini AI
-│   │   │   └── webhooks/newsletter/     # Webhook de difusión de artículos
-│   │   ├── auth/                        # Callbacks OAuth de Supabase
-│   │   ├── [lang]/                      # Rutas localizadas (gl/es)
-│   │   │   ├── layout.tsx               # Layout raíz con navbar persistente
-│   │   │   ├── loading.tsx              # Overlay de pantalla completa para cargas
-│   │   │   ├── page.tsx                 # Portada de la revista
-│   │   │   ├── articulo/[slug]/         # Lector público con soporte KaTeX e índice
-│   │   │   ├── articulos/               # Archivo y explorador con filtros
-│   │   │   ├── asociacion/              # Portal institucional y colecciones
-│   │   │   ├── autor/[slug]/            # Ficha pública de autores
-│   │   │   ├── contacto/                # Página de contacto institucional
-│   │   │   ├── escritorio/              # Panel de redacción y editor
-│   │   │   ├── noticias/                # Canal de comunicados y novedades
-│   │   │   └── login/                   # Autenticación de redactores
-│   ├── components/
-│   │   ├── escritorio/                  # ArticleEditor, TableControls, barras
-│   │   ├── features/                    # ArticleCard, CommentsSection, filtros
-│   │   ├── forms/                       # ContactForm, CommentForm, EditarArticuloForm
-│   │   ├── layout/                      # PublicNavBar, SiteFooter, wrappers
-│   │   ├── sections/                    # Bloques modulares de la portada
-│   │   └── ui/                          # SocialLinks, ThemeToggle, LanguageToggle
-│   ├── dictionaries/                    # Diccionarios de traducción (gl.json, es.json)
-│   ├── hooks/                           # useAuth, useLocale
-│   ├── lib/
-│   │   ├── constants.ts                 # Constantes globales de la app
-│   │   └── editor/                      # Extensiones TipTap, renderMath, generateIndex
-│   ├── utils/                           # Clientes de Supabase y funciones de sesión
-│   ├── proxy.ts                         # Edge Middleware (i18n + Auth + Rate Limiting)
-│   └── globals.css                      # Variables de diseño y tema oscuro
-├── .env.example                         # Plantilla de variables de entorno requeridas
-├── package.json                         # Dependencias y scripts
-└── tsconfig.json                        # Configuración estricta de TypeScript
+│   │   ├── [lang]/           # Páxinas localizadas (inicio, arquivo, lector, escritorio, autores, asociación)
+│   │   ├── api/              # Route Handlers (pdf, markdown, contact, translate, webhooks/newsletter, unsubscribe)
+│   │   └── auth/             # Callbacks OAuth (/callback) e verificación OTP (/confirm)
+│   ├── components/           # Compoñentes por dominio (escritorio, features, forms, layout, sections, ui)
+│   ├── dictionaries/         # Dicionarios canónicos gl.json e es.json
+│   └── lib/                  # DAL (db/), extensións e sanitizer (editor/), email/, pdf/, storage/, supabase/
+└── supabase/
+    ├── migrations/           # Migracións SQL incrementais ordenadas por timestamp
+    ├── seed.sql              # Datos de proba e contas iniciais para desenvolvemento local
+    └── tests/                # Suite pgTAP de base de datos e newsletter_dispatch
 ```
 
 ---
 
-## Módulos y Características Clave
+<a id="posta-en-marcha-local"></a>
 
-### 1. Navegación Persistente y Transiciones Fluidas
-- **Header Global**: `PublicNavBar` reside en el layout raíz, garantizando que el encabezado nunca desaparezca durante la navegación.
-- **Control de Visibilidad**: `HeaderVisibilityWrapper` y `FooterVisibilityWrapper` ocultan dinámicamente la navegación pública en el panel de redacción (`/escritorio`) o en login.
-- **Overlay de Carga**: `loading.tsx` implementa un overlay de pantalla completa (`z-40`) con el isotipo editorial animado, ocultando el footer durante la carga para evitar saltos de página.
-- **Redes Sociales Unificadas**: `SocialLinks.tsx` centraliza los enlaces a LinkedIn, Instagram, X y contacto por correo.
-
-### 2. Secciones Principales
-- **Portada (`/`)**: Destacado principal, artículos fijados, columnistas, temáticas y manifiesto.
-- **Artículos (`/articulos`)**: Archivo con filtrado interactivo por etiquetas y tipos.
-- **Noticias (`/noticias`)**: Canal dedicado a comunicados y actualidad editorial.
-- **Contacto (`/contacto`)**: Formulario con validación en cliente y servidor conectado a Resend.
-- **Asociación (`/asociacion`)**: Colecciones editoriales (poesía, ensayo, narrativa) y estatutos legales.
-
----
-
-## Editor de Contenidos (TipTap Suite)
-
-El panel privado (`/escritorio/nuevo` y `/escritorio/editar/[slug]`) cuenta con un editor WYSIWYG de nivel profesional diseñado para publicaciones académicas y de ensayo:
-
-1. **Fórmulas Matemáticas y Científicas**:
-   - Soporte para sintaxis **LaTeX** en línea y en bloque mediante `@tiptap/extension-mathematics` y `katex`.
-   - Renderizado seguro en el visor público mediante `renderMathInHtml.ts`.
-2. **Tablas Dinámicas**:
-   - Creación y edición de tablas con cabeceras, filas/columnas dinámicas y colores de fondo personalizados con `TableControls.tsx`.
-3. **Índice Automático de Artículos (Table of Contents)**:
-   - Generación automática de índices jerárquicos a partir de los encabezados `H1`, `H2` y `H3` del documento (`generateIndex.ts`).
-   - Inyección automática de identificadores de anclaje (`renderHeadingAnchors.ts`) para navegación directa por secciones.
-4. **Imágenes Semánticas**:
-   - Extensión `FigureExtension` para fotografías con pie de autor y leyenda centrada.
-5. **Traducción Asistida por IA**:
-   - Integración con Google Gemini para traducir borradores completos entre gallego y castellano en un clic.
-
----
-
-## Seguridad y Rendimiento
-
-- **Row Level Security (RLS)**: Ninguna mutación a la base de datos se realiza sin comprobar la identidad y permisos del usuario en Supabase (`usuario`, `escritor`, `admin`, `invitado`).
-- **Prevención de Ataques XSS**: Todo el contenido HTML proveniente del editor o de comentarios de lectores se procesa con una lista blanca estricta en `sanitize-html`.
-- **Doble Capa de Rate Limiting**: Upstash Redis en Edge limita tanto peticiones a rutas API como mutaciones HTTP masivas.
-- **Verificación Criptográfica de Webhooks**: La recepción del webhook de Supabase utiliza `crypto.timingSafeEqual` para validar la firma.
-
----
-
-## Desarrollo Local
+<p align="center">
+  <img src="assets/readme/section-quickstart.svg" alt="03 — Posta en marcha local, base de datos Supabase CLI e scripts dispoñibles" width="100%" />
+</p>
 
 ### Requisitos Previos
-- Node.js 20+
-- npm 10+
-- Cuenta de Supabase, Upstash Redis y Resend configuradas.
 
-### Instalación
+- **Node.js 20+** e **npm**
+- **Docker** (requirido polo stack local de Supabase CLI e para executar CI local con `act`)
+- Claves dos servizos externos segundo as funcionalidades que precises probar
 
-```bash
-# 1. Clonar el repositorio
-git clone https://github.com/cernapensamento/cernapensamento-webpage.git
-cd cernapensamento-webpage
+### Instalación e Stack Local
 
-# 2. Instalar dependencias
-npm install
+1. **Clonar e instalar dependencias:**
+   ```bash
+   git clone https://github.com/cernapensamento/cernapensamento-webpage.git
+   cd cernapensamento-webpage
+   npm install
+   ```
 
-# 3. Configurar variables de entorno
-cp .env.example .env.local
-# Editar .env.local con las claves correspondientes
+2. **Arrincar o stack local de Supabase e cargar datos iniciais:**
+   ```bash
+   npm run db:start   # Inicia PostgreSQL, GoTrue Auth, Storage, Studio (54323) e Inbucket (54324)
+   npm run db:reset   # Aplica todas as supabase/migrations/ e carga supabase/seed.sql
+   ```
 
-# 4. Iniciar servidor de desarrollo
-npm run dev
-```
+3. **Configurar `.env.local`:**
+   Copia as claves locais que imprime `npm run db:status` xunto coas credenciais dos servizos integrados (consulta a táboa completa en [`docs/integrations.md`](docs/integrations.md)):
 
-La aplicación estará disponible en `http://localhost:3000`.
+   | Variable | Obrigatoria en local | Uso |
+   | :--- | :--- | :--- |
+   | `NEXT_PUBLIC_SUPABASE_URL` | Si | URL da API de Supabase (`http://127.0.0.1:54321` en local) |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Si | Clave pública gobernada por políticas RLS |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Para webhooks / RPC | Servizo privilexiado para dispatch de newsletter e admin RPCs |
+   | `NEXT_PUBLIC_SITE_URL` | Si | URL base canónica (`http://localhost:3000` en local) |
+   | `UPSTASH_REDIS_REST_URL` / `TOKEN` | Opcional en dev | Rate limiting no perímetro Edge (`src/proxy.ts`) |
+   | `GEMINI_API_KEY` | Para `/api/translate` | Tradución automática `gl` ↔ `es` no escritorio |
+   | `RESEND_API_KEY`, `CONTACT_*`, `WEBHOOK_SECRET`, `UNSUBSCRIBE_TOKEN_SECRET` | Para correo / webhooks | Formulario `/api/contact`, lotes newsletter e baixa HMAC RFC 8058 |
 
-### Scripts Disponibles
+4. **Iniciar o servidor de desenvolvemento:**
+   ```bash
+   npm run dev
+   ```
 
-| Comando | Descripción |
-|---|---|
-| `npm run dev` | Inicia el servidor de desarrollo con Turbopack |
-| `npm run build` | Compila la aplicación para producción |
-| `npm run start` | Inicia el servidor de producción |
-| `npm run lint` | Ejecuta el análisis estático de código con ESLint |
-| `npm run db:start` | Inicia la base de datos local aislada con Supabase CLI (Docker) |
-| `npm run db:stop` | Pausa los contenedores locales de Supabase |
-| `npm run db:reset` | Reinicia la base de datos local, aplica migraciones y recarga datos de prueba (`seed.sql`) |
-| `npm run db:status` | Muestra URLs y claves locales de Supabase (Studio, API, Inbucket) |
+### Endpoints Locais e Contas de Proba
 
----
+- **Aplicación web:** `http://localhost:3000`
+- **Supabase Studio:** `http://127.0.0.1:54323` · **Inbucket (bandexa de correo local):** `http://127.0.0.1:54324`
 
-## Mapas de Código (Codemaps)
+O script `npm run db:reset` crea contas preconfiguradas en `supabase/seed.sql` (contrasinal común: **`Password123!`**):
 
-Para profundizar en la arquitectura interna y detalles de implementación de cada módulo, consulta la documentación en `docs/CODEMAPS/`:
+| Rol | Contas Seed |
+| :--- | :--- |
+| **`founder`** | `diegoaraujo@cernapensamento.org`, `hectorgonzalez@cernapensamento.org`, `denisfernandez@cernapensamento.org`, `anxoperez@cernapensamento.org` |
+| **`admin`** | `admin@cernapensamento.org` |
+| **`guest`** | `lucia.vazquez@cerna.org` |
+| **`member`** | `martino.rodriguez@cerna.org` |
+| **`reader`** | `lector@cerna.org` |
 
-- [**Índice General**](docs/CODEMAPS/INDEX.md)
-- [**Frontend & UI**](docs/CODEMAPS/frontend.md)
-- [**Editor & Renderizado**](docs/CODEMAPS/editor.md)
-- [**Backend & API**](docs/CODEMAPS/backend.md)
-- [**Base de Datos & Storage**](docs/CODEMAPS/database.md)
-- [**Integraciones Externas**](docs/CODEMAPS/integrations.md)
+### Scripts Dispoñibles
 
----
-
-## Despliegue
-
-El proyecto se despliega automáticamente en **Vercel** conectado al repositorio de GitHub:
-- **Ramas de producción**: Cada commit a `main` desencadena un despliegue de producción con compilación optimizada en Turbopack.
-- **Preview Deployments**: Cada Pull Request genera un entorno de previsualización con URL única para pruebas.
-
----
-
-## Licencia
-
-Proyecto privado de **Cerna Pensamento**. Todos los derechos reservados.
+| Comando | Descrición |
+| :--- | :--- |
+| `npm run dev` | Arrinca Next.js en modo desenvolvemento |
+| `npm run build` / `npm start` | Compila para produción e executa o servidor |
+| `npm run lint` | Executa ESLint (`eslint 9`) sobre todo o proxecto |
+| `npm test` / `npm run test:watch` | Suite unitaria e de compoñentes con Vitest |
+| `npm run test:coverage` | Informe de cobertura `v8` con Vitest |
+| `npm run test:db` | Probas de integración RLS contra Supabase local (`RUN_DB_TESTS=1`) |
+| `npx supabase test db` | Probas pgTAP da base de datos e `newsletter_dispatches` |
+| `npm run test:e2e` | Probas End-to-End con Playwright |
+| `npm run db:start` / `stop` / `reset` / `status` | Xestión completa da pila Docker de Supabase local |
+| `npm run act:check` / `act:test` / `act:pr` | Validación local de workflows de GitHub Actions con `act` |

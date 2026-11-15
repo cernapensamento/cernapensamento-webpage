@@ -56,9 +56,11 @@ tsconfig.tsbuildinfo
 # Sentry Config File
 .env.sentry-build-plugin
 
-# all docs directory except CODEMAPS
-/docs/*
-!/docs/CODEMAPS/
+# Local Archify diagrams and non-markdown artifacts in docs/ (never pushed to repo)
+.archify/
+/docs/.archify/
+/docs/*.html
+/docs/*.json
 
 # temporal directory
 tmp/
