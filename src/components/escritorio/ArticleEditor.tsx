@@ -30,10 +30,10 @@ import TableOfContents, { type TableOfContentData } from '@tiptap/extension-tabl
 import ArticleTableOfContents, { type ArticleTableOfContentsItem } from '@/components/features/ArticleTableOfContents';
 import { useParams } from 'next/navigation';
 import { useToast, useConfirm, usePrompt } from '@/components/ui/FeedbackProvider';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { getDictionaryClient } from '@/dictionaries/client';
 import { createClient } from '@/lib/supabase/client';
 import { i18n } from '@/i18n-config';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import TagManager from '@/components/escritorio/TagManager';
 import type { LocalizedString } from '@/lib/db/types';
 import { DB_TABLES, USER_COLS, USER_ROLES, PUBLICATION_STATUSES, PUBLICATION_TYPES, EDITOR_ACTIONS, canPublishDirectly, type EditorAction } from '@/lib/db/schema';
@@ -129,13 +129,14 @@ interface ArticleEditorProps {
 
 export default function ArticleEditor({ mode = 'create', initialData, onSave, isPublishing , userRole = USER_ROLES.READER}: ArticleEditorProps) {
     const params = useParams();
-    const routeLang = (params?.lang as string) || 'gl';
-    const dict = routeLang === 'gl' ? glDict.articleEditor : esDict.articleEditor;
-    const storageDict = routeLang === 'gl' ? glDict.escritorio.storage : esDict.escritorio.storage;
+    const routeLang = (params?.lang as string) || i18n.defaultLocale;
+    const routeDict = getDictionaryClient(routeLang);
+    const dict = routeDict.articleEditor;
+    const storageDict = routeDict.escritorio.storage;
     const toast = useToast();
     const confirm = useConfirm();
     const prompt = usePrompt();
-    const docTypes = (routeLang === 'gl' ? glDict.documentTypes : esDict.documentTypes) as Record<string, string>;
+    const docTypes = routeDict.documentTypes as Record<string, string>;
 
     const [showPublishModal, setShowPublishModal] = useState(false);
     
@@ -229,13 +230,13 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     setAuthorProfile({
                         nombre: row.full_name || '',
                         avatar_url: row.avatar_url || undefined,
-                        bio: typeof row.bio === 'string' ? row.bio : (row.bio?.gl || row.bio?.es || '')
+                        bio: resolveLocalizedText(row.bio, routeLang),
                     });
                 }
             }
         };
         fetchProfile();
-    }, [supabase]);
+    }, [supabase, routeLang]);
 
     
         
@@ -436,7 +437,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             description: dict.captionPrompt.description,
             placeholder: dict.captionPrompt.placeholder,
             confirmLabel: dict.insert,
-            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+            cancelLabel: routeDict.common.cancel,
         });
 
         (editor.chain().focus() as unknown as { setFigure: (options: { src: string; caption?: string }) => { run: () => void } }).setFigure({
@@ -517,7 +518,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             description: dict.youtubePrompt.description,
             placeholder: dict.youtubePrompt.placeholder,
             confirmLabel: dict.insert,
-            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+            cancelLabel: routeDict.common.cancel,
             validate: (val) => {
                 if (!val.trim()) return dict.youtubePrompt.emptyUrl;
                 return null;
@@ -538,7 +539,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             placeholder: dict.latexPrompt.placeholder,
             multiline: true,
             confirmLabel: dict.insert,
-            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+            cancelLabel: routeDict.common.cancel,
             validate: (val) => {
                 if (!val.trim()) return dict.latexPrompt.emptyFormula;
                 return null;
@@ -613,7 +614,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
             title: dict.clearAllTitle,
             description: dict.clearAllConfirm,
             confirmLabel: dict.clear,
-            cancelLabel: routeLang === 'gl' ? glDict.common.cancel : esDict.common.cancel,
+            cancelLabel: routeDict.common.cancel,
             variant: 'danger',
         });
 
@@ -772,7 +773,8 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
     };
 
     
-    const previewArticleDict = activeLang === 'es' ? esDict.article : glDict.article;
+    const activeDict = getDictionaryClient(activeLang);
+    const previewArticleDict = activeDict.article;
     const activeHtml = stripIndex(activeLang === 'gl' ? contenidoGl : contenidoEs);
     const liveTocItems = showIndex ? buildLiveTocItems(tocData, activeHtml) : [];
     const previewTocItems = showIndex ? getHeadingsFromHtml(activeHtml) : [];
@@ -1183,7 +1185,7 @@ export default function ArticleEditor({ mode = 'create', initialData, onSave, is
                     <div className="w-full pb-24">
                         <header className="w-full max-w-3xl px-5 md:px-0 pt-20 pb-12 mx-auto text-center">
                             {(() => {
-                                const previewDocTypes = (activeLang === 'es' ? esDict.documentTypes : glDict.documentTypes) as Record<string, string>;
+                                const previewDocTypes = activeDict.documentTypes as Record<string, string>;
                                 const rawType = (tipo || 'artigo').toLowerCase();
                                 const typeLabel = previewDocTypes[rawType] || (rawType === 'news' ? (activeLang === 'gl' ? 'Nova' : 'Noticia') : (tipo || 'Artigo'));
                                 return (
