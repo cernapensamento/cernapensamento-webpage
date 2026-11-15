@@ -3,6 +3,7 @@ import Image from 'next/image';
 import type { LocalizedString } from '@/lib/db/types';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -64,17 +65,17 @@ export default function ArticleCard({
 
   // Resolve localized title
   const titulo = articulo.title
-    ? (articulo.title[lang] || articulo.title.gl || articulo.title.es || '')
+    ? resolveLocalizedText(articulo.title, lang)
     : (lang === 'es' ? articulo.titulo_es : articulo.titulo_gl) || articulo.titulo_gl || articulo.titulo_es || '';
 
   // Resolve localized subtitle
   const subtitulo = articulo.subtitle
-    ? (articulo.subtitle[lang] || articulo.subtitle.gl || articulo.subtitle.es || null)
+    ? resolveLocalizedText(articulo.subtitle, lang) || null
     : (lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl) || articulo.subtitulo_gl || articulo.subtitulo_es || null;
 
   // Resolve fallback content excerpt if subtitle is absent
   const rawContent = articulo.content
-    ? (articulo.content[lang] || articulo.content.gl || articulo.content.es || '')
+    ? resolveLocalizedText(articulo.content, lang)
     : (lang === 'es' ? articulo.contenido_es : articulo.contenido_gl) || '';
 
   const excerpt = subtitulo || (rawContent ? rawContent.replace(/<[^>]*>/g, '').substring(0, 160).trim() + '...' : '');

@@ -7,6 +7,7 @@ import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { ArticleCardData } from '@/components/features/ArticleCard';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -27,7 +28,7 @@ interface RecentArticlesMosaicGridProps {
 
 function getLocalizedTitle(item: ArticleCardData, lang: string): string {
   if (typeof item.title === 'object' && item.title !== null) {
-    return item.title[lang as 'gl' | 'es'] || item.title.gl || item.title.es || '';
+    return resolveLocalizedText(item.title, lang);
   }
   if (lang === 'es') return item.titulo_es || item.titulo_gl || '';
   return item.titulo_gl || item.titulo_es || '';
@@ -35,7 +36,7 @@ function getLocalizedTitle(item: ArticleCardData, lang: string): string {
 
 function getLocalizedSubtitle(item: ArticleCardData, lang: string): string {
   if (typeof item.subtitle === 'object' && item.subtitle !== null) {
-    return item.subtitle[lang as 'gl' | 'es'] || item.subtitle.gl || item.subtitle.es || '';
+    return resolveLocalizedText(item.subtitle, lang);
   }
   if (lang === 'es') return item.subtitulo_es || item.subtitulo_gl || '';
   return item.subtitulo_gl || item.subtitulo_es || '';

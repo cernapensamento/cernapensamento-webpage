@@ -8,6 +8,7 @@ import type { Columnist } from '@/lib/columnists';
 import type { LocalizedString, TagItem } from '@/lib/db/types';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 
 export interface ArticleData {
   id: string | number;
@@ -444,10 +445,10 @@ export default function AuthorProfileView({
 
                 {(() => {
                   const titulo = featuredArticle.title
-                    ? (featuredArticle.title[lang] || featuredArticle.title.gl || featuredArticle.title.es || '')
+                    ? resolveLocalizedText(featuredArticle.title, lang)
                     : (lang === 'es' ? featuredArticle.titulo_es : featuredArticle.titulo_gl) || featuredArticle.titulo_gl || featuredArticle.titulo_es || '';
                   const subtitulo = featuredArticle.subtitle
-                    ? (featuredArticle.subtitle[lang] || featuredArticle.subtitle.gl || featuredArticle.subtitle.es || null)
+                    ? resolveLocalizedText(featuredArticle.subtitle, lang) || null
                     : (lang === 'es' ? featuredArticle.subtitulo_es : featuredArticle.subtitulo_gl) || featuredArticle.subtitulo_gl || featuredArticle.subtitulo_es || null;
                   const dateStr = featuredArticle.published_at || featuredArticle.publicado_en || featuredArticle.created_at || featuredArticle.creado_en || featuredArticle.updated_at || featuredArticle.actualizado_en;
                   const imageUrl = featuredArticle.cover_image_url || featuredArticle.imagen_url;
@@ -554,10 +555,10 @@ export default function AuthorProfileView({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {gridArticles.map((articulo, idx) => {
                     const titulo = articulo.title
-                      ? (articulo.title[lang] || articulo.title.gl || articulo.title.es || '')
+                      ? resolveLocalizedText(articulo.title, lang)
                       : (lang === 'es' ? articulo.titulo_es : articulo.titulo_gl) || articulo.titulo_gl || articulo.titulo_es || '';
                     const subtitulo = articulo.subtitle
-                      ? (articulo.subtitle[lang] || articulo.subtitle.gl || articulo.subtitle.es || null)
+                      ? resolveLocalizedText(articulo.subtitle, lang) || null
                       : (lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl) || articulo.subtitulo_gl || articulo.subtitulo_es || null;
                     const dateStr = articulo.published_at || articulo.publicado_en || articulo.created_at || articulo.creado_en || articulo.updated_at || articulo.actualizado_en;
                     const imageUrl = articulo.cover_image_url || articulo.imagen_url;

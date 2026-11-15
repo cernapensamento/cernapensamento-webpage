@@ -9,8 +9,8 @@ import PasswordForm from '@/components/forms/PasswordForm';
 import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 import { handleSignOut } from '@/actions/auth';
 import { clearClientDrafts } from '@/lib/editor/draftStorage';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { getDictionaryClient } from '@/dictionaries/client';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import { DB_TABLES, USER_COLS, USER_ROLES } from '@/lib/db/schema';
 import type { UserRow } from '@/lib/db/types';
 import { uploadStorageImage, removeStorageImages, STORAGE_CATEGORIES } from '@/lib/storage';
@@ -25,13 +25,11 @@ export interface ProfileDashboardProps {
 export default function ProfileDashboard({ profile, user }: ProfileDashboardProps) {
   const params = useParams();
   const lang = (params?.lang as string) || 'gl';
-  const dict = lang === 'es' ? esDict : glDict;
+  const dict = getDictionaryClient(lang);
   const dashDict = dict.dashboard;
   const toast = useToast();
 
-  const currentBio = typeof profile?.bio === 'object' && profile?.bio !== null
-    ? (profile.bio[lang as 'gl' | 'es'] || profile.bio.gl || profile.bio.es || '')
-    : (typeof profile?.bio === 'string' ? profile.bio : '');
+  const currentBio = resolveLocalizedText(profile?.bio, lang);
 
   const [nombre, setNombre] = useState(profile?.full_name || profile?.nombre || '');
   const [bio, setBio] = useState(currentBio);
