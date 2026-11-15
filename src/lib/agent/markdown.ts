@@ -1,8 +1,40 @@
 import Negotiator from 'negotiator';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isHomepagePath, isKnownPath } from '@/lib/routes';
+import { i18n, resolveLocale } from '@/i18n-config';
 
 const SITE_URL = 'https://cernapensamento.org';
+
+/**
+ * Strips HTML tags and preserves basic formatting in plain Markdown.
+ */
+export function htmlToMarkdown(html: string): string {
+  if (!html) return '';
+
+  return html
+    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n\n# $1\n\n')
+    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n\n## $1\n\n')
+    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '\n\n### $1\n\n')
+    .replace(/<h4[^>]*>(.*?)<\/h4>/gi, '\n\n#### $1\n\n')
+    .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '\n\n> $1\n\n')
+    .replace(/<li[^>]*>(.*?)<\/li>/gi, '\n- $1')
+    .replace(/<p[^>]*>(.*?)<\/p>/gi, '\n\n$1\n\n')
+    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+    .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+    .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+    .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+    .replace(/<hr\s*\/?>/gi, '\n\n---\n\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<a\b[^>]*href=(?:"([^"]*)"|'([^']*)')[^>]*>([\s\S]*?)<\/a>|<[^>]+>/gi,
+      (_match, doubleQuotedUrl: string | undefined, singleQuotedUrl: string | undefined, text: string) => {
+        const url = doubleQuotedUrl ?? singleQuotedUrl;
+        if (url === undefined) return '';
+        const destination = url.replace(/[<>\\\x00-\x20]/g, (character) => encodeURIComponent(character));
+        return `[${text.replace(/<[^>]+>/g, '')}](<${destination}>)`;
+      })
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 /**
  * Checks if the client explicitly prefers text/markdown over text/html
@@ -28,8 +60,9 @@ export function prefersMarkdown(acceptHeader: string | null | undefined): boolea
  * Generates an agent-friendly Markdown error body for HTTP 404 responses.
  * Strictly satisfies the requirement of >= 20 characters and links to sitemap and llms.txt.
  */
-export function get404Markdown(locale: string = 'gl'): string {
-  const isGalician = locale === 'gl';
+export function get404Markdown(locale: string = i18n.defaultLocale): string {
+  const resolvedLocale = resolveLocale(locale);
+  const isGalician = resolvedLocale === 'gl';
 
   if (isGalician) {
     return `# 404 - Páxina non atopada (Not Found)
@@ -68,9 +101,9 @@ Para consultas editoriales o soporte técnico: contacto@cernapensamento.org
  * Generates a clean, structured Markdown representation of the Cerna Pensamento homepage
  * for AI agents requesting Accept: text/markdown.
  */
-export function getHomepageMarkdown(locale: string = 'gl'): string {
-  const isGalician = locale === 'gl';
-  const langPrefix = isGalician ? 'gl' : 'es';
+export function getHomepageMarkdown(locale: string = i18n.defaultLocale): string {
+  const langPrefix = resolveLocale(locale);
+  const isGalician = langPrefix === 'gl';
 
   if (isGalician) {
     return `# Cerna Pensamento · Revista Galega de Ensaio, Filosofía e Creación Literaria
@@ -168,8 +201,12 @@ export function handleMarkdownNegotiation(
     return new NextResponse(getHomepageMarkdown(currentLocale), { status: 200, headers: mdHeaders });
   }
 
+  const localePattern = i18n.locales
+    .map((l) => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|');
+
   // 3. Article representation
-  const articleMatch = pathname.match(/^(?:\/(?:gl|es))?\/articulo\/([^/]+)$/);
+  const articleMatch = pathname.match(new RegExp(`^(?:\\/(?:${localePattern}))?\\/articulo\\/([^/]+)$`));
   if (articleMatch) {
     const url = request.nextUrl.clone();
     url.pathname = '/api/markdown';
@@ -180,7 +217,7 @@ export function handleMarkdownNegotiation(
   }
 
   // 4. Legal / About representation
-  const legalMatch = pathname.match(/^(?:\/(?:gl|es))?\/(privacidad|privacy|asociacion\/estatutos)$/);
+  const legalMatch = pathname.match(new RegExp(`^(?:\\/(?:${localePattern}))?\\/(privacidad|privacy|asociacion\\/estatutos)$`));
   if (legalMatch) {
     const slug = legalMatch[1].includes('estatutos') ? 'estatutos' : 'privacidad';
     const url = request.nextUrl.clone();

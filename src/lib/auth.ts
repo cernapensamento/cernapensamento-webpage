@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
-import { DB_TABLES, USER_COLS } from '@/lib/db/schema';
-import type { UserRow, UserRole } from '@/lib/db/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { USER_ROLES, canAccessWriterDesk } from '@/lib/db/schema';
+import type { UserRole } from '@/lib/db/types';
+import { getUserById } from '@/lib/db/queries/users';
 import { formatDbError } from '@/lib/db/formatDbError';
 
 /**
@@ -24,19 +26,9 @@ export async function getAuthenticatedUser() {
     // 1. Check if role is embedded directly in JWT app_metadata (from custom_access_token_hook)
     const jwtRole = user.app_metadata?.user_role as UserRole | undefined;
 
-    // 2. Fetch user profile from public.users
-    const { data: profile, error: profileError } = await supabase
-      .from(DB_TABLES.USERS)
-      .select('*')
-      .eq(USER_COLS.ID, user.id)
-      .single();
-
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.warn('[Auth] Failed to fetch user profile:', formatDbError(profileError));
-    }
-
-    const userProfile = (profile as UserRow | null) || null;
-    const role: UserRole = userProfile?.role || jwtRole || 'reader';
+    // 2. Fetch user profile via DAL
+    const userProfile = await getUserById(user.id, supabase);
+    const role: UserRole = userProfile?.role || jwtRole || USER_ROLES.READER;
 
     // Support backwards-compatibility property .rol on profile if accessed
     const compatProfile = userProfile ? {
@@ -49,4 +41,28 @@ export async function getAuthenticatedUser() {
     console.warn('[Auth] Unexpected error resolving authenticated user:', formatDbError(err));
     return { user: null, profile: null, role: null };
   }
+}
+
+/**
+ * Resolves the public request origin behind reverse proxies (e.g., Cloudflare Tunnel).
+ */
+export function resolveRequestOrigin(request: Request): string {
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  return forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : new URL(request.url).origin;
+}
+
+/**
+ * Resolves the destination path inside the desk after OAuth/OTP authentication.
+ */
+export async function resolvePostAuthRedirectPath(
+  user: { id: string; app_metadata?: Record<string, unknown> },
+  supabase: SupabaseClient
+): Promise<string> {
+  const jwtRole = user.app_metadata?.user_role as string | undefined;
+  const profile = await getUserById(user.id, supabase);
+  const role = profile?.role || jwtRole || USER_ROLES.READER;
+  return canAccessWriterDesk(role) ? '/escritorio' : '/escritorio/perfil';
 }
