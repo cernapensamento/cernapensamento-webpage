@@ -42,6 +42,7 @@ export interface PublicationRow {
   type: PublicationType;
   original_language: 'gl' | 'es';
   is_pinned: boolean;
+  show_index: boolean;
   author_id: string;
   title: LocalizedString;
   subtitle: LocalizedString | null;
@@ -135,6 +136,7 @@ export interface PublicationDetail {
   status: PublicationStatus;
   original_language: 'gl' | 'es';
   is_pinned: boolean;
+  show_index: boolean;
   created_at: string;
   updated_at: string;
   published_at?: string | null;

@@ -23,6 +23,7 @@ export const PUBLICATION_COLS = {
   TYPE: 'type',
   ORIGINAL_LANGUAGE: 'original_language',
   IS_PINNED: 'is_pinned',
+  SHOW_INDEX: 'show_index',
   AUTHOR_ID: 'author_id',
   TITLE: 'title',
   SUBTITLE: 'subtitle',
