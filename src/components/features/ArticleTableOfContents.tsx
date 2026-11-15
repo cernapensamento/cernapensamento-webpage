@@ -1,5 +1,5 @@
 import React from 'react';
-import type { IndexItem } from '@/lib/editor/ArticleIndexExtension';
+import type { IndexItem } from '@/lib/editor/generateIndex';
 
 export interface ArticleTableOfContentsItem extends IndexItem {
   id?: string;
