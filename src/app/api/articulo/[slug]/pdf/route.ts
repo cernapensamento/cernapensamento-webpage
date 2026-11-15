@@ -1,10 +1,11 @@
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
 import { PUBLICATION_STATUSES } from '@/lib/db/schema';
-import { getDictionary } from '@/dictionaries';
+import { getDictionary, type Dictionary } from '@/dictionaries';
+import { getDictionaryClient } from '@/dictionaries/client';
 import { buildArticlePdf } from '@/lib/pdf/articlePdf';
 import { formatArticleDate } from '@/lib/date';
 import { SITE_NAME } from '@/lib/constants';
-import type { Locale } from '@/i18n-config';
+import { i18n, resolveLocale, type Locale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 
 export const runtime = 'nodejs';
@@ -26,22 +27,27 @@ interface RouteContext {
  * attachment and shared-cache headers. Parameter resolution errors propagate.
  */
 export async function GET(request: Request, { params }: RouteContext) {
-  let lang: Locale = 'gl';
+  let lang: Locale = i18n.defaultLocale;
+  let dict: Dictionary | undefined;
   try {
     const { slug } = await params;
     const { searchParams } = new URL(request.url);
-    lang = searchParams.get('lang') === 'es' ? 'es' : 'gl';
+    lang = resolveLocale(searchParams.get('lang'));
 
-    const [publication, dict] = await Promise.all([
+    const [publication, loadedDict] = await Promise.all([
       getPublicationBySlug(slug, { lang }),
       getDictionary(lang),
     ]);
+    dict = loadedDict;
 
     if (!publication || publication.status !== PUBLICATION_STATUSES.PUBLISHED) {
-      return new Response(lang === 'es' ? 'Artículo no encontrado' : 'Artigo non atopado', {
-        status: 404,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
+      return new Response(
+        dict?.article?.notFoundTitle || getDictionaryClient(lang).article.notFoundTitle,
+        {
+          status: 404,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        }
+      );
     }
 
     const title = resolveLocalizedText(publication.title, lang);
@@ -84,7 +90,8 @@ export async function GET(request: Request, { params }: RouteContext) {
     });
   } catch (error) {
     console.error('Error generating article PDF:', error);
-    const errorMsg = lang === 'es' ? 'No fue posible generar el PDF' : 'Non foi posible xerar o PDF';
+    const errorMsg =
+      dict?.article?.pdfGenerationError || getDictionaryClient(lang).article.pdfGenerationError;
     return new Response(errorMsg, {
       status: 500,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },

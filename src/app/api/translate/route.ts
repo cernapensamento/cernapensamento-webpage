@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { USER_ROLES } from '@/lib/db/schema';
+import { canAccessWriterDesk } from '@/lib/db/schema';
 import { i18n } from '@/i18n-config';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -9,14 +9,6 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const MAX_TITLE_LENGTH = 500;
 const MAX_SUBTITLE_LENGTH = 1000;
 const MAX_HTML_LENGTH = 150000;
-const ALLOWED_WRITER_ROLES = [
-  USER_ROLES.GUEST,
-  USER_ROLES.MEMBER,
-  USER_ROLES.FOUNDER,
-  USER_ROLES.ADMIN,
-  'escritor',
-  'admin',
-];
 
 const extractSection = (text: string, sectionMarker: string, nextMarker?: string) => {
   const startIndex = text.indexOf(sectionMarker);
@@ -32,7 +24,7 @@ export async function POST(req: Request) {
     if (!user) {
       return NextResponse.json({ error: 'Autenticación requerida' }, { status: 401 });
     }
-    if (!role || !ALLOWED_WRITER_ROLES.includes(role)) {
+    if (!canAccessWriterDesk(role)) {
       return NextResponse.json({ error: 'Permisos insuficientes para traducir' }, { status: 403 });
     }
 
