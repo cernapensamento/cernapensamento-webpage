@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="assets/readme/hero.svg" alt="Cerna Pensamento — Revista dixital de pensamento, filosofía política, economía austríaca e creación literaria construida con Next.js 16, React 19, Supabase, TipTap 3 e Tailwind CSS v4" width="100%" />
+  <img src="assets/readme/hero.png" alt="Cerna Pensamento — Pensamento libre, ideas e debate. Revista cultural dixital bilingüe (GL / ES) con Next.js 16, Supabase + RLS e TipTap 3" width="100%" />
 </p>
 
 <p align="center">
   <a href="https://cernapensamento.org"><strong>cernapensamento.org</strong></a> ·
-  <a href="#arquitectura-e-stack">Arquitectura</a> ·
+  <a href="#arquitectura-e-fluxo">Arquitectura</a> ·
   <a href="#documentacion-tecnica">Documentación</a> ·
   <a href="#posta-en-marcha-local">Posta en Marcha</a> ·
   <a href="AGENTS.md">AGENTS.md</a>
@@ -20,48 +20,24 @@
   <img src="assets/readme/section-capabilities.svg" alt="01 — Capacidades e fluxo de publicación editorial" width="100%" />
 </p>
 
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <h3>Lectura Editorial &amp; Accesibilidade</h3>
-      <p>
-        Tipografía clásica (<code>Libre Caslon Text</code> e <code>Source Sans 3</code>), modo escuro con tokens semánticos (<code>parchment</code>, <code>charcoal</code>, <code>gold</code>), índice automático sincronizado co scroll, renderizado matemático <strong>KaTeX</strong> e descarga en <strong>PDF</strong> con caché CDN.
-      </p>
-    </td>
-    <td width="50%" valign="top">
-      <h3>Escritorio TipTap 3 &amp; Sanitización</h3>
-      <p>
-        Editor WYSIWYG para ensaios e artigos con fórmulas LaTeX, táboas con controis contextuais, figuras con pé de foto comprimidas no navegador a <strong>WebP</strong> e dobre canalización estrita mediante <code>sanitizeArticleHtml</code>.
-      </p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <h3>Bilingüismo Integral &amp; Tradución IA</h3>
-      <p>
-        Paridade completa de dicionarios (<code>src/dictionaries/gl.json</code> e <code>es.json</code>), campos JSONB multilingües na base de datos e tradución directa no escritorio mediante <strong>Google Gemini (<code>gemini-3.5-flash-lite</code>)</strong>.
-      </p>
-    </td>
-    <td width="50%" valign="top">
-      <h3>Workflow por Roles &amp; Newsletter</h3>
-      <p>
-        Control de acceso por roles en JWT e RLS (<code>reader</code>, <code>guest</code>, <code>member</code>, <code>founder</code>, <code>admin</code>), cotas de borrador, revisión editorial no cliente (sen romper o ISR) e envío automatizado por lotes con <strong>pg_net</strong>, <strong>pg_cron</strong> e <strong>Resend</strong>.
-      </p>
-    </td>
-  </tr>
-</table>
+| Piar Editorial | Implementación Técnica |
+| :--- | :--- |
+| **Lectura Editorial & Accesibilidade** | Tipografía clásica (`Libre Caslon Text` e `Source Sans 3`), modo escuro con tokens semánticos (`parchment`, `charcoal`, `gold`), índice automático sincronizado co scroll, renderizado matemático **KaTeX** e descarga en **PDF** con caché CDN. |
+| **Escritorio TipTap 3 & Sanitización** | Editor WYSIWYG para ensaios e artigos con fórmulas LaTeX, táboas con controis contextuais, figuras con pé de foto comprimidas no navegador a **WebP** e dobre canalización estrita mediante `sanitizeArticleHtml`. |
+| **Bilingüismo Integral & Tradución IA** | Paridade completa de dicionarios (`src/dictionaries/gl.json` e `es.json`), campos JSONB multilingües na base de datos e tradución directa no escritorio mediante **Google Gemini (`gemini-3.5-flash-lite`)**. |
+| **Workflow por Roles & Newsletter** | Control de acceso por roles en JWT e RLS (`reader`, `guest`, `member`, `founder`, `admin`), cotas de borrador, revisión editorial no cliente (sen romper o ISR) e envío automatizado por lotes con **`pg_net`**, **`pg_cron`** e **Resend**. |
 
-<a id="arquitectura-e-stack"></a>
+---
 
 <p align="center">
   <img src="assets/readme/section-stack.svg" alt="02 — Arquitectura do sistema, stack tecnolóxico e referencias técnicas" width="100%" />
 </p>
 
+## Arquitectura e Fluxo
+
 <p align="center">
   <img src="assets/readme/architecture.svg" alt="Diagrama de capas de Cerna Pensamento: Lector público e Editor TipTap 3 conectados ao Edge Proxy con Upstash Redis, Server Actions e Route Handlers de Next.js 16, e plataforma Supabase (Auth, PostgreSQL + RLS + pg_cron, Storage WebP)" width="100%" />
 </p>
-
-### Cómo funciona o fluxo principal
 
 1. **Perímetro Edge (`src/proxy.ts`):** Detecta e forza o prefixo de idioma (`gl` / `es`), normaliza aliases (`/about`, `/privacy`, `/contact`), serve negociación `Accept: text/markdown` cara a `/api/markdown`, exclúe `/llms.txt` e `/agent-instructions.md` de redireccións e aplica rate limiting deslizante en **Upstash Redis** (`10 req/min` en `/api/*` agás webhooks; `30 req/min` en mutacións).
 2. **Lectura pública sen cookies (`src/app/[lang]/articulo/[slug]/page.tsx`):** Mantén `revalidate = 60` (ISR) ao non ler `cookies()` no servidor e executa a cadea estrita `stripIndex` → `renderMathInHtml` → `renderHeadingAnchors` → `sanitizeArticleHtml`.
@@ -79,9 +55,7 @@
 | **IA, Correo & Observ.** | `@google/genai`, `resend`, `@react-email/components`, `@sentry/nextjs` | `gemini-3.5-flash-lite`, envío transaccional/newsletter e telemetría |
 | **Testing & CI** | Vitest `3.2`, Playwright `1.61`, `act` | Tests unitarios, compoñentes, RLS en Supabase local e E2E |
 
-<a id="documentacion-tecnica"></a>
-
-### Documentación Técnica (`docs/`)
+## Documentacion Tecnica
 
 Toda a documentación técnica colga directamente de [`docs/`](docs/INDEX.md), mantendo protocolos operativos e fluxos de Git/entrega centralizados en [`AGENTS.md`](AGENTS.md):
 
@@ -102,7 +76,7 @@ Toda a documentación técnica colga directamente de [`docs/`](docs/INDEX.md), m
 ```text
 cerna/
 ├── AGENTS.md                 # Protocolo de axentes, regras críticas, git worktrees e release checklist
-├── assets/readme/            # Recursos visuais SVG puros para este README
+├── assets/readme/            # Recursos visuais (hero.png + source/, SVG puros) para este README
 ├── database/full_schema.sql  # Volcado canónico do esquema PostgreSQL e políticas RLS
 ├── docs/                     # Documentación técnica (INDEX, frontend, editor, backend, database, integrations)
 ├── public/                   # llms.txt, agent-instructions.md, logotipos e imaxes estáticas
@@ -124,11 +98,11 @@ cerna/
 
 ---
 
-<a id="posta-en-marcha-local"></a>
-
 <p align="center">
   <img src="assets/readme/section-quickstart.svg" alt="03 — Posta en marcha local, base de datos Supabase CLI e scripts dispoñibles" width="100%" />
 </p>
+
+## Posta en Marcha Local
 
 ### Requisitos Previos
 
