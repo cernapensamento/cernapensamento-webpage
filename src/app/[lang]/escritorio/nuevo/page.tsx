@@ -68,6 +68,7 @@ export default function NuevoArticulo() {
         tags: data.tags || data.tematicas || [],
         type: data.type || data.tipo,
         original_language: data.original_language || data.idioma_original || 'gl',
+        show_index: Boolean(data.show_index),
         action,
         lang,
       });

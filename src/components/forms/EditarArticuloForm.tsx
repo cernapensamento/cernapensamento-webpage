@@ -52,6 +52,7 @@ export default function EditarArticuloForm({
     status: pub.status,
     type: pub.type,
     original_language: pub.original_language,
+    show_index: pub.show_index ?? false,
     published_at: pub.published_at,
   };
 
@@ -79,6 +80,7 @@ export default function EditarArticuloForm({
         tags: data.tags || data.tematicas || [],
         type: data.type || data.tipo,
         original_language: data.original_language || data.idioma_original || 'gl',
+        show_index: Boolean(data.show_index),
         action,
         lang,
       });

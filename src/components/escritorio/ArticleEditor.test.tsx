@@ -250,4 +250,88 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
       expect(calledPaths).not.toContain('publications/covers/u1/final-cover.webp');
     });
   });
+
+  it('toggles declarative showIndex for live writing preview, publication preview modal, and save payload', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'art-toc-1',
+          title: { gl: 'Ensaio con Índice', es: 'Ensayo con Índice' },
+          content: {
+            gl: '<h1>Primeira Parte</h1><p>Texto inicial.</p><h2>Subparte</h2><p>Máis texto.</p>',
+            es: '<h1>Primera Parte</h1><p>Texto inicial.</p>',
+          },
+          show_index: false,
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    const tocSwitch = screen.getByRole('switch', { name: /índice automático/i });
+    expect(tocSwitch).toHaveAttribute('aria-checked', 'false');
+    expect(screen.queryByRole('navigation', { name: /índice do artigo/i })).not.toBeInTheDocument();
+
+    // Turn index on and confirm live writing preview appears above the editor body
+    fireEvent.click(tocSwitch);
+    expect(tocSwitch).toHaveAttribute('aria-checked', 'true');
+    const liveNav = await screen.findByRole('navigation', { name: /índice do artigo/i });
+    expect(liveNav).toHaveTextContent('Primeira Parte');
+    expect(liveNav).toHaveTextContent('Subparte');
+
+    // Open preview modal and confirm coupled index also appears in modal preview
+    const previewButton = screen.getByRole('button', { name: /vista previa/i });
+    fireEvent.click(previewButton);
+    const navLandmarks = await screen.findAllByRole('navigation', { name: /índice do artigo/i });
+    expect(navLandmarks.length).toBeGreaterThanOrEqual(2);
+
+    // Close preview modal and save draft
+    fireEvent.click(screen.getByRole('button', { name: /volver ao editor/i }));
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          show_index: true,
+        }),
+        'draft'
+      );
+    });
+    const savedPayload = onSave.mock.calls[0][0];
+    expect(savedPayload.content?.gl).not.toContain('data-type="article-index"');
+  });
+
+  it('infers showIndex=true and strips legacy embedded <nav data-type="article-index"> on load and save', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'art-legacy-1',
+          title: { gl: 'Artigo Legado', es: 'Artículo Legado' },
+          content: {
+            gl: '<nav data-type="article-index"><div>Old</div></nav><h1>Sección Legada</h1><p>Contido.</p>',
+            es: '',
+          },
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    const tocSwitch = screen.getByRole('switch', { name: /índice automático/i });
+    expect(tocSwitch).toHaveAttribute('aria-checked', 'true');
+    const liveNav = await screen.findByRole('navigation', { name: /índice do artigo/i });
+    expect(liveNav).toHaveTextContent('Sección Legada');
+
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    const savedPayload = onSave.mock.calls[0][0];
+    expect(savedPayload.show_index).toBe(true);
+    expect(savedPayload.content?.gl).not.toContain('data-type="article-index"');
+  });
 });
