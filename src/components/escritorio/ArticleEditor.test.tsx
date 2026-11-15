@@ -32,7 +32,8 @@ vi.mock('@/components/ui/FeedbackProvider', () => ({
 }));
 
 describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
-  let removeStorageImagesSpy: ReturnType<typeof vi.spyOn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let removeStorageImagesSpy: any;
   let mockStorage: Record<string, string> = {};
 
   beforeEach(() => {

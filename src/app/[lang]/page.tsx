@@ -11,7 +11,7 @@ import FAQSection from '@/components/sections/FAQSection';
 import ContactSection from '@/components/sections/ContactSection';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getDictionary } from '@/dictionaries';
-import type { Locale } from '@/i18n-config';
+import { i18n, type Locale } from '@/i18n-config';
 import { getAllTagsWithTranslations } from '@/lib/db';
 
 export const revalidate = 60;
@@ -51,9 +51,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: {
       canonical: pageUrl,
       languages: {
-        gl: `${siteUrl}/gl`,
-        es: `${siteUrl}/es`,
-        'x-default': `${siteUrl}/gl`,
+        ...Object.fromEntries(i18n.locales.map((loc) => [loc, `${siteUrl}/${loc}`])),
+        'x-default': `${siteUrl}/${i18n.defaultLocale}`,
       },
     },
     openGraph: {

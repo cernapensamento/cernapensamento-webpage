@@ -161,7 +161,8 @@
     "loadMore": "Cargar máis publicacións",
     "loadingMore": "Cargando publicacións...",
     "unknownAuthor": "Autor Descoñecido",
-    "readArticle": "Ler artigo"
+    "readArticle": "Ler artigo",
+    "featuredCoverAlt": "Portada do artigo destacado"
   },
   "article": {
     "aboutAuthor": "Sobre o autor",
@@ -183,6 +184,9 @@
     "publishedArticles": "Artigos publicados",
     "emailLabel": "Correo",
     "instagramLabel": "Instagram",
+    "portraitOf": "Retrato de",
+    "sendEmailTo": "Enviar correo a",
+    "instagramProfileOf": "Perfil de Instagram de",
     "founderBadge": "Membro Fundador",
     "viewAllAuthors": "Ver todos os autores"
   },

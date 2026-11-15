@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS "public"."publications" (
     "published_at" timestamp with time zone,
     "show_index" boolean DEFAULT false NOT NULL,
     CONSTRAINT "publications_content_bilingual_check" CHECK ((("content" ? 'gl'::"text") AND ("content" ? 'es'::"text") AND ("length"(TRIM(BOTH FROM ("content" ->> 'gl'::"text"))) > 0) AND ("length"(TRIM(BOTH FROM ("content" ->> 'es'::"text"))) > 0))),
-    CONSTRAINT "publications_original_language_check" CHECK (("original_language" = ANY (ARRAY['gl'::"text", 'es'::"text"]))),
+    CONSTRAINT "publications_original_language_format_check" CHECK (("original_language" ~ '^[a-z]{2,5}(-[a-zA-Z0-9]{2,5})?$')),
     CONSTRAINT "publications_subtitle_bilingual_check" CHECK ((("subtitle" IS NULL) OR ("subtitle" = '{}'::"jsonb") OR (("subtitle" ? 'gl'::"text") AND ("subtitle" ? 'es'::"text")))),
     CONSTRAINT "publications_title_bilingual_check" CHECK ((("title" ? 'gl'::"text") AND ("title" ? 'es'::"text") AND ("length"(TRIM(BOTH FROM ("title" ->> 'gl'::"text"))) > 0) AND ("length"(TRIM(BOTH FROM ("title" ->> 'es'::"text"))) > 0)))
 );

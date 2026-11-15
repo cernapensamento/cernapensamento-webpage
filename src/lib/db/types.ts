@@ -6,14 +6,13 @@
 import type { UserRoleValue, PublicationStatusValue, PublicationTypeValue } from './schema';
 
 /**
- * Mandatory Bilingual Text
- * Both Galician ('gl') and Spanish ('es') are strictly required by editorial policy.
- * Can be extended with additional locales (e.g. 'en', 'pt') without schema changes.
+ * Localized Multilingual Text
+ * Supports default locales ('gl', 'es') and dynamically extends to any additional locale.
  */
 export type LocalizedString = {
-  gl: string;
-  es: string;
-  [key: string]: string;
+  gl?: string;
+  es?: string;
+  [key: string]: string | undefined;
 };
 
 export type UserRole = UserRoleValue;
@@ -34,13 +33,21 @@ export interface UserRow {
   role: UserRole;
 }
 
+export type AuthProfile = {
+  role: UserRole;
+  avatar_url: string | null;
+  full_name?: string | null;
+};
+
+export type ProfileRow = UserRow & { rol: UserRole };
+
 export interface PublicationRow {
   id: string;
   slug: string;
   cover_image_url: string | null;
   status: PublicationStatus;
   type: PublicationType;
-  original_language: 'gl' | 'es';
+  original_language: string;
   is_pinned: boolean;
   show_index: boolean;
   author_id: string;
@@ -134,7 +141,7 @@ export interface PublicationDetail {
   cover_image_url: string | null;
   type: PublicationType;
   status: PublicationStatus;
-  original_language: 'gl' | 'es';
+  original_language: string;
   is_pinned: boolean;
   show_index: boolean;
   created_at: string;

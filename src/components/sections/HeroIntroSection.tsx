@@ -2,14 +2,9 @@ import React from 'react';
 import Link from 'next/link';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import HeroAnimatedLogo from './HeroAnimatedLogo';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 
-export interface HeroDict {
-  headlinePrefix: string;
-  headlineHighlight: string;
-  description: string;
-  exploreCta?: string;
-  secondaryCta?: string;
-}
+export type HeroDict = Partial<Dictionary['hero']>;
 
 interface HeroIntroSectionProps {
   lang: string;
@@ -19,8 +14,8 @@ interface HeroIntroSectionProps {
 export default function HeroIntroSection({ lang, dict }: HeroIntroSectionProps) {
   if (!dict) return null;
 
-  const { headlinePrefix, headlineHighlight, description } = dict;
-  const exploreCta = dict.exploreCta || dict.secondaryCta || '';
+  const t = { ...getDictionaryClient(lang).hero, ...dict };
+  const exploreCta = t.exploreCta || t.secondaryCta;
 
   return (
     <section className="w-full bg-parchment border-b border-lines pt-6 pb-12 sm:pt-14 sm:pb-20 lg:py-28 relative overflow-hidden">
@@ -42,16 +37,16 @@ export default function HeroIntroSection({ lang, dict }: HeroIntroSectionProps) 
             <RevealOnScroll delayMs={100}>
               {/* Headline with golden accent detail */}
               <h1 className="font-serif text-3xl sm:text-5xl lg:text-[52px] text-charcoal font-bold tracking-tight leading-[1.14] mb-4 sm:mb-6">
-                <span>{headlinePrefix}</span>
+                <span>{t.headlinePrefix}</span>
                 <br />
                 <span className="text-gold italic font-normal underline decoration-gold/30 underline-offset-8">
-                  {headlineHighlight}
+                  {t.headlineHighlight}
                 </span>
               </h1>
 
               {/* Description */}
               <p className="font-sans text-sm sm:text-base lg:text-lg text-charcoal/75 leading-relaxed max-w-xl mb-6 sm:mb-8">
-                {description}
+                {t.description}
               </p>
 
               {/* Only CTA: Explorar Publicacións */}

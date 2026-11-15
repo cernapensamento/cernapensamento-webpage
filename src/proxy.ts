@@ -1,19 +1,16 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
-import { i18n } from './i18n-config';
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
+import { i18n, isSupportedLocale, type Locale } from './i18n-config';
 import { match as matchLocale } from '@formatjs/intl-localematcher';
 import Negotiator from 'negotiator';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
-import {
-  prefersMarkdown,
-  get404Markdown,
-  getHomepageMarkdown,
-  isHomepagePath,
-  isKnownPath,
-} from '@/lib/agent/markdown';
+import { handleMarkdownNegotiation } from '@/lib/agent/markdown';
 
-// Inicializar Redis solo si las variables de entorno están presentes
+// ---------------------------------------------------------------------
+// CONFIGURATION & RATE LIMITERS
+// ---------------------------------------------------------------------
+
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
   ? new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL,
@@ -21,303 +18,239 @@ const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_RE
     })
   : null;
 
-// Rate limiter para API y Webhooks
-const apiLimiter = redis ? new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(10, '1 m'),
-  analytics: true,
-  prefix: '@upstash/ratelimit/api',
-}) : null;
+const apiLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, '1 m'),
+      analytics: true,
+      prefix: '@upstash/ratelimit/api',
+    })
+  : null;
 
-// Rate limiter global para POST/PUT/DELETE
-const globalMutationLimiter = redis ? new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(30, '1 m'),
-  analytics: true,
-  prefix: '@upstash/ratelimit/global',
-}) : null;
+const globalMutationLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(30, '1 m'),
+      analytics: true,
+      prefix: '@upstash/ratelimit/global',
+    })
+  : null;
 
-/**
- * Selects a supported locale from NEXT_LOCALE, then Accept-Language, falling
- * back to the default locale when negotiation fails or has no supported match.
- */
-function getLocale(request: NextRequest): string {
-  const negotiatorHeaders: Record<string, string> = {};
-  request.headers.forEach((value, key) => (negotiatorHeaders[key] = value));
+const ROUTE_ALIASES: Record<string, string> = {
+  privacy: 'privacidad',
+  about: 'asociacion',
+  contact: 'contacto',
+};
 
+const EXCLUDED_PREFIXES = [
+  '/api',
+  '/auth',
+  '/_next',
+  '/favicon.ico',
+  '/images',
+  '/llms.txt',
+  '/agent-instructions.md',
+  '/robots.txt',
+  '/sitemap.xml',
+];
+
+const STATIC_DISCOVERY_FILES = new Set([
+  '/llms.txt',
+  '/agent-instructions.md',
+  '/robots.txt',
+  '/sitemap.xml',
+]);
+
+// ---------------------------------------------------------------------
+// HELPER FUNCTIONS
+// ---------------------------------------------------------------------
+
+function withVaryAccept(res: NextResponse): NextResponse {
+  const existingVary = res.headers.get('Vary');
+  if (!existingVary) {
+    res.headers.set('Vary', 'Accept');
+  } else if (!existingVary.includes('Accept')) {
+    res.headers.set('Vary', `${existingVary}, Accept`);
+  }
+  return res;
+}
+
+function getLocale(request: NextRequest): Locale {
   const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
-  if (cookieLocale && (i18n.locales as readonly string[]).includes(cookieLocale as (typeof i18n.locales)[number])) {
+  if (isSupportedLocale(cookieLocale)) {
     return cookieLocale;
   }
 
-  const locales: string[] = [...i18n.locales];
+  const negotiatorHeaders = Object.fromEntries(request.headers.entries());
   try {
     const languages = new Negotiator({ headers: negotiatorHeaders }).languages();
-    return matchLocale(languages, locales, i18n.defaultLocale);
+    const matched = matchLocale(languages, [...i18n.locales], i18n.defaultLocale);
+    return isSupportedLocale(matched) ? matched : i18n.defaultLocale;
   } catch {
     return i18n.defaultLocale;
   }
 }
 
-/**
- * Applies locale redirects/headers, optional Redis rate limits, and session
- * redirects for dashboard/login routes. Successful session refreshes update cookies.
- * Returns 429 for exceeded limits; Redis failures, auth exceptions, and missing
- * auth configuration allow processing to continue. Unexpected outer errors pass
- * the request through with an X-Proxy-Error response header. Discovery text/XML
- * endpoints bypass these checks.
- */
+function createRateLimitResponse(message: string, limit: number, remaining: number, reset: number) {
+  return new NextResponse(JSON.stringify({ error: message }), {
+    status: 429,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-RateLimit-Limit': limit.toString(),
+      'X-RateLimit-Remaining': remaining.toString(),
+      'X-RateLimit-Reset': reset.toString(),
+    },
+  });
+}
+
+async function handleRateLimiting(request: NextRequest, pathname: string): Promise<NextResponse | null> {
+  if (!redis) return null;
+
+  const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? '127.0.0.1';
+
+  try {
+    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/webhooks/')) {
+      const { success, limit, reset, remaining } = await apiLimiter!.limit(ip);
+      if (!success) {
+        return createRateLimitResponse('Too Many Requests', limit, reset, remaining);
+      }
+    } else if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
+      const { success, limit, reset, remaining } = await globalMutationLimiter!.limit(ip);
+      if (!success) {
+        return createRateLimitResponse('Demasiadas peticiones. Por favor, espera un minuto.', limit, reset, remaining);
+      }
+    }
+  } catch (error) {
+    console.error('Rate limiting error:', error);
+  }
+
+  return null;
+}
+
+function handleRouteAliases(request: NextRequest, pathname: string, currentLocale: Locale): NextResponse | null {
+  const segments = pathname.split('/').filter(Boolean);
+  if (isSupportedLocale(segments[0])) {
+    segments.shift();
+  }
+  const barePath = segments.join('/');
+
+  if (ROUTE_ALIASES[barePath]) {
+    const target = ROUTE_ALIASES[barePath];
+    return withVaryAccept(
+      NextResponse.redirect(new URL(`/${currentLocale}/${target}${request.nextUrl.search}`, request.url))
+    );
+  }
+  return null;
+}
+
+async function handleAuthProtection(
+  request: NextRequest,
+  pathname: string,
+  currentLocale: Locale,
+  requestHeaders: Headers
+): Promise<NextResponse> {
+  let response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+
+  const isEscritorio = /^(\/[a-z]{2})?\/escritorio/.test(pathname);
+  const isLogin = /^(\/[a-z]{2})?\/login$/.test(pathname);
+
+  if (!isEscritorio && !isLogin) {
+    return withVaryAccept(response);
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return withVaryAccept(response);
+  }
+
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          response = NextResponse.next({
+            request: { headers: requestHeaders },
+          });
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        },
+      },
+    });
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user && isEscritorio) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${currentLocale}/login`;
+      return NextResponse.redirect(url);
+    }
+
+    if (user && isLogin) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${currentLocale}/escritorio`;
+      return NextResponse.redirect(url);
+    }
+  } catch (authError) {
+    console.error('[Proxy:Auth] Failed to verify auth session:', authError);
+  }
+
+  return withVaryAccept(response);
+}
+
+// ---------------------------------------------------------------------
+// MAIN PROXY MIDDLEWARE
+// ---------------------------------------------------------------------
+
 export async function proxy(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname;
-    const isExcluded = [
-      '/api',
-      '/auth',
-      '/_next',
-      '/favicon.ico',
-      '/images',
-      '/llms.txt',
-      '/agent-instructions.md',
-      '/robots.txt',
-      '/sitemap.xml',
-    ].some((path) => pathname.startsWith(path));
 
-    // Bypass excluded static files immediately
-    if (
-      pathname === '/llms.txt' ||
-      pathname === '/agent-instructions.md' ||
-      pathname === '/robots.txt' ||
-      pathname === '/sitemap.xml'
-    ) {
-      const response = NextResponse.next();
-      response.headers.set('Vary', 'Accept');
-      return response;
+    // 1. Bypass static discovery files immediately
+    if (STATIC_DISCOVERY_FILES.has(pathname)) {
+      return withVaryAccept(NextResponse.next());
     }
 
-    // Determine Locale
-    let currentLocale: string = i18n.defaultLocale;
-    const localeMatch = pathname.match(/^\/([^/]+)/);
-    if (localeMatch && (i18n.locales as readonly string[]).includes(localeMatch[1] as (typeof i18n.locales)[number])) {
-      currentLocale = localeMatch[1] as 'gl' | 'es';
-    } else if (!isExcluded) {
-      currentLocale = getLocale(request) as 'gl' | 'es';
+    const isExcluded = EXCLUDED_PREFIXES.some((path) => pathname.startsWith(path));
+
+    // 2. Determine Locale
+    const firstSegment = pathname.split('/')[1];
+    const currentLocale: Locale = isSupportedLocale(firstSegment)
+      ? firstSegment
+      : isExcluded
+        ? i18n.defaultLocale
+        : getLocale(request);
+
+    // 3. Trust Anchor Route Aliases (/privacy, /about, /contact)
+    const aliasResponse = handleRouteAliases(request, pathname, currentLocale);
+    if (aliasResponse) return aliasResponse;
+
+    // 4. Content Negotiation (Markdown representation for AI Agents)
+    const markdownResponse = handleMarkdownNegotiation(request, pathname, currentLocale);
+    if (markdownResponse) return markdownResponse;
+
+    // 5. Rate Limiting Check
+    const rateLimitResponse = await handleRateLimiting(request, pathname);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    // 6. i18n Redirection if missing locale prefix
+    if (!isExcluded && !isSupportedLocale(firstSegment)) {
+      const destination = `/${currentLocale}${pathname === '/' ? '' : pathname}${request.nextUrl.search}`;
+      return withVaryAccept(NextResponse.redirect(new URL(destination, request.url)));
     }
 
-    // --- Trust Anchor Route Aliases (/privacy, /about, /contact) ---
-    const cleanPath = pathname.replace(/\/+$/, '') || '/';
-    if (cleanPath === '/privacy' || cleanPath === `/${currentLocale}/privacy`) {
-      const res = NextResponse.redirect(
-        new URL(`/${currentLocale}/privacidad${request.nextUrl.search}`, request.url)
-      );
-      res.headers.set('Vary', 'Accept');
-      return res;
-    }
-    if (cleanPath === '/about' || cleanPath === `/${currentLocale}/about`) {
-      const res = NextResponse.redirect(
-        new URL(`/${currentLocale}/asociacion${request.nextUrl.search}`, request.url)
-      );
-      res.headers.set('Vary', 'Accept');
-      return res;
-    }
-    if (cleanPath === '/contact' || cleanPath === `/${currentLocale}/contact`) {
-      const res = NextResponse.redirect(
-        new URL(`/${currentLocale}/contacto${request.nextUrl.search}`, request.url)
-      );
-      res.headers.set('Vary', 'Accept');
-      return res;
-    }
-
-    // --- Content Negotiation: Markdown for AI Agents (acceptmarkdown.com) ---
-    const hasMarkdownPreference = prefersMarkdown(request.headers.get('accept'));
-
-    if (hasMarkdownPreference) {
-      // 1. Agent-friendly 404 for unknown / nonexistent paths
-      if (!isKnownPath(pathname)) {
-        return new NextResponse(get404Markdown(currentLocale), {
-          status: 404,
-          headers: {
-            'Content-Type': 'text/markdown; charset=utf-8',
-            'Vary': 'Accept',
-          },
-        });
-      }
-
-      // 2. Homepage Markdown representation
-      if (isHomepagePath(pathname)) {
-        return new NextResponse(getHomepageMarkdown(currentLocale), {
-          status: 200,
-          headers: {
-            'Content-Type': 'text/markdown; charset=utf-8',
-            'Vary': 'Accept',
-          },
-        });
-      }
-
-      // 3. Article Markdown representation
-      const articleMatch = pathname.match(/^(?:\/(?:gl|es))?\/articulo\/([^/]+)$/);
-      if (articleMatch) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/api/markdown';
-        url.searchParams.set('type', 'article');
-        url.searchParams.set('slug', articleMatch[1]);
-        url.searchParams.set('lang', currentLocale);
-        return NextResponse.rewrite(url, {
-          headers: {
-            'Vary': 'Accept',
-          },
-        });
-      }
-
-      // 4. Legal / About Markdown representation
-      const legalMatch = pathname.match(/^(?:\/(?:gl|es))?\/(privacidad|privacy|asociacion\/estatutos)$/);
-      if (legalMatch) {
-        const slug = legalMatch[1].includes('estatutos') ? 'estatutos' : 'privacidad';
-        const url = request.nextUrl.clone();
-        url.pathname = '/api/markdown';
-        url.searchParams.set('type', 'legal');
-        url.searchParams.set('slug', slug);
-        url.searchParams.set('lang', currentLocale);
-        return NextResponse.rewrite(url, {
-          headers: {
-            'Vary': 'Accept',
-          },
-        });
-      }
-    }
-
-    // --- Rate Limiting Logic ---
-    if (redis) {
-      const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? '127.0.0.1';
-      
-      try {
-        if (pathname.startsWith('/api/') && !pathname.startsWith('/api/webhooks/')) {
-          const { success, limit, reset, remaining } = await apiLimiter!.limit(ip);
-          if (!success) {
-            return new NextResponse(
-              JSON.stringify({ error: 'Too Many Requests' }),
-              {
-                status: 429,
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-RateLimit-Limit': limit.toString(),
-                  'X-RateLimit-Remaining': remaining.toString(),
-                  'X-RateLimit-Reset': reset.toString(),
-                },
-              }
-            );
-          }
-        } else if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
-          const { success, limit, reset, remaining } = await globalMutationLimiter!.limit(ip);
-          if (!success) {
-            return new NextResponse(
-              JSON.stringify({ error: 'Demasiadas peticiones. Por favor, espera un minuto.' }),
-              {
-                status: 429,
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-RateLimit-Limit': limit.toString(),
-                  'X-RateLimit-Remaining': remaining.toString(),
-                  'X-RateLimit-Reset': reset.toString(),
-                },
-              }
-            );
-          }
-        }
-      } catch (error) {
-        console.error('Rate limiting error:', error);
-        // Fail open if Redis is down
-      }
-    }
-    // -------------------------
-
-    // 1. Prepare Request Headers (x-locale)
+    // 7. Base request headers & Auth Protection
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-locale', currentLocale);
 
-    let supabaseResponse = NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      }
-    });
-
-    // 2. i18n Redirection
-    if (!isExcluded) {
-      const pathnameIsMissingLocale = i18n.locales.every(
-        (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
-      );
-
-      if (pathnameIsMissingLocale) {
-        const redirectRes = NextResponse.redirect(
-          new URL(`/${currentLocale}${pathname === '/' ? '' : pathname}${request.nextUrl.search}`, request.url)
-        );
-        redirectRes.headers.set('Vary', 'Accept');
-        return redirectRes;
-      }
-    }
-
-    // 3. Auth Protection (Handling [lang] prefix) - Only query Supabase Auth for protected/login routes
-    const isEscritorio = /^(\/[a-z]{2})?\/escritorio/.test(pathname);
-    const isLogin = /^(\/[a-z]{2})?\/login$/.test(pathname);
-
-    if (isEscritorio || isLogin) {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (supabaseUrl && supabaseAnonKey) {
-        try {
-          const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-            cookies: {
-              getAll() {
-                return request.cookies.getAll();
-              },
-              setAll(cookiesToSet) {
-                cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-                supabaseResponse = NextResponse.next({
-                  request: {
-                    headers: requestHeaders,
-                  },
-                });
-                cookiesToSet.forEach(({ name, value, options }) =>
-                  supabaseResponse.cookies.set(name, value, options)
-                );
-              },
-            },
-          });
-
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-
-          if (!user && isEscritorio) {
-            const url = request.nextUrl.clone();
-            url.pathname = `/${currentLocale}/login`;
-            return NextResponse.redirect(url);
-          }
-
-          if (user && isLogin) {
-            const url = request.nextUrl.clone();
-            url.pathname = `/${currentLocale}/escritorio`;
-            return NextResponse.redirect(url);
-          }
-        } catch (authError) {
-          console.error('[Proxy:Auth] Failed to verify auth session:', authError);
-        }
-      } else {
-        console.warn('[Proxy:Auth] Supabase environment variables are missing');
-      }
-    }
-
-    const existingVary = supabaseResponse.headers.get('Vary');
-    if (!existingVary) {
-      supabaseResponse.headers.set('Vary', 'Accept');
-    } else if (!existingVary.includes('Accept')) {
-      supabaseResponse.headers.set('Vary', `${existingVary}, Accept`);
-    }
-
-    return supabaseResponse;
+    return await handleAuthProtection(request, pathname, currentLocale, requestHeaders);
   } catch (err) {
     console.error('[Proxy:Fatal] Unhandled proxy error:', err);
-    // Graceful fallback to avoid taking down the whole application with a 500
     const fallbackResponse = NextResponse.next();
     fallbackResponse.headers.set(
       'X-Proxy-Error',
@@ -331,4 +264,4 @@ export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|agent-instructions.md|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-}
+};

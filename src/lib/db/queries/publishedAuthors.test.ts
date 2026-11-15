@@ -9,21 +9,15 @@ const publication = {
 };
 
 describe('published author pagination', () => {
-  it.each([false, true])('aggregates all pages (legacy schema: %s)', async (legacy) => {
+  it('aggregates all pages across pagination', async () => {
     const firstPage = Array.from({ length: 1000 }, (_, index) => ({ ...publication, id: `pub-${index}` }));
     const secondPage = [
       { ...publication, type: 'essay', created_at: '2026-09-01T00:00:00Z', slug: 'older' },
       { ...publication, author: { ...author, id: 'author-2', slug: 'second' } },
     ];
-    const convert = (row: typeof publication) => legacy ? {
-      id: row.id, slug: row.slug, titulo_gl: row.title.gl, titulo_es: '', tipo: row.type === 'essay' ? 'ensaio' : 'artigo',
-      creado_en: row.created_at, autor_id: row.author.id,
-      perfiles: { id: row.author.id, nombre: row.author.full_name, slug: row.author.slug },
-    } : row;
-    const range = vi.fn();
-    if (legacy) range.mockResolvedValueOnce({ data: null, error: { code: 'PGRST205' } });
-    range.mockResolvedValueOnce({ data: firstPage.map(convert), error: null })
-      .mockResolvedValueOnce({ data: secondPage.map(convert), error: null });
+    const range = vi.fn()
+      .mockResolvedValueOnce({ data: firstPage, error: null })
+      .mockResolvedValueOnce({ data: secondPage, error: null });
     const query = {
       select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), range,
     };
@@ -37,7 +31,7 @@ describe('published author pagination', () => {
     });
     expect(result[1]).toMatchObject({ id: 'author-2', slug: 'second', published_count: 1 });
     expect(range).toHaveBeenLastCalledWith(1000, 1999);
-    expect(range).toHaveBeenCalledTimes(legacy ? 3 : 2);
+    expect(range).toHaveBeenCalledTimes(2);
     expect(query.select.mock.calls.flat().join('')).not.toContain('content');
   });
 

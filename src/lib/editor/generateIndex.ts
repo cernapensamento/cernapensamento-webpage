@@ -5,7 +5,71 @@
  * and generates hierarchical section numbers (1., 1.1., 1.1.1.).
  */
 
-import type { IndexItem, Slug } from './ArticleIndexExtension';
+export type Slug = string & { readonly __brand: unique symbol };
+
+export interface IndexItem {
+  readonly path: readonly number[];
+  readonly text: string;
+  readonly slug: Slug;
+}
+
+export interface IndexLevelStyle {
+  readonly indent: string;
+  readonly fontSize: string;
+  readonly fontWeight: string;
+  readonly opacity: string;
+  readonly numWidth: string;
+}
+
+const INDEX_LEVEL_STYLES: Record<1 | 2 | 3, IndexLevelStyle> = {
+  1: { indent: '0', fontSize: '1.15rem', fontWeight: '600', opacity: '1', numWidth: '1.75rem' },
+  2: { indent: '1.5rem', fontSize: '1.05rem', fontWeight: '400', opacity: '0.9', numWidth: '2.75rem' },
+  3: { indent: '3rem', fontSize: '0.95rem', fontWeight: '400', opacity: '0.75', numWidth: '3.75rem' },
+};
+
+export const INDEX_BLOCK_STYLES = {
+  nav: 'border-top: 1px solid rgba(197, 160, 89, 0.4); border-bottom: 1px solid rgba(197, 160, 89, 0.4); padding: 1.75rem 2rem; margin-bottom: 2.5rem;',
+  label: 'display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 1rem; font-family: var(--font-sans);',
+  list: 'display: flex; flex-direction: column; gap: 0.25rem;',
+} as const;
+
+const INDEX_ARIA_LABELS: Record<string, string> = {
+  es: 'Índice del artículo',
+  gl: 'Índice do artigo',
+  pt: 'Índice do artigo',
+  en: 'Article index',
+};
+
+/**
+ * Returns the visual style tokens for a given heading depth (clamped to levels 1–3).
+ */
+export function getIndexLevelStyle(level: number): IndexLevelStyle {
+  const clamped = Math.min(Math.max(level, 1), 3) as 1 | 2 | 3;
+  return INDEX_LEVEL_STYLES[clamped];
+}
+
+/**
+ * Returns the localized visible label and accessible aria-label for an article index block.
+ */
+export function getIndexLabels(lang: string): { label: string; ariaLabel: string } {
+  return {
+    label: 'Índice',
+    ariaLabel: INDEX_ARIA_LABELS[lang] || 'Índice',
+  };
+}
+
+/**
+ * Builds the inline CSS strings for a single index row, shared by both
+ * TipTap's DOMOutputSpec renderer and the static HTML fallback generator.
+ */
+export function getIndexRowStyles(level: number): { row: string; num: string; link: string } {
+  const { indent, fontSize, fontWeight, opacity, numWidth } = getIndexLevelStyle(level);
+  return {
+    row: `display: flex; align-items: baseline; gap: 0.5rem; padding: 0.25rem 0 0.25rem ${indent}; margin: 0;`,
+    num: `color: var(--color-gold); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.02em; min-width: ${numWidth}; flex-shrink: 0; font-variant-numeric: tabular-nums; font-family: var(--font-sans);`,
+    link: `color: var(--color-charcoal, inherit); opacity: ${opacity}; text-decoration: none; font-size: ${fontSize}; font-weight: ${fontWeight}; line-height: 1.5; font-family: var(--font-serif); transition: opacity 0.2s;`,
+  };
+}
 
 /**
  * Converts heading text to a URL-safe slug.
@@ -98,55 +162,35 @@ export function parseHeadings(html: string): HeadingEntry[] {
  * Intelligently shifts levels if the document only uses H2 and H3.
  */
 export function buildHierarchicalHeadings(headings: HeadingEntry[]): IndexItem[] {
-  const hasH1 = headings.some((h) => h.level === 1);
-  const hasH2 = headings.some((h) => h.level === 2);
+  const shiftLevel = !headings.some((h) => h.level === 1) && headings.some((h) => h.level === 2);
 
   let c1 = 0;
   let c2 = 0;
   let c3 = 0;
 
   return headings.map(({ level, text, slug }) => {
-    let path: number[] = [];
+    // When a document skips H1 and starts at H2, promote H2→1 and H3→2
+    const effectiveLevel = shiftLevel ? Math.max(1, level - 1) : level;
+    let path: number[];
 
-    if (!hasH1 && hasH2) {
-      // Document without H1: H2 acts as primary section (1., 2.), H3 acts as subsection (1.1., 1.2.)
-      if (level === 2) {
-        c1++;
-        c2 = 0;
-        path = [c1];
-      } else if (level === 3) {
-        if (c1 === 0) c1 = 1;
-        c2++;
-        path = [c1, c2];
-      }
+    if (effectiveLevel === 1) {
+      c1++;
+      c2 = 0;
+      c3 = 0;
+      path = [c1];
+    } else if (effectiveLevel === 2) {
+      if (c1 === 0) c1 = 1;
+      c2++;
+      c3 = 0;
+      path = [c1, c2];
     } else {
-      // Standard document: H1 (1.), H2 (1.1.), H3 (1.1.1.)
-      if (level === 1) {
-        c1++;
-        c2 = 0;
-        c3 = 0;
-        path = [c1];
-      } else if (level === 2) {
-        if (c1 === 0) c1 = 1;
-        c2++;
-        c3 = 0;
-        path = [c1, c2];
-      } else if (level === 3) {
-        if (c1 === 0) c1 = 1;
-        if (c2 === 0) c2 = 1;
-        c3++;
-        path = [c1, c2, c3];
-      }
+      if (c1 === 0) c1 = 1;
+      if (c2 === 0) c2 = 1;
+      c3++;
+      path = [c1, c2, c3];
     }
 
-    // Fallback if path is somehow empty (e.g., deep heading without parents)
-    if (path.length === 0) path = [1];
-
-    return {
-      path,
-      text,
-      slug,
-    };
+    return { path, text, slug };
   });
 }
 
@@ -154,8 +198,7 @@ export function buildHierarchicalHeadings(headings: HeadingEntry[]): IndexItem[]
  * Extracts and calculates hierarchical headings directly from an HTML string.
  */
 export function getHeadingsFromHtml(html: string): IndexItem[] {
-  const headings = parseHeadings(html);
-  return buildHierarchicalHeadings(headings);
+  return buildHierarchicalHeadings(parseHeadings(html));
 }
 
 /**
@@ -169,27 +212,22 @@ export function stripIndex(html: string): string {
 /**
  * Generates the full index HTML block from an article's HTML content.
  */
-export function generateIndex(html: string, lang: 'gl' | 'es'): string {
+export function generateIndex(html: string, lang: string): string {
   const items = getHeadingsFromHtml(html);
   if (items.length === 0) return '';
 
-  const label = lang === 'gl' ? 'Índice' : 'Índice';
-  const ariaLabel = lang === 'es' ? 'Índice del artículo' : 'Índice do artigo';
+  const { label, ariaLabel } = getIndexLabels(lang);
 
   const rows = items
     .map((item) => {
       const level = item.path.length;
-      const num = item.path.join('.') + '.';
-      const indent = level === 1 ? '0' : level === 2 ? '1.5rem' : '3rem';
-      const fontSize = level === 1 ? '1.15rem' : level === 2 ? '1.05rem' : '0.95rem';
-      const fontWeight = level === 1 ? '600' : '400';
-      const opacity = level === 3 ? '0.75' : level === 2 ? '0.9' : '1';
-      const numWidth = level === 1 ? '1.75rem' : level === 2 ? '2.75rem' : '3.75rem';
+      const num = `${item.path.join('.')}.`;
+      const styles = getIndexRowStyles(level);
 
       return `
-        <div class="index-row index-level-${level}" role="listitem" style="display: flex; align-items: baseline; gap: 0.5rem; padding: 0.25rem 0 0.25rem ${indent}; margin: 0;">
-          <span class="index-num" style="color: var(--color-gold); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.02em; min-width: ${numWidth}; flex-shrink: 0; font-variant-numeric: tabular-nums; font-family: var(--font-sans);">${num}</span>
-          <a href="#${item.slug}" class="index-link" style="color: var(--color-charcoal, inherit); opacity: ${opacity}; text-decoration: none; font-size: ${fontSize}; font-weight: ${fontWeight}; line-height: 1.5; font-family: var(--font-serif); transition: opacity 0.2s;">${item.text}</a>
+        <div class="index-row index-level-${level}" role="listitem" style="${styles.row}">
+          <span class="index-num" style="${styles.num}">${num}</span>
+          <a href="#${item.slug}" class="index-link" style="${styles.link}">${item.text}</a>
         </div>
       `;
     })
@@ -198,9 +236,9 @@ export function generateIndex(html: string, lang: 'gl' | 'es'): string {
   return `
     <nav data-type="article-index" aria-label="${ariaLabel}" class="article-index-block" lang="${lang}" data-items='${JSON.stringify(
       items
-    ).replace(/'/g, "&apos;")}' style="border-top: 1px solid rgba(197, 160, 89, 0.4); border-bottom: 1px solid rgba(197, 160, 89, 0.4); padding: 1.75rem 2rem; margin-bottom: 2.5rem;">
-      <div class="index-label" style="display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 1rem; font-family: var(--font-sans);">${label}</div>
-      <div class="index-list" role="list" style="display: flex; flex-direction: column; gap: 0.25rem;">
+    ).replace(/'/g, "&apos;")}' style="${INDEX_BLOCK_STYLES.nav}">
+      <div class="index-label" style="${INDEX_BLOCK_STYLES.label}">${label}</div>
+      <div class="index-list" role="list" style="${INDEX_BLOCK_STYLES.list}">
         ${rows}
       </div>
     </nav>

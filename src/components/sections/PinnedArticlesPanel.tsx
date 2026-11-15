@@ -1,83 +1,53 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import type { LocalizedString } from '@/lib/db/types';
-import { PUBLICATION_TYPES } from '@/lib/db/schema';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
-
-interface PinnedArticleData {
-  id: string | number;
-  slug?: string | null;
-  type?: string;
-  tipo?: string;
-  title?: LocalizedString;
-  subtitle?: LocalizedString | null;
-  content?: LocalizedString;
-  titulo_es?: string;
-  titulo_gl?: string;
-  subtitulo_es?: string;
-  subtitulo_gl?: string;
-  contenido_es?: string;
-  contenido_gl?: string;
-  author?: {
-    full_name?: string;
-    nombre?: string;
-    avatar_url?: string | null;
-    slug?: string | null;
-  } | null;
-  perfiles?: {
-    nombre?: string;
-  } | null;
-  cover_image_url?: string | null;
-  imagen_url?: string | null;
-}
+import { getDictionaryClient } from '@/dictionaries/client';
+import {
+  resolveSectionArticle,
+  stripHtmlExcerpt,
+  type SectionArticleData,
+  type SectionArticleDict,
+} from './sectionArticleHelpers';
 
 interface PinnedArticlesPanelProps {
-  articulos: PinnedArticleData[];
+  articulos: SectionArticleData[];
   lang: string;
-  dict?: { documentTypes?: Record<string, string>; [key: string]: unknown };
+  dict?: SectionArticleDict;
 }
 
 export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArticlesPanelProps) {
   if (!articulos || articulos.length === 0) return null;
 
-  const fallbackDict = lang === 'es' ? esDict : glDict;
+  const fallbackDict = getDictionaryClient(lang);
+  const pinnedTitle = dict?.mosaic?.pinnedTitle || dict?.pinnedTitle || fallbackDict.mosaic.pinnedTitle;
 
   return (
     <section className="border-t border-lines pt-12">
       <div className="flex items-center gap-3 mb-8">
         <span className="material-symbols-outlined text-gold" data-icon="push_pin">push_pin</span>
-        <h2 className="font-serif text-2xl md:text-3xl text-charcoal">{((dict?.mosaic as Record<string, string>)?.pinnedTitle) || (dict?.pinnedTitle as string) || fallbackDict.mosaic.pinnedTitle}</h2>
+        <h2 className="font-serif text-2xl md:text-3xl text-charcoal">{pinnedTitle}</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {articulos.map((articulo) => {
-          const titulo = articulo.title
-            ? (articulo.title[lang] || articulo.title.gl || articulo.title.es || '')
-            : (articulo.titulo_gl || articulo.titulo_es || '');
-
-          const subtitulo = articulo.subtitle
-            ? (articulo.subtitle[lang] || articulo.subtitle.gl || articulo.subtitle.es || null)
-            : (articulo.subtitulo_gl || articulo.subtitulo_es || null);
-
-          const rawContent = articulo.content
-            ? (articulo.content[lang] || articulo.content.gl || articulo.content.es || '')
-            : (articulo.contenido_gl || articulo.contenido_es || '');
-
-          const typeKey = (articulo.type || articulo.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
-          const typeLabel = dict?.documentTypes?.[typeKey] || dict?.documentTypes?.[typeKey === PUBLICATION_TYPES.ARTICLE ? 'artigo' : typeKey] || typeKey;
-
-          const coverUrl = articulo.cover_image_url || articulo.imagen_url;
-          const authorName = articulo.author?.full_name || articulo.author?.nombre || articulo.perfiles?.nombre || (dict?.articles as Record<string, string>)?.unknownAuthor || fallbackDict.articles.unknownAuthor;
+          const {
+            href,
+            titulo,
+            subtitulo,
+            rawContent,
+            typeLabel,
+            coverUrl,
+            coverAlt,
+            authorName,
+          } = resolveSectionArticle(articulo, lang, dict, fallbackDict);
 
           return (
-            <Link key={articulo.id} href={`/${lang}/articulo/${articulo.slug || articulo.id}`} className="group flex flex-col h-full cursor-pointer">
+            <Link key={articulo.id} href={href} className="group flex flex-col h-full cursor-pointer">
               <div className="w-full aspect-video relative mb-4 overflow-hidden bg-lines/30">
                 {coverUrl ? (
-                  <Image 
-                    src={coverUrl} 
-                    alt={titulo || ''} 
-                    fill 
-                    className="object-cover group-hover:scale-105 transition-all duration-700" 
+                  <Image
+                    src={coverUrl}
+                    alt={coverAlt}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-all duration-700"
                     sizes="(max-width: 768px) 100vw, 25vw"
                   />
                 ) : (
@@ -93,7 +63,7 @@ export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArt
                 {titulo}
               </h3>
               <p className="font-sans text-sm text-charcoal/60 line-clamp-3">
-                {subtitulo || (rawContent ? String(rawContent).replace(/<[^>]*>?/g, '').substring(0, 100) + '...' : '')}
+                {subtitulo || stripHtmlExcerpt(rawContent, 100)}
               </p>
               <div className="mt-auto border-t border-lines pt-3 w-1/3">
                 <span className="text-[10px] font-semibold text-charcoal/80 uppercase tracking-widest">

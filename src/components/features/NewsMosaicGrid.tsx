@@ -7,6 +7,7 @@ import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { PublicationCardItem } from '@/lib/db';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import esDict from '@/dictionaries/es.json';
 import glDict from '@/dictionaries/gl.json';
 
@@ -59,16 +60,8 @@ interface NewsCardProps {
 }
 
 function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
-  const title =
-    (item.title as Record<string, string>)?.[lang] ||
-    (item.title as Record<string, string>)?.gl ||
-    (item.title as Record<string, string>)?.es ||
-    '';
-  const subtitle =
-    (item.subtitle as Record<string, string>)?.[lang] ||
-    (item.subtitle as Record<string, string>)?.gl ||
-    (item.subtitle as Record<string, string>)?.es ||
-    '';
+  const title = resolveLocalizedText(item.title, lang);
+  const subtitle = resolveLocalizedText(item.subtitle, lang);
   const category = getLocalizedCategory(item, lang, dict?.documentTypes);
   const rawDate = item.published_at || item.created_at;
   const hasCover = Boolean(item.cover_image_url);

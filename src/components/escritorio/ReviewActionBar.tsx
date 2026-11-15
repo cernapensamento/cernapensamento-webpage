@@ -33,7 +33,7 @@ export default function ReviewActionBar({ articuloId, status }: Props) {
     return null;
   }
 
-  const role = profile?.role || profile?.rol;
+  const role = profile?.role;
   if (loading || !role || !AUTHORIZED_ROLES.includes(role)) {
     return null;
   }

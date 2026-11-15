@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { getDictionary } from '@/dictionaries';
+import { i18n, isSupportedLocale, type Locale } from '@/i18n-config';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import { DB_TABLES, PUBLICATION_COLS, PUBLICATION_STATUSES, USER_COLS } from '@/lib/db/schema';
 import { renderNewsletterEmail } from '@/lib/email/newsletter-template';
 import { getNewsletterSecret, buildUnsubscribeUrl, getSiteBaseUrl } from '@/lib/email/newsletter';
@@ -165,21 +167,18 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. Resolve Metadata & Editorial Strings
-    const originalLang = claimedPublication.original_language || 'gl';
-    const primaryLang = (originalLang === 'es' ? 'es' : 'gl') as 'gl' | 'es';
-    const fallbackLang = primaryLang === 'gl' ? 'es' : 'gl';
+    const originalLang = claimedPublication.original_language || i18n.defaultLocale;
+    const primaryLang: Locale = isSupportedLocale(originalLang) ? originalLang : i18n.defaultLocale;
     const dict = await getDictionary(primaryLang);
 
     const title =
-      claimedPublication.title?.[primaryLang] ||
-      claimedPublication.title?.[fallbackLang] ||
+      resolveLocalizedText(claimedPublication.title, primaryLang) ||
       claimedPublication.titulo_gl ||
       claimedPublication.titulo_es ||
       dict.newsletter.email.defaultTitle;
 
     const subtitle =
-      claimedPublication.subtitle?.[primaryLang] ||
-      claimedPublication.subtitle?.[fallbackLang] ||
+      resolveLocalizedText(claimedPublication.subtitle, primaryLang) ||
       claimedPublication.subtitulo_gl ||
       claimedPublication.subtitulo_es ||
       null;
@@ -192,33 +191,35 @@ export async function POST(request: NextRequest) {
     const publicationType = claimedPublication.type || 'artigo';
 
     // 8. Prepare Email List with Personalized 1-Click Unsubscribe & RFC 8058 Headers
-    const emailBatch = subscribers.map((sub) => {
-      const userUnsubscribeUrl = buildUnsubscribeUrl(sub.email, primaryLang);
-      const emailContent = renderNewsletterEmail({
-        title,
-        subtitle,
-        authorName,
-        coverImageUrl,
-        articleUrl,
-        profileUrl,
-        unsubscribeUrl: userUnsubscribeUrl,
-        lang: primaryLang,
-        publicationType,
-        dict,
-      });
+    const emailBatch = await Promise.all(
+      subscribers.map(async (sub) => {
+        const userUnsubscribeUrl = buildUnsubscribeUrl(sub.email, primaryLang);
+        const emailContent = await renderNewsletterEmail({
+          title,
+          subtitle,
+          authorName,
+          coverImageUrl,
+          articleUrl,
+          profileUrl,
+          unsubscribeUrl: userUnsubscribeUrl,
+          lang: primaryLang,
+          publicationType,
+          dict,
+        });
 
-      return {
-        from: 'Cerna <boletin@cernapensamento.org>',
-        to: [sub.email],
-        subject: emailContent.subject,
-        html: emailContent.html,
-        text: emailContent.text,
-        headers: {
-          'List-Unsubscribe': `<${userUnsubscribeUrl}>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-        },
-      };
-    });
+        return {
+          from: 'Cerna <boletin@cernapensamento.org>',
+          to: [sub.email],
+          subject: emailContent.subject,
+          html: emailContent.html,
+          text: emailContent.text,
+          headers: {
+            'List-Unsubscribe': `<${userUnsubscribeUrl}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
+        };
+      })
+    );
 
     // 9. Send in Chunks of 100 (Resend batch limit is 100 items per request)
     const CHUNK_SIZE = 100;

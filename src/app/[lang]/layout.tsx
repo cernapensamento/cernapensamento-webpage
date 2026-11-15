@@ -3,6 +3,7 @@ import { fontVariables } from "@/lib/fonts";
 import "../globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { FeedbackProvider } from "@/components/ui/FeedbackProvider";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 import SiteFooter from '@/components/layout/SiteFooter';
 
 import { SITE_NAME } from "@/lib/constants";
@@ -43,13 +44,15 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col font-sans bg-parchment text-charcoal">
         <ThemeProvider>
           <FeedbackProvider>
-            <HeaderVisibilityWrapper>
-              <PublicNavBar />
-            </HeaderVisibilityWrapper>
-            <main className="flex-grow flex flex-col relative">
-              {children}
-            </main>
-            <SiteFooter />
+            <AuthProvider>
+              <HeaderVisibilityWrapper>
+                <PublicNavBar />
+              </HeaderVisibilityWrapper>
+              <main className="flex-grow flex flex-col relative">
+                {children}
+              </main>
+              <SiteFooter />
+            </AuthProvider>
           </FeedbackProvider>
         </ThemeProvider>
       </body>

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { getDictionary } from '@/dictionaries';
 import type { Locale } from '@/i18n-config';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import {
   DB_TABLES,
   PUBLICATION_COLS,
@@ -190,12 +191,8 @@ export default async function EscritorioDelEscritorElDialecto({ params: routePar
           <div className="overflow-y-auto scrollbar-none pb-16" style={{ maxHeight: 'calc(100vh - 400px)' }}>
             <div className="space-y-12">
                 {displayedArticles.length > 0 ? displayedArticles.map((articulo) => {
-                  const titulo = articulo.title
-                    ? (articulo.title[lang] || articulo.title.gl || articulo.title.es || '')
-                    : '';
-                  const subtitulo = articulo.subtitle
-                    ? (articulo.subtitle[lang] || articulo.subtitle.gl || articulo.subtitle.es || null)
-                    : null;
+                  const titulo = resolveLocalizedText(articulo.title, lang);
+                  const subtitulo = articulo.subtitle ? resolveLocalizedText(articulo.subtitle, lang) : null;
                   const typeLabel = (dict.documentTypes as Record<string, string>)?.[articulo.type] || articulo.type;
 
                   return (

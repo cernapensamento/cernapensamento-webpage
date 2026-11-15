@@ -27,7 +27,6 @@ export default function PublicNavBar() {
   const dict = getDictionaryClient(lang);
   const userName =
     userProfile?.full_name ||
-    userProfile?.nombre ||
     (user?.user_metadata?.full_name as string) ||
     (user?.user_metadata?.name as string) ||
     user?.email?.split('@')[0] ||

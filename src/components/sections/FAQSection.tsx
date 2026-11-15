@@ -2,21 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 
-export interface FAQItem {
-  question: string;
-  answer: string;
-}
-
-export interface FAQDict {
-  tag: string;
-  title: string;
-  description: string;
-  items: FAQItem[];
-  moreQuestions?: string;
-  contactUs?: string;
-  statutesLink?: string;
-}
+export type FAQItem = Dictionary['faq']['items'][number];
+export type FAQDict = Partial<Dictionary['faq']>;
 
 interface FAQSectionProps {
   dict: FAQDict;
@@ -34,6 +23,8 @@ export default function FAQSection({ dict, lang }: FAQSectionProps) {
   if (!dict || !dict.items || dict.items.length === 0) {
     return null;
   }
+
+  const t = { ...getDictionaryClient(lang).faq, ...dict };
 
   return (
     <section 
@@ -55,7 +46,7 @@ export default function FAQSection({ dict, lang }: FAQSectionProps) {
           <div className="flex items-center gap-3 mb-4">
             <span className="w-6 h-[2px] bg-gold" aria-hidden="true" />
             <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
-              {dict.tag}
+              {t.tag}
             </span>
           </div>
 
@@ -63,17 +54,17 @@ export default function FAQSection({ dict, lang }: FAQSectionProps) {
             id="faq-heading"
             className="font-serif text-3xl sm:text-4xl md:text-5xl text-charcoal font-bold tracking-tight leading-tight mb-5"
           >
-            {dict.title}
+            {t.title}
           </h2>
 
           <p className="font-sans text-base sm:text-lg text-charcoal/70 leading-relaxed">
-            {dict.description}
+            {t.description}
           </p>
         </div>
 
         {/* Accordion List */}
         <div className="divide-y divide-lines border-y border-lines">
-          {dict.items.map((item, idx) => {
+          {t.items.map((item, idx) => {
             const isOpen = openIndex === idx;
             const itemNumber = String(idx + 1).padStart(2, '0');
             const panelId = `faq-panel-${idx}`;
@@ -132,22 +123,22 @@ export default function FAQSection({ dict, lang }: FAQSectionProps) {
         </div>
 
         {/* Footnote / Further Assistance */}
-        {dict.moreQuestions && (
+        {t.moreQuestions && (
           <div className="mt-12 pt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-sans text-charcoal/65">
-            <span>{dict.moreQuestions}</span>
+            <span>{t.moreQuestions}</span>
             <div className="flex items-center gap-4">
               <Link
                 href={`/${lang}/contacto`}
                 className="font-bold text-charcoal hover:text-gold underline underline-offset-4 uppercase tracking-wider transition-colors"
               >
-                {dict.contactUs || 'contacto@cernapensamento.org'}
+                {t.contactUs}
               </Link>
               <span aria-hidden="true" className="text-lines">|</span>
               <Link
                 href={`/${lang}/asociacion/estatutos`}
                 className="font-bold text-charcoal/70 hover:text-gold uppercase tracking-wider transition-colors"
               >
-                {dict.statutesLink}
+                {t.statutesLink}
               </Link>
             </div>
           </div>

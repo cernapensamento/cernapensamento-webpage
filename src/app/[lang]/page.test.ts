@@ -16,7 +16,7 @@ describe('Homepage Metadata & Agent Readiness', () => {
     expect((meta.alternates?.languages as Record<string, string>)?.es).toBe('https://cernapensamento.org/es');
 
     // OpenGraph signals: type and image
-    expect(meta.openGraph?.type).toBe('website');
+    expect((meta.openGraph as Record<string, unknown>)?.type).toBe('website');
     expect(meta.openGraph?.images).toBeDefined();
     const images = meta.openGraph?.images as Array<{ url: string | URL }>;
     expect(images[0]?.url).toContain('/images/logo/screen.png');

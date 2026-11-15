@@ -1,31 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
+import { deepMerge } from '@/lib/i18n/deepMerge';
 
-export interface AssociationAndNewsDict {
-  badge: string;
-  title: string;
-  description: string;
-  associationCard: {
-    tag: string;
-    title: string;
-    description: string;
-    manifestoLink: string;
-    statutesLink: string;
-    collectionsLink: string;
-    button: string;
-  };
-  newsCard: {
-    tag: string;
-    title: string;
-    description: string;
-    previews: Array<{
-      category: string;
-      title: string;
-    }>;
-    button: string;
-  };
-}
+export type AssociationAndNewsDict = Partial<Dictionary['associationAndNews']>;
 
 interface AssociationAndNewsSectionProps {
   lang: string;
@@ -35,12 +14,21 @@ interface AssociationAndNewsSectionProps {
 export default function AssociationAndNewsSection({ lang, dict }: AssociationAndNewsSectionProps) {
   if (!dict) return null;
 
-  const { badge, title, description, associationCard: assoc, newsCard: news } = dict;
+  const t = deepMerge(
+    getDictionaryClient(lang).associationAndNews as Record<string, unknown>,
+    dict as Record<string, unknown>
+  ) as Dictionary['associationAndNews'];
+  const { badge, title, description, associationCard: assoc, newsCard: news } = t;
+
+  const associationLinks = [
+    { href: `/${lang}/asociacion#manifesto`, label: assoc.manifestoLink },
+    { href: `/${lang}/asociacion/estatutos`, label: assoc.statutesLink },
+    { href: `/${lang}/asociacion#coleccions`, label: assoc.collectionsLink },
+  ];
 
   return (
     <section className="w-full border-t border-lines py-20 md:py-28 bg-parchment">
       <div className="max-w-[1120px] mx-auto px-5 md:px-16 flex flex-col gap-16">
-        
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-lines">
           <RevealOnScroll delayMs={50}>
@@ -62,12 +50,11 @@ export default function AssociationAndNewsSection({ lang, dict }: AssociationAnd
 
         {/* Dual Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-          
           {/* Card 1: Asociación */}
           <RevealOnScroll delayMs={100} className="h-full">
             <div className="bg-surface border border-lines p-8 sm:p-10 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-lg relative overflow-hidden group">
-              <span 
-                aria-hidden="true" 
+              <span
+                aria-hidden="true"
                 className="absolute -right-3 -bottom-8 text-8xl sm:text-9xl font-serif text-charcoal/[0.04] dark:text-parchment/[0.04] select-none pointer-events-none font-bold"
               >
                 § I
@@ -91,33 +78,20 @@ export default function AssociationAndNewsSection({ lang, dict }: AssociationAnd
 
                 {/* Sub-links */}
                 <div className="flex flex-col gap-3 pt-4 border-t border-lines/70 mb-8">
-                  <Link 
-                    href={`/${lang}/asociacion#manifesto`}
-                    className="flex items-center justify-between py-2 text-sm text-charcoal/80 hover:text-gold transition-colors font-sans border-b border-lines/40 group/sub"
-                  >
-                    <span>{assoc.manifestoLink}</span>
-                    <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover/sub:translate-x-1" aria-hidden="true">
-                      arrow_forward
-                    </span>
-                  </Link>
-                  <Link 
-                    href={`/${lang}/asociacion/estatutos`}
-                    className="flex items-center justify-between py-2 text-sm text-charcoal/80 hover:text-gold transition-colors font-sans border-b border-lines/40 group/sub"
-                  >
-                    <span>{assoc.statutesLink}</span>
-                    <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover/sub:translate-x-1" aria-hidden="true">
-                      arrow_forward
-                    </span>
-                  </Link>
-                  <Link 
-                    href={`/${lang}/asociacion#coleccions`}
-                    className="flex items-center justify-between py-2 text-sm text-charcoal/80 hover:text-gold transition-colors font-sans group/sub"
-                  >
-                    <span>{assoc.collectionsLink}</span>
-                    <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover/sub:translate-x-1" aria-hidden="true">
-                      arrow_forward
-                    </span>
-                  </Link>
+                  {associationLinks.map((item, idx) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center justify-between py-2 text-sm text-charcoal/80 hover:text-gold transition-colors font-sans group/sub ${
+                        idx < associationLinks.length - 1 ? 'border-b border-lines/40' : ''
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                      <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover/sub:translate-x-1" aria-hidden="true">
+                        arrow_forward
+                      </span>
+                    </Link>
+                  ))}
                 </div>
               </div>
 
@@ -138,8 +112,8 @@ export default function AssociationAndNewsSection({ lang, dict }: AssociationAnd
           {/* Card 2: Noticias */}
           <RevealOnScroll delayMs={200} className="h-full">
             <div className="bg-surface border border-lines p-8 sm:p-10 flex flex-col justify-between h-full transition-all duration-300 hover:border-gold/60 hover:shadow-lg relative overflow-hidden group">
-              <span 
-                aria-hidden="true" 
+              <span
+                aria-hidden="true"
                 className="absolute -right-3 -bottom-8 text-8xl sm:text-9xl font-serif text-charcoal/[0.04] dark:text-parchment/[0.04] select-none pointer-events-none font-bold"
               >
                 § II
@@ -189,7 +163,6 @@ export default function AssociationAndNewsSection({ lang, dict }: AssociationAnd
               </div>
             </div>
           </RevealOnScroll>
-
         </div>
       </div>
     </section>

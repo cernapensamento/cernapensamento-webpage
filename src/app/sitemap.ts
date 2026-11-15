@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getPublicationCards } from '@/lib/db/queries/publications';
 import { getPublishedAuthors } from '@/lib/db/queries/users';
 import { COLUMNISTS } from '@/lib/columnists';
+import { i18n } from '@/i18n-config';
 
 export const revalidate = 3600;
 
@@ -17,6 +18,14 @@ function getPublicClient() {
   });
 }
 
+function getLanguageAlternates(path: string = '') {
+  const languages: Record<string, string> = {};
+  for (const loc of i18n.locales) {
+    languages[loc] = `${SITE_URL}/${loc}${path}`;
+  }
+  return { languages };
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const entries: MetadataRoute.Sitemap = [];
@@ -27,26 +36,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: now,
     changeFrequency: 'daily',
     priority: 1.0,
-    alternates: {
-      languages: {
-        gl: `${SITE_URL}/gl`,
-        es: `${SITE_URL}/es`,
-      },
-    },
+    alternates: getLanguageAlternates(),
   });
 
-  for (const lang of ['gl', 'es'] as const) {
+  for (const lang of i18n.locales) {
     entries.push({
       url: `${SITE_URL}/${lang}`,
       lastModified: now,
       changeFrequency: 'daily',
       priority: 1.0,
-      alternates: {
-        languages: {
-          gl: `${SITE_URL}/gl`,
-          es: `${SITE_URL}/es`,
-        },
-      },
+      alternates: getLanguageAlternates(),
     });
   }
 
@@ -66,18 +65,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   for (const page of staticPages) {
-    for (const lang of ['gl', 'es'] as const) {
+    for (const lang of i18n.locales) {
       entries.push({
         url: `${SITE_URL}/${lang}/${page.path}`,
         lastModified: now,
         changeFrequency: page.changeFrequency,
         priority: page.priority,
-        alternates: {
-          languages: {
-            gl: `${SITE_URL}/gl/${page.path}`,
-            es: `${SITE_URL}/es/${page.path}`,
-          },
-        },
+        alternates: getLanguageAlternates(`/${page.path}`),
       });
     }
   }
@@ -97,18 +91,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (!pub.slug) continue;
       const effectiveDate = pub.published_at || pub.updated_at || pub.created_at;
       const lastMod = effectiveDate ? new Date(effectiveDate) : now;
-      for (const lang of ['gl', 'es'] as const) {
+      for (const lang of i18n.locales) {
         entries.push({
           url: `${SITE_URL}/${lang}/articulo/${pub.slug}`,
           lastModified: lastMod,
           changeFrequency: 'weekly',
           priority: 0.85,
-          alternates: {
-            languages: {
-              gl: `${SITE_URL}/gl/articulo/${pub.slug}`,
-              es: `${SITE_URL}/es/articulo/${pub.slug}`,
-            },
-          },
+          alternates: getLanguageAlternates(`/articulo/${pub.slug}`),
         });
       }
     }
@@ -134,18 +123,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     for (const slug of authorSlugs) {
-      for (const lang of ['gl', 'es'] as const) {
+      for (const lang of i18n.locales) {
         entries.push({
           url: `${SITE_URL}/${lang}/autor/${slug}`,
           lastModified: now,
           changeFrequency: 'weekly',
           priority: 0.75,
-          alternates: {
-            languages: {
-              gl: `${SITE_URL}/gl/autor/${slug}`,
-              es: `${SITE_URL}/es/autor/${slug}`,
-            },
-          },
+          alternates: getLanguageAlternates(`/autor/${slug}`),
         });
       }
     }

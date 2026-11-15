@@ -1,4 +1,6 @@
 import Negotiator from 'negotiator';
+import { NextResponse, type NextRequest } from 'next/server';
+import { isHomepagePath, isKnownPath } from '@/lib/routes';
 
 const SITE_URL = 'https://cernapensamento.org';
 
@@ -137,92 +139,57 @@ export function getHomepageMarkdown(locale: string = 'gl'): string {
 `;
 }
 
-/**
- * Checks whether a given request pathname is the homepage.
- */
-export function isHomepagePath(pathname: string): boolean {
-  return (
-    pathname === '/' ||
-    pathname === '/gl' ||
-    pathname === '/gl/' ||
-    pathname === '/es' ||
-    pathname === '/es/'
-  );
-}
+export { isHomepagePath, isKnownPath } from '@/lib/routes';
 
 /**
- * Checks if a given pathname corresponds to a known valid route or resource in Cerna.
- * Returns false for unknown paths, probe URLs, and 404 targets.
+ * Negotiates and handles Markdown representation responses for AI agents (acceptmarkdown.com).
+ * Returns NextResponse (direct markdown or internal rewrite) if the client requested markdown,
+ * or null if standard HTML rendering should proceed.
  */
-export function isKnownPath(pathname: string): boolean {
-  const cleanPath = pathname.replace(/\/+$/, '') || '/';
+export function handleMarkdownNegotiation(
+  request: NextRequest,
+  pathname: string,
+  currentLocale: string
+): NextResponse | null {
+  if (!prefersMarkdown(request.headers.get('accept'))) return null;
 
-  // Static files and system paths
-  if (
-    cleanPath === '/sitemap.xml' ||
-    cleanPath === '/robots.txt' ||
-    cleanPath === '/llms.txt' ||
-    cleanPath === '/favicon.ico' ||
-    cleanPath.startsWith('/images/') ||
-    cleanPath.startsWith('/_next/') ||
-    cleanPath.startsWith('/api/') ||
-    cleanPath.startsWith('/auth/')
-  ) {
-    return true;
+  const mdHeaders = {
+    'Content-Type': 'text/markdown; charset=utf-8',
+    'Vary': 'Accept',
+  };
+
+  // 1. 404 representation for unknown paths
+  if (!isKnownPath(pathname)) {
+    return new NextResponse(get404Markdown(currentLocale), { status: 404, headers: mdHeaders });
   }
 
-  // Homepages
-  if (isHomepagePath(cleanPath)) {
-    return true;
+  // 2. Homepage representation
+  if (isHomepagePath(pathname)) {
+    return new NextResponse(getHomepageMarkdown(currentLocale), { status: 200, headers: mdHeaders });
   }
 
-  // Strip locale prefix if present (e.g., /gl/articulos -> /articulos)
-  let pathWithoutLocale = cleanPath;
-  const localeMatch = cleanPath.match(/^\/(gl|es)(\/.*)?$/);
-  if (localeMatch) {
-    pathWithoutLocale = localeMatch[2] || '/';
+  // 3. Article representation
+  const articleMatch = pathname.match(/^(?:\/(?:gl|es))?\/articulo\/([^/]+)$/);
+  if (articleMatch) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/api/markdown';
+    url.searchParams.set('type', 'article');
+    url.searchParams.set('slug', articleMatch[1]);
+    url.searchParams.set('lang', currentLocale);
+    return NextResponse.rewrite(url, { headers: { 'Vary': 'Accept' } });
   }
 
-  if (isHomepagePath(pathWithoutLocale)) {
-    return true;
+  // 4. Legal / About representation
+  const legalMatch = pathname.match(/^(?:\/(?:gl|es))?\/(privacidad|privacy|asociacion\/estatutos)$/);
+  if (legalMatch) {
+    const slug = legalMatch[1].includes('estatutos') ? 'estatutos' : 'privacidad';
+    const url = request.nextUrl.clone();
+    url.pathname = '/api/markdown';
+    url.searchParams.set('type', 'legal');
+    url.searchParams.set('slug', slug);
+    url.searchParams.set('lang', currentLocale);
+    return NextResponse.rewrite(url, { headers: { 'Vary': 'Accept' } });
   }
 
-  const knownExactSegments = new Set([
-    '/articulos',
-    '/autores',
-    '/asociacion',
-    '/asociacion/estatutos',
-    '/asociacion/coleccion-articulos',
-    '/asociacion/coleccion-ensayos',
-    '/asociacion/coleccion-narrativa',
-    '/asociacion/coleccion-poesia',
-    '/noticias',
-    '/contacto',
-    '/privacidad',
-    '/privacy',
-    '/about',
-    '/contact',
-    '/login',
-    '/escritorio',
-    '/escritorio/nuevo',
-    '/escritorio/perfil',
-    '/recuperar-password',
-    '/actualizar-password',
-    '/bad-request',
-  ]);
-
-  if (knownExactSegments.has(pathWithoutLocale)) {
-    return true;
-  }
-
-  // Dynamic routes: /articulo/[slug], /autor/[slug], /escritorio/editar/[slug]
-  if (
-    /^\/articulo\/[^/]+$/.test(pathWithoutLocale) ||
-    /^\/autor\/[^/]+$/.test(pathWithoutLocale) ||
-    /^\/escritorio\/editar\/[^/]+$/.test(pathWithoutLocale)
-  ) {
-    return true;
-  }
-
-  return false;
+  return null;
 }
