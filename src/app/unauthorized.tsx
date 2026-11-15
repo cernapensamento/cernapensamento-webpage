@@ -1,10 +1,11 @@
 import './globals.css';
 import { LiteraryError } from '@/components/errors/LiteraryError';
 import { ERROR_CODES } from '@/lib/constants';
+import { i18n } from '@/i18n-config';
 
 export default function GlobalUnauthorized() {
   return (
-    <html lang="gl">
+    <html lang={i18n.defaultLocale}>
       <head>
         {/* eslint-disable-next-line @next/next/no-page-custom-font, @next/next/google-font-display */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" />
