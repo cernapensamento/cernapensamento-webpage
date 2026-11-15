@@ -1,8 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { getDictionaryClient } from '@/dictionaries/client';
+import { i18n } from '@/i18n-config';
 
 interface EstatutosCardProps {
   lang: string;
@@ -13,8 +13,8 @@ interface EstatutosCardProps {
 }
 
 export function EstatutosCard({ lang, title, description, readMoreText, legalFramework }: EstatutosCardProps) {
-  const dict = lang === 'es' ? esDict : glDict;
-  const badgeText = legalFramework || dict.asociacion.legalFramework;
+  const activeLang = lang || i18n.defaultLocale;
+  const badgeText = legalFramework || getDictionaryClient(activeLang).asociacion.legalFramework;
 
   return (
     <section id="estatutos" aria-labelledby="estatutos-title" className="mt-20 scroll-mt-32">
@@ -51,7 +51,7 @@ export function EstatutosCard({ lang, title, description, readMoreText, legalFra
 
             <div className="shrink-0 flex items-center pt-2 lg:pt-0">
               <Link 
-                href={`/${lang}/asociacion/estatutos`}
+                href={`/${activeLang}/asociacion/estatutos`}
                 className="btn-primary text-xs tracking-[0.16em] font-bold inline-flex items-center gap-2.5 group/btn shadow-sm"
               >
                 <span>{readMoreText}</span>
