@@ -4,6 +4,7 @@ import ContactForm from '@/components/forms/ContactForm';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
+import { SITE_NAME } from '@/lib/constants';
 
 export const revalidate = 60;
 
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const dict = await getDictionary(locale);
 
   return {
-    title: `${dict.contactoPage.title} | Cerna Pensamento`,
+    title: `${dict.contactoPage.title} | ${SITE_NAME}`,
     description: dict.contactoPage.description,
   };
 }

@@ -1,8 +1,10 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import ArticlesArchiveList from '@/components/features/ArticlesArchiveList';
 import ArticlesFilterBar from '@/components/features/ArticlesFilterBar';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
+import { SITE_NAME } from '@/lib/constants';
 import {
   getAllTagsWithTranslations,
   getPublicationCards,
@@ -11,13 +13,27 @@ import {
 
 export const revalidate = 60;
 
-export default async function ArticulosPage({
-  params,
-  searchParams,
-}: {
+interface Props {
   params: Promise<{ lang: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+
+  return {
+    title: `${dict.articles.title} | ${SITE_NAME}`,
+    description: dict.articles.description,
+  };
+}
+
+export default async function ArticulosPage({ params, searchParams }: Props) {
   const [{ lang }, resolvedParams] = await Promise.all([params, searchParams]);
   const locale = resolveLocale(lang);
 

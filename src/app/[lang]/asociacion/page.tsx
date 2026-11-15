@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { resolveLocale } from '@/i18n-config';
 import { getDictionary } from '@/dictionaries';
+import { SITE_NAME } from '@/lib/constants';
 import { EstatutosCard } from '@/components/estatutos/EstatutosCard';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const dict = await getDictionary(locale);
 
   return {
-    title: `${dict.nav.asociacion} | Cerna Pensamento`,
+    title: `${dict.nav.asociacion} | ${SITE_NAME}`,
     description: dict.associationAndNews.description,
   };
 }
@@ -39,6 +40,7 @@ export default async function AsociacionPage({ params }: Props) {
     title: edTitle, 
     description: edDesc, 
     readMore, 
+    collectionPrefix,
     collections, 
     estatutosCard 
   } = dict.editorial.hub;
@@ -72,7 +74,7 @@ export default async function AsociacionPage({ params }: Props) {
             <RevealOnScroll delayMs={50}>
               <div className="flex items-center gap-2 mb-4">
                 <span className="w-5 h-[2px] bg-gold" aria-hidden="true" />
-                <span className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
+                <span id="manifesto-title" className="text-xs font-bold text-gold uppercase tracking-[0.2em]">
                   {dict.asociacion.sectionManifesto}
                 </span>
               </div>
@@ -169,7 +171,7 @@ export default async function AsociacionPage({ params }: Props) {
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {collections.map((col: { id: string | number; title: string; description: string }, idx: number) => (
+            {collections.map((col, idx) => (
               <RevealOnScroll key={idx} delayMs={100 + (idx % 2) * 100}>
                 <Link 
                   href={`/${locale}/asociacion/coleccion-${col.id}`}
@@ -177,7 +179,7 @@ export default async function AsociacionPage({ params }: Props) {
                 >
                   <div className="relative z-10">
                     <span className="font-mono text-xs font-bold text-gold mb-3 block">
-                      COL. {String(idx + 1).padStart(2, '0')}
+                      {collectionPrefix} {String(idx + 1).padStart(2, '0')}
                     </span>
                     <h3 className="font-serif text-2xl md:text-3xl text-charcoal group-hover:text-gold transition-colors mb-3 leading-snug">
                       {col.title}
@@ -265,7 +267,7 @@ export default async function AsociacionPage({ params }: Props) {
             lang={locale}
             title={estatutosCard.title}
             description={estatutosCard.description}
-            readMoreText={readMore}
+            readMoreText={estatutosCard.button}
             legalFramework={dict.asociacion.legalFramework}
           />
         )}

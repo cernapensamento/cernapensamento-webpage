@@ -1,17 +1,30 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import NewsMosaicGrid from '@/components/features/NewsMosaicGrid';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getPublicationCards, PUBLICATION_TYPES } from '@/lib/db';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
+import { SITE_NAME } from '@/lib/constants';
 
 export const revalidate = 60;
 
-export default async function NoticiasPage({
-  params,
-}: {
+interface Props {
   params: Promise<{ lang: string }>;
-}) {
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang } = await params;
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+
+  return {
+    title: `${dict.noticias.pageTitle} | ${SITE_NAME}`,
+    description: dict.noticias.pageDescription,
+  };
+}
+
+export default async function NoticiasPage({ params }: Props) {
   const { lang } = await params;
   const locale = resolveLocale(lang);
 
