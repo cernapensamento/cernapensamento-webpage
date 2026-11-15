@@ -15,8 +15,12 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      const storedTheme = localStorage.getItem('theme') as Theme | null;
-      if (storedTheme) return storedTheme;
+      try {
+        const storedTheme = window.localStorage?.getItem?.('theme') as Theme | null;
+        if (storedTheme) return storedTheme;
+      } catch {
+        // Ignore storage access errors in restricted environments
+      }
       if (document.documentElement.classList.contains('dark')) return 'dark';
     }
     return 'system';
@@ -40,7 +44,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('theme', newTheme);
+    try {
+      window.localStorage?.setItem?.('theme', newTheme);
+    } catch {
+      // Ignore storage access errors in restricted environments
+    }
     
     if (newTheme === 'dark' || (newTheme === 'system' && systemTheme === 'dark')) {
       document.documentElement.classList.add('dark');

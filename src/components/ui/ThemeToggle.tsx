@@ -2,10 +2,14 @@
 
 import { useTheme } from '@/components/ThemeProvider';
 import { useEffect, useState } from 'react';
+import { useLocale } from '@/hooks/useLocale';
+import { getDictionaryClient } from '@/dictionaries/client';
 
 export default function ThemeToggle() {
   const { theme, setTheme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const lang = useLocale();
+  const dict = getDictionaryClient(lang);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0); return () => clearTimeout(timer);
@@ -33,8 +37,8 @@ export default function ThemeToggle() {
   return (
     <button type="button" onClick={toggleTheme}
       className="p-2 border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors duration-300 flex items-center justify-center w-10 h-10 shadow-lg"
-      aria-label="Alternar tema"
-      title="Alternar tema"
+      aria-label={dict.nav.toggleTheme}
+      title={dict.nav.toggleTheme}
     >
       {isDark ? (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-[20px] h-[20px]">

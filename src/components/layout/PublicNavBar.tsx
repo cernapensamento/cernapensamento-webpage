@@ -10,7 +10,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLocale } from '@/hooks/useLocale';
 import { getDictionaryClient } from '@/dictionaries/client';
 import { SITE_NAME } from '@/lib/constants';
-import { USER_ROLES } from '@/lib/db/schema';
+import { COLUMNISTS } from '@/lib/columnists';
+import { PUBLICATION_TYPES, isReaderRole, resolveRoleLabel } from '@/lib/db/schema';
 import { handleSignOut } from '@/actions/auth';
 import { clearClientDrafts } from '@/lib/editor/draftStorage';
 
@@ -18,6 +19,16 @@ interface DropdownItem {
   title: string;
   desc: string;
   href: string;
+}
+
+interface DropdownSection {
+  id: string;
+  label: string;
+  href: string;
+  items: DropdownItem[];
+  desktopFooterLabel: string;
+  mobileFooterLabel: string;
+  dropdownWidthClass: string;
 }
 
 export default function PublicNavBar() {
@@ -30,7 +41,7 @@ export default function PublicNavBar() {
     (user?.user_metadata?.full_name as string) ||
     (user?.user_metadata?.name as string) ||
     user?.email?.split('@')[0] ||
-    'Usuario';
+    dict.nav.defaultUser;
 
   // Desktop active dropdown ('publicacions' | 'asociacion' | 'autores' | null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -97,70 +108,101 @@ export default function PublicNavBar() {
     setMobileExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  // Dropdown Content from Dictionary
-  const publicacionsItems: DropdownItem[] = [
+  const dropdownSections: DropdownSection[] = [
     {
-      title: dict.nav?.artigosOpinion,
-      desc: dict.nav?.artigosDesc,
-      href: `/${lang}/articulos?tipo=article`,
+      id: 'publicacions',
+      label: dict.nav.publicaciones,
+      href: `/${lang}/articulos`,
+      desktopFooterLabel: dict.nav.todasPublicaciones,
+      mobileFooterLabel: dict.nav.verTodoArquivo,
+      dropdownWidthClass: 'w-[380px]',
+      items: [
+        {
+          title: dict.nav.artigosOpinion,
+          desc: dict.nav.artigosDesc,
+          href: `/${lang}/articulos?tipo=${PUBLICATION_TYPES.ARTICLE}`,
+        },
+        {
+          title: dict.nav.ensaiosFilosoficos,
+          desc: dict.nav.ensaiosDesc,
+          href: `/${lang}/articulos?tipo=${PUBLICATION_TYPES.ESSAY}`,
+        },
+        {
+          title: dict.nav.coleccionNarrativa,
+          desc: dict.nav.narrativaDesc,
+          href: `/${lang}/articulos?tipo=${PUBLICATION_TYPES.COLUMN}`,
+        },
+        {
+          title: dict.nav.coleccionPoesia,
+          desc: dict.nav.poesiaDesc,
+          href: `/${lang}/articulos?tipo=${PUBLICATION_TYPES.POETRY}`,
+        },
+      ],
     },
     {
-      title: dict.nav?.ensaiosFilosoficos,
-      desc: dict.nav?.ensaiosDesc,
-      href: `/${lang}/articulos?tipo=essay`,
+      id: 'asociacion',
+      label: dict.nav.asociacion,
+      href: `/${lang}/asociacion`,
+      desktopFooterLabel: dict.nav.conoceAsociacion,
+      mobileFooterLabel: `${dict.nav.conoceAsociacion} →`,
+      dropdownWidthClass: 'w-[380px]',
+      items: [
+        {
+          title: dict.nav.proxectoManifesto,
+          desc: dict.nav.proxectoDesc,
+          href: `/${lang}/asociacion#manifesto`,
+        },
+        {
+          title: dict.nav.estatutosSociais,
+          desc: dict.nav.estatutosDesc,
+          href: `/${lang}/asociacion#estatutos`,
+        },
+        {
+          title: dict.nav.coleccionsEditoriais,
+          desc: dict.nav.coleccionsDesc,
+          href: `/${lang}/asociacion#coleccions`,
+        },
+      ],
     },
     {
-      title: dict.nav?.coleccionNarrativa,
-      desc: dict.nav?.narrativaDesc,
-      href: `/${lang}/articulos?tipo=column`,
-    },
-    {
-      title: dict.nav?.coleccionPoesia,
-      desc: dict.nav?.poesiaDesc,
-      href: `/${lang}/articulos?tipo=poetry`,
+      id: 'autores',
+      label: dict.nav.autores,
+      href: `/${lang}/autores`,
+      desktopFooterLabel: dict.nav.todosAutores,
+      mobileFooterLabel: `${dict.nav.todosAutores} →`,
+      dropdownWidthClass: 'w-[360px]',
+      items: COLUMNISTS.map((columnist) => {
+        const bioKey = columnist.slug.split('-')[0] as keyof typeof dict.nav.founderBios;
+        return {
+          title: columnist.name,
+          desc: dict.nav.founderBios?.[bioKey] ?? '',
+          href: `/${lang}/autor/${columnist.slug}`,
+        };
+      }),
     },
   ];
 
-  const asociacionItems: DropdownItem[] = [
+  const canWrite = !isReaderRole(userProfile?.role);
+  const userMenuLinks = [
     {
-      title: dict.nav?.proxectoManifesto,
-      desc: dict.nav?.proxectoDesc,
-      href: `/${lang}/asociacion#manifesto`,
+      href: `/${lang}/escritorio/perfil`,
+      label: dict.nav.userMenu.profile,
+      icon: 'badge',
+      visible: true,
     },
     {
-      title: dict.nav?.estatutosSociais,
-      desc: dict.nav?.estatutosDesc,
-      href: `/${lang}/asociacion#estatutos`,
+      href: `/${lang}/escritorio`,
+      label: dict.nav.userMenu.myArticles,
+      icon: 'article',
+      visible: canWrite,
     },
     {
-      title: dict.nav?.coleccionsEditoriais,
-      desc: dict.nav?.coleccionsDesc,
-      href: `/${lang}/asociacion#coleccions`,
+      href: `/${lang}/escritorio/nuevo`,
+      label: dict.nav.userMenu.newArticle,
+      icon: 'edit_square',
+      visible: canWrite,
     },
-  ];
-
-  const autoresItems: DropdownItem[] = [
-    {
-      title: 'Diego Araújo',
-      desc: dict.nav?.founderBios?.diego || '',
-      href: `/${lang}/autor/diego-araujo`,
-    },
-    {
-      title: 'Anxo Pérez',
-      desc: dict.nav?.founderBios?.anxo || '',
-      href: `/${lang}/autor/anxo-perez`,
-    },
-    {
-      title: 'Héctor González',
-      desc: dict.nav?.founderBios?.hector || '',
-      href: `/${lang}/autor/hector-gonzalez`,
-    },
-    {
-      title: 'Denis Fernández',
-      desc: dict.nav?.founderBios?.denis || '',
-      href: `/${lang}/autor/denis-fernandez`,
-    },
-  ];
+  ].filter((item) => item.visible);
 
   return (
     <header data-print="hide" className="bg-parchment dark:bg-[#121212] border-b border-lines w-full sticky top-0 z-[100]">
@@ -196,221 +238,83 @@ export default function PublicNavBar() {
         {/* DESKTOP NAVIGATION (DROPDOWNS WITH DIRECT LINKS) */}
         {/* ==================================================== */}
         <div className="hidden lg:flex items-center gap-1 xl:gap-2 h-full">
-          
-          {/* 1. Publicacións: Direct Link to /articulos + Dropdown Toggle */}
-          <div 
-            className="relative h-full flex items-center"
-            onMouseEnter={() => setActiveDropdown('publicacions')}
-            onMouseLeave={() => setActiveDropdown(null)}
-          >
-            <div className={`h-full flex items-center transition-colors ${
-              activeDropdown === 'publicacions'
-                ? 'text-charcoal border-b-2 border-charcoal font-bold'
-                : 'text-charcoal/80 hover:text-charcoal'
-            }`}>
-              <Link
-                href={`/${lang}/articulos`}
-                className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
+          {dropdownSections.map((section) => {
+            const isActive = activeDropdown === section.id;
+            return (
+              <div
+                key={section.id}
+                className="relative h-full flex items-center"
+                onMouseEnter={() => setActiveDropdown(section.id)}
+                onMouseLeave={() => setActiveDropdown(null)}
               >
-                {dict.nav?.publicaciones}
-              </Link>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleDropdown('publicacions');
-                }}
-                className="h-full pr-3 text-charcoal/60 hover:text-charcoal flex items-center"
-                aria-label={dict.nav?.publicaciones}
-                aria-expanded={activeDropdown === 'publicacions'}
-              >
-                <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${activeDropdown === 'publicacions' ? 'rotate-180' : ''}`}>
-                  expand_more
-                </span>
-              </button>
-            </div>
-
-            {activeDropdown === 'publicacions' && (
-              <div className="absolute top-full left-0 w-[380px] bg-parchment border border-lines shadow-2xl z-50 animate-appear-instant">
-                <div className="p-2 flex flex-col">
-                  {publicacionsItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setActiveDropdown(null)}
-                      className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group/item flex items-start justify-between"
-                    >
-                      <div>
-                        <span className="font-sans font-bold text-sm text-charcoal group-hover/item:text-gold transition-colors block">
-                          {item.title}
-                        </span>
-                        <span className="font-sans text-xs text-charcoal/65 block mt-0.5 leading-relaxed">
-                          {item.desc}
-                        </span>
-                      </div>
-                      <span className="text-charcoal/40 group-hover/item:text-gold group-hover/item:translate-x-1 transition-all text-xs pt-0.5" aria-hidden="true">
-                        →
-                      </span>
-                    </Link>
-                  ))}
-                  <div className="pt-2 px-3 pb-2 border-t border-lines mt-1">
-                    <Link
-                      href={`/${lang}/articulos`}
-                      onClick={() => setActiveDropdown(null)}
-                      className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
-                    >
-                      <span>{dict.nav?.todasPublicaciones}</span>
-                      <span aria-hidden="true">→</span>
-                    </Link>
-                  </div>
+                <div className={`h-full flex items-center transition-colors ${
+                  isActive
+                    ? 'text-charcoal border-b-2 border-charcoal font-bold'
+                    : 'text-charcoal/80 hover:text-charcoal'
+                }`}>
+                  <Link
+                    href={section.href}
+                    className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
+                  >
+                    {section.label}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDropdown(section.id);
+                    }}
+                    className="h-full pr-3 text-charcoal/60 hover:text-charcoal flex items-center"
+                    aria-label={section.label}
+                    aria-expanded={isActive}
+                  >
+                    <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`}>
+                      expand_more
+                    </span>
+                  </button>
                 </div>
-              </div>
-            )}
-          </div>
 
-          {/* 2. Asociación: Direct Link to /asociacion + Dropdown Toggle */}
-          <div 
-            className="relative h-full flex items-center"
-            onMouseEnter={() => setActiveDropdown('asociacion')}
-            onMouseLeave={() => setActiveDropdown(null)}
-          >
-            <div className={`h-full flex items-center transition-colors ${
-              activeDropdown === 'asociacion'
-                ? 'text-charcoal border-b-2 border-charcoal font-bold'
-                : 'text-charcoal/80 hover:text-charcoal'
-            }`}>
-              <Link
-                href={`/${lang}/asociacion`}
-                className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
-              >
-                {dict.nav?.asociacion}
-              </Link>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleDropdown('asociacion');
-                }}
-                className="h-full pr-3 text-charcoal/60 hover:text-charcoal flex items-center"
-                aria-label={dict.nav?.asociacion}
-                aria-expanded={activeDropdown === 'asociacion'}
-              >
-                <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${activeDropdown === 'asociacion' ? 'rotate-180' : ''}`}>
-                  expand_more
-                </span>
-              </button>
-            </div>
-
-            {activeDropdown === 'asociacion' && (
-              <div className="absolute top-full left-0 w-[380px] bg-parchment border border-lines shadow-2xl z-50 animate-appear-instant">
-                <div className="p-2 flex flex-col">
-                  {asociacionItems.map((item) => (
-                    <Link
-                      key={item.title}
-                      href={item.href}
-                      onClick={() => setActiveDropdown(null)}
-                      className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group/item flex items-start justify-between"
-                    >
-                      <div>
-                        <span className="font-sans font-bold text-sm text-charcoal group-hover/item:text-gold transition-colors block">
-                          {item.title}
-                        </span>
-                        <span className="font-sans text-xs text-charcoal/65 block mt-0.5 leading-relaxed">
-                          {item.desc}
-                        </span>
+                {isActive && (
+                  <div className={`absolute top-full left-0 ${section.dropdownWidthClass} bg-parchment border border-lines shadow-2xl z-50 animate-appear-instant`}>
+                    <div className="p-2 flex flex-col">
+                      {section.items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setActiveDropdown(null)}
+                          className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group/item flex items-start justify-between"
+                        >
+                          <div>
+                            <span className="font-sans font-bold text-sm text-charcoal group-hover/item:text-gold transition-colors block">
+                              {item.title}
+                            </span>
+                            <span className="font-sans text-xs text-charcoal/65 block mt-0.5 leading-relaxed">
+                              {item.desc}
+                            </span>
+                          </div>
+                          <span className="text-charcoal/40 group-hover/item:text-gold group-hover/item:translate-x-1 transition-all text-xs pt-0.5" aria-hidden="true">
+                            →
+                          </span>
+                        </Link>
+                      ))}
+                      <div className="pt-2 px-3 pb-2 border-t border-lines mt-1">
+                        <Link
+                          href={section.href}
+                          onClick={() => setActiveDropdown(null)}
+                          className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
+                        >
+                          <span>{section.desktopFooterLabel}</span>
+                          <span aria-hidden="true">→</span>
+                        </Link>
                       </div>
-                      <span className="text-charcoal/40 group-hover/item:text-gold group-hover/item:translate-x-1 transition-all text-xs pt-0.5" aria-hidden="true">
-                        →
-                      </span>
-                    </Link>
-                  ))}
-                  <div className="pt-2 px-3 pb-2 border-t border-lines mt-1">
-                    <Link
-                      href={`/${lang}/asociacion`}
-                      onClick={() => setActiveDropdown(null)}
-                      className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
-                    >
-                      <span>{dict.nav?.conoceAsociacion}</span>
-                      <span aria-hidden="true">→</span>
-                    </Link>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })}
 
-          {/* 3. Autores Dropdown */}
-          <div 
-            className="relative h-full flex items-center"
-            onMouseEnter={() => setActiveDropdown('autores')}
-            onMouseLeave={() => setActiveDropdown(null)}
-          >
-            <div className={`h-full flex items-center transition-colors ${
-              activeDropdown === 'autores'
-                ? 'text-charcoal border-b-2 border-charcoal font-bold'
-                : 'text-charcoal/80 hover:text-charcoal'
-            }`}>
-              <Link
-                href={`/${lang}/autores`}
-                className="h-full pl-3.5 pr-1 xl:pl-4 xl:pr-1.5 flex items-center text-sm font-semibold tracking-wide"
-              >
-                {dict.nav?.autores}
-              </Link>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleDropdown('autores');
-                }}
-                className="h-full pr-3 text-charcoal/60 hover:text-charcoal flex items-center"
-                aria-label={dict.nav?.autores}
-                aria-expanded={activeDropdown === 'autores'}
-              >
-                <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${activeDropdown === 'autores' ? 'rotate-180' : ''}`}>
-                  expand_more
-                </span>
-              </button>
-            </div>
-
-            {activeDropdown === 'autores' && (
-              <div className="absolute top-full left-0 w-[360px] bg-parchment border border-lines shadow-2xl z-50 animate-appear-instant">
-                <div className="p-2 flex flex-col">
-                  {autoresItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setActiveDropdown(null)}
-                      className="p-3.5 hover:bg-surface border-b border-lines/40 last:border-0 transition-colors group/item flex items-start justify-between"
-                    >
-                      <div>
-                        <span className="font-sans font-bold text-sm text-charcoal group-hover/item:text-gold transition-colors block">
-                          {item.title}
-                        </span>
-                        <span className="font-sans text-xs text-charcoal/65 block mt-0.5 leading-relaxed">
-                          {item.desc}
-                        </span>
-                      </div>
-                      <span className="text-charcoal/40 group-hover/item:text-gold group-hover/item:translate-x-1 transition-all text-xs pt-0.5" aria-hidden="true">
-                        →
-                      </span>
-                    </Link>
-                  ))}
-                  <div className="pt-2 px-3 pb-2 border-t border-lines mt-1">
-                    <Link
-                      href={`/${lang}/autores`}
-                      onClick={() => setActiveDropdown(null)}
-                      className="text-xs font-bold uppercase tracking-[0.16em] text-charcoal hover:text-gold flex items-center justify-between py-1 transition-colors"
-                    >
-                      <span>{dict.nav?.todosAutores}</span>
-                      <span aria-hidden="true">→</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 4. Noticias (Direct Link) */}
+          {/* Noticias (Direct Link) */}
           <Link
             href={`/${lang}/noticias`}
             className={`h-full px-3.5 xl:px-4 flex items-center text-sm font-semibold tracking-wide transition-colors ${
@@ -419,10 +323,10 @@ export default function PublicNavBar() {
                 : 'text-charcoal/80 hover:text-charcoal'
             }`}
           >
-            {dict.nav?.noticias}
+            {dict.nav.noticias}
           </Link>
 
-          {/* 5. Contactar (Direct Link) */}
+          {/* Contactar (Direct Link) */}
           <Link
             href={`/${lang}/contacto`}
             className={`h-full px-3.5 xl:px-4 flex items-center text-sm font-semibold tracking-wide transition-colors ${
@@ -431,7 +335,7 @@ export default function PublicNavBar() {
                 : 'text-charcoal/80 hover:text-charcoal'
             }`}
           >
-            {dict.nav?.contactar || 'Contactar'}
+            {dict.nav.contactar}
           </Link>
 
         </div>
@@ -454,13 +358,13 @@ export default function PublicNavBar() {
                 type="button"
                 onClick={() => setUserMenuOpen((prev) => !prev)}
                 className="w-10 h-10 border border-lines bg-parchment hover:bg-lines flex items-center justify-center transition-colors relative overflow-hidden cursor-pointer"
-                title={dict.nav?.userMenu?.profile || dict.nav?.escritorio}
+                title={dict.nav.userMenu.profile || dict.nav.escritorio}
                 aria-expanded={userMenuOpen}
                 aria-haspopup="true"
-                aria-label={dict.nav?.userMenu?.profile || 'Menú de usuario'}
+                aria-label={dict.nav.userMenuAria}
               >
                 {userProfile?.avatar_url ? (
-                  <Image className="object-cover" alt="Perfil" src={userProfile.avatar_url} fill sizes="40px" />
+                  <Image className="object-cover" alt={dict.nav.profileAvatarAlt} src={userProfile.avatar_url} fill sizes="40px" />
                 ) : (
                   <span className="material-symbols-outlined text-[20px]">person</span>
                 )}
@@ -475,15 +379,7 @@ export default function PublicNavBar() {
                   {/* User identity header */}
                   <div className="px-4 py-3 border-b border-lines/80 bg-parchment/40">
                     <p className="text-[10px] font-sans text-charcoal/50 uppercase tracking-[0.2em] mb-1">
-                      {userProfile?.role === USER_ROLES.ADMIN
-                        ? dict.dashboard?.admin || 'ADMIN'
-                        : userProfile?.role === USER_ROLES.FOUNDER
-                        ? dict.dashboard?.founder || dict.dashboard?.writer || 'FUNDADOR'
-                        : userProfile?.role === USER_ROLES.MEMBER
-                        ? dict.dashboard?.member || 'MEMBRO'
-                        : userProfile?.role === USER_ROLES.GUEST
-                        ? dict.dashboard?.guest || 'CONVIDADO'
-                        : dict.dashboard?.reader || 'LECTOR'}
+                      {resolveRoleLabel(userProfile?.role, dict.dashboard)}
                     </p>
                     <p className="text-sm font-serif font-bold text-charcoal truncate">
                       {userName}
@@ -492,51 +388,27 @@ export default function PublicNavBar() {
 
                   {/* Actions list */}
                   <div className="py-2 flex flex-col gap-0.5">
-                    {/* Perfil */}
-                    <Link
-                      href={`/${lang}/escritorio/perfil`}
-                      onClick={() => setUserMenuOpen(false)}
-                      className="group px-4 py-2.5 text-sm font-sans flex items-center justify-between text-charcoal hover:bg-lines/50 hover:text-gold transition-all duration-200"
-                      role="menuitem"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-[18px] text-charcoal/60 group-hover:text-gold group-hover:scale-110 transition-all duration-200">badge</span>
-                        <span className="font-medium group-hover:translate-x-0.5 transition-transform duration-200">{dict.nav?.userMenu?.profile || dict.dashboard?.profileTitle || 'O teu Perfil'}</span>
-                      </div>
-                      <span className="material-symbols-outlined text-[14px] text-charcoal/30 group-hover:text-gold group-hover:translate-x-1 transition-all duration-200">arrow_forward</span>
-                    </Link>
-
-                    {/* As miñas publicacións */}
-                    {userProfile?.role !== USER_ROLES.READER && (
+                    {userMenuLinks.map((item) => (
                       <Link
-                        href={`/${lang}/escritorio`}
+                        key={item.href}
+                        href={item.href}
                         onClick={() => setUserMenuOpen(false)}
                         className="group px-4 py-2.5 text-sm font-sans flex items-center justify-between text-charcoal hover:bg-lines/50 hover:text-gold transition-all duration-200"
                         role="menuitem"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-[18px] text-charcoal/60 group-hover:text-gold group-hover:scale-110 transition-all duration-200">article</span>
-                          <span className="font-medium group-hover:translate-x-0.5 transition-transform duration-200">{dict.nav?.userMenu?.myArticles || dict.dashboard?.myArticles || 'As miñas Publicacións'}</span>
+                          <span className="material-symbols-outlined text-[18px] text-charcoal/60 group-hover:text-gold group-hover:scale-110 transition-all duration-200">
+                            {item.icon}
+                          </span>
+                          <span className="font-medium group-hover:translate-x-0.5 transition-transform duration-200">
+                            {item.label}
+                          </span>
                         </div>
-                        <span className="material-symbols-outlined text-[14px] text-charcoal/30 group-hover:text-gold group-hover:translate-x-1 transition-all duration-200">arrow_forward</span>
+                        <span className="material-symbols-outlined text-[14px] text-charcoal/30 group-hover:text-gold group-hover:translate-x-1 transition-all duration-200">
+                          arrow_forward
+                        </span>
                       </Link>
-                    )}
-
-                    {/* Escribir novo artigo */}
-                    {userProfile?.role !== USER_ROLES.READER && (
-                      <Link
-                        href={`/${lang}/escritorio/nuevo`}
-                        onClick={() => setUserMenuOpen(false)}
-                        className="group px-4 py-2.5 text-sm font-sans flex items-center justify-between text-charcoal hover:bg-lines/50 hover:text-gold transition-all duration-200"
-                        role="menuitem"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-[18px] text-charcoal/60 group-hover:text-gold group-hover:scale-110 transition-all duration-200">edit_square</span>
-                          <span className="font-medium group-hover:translate-x-0.5 transition-transform duration-200">{dict.nav?.userMenu?.newArticle || dict.dashboard?.newArticle || 'Novo Artigo'}</span>
-                        </div>
-                        <span className="material-symbols-outlined text-[14px] text-charcoal/30 group-hover:text-gold group-hover:translate-x-1 transition-all duration-200">arrow_forward</span>
-                      </Link>
-                    )}
+                    ))}
                   </div>
 
                   {/* Divider and Logout */}
@@ -548,7 +420,7 @@ export default function PublicNavBar() {
                         role="menuitem"
                       >
                         <span className="material-symbols-outlined text-[18px] text-charcoal/50 group-hover:text-red-500 group-hover:-translate-x-0.5 transition-all duration-200">logout</span>
-                        <span className="font-medium">{dict.nav?.userMenu?.logout || dict.nav?.logout || 'Pechar Sesión'}</span>
+                        <span className="font-medium">{dict.nav.userMenu.logout}</span>
                       </button>
                     </form>
                   </div>
@@ -559,7 +431,7 @@ export default function PublicNavBar() {
             <Link
               href={`/${lang}/login`}
               className="w-10 h-10 border border-lines bg-parchment text-charcoal hover:bg-lines flex items-center justify-center transition-colors"
-              title={dict.nav?.login}
+              title={dict.nav.login}
             >
               <span className="material-symbols-outlined text-[20px]">person</span>
             </Link>
@@ -577,7 +449,7 @@ export default function PublicNavBar() {
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="w-10 h-10 border border-lines bg-parchment text-charcoal hover:bg-lines transition-colors flex items-center justify-center"
-            aria-label={mobileMenuOpen ? (dict.nav?.closeMenu || 'Pechar menú') : (dict.nav?.toggleMenu || 'Abrir menú')}
+            aria-label={mobileMenuOpen ? dict.nav.closeMenu : dict.nav.toggleMenu}
             aria-expanded={mobileMenuOpen}
           >
             <span className="material-symbols-outlined text-[24px]">
@@ -594,140 +466,56 @@ export default function PublicNavBar() {
       {mobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 right-0 h-[calc(100dvh-4rem)] md:h-[calc(100dvh-5rem)] bg-parchment dark:bg-[#121212] z-[999] overflow-y-auto border-t border-lines flex flex-col justify-between p-6 shadow-2xl">
           <div className="flex flex-col gap-6">
-            
-            {/* 1. Publicacións: Direct Link + Accordion Chevron */}
-            <div className="border-b border-lines pb-4">
-              <div className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2">
-                <Link
-                  href={`/${lang}/articulos`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-gold transition-colors"
-                >
-                  {dict.nav?.publicaciones}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => toggleMobileAccordion('publicacions')}
-                  className="p-1 text-charcoal/70"
-                  aria-label={dict.dashboard?.expandSidebar || 'Expandir'}
-                >
-                  <span className={`material-symbols-outlined transition-transform ${mobileExpanded['publicacions'] ? 'rotate-180 text-gold' : ''}`}>
-                    expand_more
-                  </span>
-                </button>
-              </div>
-              {mobileExpanded['publicacions'] && (
-                <div className="flex flex-col gap-3 pl-3 pt-3 border-l-2 border-gold/40 mt-2">
-                  {publicacionsItems.map((item) => (
+            {dropdownSections.map((section) => {
+              const isExpanded = Boolean(mobileExpanded[section.id]);
+              return (
+                <div key={section.id} className="border-b border-lines pb-4">
+                  <div className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2">
                     <Link
-                      key={item.href}
-                      href={item.href}
+                      href={section.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="text-sm font-sans font-medium text-charcoal/80 hover:text-gold py-1"
+                      className="hover:text-gold transition-colors"
                     >
-                      {item.title}
+                      {section.label}
                     </Link>
-                  ))}
-                  <Link
-                    href={`/${lang}/articulos`}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
-                  >
-                    {dict.nav?.verTodoArquivo}
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* 2. Asociación: Direct Link + Accordion Chevron */}
-            <div className="border-b border-lines pb-4">
-              <div className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2">
-                <Link
-                  href={`/${lang}/asociacion`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-gold transition-colors"
-                >
-                  {dict.nav?.asociacion}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => toggleMobileAccordion('asociacion')}
-                  className="p-1 text-charcoal/70"
-                  aria-label={dict.dashboard?.expandSidebar || 'Expandir'}
-                >
-                  <span className={`material-symbols-outlined transition-transform ${mobileExpanded['asociacion'] ? 'rotate-180 text-gold' : ''}`}>
-                    expand_more
-                  </span>
-                </button>
-              </div>
-              {mobileExpanded['asociacion'] && (
-                <div className="flex flex-col gap-3 pl-3 pt-3 border-l-2 border-gold/40 mt-2">
-                  {asociacionItems.map((item) => (
-                    <Link
-                      key={item.title}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-sm font-sans font-medium text-charcoal/80 hover:text-gold py-1"
+                    <button
+                      type="button"
+                      onClick={() => toggleMobileAccordion(section.id)}
+                      className="p-1 text-charcoal/70"
+                      aria-label={dict.dashboard.expandSidebar}
+                      aria-expanded={isExpanded}
                     >
-                      {item.title}
-                    </Link>
-                  ))}
-                  <Link
-                    href={`/${lang}/asociacion`}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
-                  >
-                    {dict.nav?.conoceAsociacion} →
-                  </Link>
+                      <span className={`material-symbols-outlined transition-transform ${isExpanded ? 'rotate-180 text-gold' : ''}`}>
+                        expand_more
+                      </span>
+                    </button>
+                  </div>
+                  {isExpanded && (
+                    <div className="flex flex-col gap-3 pl-3 pt-3 border-l-2 border-gold/40 mt-2">
+                      {section.items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="text-sm font-sans font-medium text-charcoal/80 hover:text-gold py-1"
+                        >
+                          {item.title}
+                        </Link>
+                      ))}
+                      <Link
+                        href={section.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
+                      >
+                        {section.mobileFooterLabel}
+                      </Link>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })}
 
-            {/* 3. Autores: Direct Link + Accordion Chevron */}
-            <div className="border-b border-lines pb-4">
-              <div className="w-full flex items-center justify-between text-xl font-serif font-bold text-charcoal py-2">
-                <Link
-                  href={`/${lang}/autores`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-gold transition-colors"
-                >
-                  {dict.nav?.autores}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => toggleMobileAccordion('autores')}
-                  className="p-1 text-charcoal/70"
-                  aria-label={dict.dashboard?.expandSidebar || 'Expandir'}
-                >
-                  <span className={`material-symbols-outlined transition-transform ${mobileExpanded['autores'] ? 'rotate-180 text-gold' : ''}`}>
-                    expand_more
-                  </span>
-                </button>
-              </div>
-              {mobileExpanded['autores'] && (
-                <div className="flex flex-col gap-3 pl-3 pt-3 border-l-2 border-gold/40 mt-2">
-                  {autoresItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-sm font-sans font-medium text-charcoal/80 hover:text-gold py-1"
-                    >
-                      {item.title}
-                    </Link>
-                  ))}
-                  <Link
-                    href={`/${lang}/autores`}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-xs font-bold uppercase tracking-widest text-gold pt-2"
-                  >
-                    {dict.nav?.todosAutores} →
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* 4. Noticias (Direct Link) */}
+            {/* Noticias (Direct Link) */}
             <div className="border-b border-lines pb-4">
               <Link
                 href={`/${lang}/noticias`}
@@ -736,11 +524,11 @@ export default function PublicNavBar() {
                   pathname?.includes('/noticias') ? 'text-gold' : 'text-charcoal hover:text-gold'
                 }`}
               >
-                {dict.nav?.noticiasYAvisos}
+                {dict.nav.noticiasYAvisos}
               </Link>
             </div>
 
-            {/* 5. Contactar (Direct Link) */}
+            {/* Contactar (Direct Link) */}
             <div className="border-b border-lines pb-4">
               <Link
                 href={`/${lang}/contacto`}
@@ -749,54 +537,35 @@ export default function PublicNavBar() {
                   pathname?.includes('/contacto') ? 'text-gold' : 'text-charcoal hover:text-gold'
                 }`}
               >
-                {dict.nav?.contactar}
+                {dict.nav.contactar}
               </Link>
             </div>
 
-            {/* 6. Escritorio / Perfil */}
+            {/* Escritorio / Perfil */}
             <div className="border-b border-lines pb-4">
               {user ? (
                 <div className="flex flex-col gap-2 pt-2">
                   <div className="text-xs font-sans text-charcoal/50 uppercase tracking-widest pb-1">
-                    {dict.nav?.userMenu?.profile || 'A túa Conta'} • {userName}
+                    {dict.nav.accountLabel} • {userName}
                   </div>
-                  <Link
-                    href={`/${lang}/escritorio/perfil`}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-lg font-serif font-bold text-charcoal hover:text-gold py-1 flex items-center justify-between"
-                  >
-                    <span>{dict.nav?.userMenu?.profile || 'O teu Perfil'}</span>
-                    <span className="material-symbols-outlined text-sm">badge</span>
-                  </Link>
-
-                  {userProfile?.role !== USER_ROLES.READER && (
+                  {userMenuLinks.map((item) => (
                     <Link
-                      href={`/${lang}/escritorio`}
+                      key={item.href}
+                      href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-lg font-serif font-bold text-charcoal hover:text-gold py-1 flex items-center justify-between"
                     >
-                      <span>{dict.nav?.userMenu?.myArticles || 'As miñas Publicacións'}</span>
-                      <span className="material-symbols-outlined text-sm">article</span>
+                      <span>{item.label}</span>
+                      <span className="material-symbols-outlined text-sm">{item.icon}</span>
                     </Link>
-                  )}
-
-                  {userProfile?.role !== USER_ROLES.READER && (
-                    <Link
-                      href={`/${lang}/escritorio/nuevo`}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-serif font-bold text-charcoal hover:text-gold py-1 flex items-center justify-between"
-                    >
-                      <span>{dict.nav?.userMenu?.newArticle || 'Novo Artigo'}</span>
-                      <span className="material-symbols-outlined text-sm">edit_square</span>
-                    </Link>
-                  )}
+                  ))}
 
                   <form action={handleSignOut} onSubmit={clearClientDrafts} className="pt-2">
                     <button
                       type="submit"
                       className="w-full text-left py-2 text-sm font-sans flex items-center justify-between text-charcoal/60 hover:text-red-500 cursor-pointer"
                     >
-                      <span>{dict.nav?.userMenu?.logout || 'Pechar Sesión'}</span>
+                      <span>{dict.nav.userMenu.logout}</span>
                       <span className="material-symbols-outlined text-sm">logout</span>
                     </button>
                   </form>
@@ -807,7 +576,7 @@ export default function PublicNavBar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-xl font-serif font-bold text-charcoal hover:text-gold py-2 flex items-center justify-between"
                 >
-                  <span>{dict.nav?.login}</span>
+                  <span>{dict.nav.login}</span>
                   <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true">
                     arrow_forward
                   </span>
