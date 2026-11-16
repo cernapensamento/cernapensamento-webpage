@@ -63,7 +63,7 @@ describe('ReviewActionBar Component', () => {
   it('renders nothing when user role is reader or member', () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'reader-1' } as unknown as User,
-      profile: { role: 'reader', rol: 'reader', avatar_url: null, full_name: null, nombre: null },
+      profile: { role: 'reader', avatar_url: null, full_name: null },
       loading: false,
     });
 
@@ -76,7 +76,7 @@ describe('ReviewActionBar Component', () => {
   it('renders nothing when publication status is not in_review', () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'admin-1' } as unknown as User,
-      profile: { role: 'admin', rol: 'admin', avatar_url: null, full_name: null, nombre: null },
+      profile: { role: 'admin', avatar_url: null, full_name: null },
       loading: false,
     });
 
@@ -89,7 +89,7 @@ describe('ReviewActionBar Component', () => {
   it('renders when user is admin and publication is in_review', () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'admin-1' } as unknown as User,
-      profile: { role: 'admin', rol: 'admin', avatar_url: null, full_name: null, nombre: null },
+      profile: { role: 'admin', avatar_url: null, full_name: null },
       loading: false,
     });
 
@@ -103,7 +103,7 @@ describe('ReviewActionBar Component', () => {
   it('renders when user is founder and publication is in_review', () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'founder-1' } as unknown as User,
-      profile: { role: 'founder', rol: 'founder', avatar_url: null, full_name: null, nombre: null },
+      profile: { role: 'founder', avatar_url: null, full_name: null },
       loading: false,
     });
 
@@ -127,7 +127,7 @@ describe('ReviewActionBar Component', () => {
   it('approves article when clicking approve button', async () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'admin-1' } as unknown as User,
-      profile: { role: 'admin', rol: 'admin', avatar_url: null, full_name: null, nombre: null },
+      profile: { role: 'admin', avatar_url: null, full_name: null },
       loading: false,
     });
     vi.mocked(articleActions.updateArticleState).mockResolvedValueOnce({ success: true });
@@ -138,7 +138,7 @@ describe('ReviewActionBar Component', () => {
     fireEvent.click(approveBtn);
 
     await waitFor(() => {
-      expect(articleActions.updateArticleState).toHaveBeenCalledWith('art-123', PUBLICATION_STATUSES.PUBLISHED);
+      expect(articleActions.updateArticleState).toHaveBeenCalledWith('art-123', PUBLICATION_STATUSES.PUBLISHED, 'gl');
       expect(mockToast.success).toHaveBeenCalled();
     });
   });
@@ -146,7 +146,7 @@ describe('ReviewActionBar Component', () => {
   it('rejects article when clicking reject button', async () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'admin-1' } as unknown as User,
-      profile: { role: 'admin', rol: 'admin', avatar_url: null, full_name: null, nombre: null },
+      profile: { role: 'admin', avatar_url: null, full_name: null },
       loading: false,
     });
     vi.mocked(articleActions.updateArticleState).mockResolvedValueOnce({ success: true });
@@ -157,7 +157,7 @@ describe('ReviewActionBar Component', () => {
     fireEvent.click(rejectBtn);
 
     await waitFor(() => {
-      expect(articleActions.updateArticleState).toHaveBeenCalledWith('art-123', PUBLICATION_STATUSES.DRAFT);
+      expect(articleActions.updateArticleState).toHaveBeenCalledWith('art-123', PUBLICATION_STATUSES.DRAFT, 'gl');
       expect(mockToast.success).toHaveBeenCalled();
     });
   });

@@ -5,8 +5,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import FormattedDate from '@/components/ui/FormattedDate';
-import type { PublicationType, UserRole } from '@/lib/db/types';
-import { USER_ROLES } from '@/lib/db/schema';
+import { i18n } from '@/i18n-config';
+import { getDictionaryClient } from '@/dictionaries/client';
+import {
+  resolveRoleLabel,
+  normalizePublicationType,
+} from '@/lib/db/schema';
+import type {
+  PublicationType,
+  UserRole,
+} from '@/lib/db/types';
 
 export interface AuthorDirectoryItem {
   id: string;
@@ -88,9 +96,9 @@ function AnimatedNumber({ value }: { value: number }) {
   useIsomorphicLayoutEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const reduceMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)'
-    ).matches;
+    const reduceMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (reduceMotion || value === 0) return;
 
@@ -122,7 +130,6 @@ function AuthorCard({
   documentTypes,
 }: {
   author: AuthorDirectoryItem;
-  index: number;
   lang: string;
   dict: AuthorsPageDict;
   documentTypes: Record<string, string>;
@@ -130,16 +137,18 @@ function AuthorCard({
   const [imageError, setImageError] = useState(false);
   const authorHref = `/${lang}/autor/${author.slug || author.id}`;
   const typeLabels = author.publication_types.map(
-    (type) => documentTypes[type] || type
+    (type) => documentTypes[type] || documentTypes[normalizePublicationType(type)] || type
   );
   const visibleTypes = typeLabels.slice(0, 3);
   const extraTypes = typeLabels.length - visibleTypes.length;
-  const roleLabel =
-    author.role === USER_ROLES.FOUNDER
-      ? dict.roles.founder
-      : author.role === USER_ROLES.ADMIN
-        ? dict.roles.editorialBoard
-        : dict.roles.contributor;
+  const roleLabel = resolveRoleLabel(author.role, {
+    founder: dict.roles.founder,
+    writer: dict.roles.founder,
+    admin: dict.roles.editorialBoard,
+    member: dict.roles.contributor,
+    guest: dict.roles.contributor,
+    reader: dict.roles.contributor,
+  });
   const showsImage = Boolean(author.avatar_url) && !imageError;
 
   return (
@@ -253,22 +262,36 @@ function AuthorCard({
 export default function AuthorsDirectory({
   authors,
   lang,
-  dict,
-  documentTypes,
+  dict: rawDict,
+  documentTypes: rawDocumentTypes,
 }: AuthorsDirectoryProps) {
   const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const sortLocale = lang || i18n.defaultLocale;
+  const fallbackDict = getDictionaryClient(sortLocale);
+  const dict: AuthorsPageDict = {
+    ...fallbackDict.autoresPage,
+    ...rawDict,
+    roles: {
+      ...fallbackDict.autoresPage.roles,
+      ...rawDict?.roles,
+    },
+  };
+  const documentTypes: Record<string, string> = {
+    ...fallbackDict.documentTypes,
+    ...rawDocumentTypes,
+  };
 
   const sortedAuthors = useMemo(() => {
     return [...authors].sort((a, b) => {
       if (sortBy === 'name') {
-        return a.full_name.localeCompare(b.full_name, lang === 'gl' ? 'gl' : 'es');
+        return a.full_name.localeCompare(b.full_name, sortLocale);
       }
 
       if (sortBy === 'works') {
         if (b.published_count !== a.published_count) {
           return b.published_count - a.published_count;
         }
-        return a.full_name.localeCompare(b.full_name, lang === 'gl' ? 'gl' : 'es');
+        return a.full_name.localeCompare(b.full_name, sortLocale);
       }
 
       const aDate = a.latest_publication_at
@@ -279,9 +302,9 @@ export default function AuthorsDirectory({
         : 0;
 
       if (bDate !== aDate) return bDate - aDate;
-      return a.full_name.localeCompare(b.full_name, lang === 'gl' ? 'gl' : 'es');
+      return a.full_name.localeCompare(b.full_name, sortLocale);
     });
-  }, [authors, sortBy, lang]);
+  }, [authors, sortBy, sortLocale]);
 
   const totalPublications = useMemo(
     () => authors.reduce((total, author) => total + author.published_count, 0),
@@ -431,7 +454,6 @@ export default function AuthorsDirectory({
                   >
                     <AuthorCard
                       author={author}
-                      index={index}
                       lang={lang}
                       dict={dict}
                       documentTypes={documentTypes}

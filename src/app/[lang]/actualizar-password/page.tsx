@@ -1,12 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
+import {
+  MIN_PASSWORD_LENGTH,
+  formatClientAuthError,
+  getClientSession,
+  resolveClientDeskRedirectPath,
+  updateClientPassword,
+} from '@/lib/auth-client';
 import { useToast } from '@/components/ui/FeedbackProvider';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { getDictionaryClient } from '@/dictionaries/client';
+import { useLocale } from '@/hooks/useLocale';
 
 export default function ActualizarPasswordPage() {
   const [password, setPassword] = useState('');
@@ -14,17 +21,16 @@ export default function ActualizarPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const router = useRouter();
-  const params = useParams();
-  const lang = (params.lang as string) || 'es';
+  const lang = useLocale();
   const supabase = createClient();
   const toast = useToast();
-  
-  const dict = lang === 'es' ? esDict : glDict;
+
+  const dict = getDictionaryClient(lang);
   const loginDict = dict.loginPage;
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await getClientSession(supabase);
       if (!session) {
         router.push(`/${lang}/login`);
       } else {
@@ -39,21 +45,25 @@ export default function ActualizarPasswordPage() {
     setLoading(true);
     setError(null);
 
-    if (password.length < 6) {
+    if (password.length < MIN_PASSWORD_LENGTH) {
       setError(loginDict.passError);
       setLoading(false);
       return;
     }
-    
+
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      
+      const { data, error } = await updateClientPassword(supabase, password);
+
       if (error) throw error;
-      
+
       toast.success(loginDict.updateSuccess);
-      router.push(`/${lang}/escritorio`);
+      const user = data.user ?? (await getClientSession(supabase)).data.session?.user;
+      const redirectPath = user
+        ? await resolveClientDeskRedirectPath(user, supabase, lang)
+        : `/${lang}/escritorio`;
+      router.push(redirectPath);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : loginDict.genericAuthError);
+      setError(formatClientAuthError(err, loginDict));
     } finally {
       setLoading(false);
     }
@@ -104,7 +114,7 @@ export default function ActualizarPasswordPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={MIN_PASSWORD_LENGTH}
               className="w-full px-4 py-3 bg-surface border border-lines text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-charcoal focus:ring-1 focus:ring-charcoal/10 transition-all duration-200"
               placeholder="••••••••"
             />

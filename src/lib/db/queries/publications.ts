@@ -4,7 +4,7 @@
  * Enforces bandwidth egress guardrails (never selects full content on listing queries).
  */
 
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import { resolveClient } from '../resolveClient';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
 import { sanitizeStorageUrl } from '@/lib/storage/paths';
 import {
@@ -12,18 +12,20 @@ import {
   PUBLICATION_COLS,
   USER_COLS,
   PUBLICATION_STATUSES,
+  GUEST_PUBLICATION_LIMITS,
 } from '../schema';
 import { getPublicationIdsByTagSlugs } from './tags';
 import { formatDbError } from '../formatDbError';
 import type {
-
   PublicationRow,
   PublicationCardItem,
+  PublicationDashboardItem,
   PublicationDetail,
   PublicationType,
   PublicationStatus,
   TagItem,
   LocalizedString,
+  GuestPublicationQuota,
 } from '../types';
 
 interface RawTagRelation {
@@ -52,6 +54,7 @@ interface RawPublicationCard {
   is_pinned: boolean | null;
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
   author_id: string;
   author: {
     id: string;
@@ -60,11 +63,6 @@ interface RawPublicationCard {
     avatar_url: string | null;
   } | null;
   publication_tags: RawTagRelation[] | null;
-}
-
-async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient> {
-  if (provided) return provided;
-  return await createServerClient();
 }
 
 /**
@@ -106,6 +104,16 @@ function normalizeTags(
   }
 
   return result;
+}
+
+/**
+ * Retrieve a full publication detail by its primary UUID.
+ */
+export async function getPublicationById(
+  id: string,
+  options?: { client?: SupabaseClient; lang?: string; throwOnError?: boolean }
+): Promise<PublicationDetail | null> {
+  return await getPublicationBySlug(id, options);
 }
 
 /**
@@ -234,8 +242,10 @@ export async function getPublicationBySlug(
           status: (activeLegacyData.estado === 'publicado' ? 'published' : 'draft') as PublicationStatus,
           original_language: activeLegacyData.idioma_original || 'gl',
           is_pinned: activeLegacyData.fijado ?? false,
+          show_index: false,
           created_at: activeLegacyData.creado_en,
           updated_at: activeLegacyData.actualizado_en,
+          published_at: activeLegacyData.creado_en,
           author: {
             id: pAuthor.id || activeLegacyData.autor_id,
             full_name: pAuthor.nombre || 'Anónimo',
@@ -268,8 +278,10 @@ export async function getPublicationBySlug(
       status: activeData.status,
       original_language: activeData.original_language,
       is_pinned: activeData.is_pinned ?? false,
+      show_index: activeData.show_index ?? false,
       created_at: activeData.created_at,
       updated_at: activeData.updated_at,
+      published_at: activeData.published_at ?? activeData.created_at,
       author: normalizedAuthor,
       tags: normalizeTags(activeData.publication_tags, options?.lang),
     };
@@ -296,6 +308,10 @@ export interface GetPublicationCardsOptions {
   searchQuery?: string;
   client?: SupabaseClient;
   lang?: string;
+}
+
+function sanitizeSearchQuery(term: string): string {
+  return term.replace(/[,().%*"\\]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -343,6 +359,7 @@ export async function getPublicationCards(
         ${PUBLICATION_COLS.IS_PINNED},
         ${PUBLICATION_COLS.CREATED_AT},
         ${PUBLICATION_COLS.UPDATED_AT},
+        ${PUBLICATION_COLS.PUBLISHED_AT},
         author:${DB_TABLES.USERS} (
           ${USER_COLS.ID},
           ${USER_COLS.FULL_NAME},
@@ -357,6 +374,7 @@ export async function getPublicationCards(
         )
       `)
       .eq(PUBLICATION_COLS.STATUS, status)
+      .order(PUBLICATION_COLS.PUBLISHED_AT, { ascending: false, nullsFirst: false })
       .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
       .order(PUBLICATION_COLS.ID, { ascending: false })
       .range(offset, offset + limit - 1);
@@ -374,7 +392,7 @@ export async function getPublicationCards(
       query = query.eq(PUBLICATION_COLS.IS_PINNED, options.isPinned);
     }
     if (options?.searchQuery) {
-      const q = options.searchQuery.trim();
+      const q = sanitizeSearchQuery(options.searchQuery);
       if (q) {
         query = query.or(`title->>gl.ilike.%${q}%,title->>es.ilike.%${q}%,subtitle->>gl.ilike.%${q}%,subtitle->>es.ilike.%${q}%`);
       }
@@ -407,7 +425,7 @@ export async function getPublicationCards(
           legQuery = legQuery.eq('fijado', options.isPinned);
         }
         if (options?.searchQuery) {
-          const q = options.searchQuery.trim();
+          const q = sanitizeSearchQuery(options.searchQuery);
           if (q) {
             legQuery = legQuery.or(`titulo_gl.ilike.%${q}%,titulo_es.ilike.%${q}%,subtitulo_gl.ilike.%${q}%,subtitulo_es.ilike.%${q}%`);
           }
@@ -432,6 +450,7 @@ export async function getPublicationCards(
             is_pinned: row.fijado ?? false,
             created_at: row.creado_en,
             updated_at: row.actualizado_en,
+            published_at: row.creado_en,
             author: {
               id: pAuthor.id || row.autor_id,
               full_name: pAuthor.nombre || 'Anónimo',
@@ -459,6 +478,7 @@ export async function getPublicationCards(
       is_pinned: row.is_pinned ?? false,
       created_at: row.created_at,
       updated_at: row.updated_at,
+      published_at: row.published_at ?? row.created_at,
       author: row.author || {
         id: row.author_id,
         full_name: 'Anónimo',
@@ -577,26 +597,222 @@ export async function updatePublicationStatus(
   client?: SupabaseClient
 ): Promise<{ success: boolean; error: PostgrestError | null }> {
   const supabase = await resolveClient(client);
+  const updatePayload: Record<string, unknown> = {
+    [PUBLICATION_COLS.STATUS]: status,
+  };
+  if (status === PUBLICATION_STATUSES.DRAFT || status === PUBLICATION_STATUSES.IN_REVIEW) {
+    updatePayload[PUBLICATION_COLS.PUBLISHED_AT] = null;
+  }
   const { error } = await supabase
     .from(DB_TABLES.PUBLICATIONS)
-    .update({ [PUBLICATION_COLS.STATUS]: status })
+    .update(updatePayload)
     .eq(PUBLICATION_COLS.ID, id);
 
   return { success: !error, error };
 }
 
 /**
- * Delete a publication.
+ * Fetch minimal asset metadata needed for cleaning up storage files before publication deletion.
+ */
+export async function getPublicationAssetsForCleanup(
+  id: string,
+  client?: SupabaseClient
+): Promise<{ cover_image_url: string | null; content: LocalizedString | null } | null> {
+  try {
+    const supabase = await resolveClient(client);
+    const { data, error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select(`${PUBLICATION_COLS.COVER_IMAGE_URL}, ${PUBLICATION_COLS.CONTENT}`)
+      .eq(PUBLICATION_COLS.ID, id)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      cover_image_url: (data.cover_image_url as string | null) ?? null,
+      content: (data.content as LocalizedString | null) ?? null,
+    };
+  } catch (err) {
+    console.warn('[DAL:publications] Failed to fetch publication assets for cleanup:', formatDbError(err));
+    return null;
+  }
+}
+
+/**
+ * Count the number of currently pinned publications.
+ */
+export async function countPinnedPublications(
+  client?: SupabaseClient
+): Promise<{ count: number; error: unknown | null }> {
+  try {
+    const supabase = await resolveClient(client);
+    const { count, error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select('*', { count: 'exact', head: true })
+      .eq(PUBLICATION_COLS.IS_PINNED, true);
+
+    return { count: count ?? 0, error };
+  } catch (err) {
+    return { count: 0, error: err };
+  }
+}
+
+/**
+ * Update the pinned state of a publication.
+ */
+export async function setPublicationPinned(
+  id: string,
+  isPinned: boolean,
+  client?: SupabaseClient
+): Promise<{ success: boolean; error: unknown | null }> {
+  try {
+    const supabase = await resolveClient(client);
+    const { error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .update({ [PUBLICATION_COLS.IS_PINNED]: isPinned })
+      .eq(PUBLICATION_COLS.ID, id);
+
+    return { success: !error, error };
+  } catch (err) {
+    return { success: false, error: err };
+  }
+}
+
+/**
+ * Delete a publication and verify at least one row was deleted (detecting silent RLS rejections).
  */
 export async function deletePublication(
   id: string,
   client?: SupabaseClient
-): Promise<{ success: boolean; error: PostgrestError | null }> {
+): Promise<{ success: boolean; error: unknown | null }> {
   const supabase = await resolveClient(client);
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from(DB_TABLES.PUBLICATIONS)
     .delete()
-    .eq(PUBLICATION_COLS.ID, id);
+    .eq(PUBLICATION_COLS.ID, id)
+    .select(PUBLICATION_COLS.ID);
 
-  return { success: !error, error };
+  if (error) {
+    return { success: false, error };
+  }
+
+  if (Array.isArray(data) && data.length === 0) {
+    return { success: false, error: new Error('RLS blocked deletion or row not found') };
+  }
+
+  return { success: true, error: null };
+}
+
+export interface GetDashboardPublicationsOptions {
+  authorId: string;
+  forApproval?: boolean;
+  client?: SupabaseClient;
+}
+
+/**
+ * Fetch lightweight publication records for the writer desk dashboard.
+ * Returns either publications awaiting approval (when `forApproval` is true)
+ * or the author's own publications, ordered newest creation time first.
+ * Never selects heavy content fields.
+ */
+export async function getDashboardPublications(
+  options: GetDashboardPublicationsOptions
+): Promise<PublicationDashboardItem[]> {
+  try {
+    const supabase = await resolveClient(options.client);
+
+    let query = supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select(`
+        ${PUBLICATION_COLS.ID},
+        ${PUBLICATION_COLS.SLUG},
+        ${PUBLICATION_COLS.TITLE},
+        ${PUBLICATION_COLS.SUBTITLE},
+        ${PUBLICATION_COLS.COVER_IMAGE_URL},
+        ${PUBLICATION_COLS.TYPE},
+        ${PUBLICATION_COLS.STATUS},
+        ${PUBLICATION_COLS.IS_PINNED},
+        ${PUBLICATION_COLS.CREATED_AT},
+        ${PUBLICATION_COLS.UPDATED_AT},
+        ${PUBLICATION_COLS.PUBLISHED_AT},
+        ${PUBLICATION_COLS.AUTHOR_ID},
+        author:${DB_TABLES.USERS} (
+          ${USER_COLS.ID},
+          ${USER_COLS.FULL_NAME}
+        )
+      `)
+      .order(PUBLICATION_COLS.CREATED_AT, { ascending: false });
+
+    if (options.forApproval) {
+      query = query.eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.IN_REVIEW);
+    } else {
+      query = query.eq(PUBLICATION_COLS.AUTHOR_ID, options.authorId);
+    }
+
+    const { data, error } = await query;
+    if (error || !data) {
+      console.warn('[DAL:publications] Failed to fetch dashboard publications:', formatDbError(error));
+      return [];
+    }
+
+    const rows = data as unknown as PublicationDashboardItem[];
+    return rows.map((row) => ({
+      ...row,
+      cover_image_url: cleanImageUrl(row.cover_image_url),
+    }));
+  } catch (err) {
+    console.warn('[DAL:publications] Unexpected error fetching dashboard publications:', formatDbError(err));
+    return [];
+  }
+}
+
+/**
+ * Computes guest author publication quota from an existing list of publications.
+ */
+export function computeGuestPublicationQuota(
+  publications: Array<{ created_at: string }>
+): GuestPublicationQuota {
+  const currentYear = new Date().getFullYear();
+  const totalCount = publications.length;
+  const yearlyCount = publications.filter(
+    (p) => new Date(p.created_at).getFullYear() === currentYear
+  ).length;
+  const totalLimit = GUEST_PUBLICATION_LIMITS.TOTAL;
+  const yearlyLimit = GUEST_PUBLICATION_LIMITS.YEARLY;
+
+  return {
+    totalCount,
+    yearlyCount,
+    totalLimit,
+    yearlyLimit,
+    canCreate: totalCount < totalLimit && yearlyCount < yearlyLimit,
+  };
+}
+
+/**
+ * Queries an author's publication timestamps and returns guest quota status.
+ */
+export async function getGuestPublicationQuota(
+  authorId: string,
+  client?: SupabaseClient
+): Promise<GuestPublicationQuota> {
+  try {
+    const supabase = await resolveClient(client);
+    const { data, error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .select(PUBLICATION_COLS.CREATED_AT)
+      .eq(PUBLICATION_COLS.AUTHOR_ID, authorId);
+
+    if (error || !data) {
+      console.warn('[DAL:publications] Failed to fetch guest quota:', formatDbError(error));
+      return computeGuestPublicationQuota([]);
+    }
+
+    return computeGuestPublicationQuota(data as Array<{ created_at: string }>);
+  } catch (err) {
+    console.warn('[DAL:publications] Unexpected error fetching guest quota:', formatDbError(err));
+    return computeGuestPublicationQuota([]);
+  }
 }

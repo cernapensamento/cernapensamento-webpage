@@ -1,52 +1,61 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import ArticlesArchiveList from '@/components/features/ArticlesArchiveList';
 import ArticlesFilterBar from '@/components/features/ArticlesFilterBar';
 import { getDictionary } from '@/dictionaries';
-import type { Locale } from '@/i18n-config';
-import { getAllTagsWithTranslations, getPublicationCards, type PublicationType } from '@/lib/db';
+import { resolveLocale } from '@/i18n-config';
+import { SITE_NAME } from '@/lib/constants';
+import {
+  getAllTagsWithTranslations,
+  getPublicationCards,
+  parsePublicationType,
+} from '@/lib/db';
 
 export const revalidate = 60;
 
-function normalizePublicationType(raw: string | string[] | undefined): PublicationType | undefined {
-  if (!raw || Array.isArray(raw)) return undefined;
-  const val = raw.toLowerCase().trim();
-  if (val === 'artigo' || val === 'articulo' || val === 'article') return 'article' as PublicationType;
-  if (val === 'ensaio' || val === 'ensayo' || val === 'essay') return 'essay' as PublicationType;
-  if (val === 'poesia' || val === 'poesía' || val === 'poetry') return 'poetry' as PublicationType;
-  if (val === 'columna' || val === 'narrativa' || val === 'column') return 'column' as PublicationType;
-  if (val === 'entrevista' || val === 'interview') return 'interview' as PublicationType;
-  if (val === 'reportaxe' || val === 'reportaje' || val === 'reportage') return 'reportage' as PublicationType;
-  return val as PublicationType;
-}
-
-export default async function ArticulosPage({
-  params,
-  searchParams,
-}: {
+interface Props {
   params: Promise<{ lang: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
   const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
-  const resolvedParams = await searchParams;
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+
+  return {
+    title: `${dict.articles.title} | ${SITE_NAME}`,
+    description: dict.articles.description,
+  };
+}
+
+export default async function ArticulosPage({ params, searchParams }: Props) {
+  const [{ lang }, resolvedParams] = await Promise.all([params, searchParams]);
+  const locale = resolveLocale(lang);
 
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : '';
   const temaRaw = resolvedParams.tema;
   const temasArray = Array.isArray(temaRaw) ? temaRaw : (typeof temaRaw === 'string' && temaRaw ? [temaRaw] : []);
   const tipoRaw = resolvedParams.tipo || resolvedParams.type;
-  const currentType = normalizePublicationType(tipoRaw);
+  const currentType = typeof tipoRaw === 'string' ? parsePublicationType(tipoRaw) : undefined;
 
-  // 1. Get all available tags with localized names
-  const availableTags = await getAllTagsWithTranslations({ lang });
-
-  // 2. Fetch the 10 most recent articles plus teaser preview articles (limit: 14)
-  const publications = await getPublicationCards({
-    type: currentType,
-    tagSlugs: temasArray.length > 0 ? temasArray : undefined,
-    searchQuery: q,
-    limit: 14,
-    lang,
-  });
+  const [dict, availableTags, publications] = await Promise.all([
+    getDictionary(locale),
+    // 1. Get all available tags with localized names
+    getAllTagsWithTranslations({ lang: locale }),
+    // 2. Fetch the 10 most recent articles plus teaser preview articles (limit: 14)
+    getPublicationCards({
+      type: currentType,
+      tagSlugs: temasArray.length > 0 ? temasArray : undefined,
+      searchQuery: q,
+      limit: 14,
+      lang: locale,
+    }),
+  ]);
 
   const listKey = `${currentType || 'all'}-${temasArray.join(',')}-${q}`;
 
@@ -66,7 +75,7 @@ export default async function ArticulosPage({
           <ArticlesArchiveList
             key={listKey}
             initialArticles={publications}
-            lang={lang}
+            lang={locale}
             dict={dict}
             filterOptions={{
               type: currentType,

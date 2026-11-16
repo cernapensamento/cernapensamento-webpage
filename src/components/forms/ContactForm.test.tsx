@@ -3,7 +3,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ContactForm from './ContactForm';
-import glDict from '@/dictionaries/gl.json';
+import { getDictionaryClient } from '@/dictionaries/client';
+
+const glContactDict = getDictionaryClient('gl').contactForm;
 
 describe('ContactForm component', () => {
   beforeEach(() => {
@@ -16,7 +18,7 @@ describe('ContactForm component', () => {
   });
 
   it('renders all required form fields and labels', () => {
-    render(<ContactForm dict={glDict.contactForm} lang="gl" />);
+    render(<ContactForm dict={glContactDict} lang="gl" />);
 
     expect(screen.getByLabelText(/nome completo/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^email/i)).toBeInTheDocument();
@@ -26,9 +28,70 @@ describe('ContactForm component', () => {
     expect(screen.getByRole('button', { name: /enviar mensaxe/i })).toBeInTheDocument();
   });
 
+  it('falls back cleanly to getDictionaryClient and useLocale when props are omitted', () => {
+    render(<ContactForm />);
+
+    expect(screen.getByLabelText(/nome completo/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: glContactDict.privacyLink })).toHaveAttribute(
+      'href',
+      '/gl/privacidad'
+    );
+  });
+
+  it('supports a 3rd locale via injected dict without hardcoded strings', async () => {
+    const user = userEvent.setup();
+    const enContactDict = {
+      fullName: 'Full Name',
+      email: 'Email',
+      subject: 'Subject',
+      message: 'Message',
+      submit: 'Send Message',
+      submitting: 'Sending...',
+      success: 'Message sent successfully.',
+      fileUpload: 'Upload File (Optional PDF)',
+      selectFile: 'Select File',
+      uploadDesc: 'PDF up to 3.5MB',
+      agreement: 'I accept the terms.',
+      privacyLink: 'Read privacy policy',
+      errorSize: 'File exceeds 3.5MB.',
+      errorType: 'Only PDF files are allowed.',
+      requiredName: 'Name is required',
+      requiredEmail: 'Email is required',
+      requiredSubject: 'Select a subject',
+      requiredMessage: 'Message is required',
+      requiredGuidelines: 'You must accept the terms',
+      genericError: 'Error sending message',
+      invalidEmail: 'Invalid email format',
+      tooLong: 'Too long',
+      rateLimited: 'Too many requests',
+      sendFailed: 'Delivery failed',
+      successNote: 'Thank you.',
+      sendAnother: 'Send another',
+      removeFile: 'Remove file',
+      subjects: {
+        placeholder: 'Select a subject',
+        article: 'Article Submission',
+        association: 'Membership Request',
+        question: 'Question',
+      },
+    };
+
+    render(<ContactForm dict={enContactDict} lang="en" />);
+
+    expect(screen.getByRole('link', { name: 'Read privacy policy' })).toHaveAttribute(
+      'href',
+      '/en/privacidad'
+    );
+
+    await user.click(screen.getByRole('button', { name: /send message/i }));
+
+    expect(screen.getByText('Name is required')).toBeInTheDocument();
+    expect(screen.getByText('Email is required')).toBeInTheDocument();
+  });
+
   it('displays client-side validation errors when submitting empty form', async () => {
     const user = userEvent.setup();
-    render(<ContactForm dict={glDict.contactForm} lang="gl" />);
+    render(<ContactForm dict={glContactDict} lang="gl" />);
 
     const submitBtn = screen.getByRole('button', { name: /enviar mensaxe/i });
     await user.click(submitBtn);
@@ -43,7 +106,7 @@ describe('ContactForm component', () => {
 
   it('validates email format before sending', async () => {
     const user = userEvent.setup();
-    render(<ContactForm dict={glDict.contactForm} lang="gl" />);
+    render(<ContactForm dict={glContactDict} lang="gl" />);
 
     await user.type(screen.getByLabelText(/nome completo/i), 'Rosalía');
     await user.type(screen.getByLabelText(/^email/i), 'invalid-email');
@@ -57,6 +120,24 @@ describe('ContactForm component', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('validates invalid file type and allows removing an attached PDF', async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    render(<ContactForm dict={glContactDict} lang="gl" />);
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const txtFile = new File(['hello'], 'notes.txt', { type: 'text/plain' });
+    await user.upload(fileInput, txtFile);
+
+    expect(screen.getByText(glContactDict.errorType)).toBeInTheDocument();
+
+    const pdfFile = new File(['%PDF-1.4'], 'ensaio.pdf', { type: 'application/pdf' });
+    await user.upload(fileInput, pdfFile);
+    expect(screen.getByText('ensaio.pdf')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: glContactDict.removeFile }));
+    expect(screen.queryByText('ensaio.pdf')).not.toBeInTheDocument();
+  });
+
   it('includes selected PDF file in submitted FormData and shows success screen', async () => {
     const user = userEvent.setup();
     const mockFetch = vi.fn().mockResolvedValue({
@@ -65,7 +146,7 @@ describe('ContactForm component', () => {
     });
     vi.stubGlobal('fetch', mockFetch);
 
-    render(<ContactForm dict={glDict.contactForm} lang="gl" />);
+    render(<ContactForm dict={glContactDict} lang="gl" />);
 
     await user.type(screen.getByLabelText(/nome completo/i), 'Rosalía de Castro');
     await user.type(screen.getByLabelText(/^email/i), 'rosalia@cerna.gal');
@@ -115,7 +196,7 @@ describe('ContactForm component', () => {
     });
     vi.stubGlobal('fetch', mockFetch);
 
-    render(<ContactForm dict={glDict.contactForm} lang="gl" />);
+    render(<ContactForm dict={glContactDict} lang="gl" />);
 
     await user.type(screen.getByLabelText(/nome completo/i), 'Rosalía');
     await user.type(screen.getByLabelText(/^email/i), 'rosalia@cerna.gal');

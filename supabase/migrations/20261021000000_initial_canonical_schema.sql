@@ -486,7 +486,7 @@ CREATE POLICY "Authors and Admins can delete publications" ON "public"."publicat
 
 CREATE POLICY "Authors can insert publications" ON "public"."publications" FOR INSERT WITH CHECK ((("auth"."uid"() = "author_id") AND (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), ( SELECT ("users"."role")::"text" AS "role"
    FROM "public"."users"
-  WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['guest'::"text", 'member'::"text", 'founder'::"text", 'admin'::"text"])) AND (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), ( SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text"]) OR (("status" <> 'published'::"public"."publication_status") AND ("is_pinned" = false))))));
+  WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['guest'::"text", 'member'::"text", 'founder'::"text", 'admin'::"text"])) AND (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), ( SELECT ("users"."role")::"text" FROM "public"."users" WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text"]) OR (("status" <> 'published'::"public"."publication_status") AND ("is_pinned" = false)))));
 
 
 

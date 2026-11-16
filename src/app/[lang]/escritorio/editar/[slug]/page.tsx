@@ -1,54 +1,58 @@
 import React from 'react';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { createClient } from '@/lib/supabase/server';
 import { redirect, notFound } from 'next/navigation';
 import EditarArticuloForm from '@/components/forms/EditarArticuloForm';
-import { getPublicationBySlug } from '@/lib/db/queries/publications';
 import {
-  USER_ROLES,
-  PUBLICATION_STATUSES,
-} from '@/lib/db/schema';
+  getPublicationBySlug,
+  canAccessWriterDesk,
+  canPublishDirectly,
+} from '@/lib/db';
+import { getDictionary } from '@/dictionaries';
+import { resolveLocale } from '@/i18n-config';
 
 interface Props {
   params: Promise<{ slug: string; lang: string }>;
 }
 
 export default async function EditarArticuloPage({ params }: Props) {
-  const [resolvedParams, { user, profile }] = await Promise.all([
+  const [resolvedParams, { user, role }] = await Promise.all([
     params,
     getAuthenticatedUser(),
   ]);
-  const { slug, lang = 'es' } = resolvedParams;
+  const lang = resolveLocale(resolvedParams?.lang);
+  const slug = resolvedParams.slug;
 
-  if (!user || !profile) {
+  if (!user) {
     redirect(`/${lang}/login`);
   }
 
-  const roleStr = String(profile.role || profile.rol || USER_ROLES.READER);
-
-  // Block reader role from writer desk
-  if (roleStr === USER_ROLES.READER || roleStr === 'usuario') {
+  if (!canAccessWriterDesk(role)) {
     redirect(`/${lang}/escritorio/perfil`);
   }
 
-  const supabase = await createClient();
-  const publication = await getPublicationBySlug(slug, { client: supabase });
+  const [publication, dict] = await Promise.all([
+    getPublicationBySlug(slug, { lang }),
+    getDictionary(lang),
+  ]);
 
   if (!publication) {
     notFound();
   }
 
-  // Verify that user is author, admin, or founder reviewing pending submission
+  // Verify that user is author or privileged reviewer (admin/founder)
   const isAuthor = publication.author.id === user.id;
-  const isAdmin = roleStr === USER_ROLES.ADMIN || roleStr === 'admin';
-  const isReviewer =
-    (roleStr === USER_ROLES.FOUNDER || roleStr === 'escritor') &&
-    (publication.status === PUBLICATION_STATUSES.IN_REVIEW ||
-      (publication as unknown as { estado?: string }).estado === 'pendiente_aprobacion');
+  const isPrivileged = canPublishDirectly(role);
 
-  if (!isAuthor && !isAdmin && !isReviewer) {
+  if (!isAuthor && !isPrivileged) {
     redirect(`/${lang}/escritorio`);
   }
 
-  return <EditarArticuloForm publication={publication} userRole={roleStr} />;
+  return (
+    <EditarArticuloForm
+      publication={publication}
+      userRole={role}
+      lang={lang}
+      dict={dict.articleEditor}
+    />
+  );
 }

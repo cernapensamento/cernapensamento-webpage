@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getDictionary } from '@/dictionaries';
-import { Locale } from '@/i18n-config';
+import { resolveLocale } from '@/i18n-config';
+import { resolveAuthorBio, resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import { getColumnistBySlug } from '@/lib/columnists';
 import { SITE_NAME } from '@/lib/constants';
 import { getPublishedAuthors } from '@/lib/db';
@@ -16,7 +17,8 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
 
   const title = `${dict.autoresPage.eyebrow} | ${SITE_NAME}`;
 
@@ -33,26 +35,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function AutoresPage({ params }: Props) {
   const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
-  const publishedAuthors = await getPublishedAuthors();
-
-  const language = lang === 'es' ? 'es' : 'gl';
-  const authorBios = dict.authors as Record<string, string>;
+  const locale = resolveLocale(lang);
+  const [dict, publishedAuthors] = await Promise.all([
+    getDictionary(locale),
+    getPublishedAuthors(),
+  ]);
 
   const authors: AuthorDirectoryItem[] = publishedAuthors.map((author) => {
     const columnist = getColumnistBySlug(author.slug);
-    const bio =
-      (author.slug ? authorBios[author.slug] : '') ||
-      (author.bio
-        ? author.bio[language] || author.bio.gl || author.bio.es
-        : '') ||
-      columnist?.bio?.[language] ||
-      '';
+    const bio = resolveAuthorBio(author, dict.authors, locale);
 
     const latestPublicationTitle = author.latest_publication_title
-      ? author.latest_publication_title[language] ||
-        author.latest_publication_title.gl ||
-        author.latest_publication_title.es
+      ? resolveLocalizedText(author.latest_publication_title, locale)
       : null;
 
     return {
@@ -73,9 +67,9 @@ export default async function AutoresPage({ params }: Props) {
   return (
     <AuthorsDirectory
       authors={authors}
-      lang={lang}
+      lang={locale}
       dict={dict.autoresPage}
-      documentTypes={dict.documentTypes as Record<string, string>}
+      documentTypes={dict.documentTypes}
     />
   );
 }

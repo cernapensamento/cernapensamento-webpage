@@ -9,6 +9,7 @@ import {
 import { parseDocument } from 'htmlparser2';
 import type { ChildNode, Element } from 'domhandler';
 import { sanitizeStorageUrl } from '@/lib/storage/paths';
+import { getHeadingsFromHtml, stripIndex } from '@/lib/editor/generateIndex';
 
 /**
  * Server-side PDF typesetting for a published article.
@@ -29,6 +30,8 @@ export interface ArticlePdfInput {
   tags: string[];
   coverImageUrl: string | null;
   html: string;
+  showIndex?: boolean;
+  indexLabel?: string;
   siteName: string;
   siteUrl: string;
 }
@@ -683,17 +686,30 @@ function htmlToBlocks(html: string): Block[] {
 }
 
 /**
- * Accepts parseable HTTP(S) URLs except localhost, 0.0.0.0, and the listed private,
- * loopback, and link-local IPv4 prefixes. Does not resolve DNS or check redirects.
+ * Accepts parseable HTTP(S) URLs except localhost, 0.0.0.0, private IPv4/IPv6 prefixes,
+ * loopbacks, link-local addresses, and cloud metadata IPs.
  */
 function isFetchableUrl(value: string): boolean {
   try {
     const url = new URL(value);
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
-    const host = url.hostname;
-    return !(
+    const rawHost = url.hostname.toLowerCase();
+    const host = rawHost.startsWith('[') && rawHost.endsWith(']') ? rawHost.slice(1, -1) : rawHost;
+
+    if (
       host === 'localhost' ||
       host === '0.0.0.0' ||
+      host === '::' ||
+      host === '::1' ||
+      host.startsWith('::ffff:') ||
+      host.startsWith('fe80:') ||
+      host.startsWith('fc') ||
+      host.startsWith('fd')
+    ) {
+      return false;
+    }
+
+    return !(
       /^127\./.test(host) ||
       /^10\./.test(host) ||
       /^192\.168\./.test(host) ||
@@ -946,10 +962,15 @@ class ArticlePdfBuilder {
 
     if (!isFetchableUrl(url)) return null;
     if (this.imageCache.has(url)) return this.imageCache.get(url) ?? null;
+    if (this.imageCache.size >= 50) {
+      console.warn(`[PDF] Image cache size limit reached (50 images). Skipping: ${url}`);
+      return null;
+    }
 
     try {
       const response = await fetch(url, {
         signal: AbortSignal.timeout(9000),
+        redirect: 'error',
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 CernaBot/1.0',
@@ -962,8 +983,21 @@ class ArticlePdfBuilder {
         return null;
       }
 
+      const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
+      if (contentLength > 5 * 1024 * 1024) {
+        console.warn(`[PDF] Image exceeded 5MB size limit (${contentLength} bytes): ${url}`);
+        this.imageCache.set(url, null);
+        return null;
+      }
+
       const contentType = (response.headers.get('content-type') || '').toLowerCase();
-      const bytes = new Uint8Array(await response.arrayBuffer());
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > 5 * 1024 * 1024) {
+        console.warn(`[PDF] Image payload exceeded 5MB limit (${buffer.byteLength} bytes): ${url}`);
+        this.imageCache.set(url, null);
+        return null;
+      }
+      const bytes = new Uint8Array(buffer);
 
       const sigPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e;
       const sigJpeg = bytes[0] === 0xff && bytes[1] === 0xd8;
@@ -1231,6 +1265,55 @@ class ArticlePdfBuilder {
     this.rule(0, 16);
   }
 
+  drawIndex(input: ArticlePdfInput): void {
+    if (!input.showIndex) return;
+    const items = getHeadingsFromHtml(input.html);
+    if (items.length === 0) return;
+
+    this.ensureSpace(46);
+
+    this.page.drawText(safeText(input.indexLabel || 'Índice').toUpperCase(), {
+      x: MARGIN.left,
+      y: this.y - 7,
+      font: this.fontSansBold,
+      size: 7.5,
+      color: GOLD,
+    });
+    this.y -= 20;
+
+    for (const item of items) {
+      const level = Math.min(Math.max(item.path.length, 1), 3);
+      const indent = (level - 1) * 14;
+      const num = `${item.path.join('.')}.`;
+      const fontSize = level === 1 ? 10.5 : level === 2 ? 10 : 9.5;
+      const lineHeight = 14.5;
+      const numWidth = level === 1 ? 22 : level === 2 ? 32 : 42;
+      const lines = this.layoutRuns(
+        [{ text: item.text, style: { bold: level === 1 } }],
+        fontSize,
+        CONTENT_WIDTH - indent - numWidth
+      );
+      if (lines.length === 0) continue;
+
+      this.ensureSpace(lines.length * lineHeight);
+      this.page.drawText(safeText(num), {
+        x: MARGIN.left + indent,
+        y: this.y,
+        font: this.fontSansBold,
+        size: 9,
+        color: GOLD,
+      });
+      this.drawLines(lines, {
+        x: MARGIN.left + indent + numWidth,
+        lineHeight,
+        color: level === 3 ? MUTED : INK,
+      });
+      this.y -= 2;
+    }
+
+    this.rule(8, 16);
+  }
+
   async drawAuthorNote(input: ArticlePdfInput): Promise<void> {
     if (!input.authorBio) return;
 
@@ -1467,8 +1550,9 @@ export async function buildArticlePdf(input: ArticlePdfInput): Promise<Uint8Arra
   builder.setSiteUrl(input.siteUrl);
 
   await builder.drawMasthead(input);
+  builder.drawIndex(input);
 
-  const blocks = htmlToBlocks(input.html);
+  const blocks = htmlToBlocks(stripIndex(input.html));
   await builder.drawBlocks(blocks);
   await builder.drawAuthorNote(input);
 

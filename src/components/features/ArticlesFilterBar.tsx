@@ -2,7 +2,13 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { PUBLICATION_TYPES, type PublicationTypeValue } from '@/lib/db/schema';
+import {
+  PUBLICATION_TYPES,
+  parsePublicationType,
+  type PublicationTypeValue,
+} from '@/lib/db/schema';
+import { useLocale } from '@/hooks/useLocale';
+import { getDictionaryClient } from '@/dictionaries/client';
 
 const PUBLICATION_TYPE_OPTIONS: PublicationTypeValue[] = [
   PUBLICATION_TYPES.ESSAY,
@@ -13,21 +19,78 @@ const PUBLICATION_TYPE_OPTIONS: PublicationTypeValue[] = [
   PUBLICATION_TYPES.REPORTAGE,
 ];
 
-function normalizePublicationType(raw: string | null | undefined): string {
-  if (!raw) return '';
-  const val = raw.toLowerCase().trim();
-  if (val === 'artigo' || val === 'articulo' || val === PUBLICATION_TYPES.ARTICLE) return PUBLICATION_TYPES.ARTICLE;
-  if (val === 'ensaio' || val === 'ensayo' || val === PUBLICATION_TYPES.ESSAY) return PUBLICATION_TYPES.ESSAY;
-  if (val === 'poesia' || val === 'poesía' || val === PUBLICATION_TYPES.POETRY) return PUBLICATION_TYPES.POETRY;
-  if (val === 'columna' || val === 'narrativa' || val === PUBLICATION_TYPES.COLUMN) return PUBLICATION_TYPES.COLUMN;
-  if (val === 'entrevista' || val === PUBLICATION_TYPES.INTERVIEW) return PUBLICATION_TYPES.INTERVIEW;
-  if (val === 'reportaxe' || val === 'reportaje' || val === PUBLICATION_TYPES.REPORTAGE) return PUBLICATION_TYPES.REPORTAGE;
-  return val;
+interface FilterOption {
+  key: string;
+  label: string;
+  isSelected: boolean;
+}
+
+const FILTER_BUTTON_BASE =
+  'px-4 sm:px-5 py-1.5 border font-sans text-xs uppercase tracking-[0.16em] transition-all duration-300 cursor-pointer';
+
+const FILTER_TONE_CLASSES: Record<'gold' | 'charcoal', { active: string; inactive: string }> = {
+  gold: {
+    active: 'bg-gold text-parchment border-gold shadow-sm font-semibold',
+    inactive: 'border-lines text-charcoal/70 bg-surface/50 hover:border-gold/60 hover:text-charcoal',
+  },
+  charcoal: {
+    active: 'bg-charcoal text-parchment border-charcoal shadow-sm font-semibold',
+    inactive: 'border-lines text-charcoal/70 bg-surface/50 hover:border-charcoal hover:text-charcoal',
+  },
+};
+
+function FilterButtonGroup({
+  label,
+  allLabel,
+  isAllSelected,
+  onSelectAll,
+  options,
+  onSelectOption,
+  tone,
+  className = '',
+}: {
+  label: string;
+  allLabel: string;
+  isAllSelected: boolean;
+  onSelectAll: () => void;
+  options: FilterOption[];
+  onSelectOption: (key: string) => void;
+  tone: 'gold' | 'charcoal';
+  className?: string;
+}) {
+  const toneClasses = FILTER_TONE_CLASSES[tone];
+
+  return (
+    <div className={`flex flex-col items-center gap-3 ${className}`.trim()}>
+      <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-charcoal/50 font-semibold select-none">
+        {label}
+      </span>
+      <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
+        <button
+          type="button"
+          onClick={onSelectAll}
+          className={`${FILTER_BUTTON_BASE} ${isAllSelected ? toneClasses.active : toneClasses.inactive}`}
+        >
+          {allLabel}
+        </button>
+        {options.map((option) => (
+          <button
+            type="button"
+            key={option.key}
+            onClick={() => onSelectOption(option.key)}
+            className={`${FILTER_BUTTON_BASE} ${option.isSelected ? toneClasses.active : toneClasses.inactive}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 interface ArticlesFilterBarProps {
   availableTags: { slug: string; name: string }[];
-  dict: {
+  dict?: {
     searchPlaceholder?: string;
     all?: string;
     filterByType?: string;
@@ -40,16 +103,27 @@ interface ArticlesFilterBarProps {
 export default function ArticlesFilterBar({
   availableTags,
   dict,
-  documentTypes = {},
+  documentTypes,
 }: ArticlesFilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const lang = useLocale();
+  const fallbackDict = getDictionaryClient(lang);
+
+  const mergedDict = {
+    ...fallbackDict.articles,
+    ...dict,
+  };
+  const mergedDocumentTypes: Record<string, string> = {
+    ...(fallbackDict.documentTypes as Record<string, string>),
+    ...(documentTypes ?? {}),
+  };
 
   const currentQuery = searchParams.get('q') || '';
   const currentTags = searchParams.getAll('tema');
   const currentTagsSet = new Set(currentTags);
-  const currentType = normalizePublicationType(searchParams.get('tipo') || searchParams.get('type'));
+  const currentType = parsePublicationType(searchParams.get('tipo') || searchParams.get('type')) || '';
 
   const [query, setQuery] = useState(currentQuery);
   const createQueryStringRef = useRef<((name: string, value: string) => string) | null>(null);
@@ -108,6 +182,18 @@ export default function ArticlesFilterBar({
     router.push(pathname + '?' + params.toString(), { scroll: false });
   };
 
+  const typeOptions: FilterOption[] = PUBLICATION_TYPE_OPTIONS.map((tKey) => ({
+    key: tKey,
+    label: mergedDocumentTypes[tKey] || tKey,
+    isSelected: currentType.toLowerCase() === tKey.toLowerCase(),
+  }));
+
+  const tagOptions: FilterOption[] = availableTags.map((tag) => ({
+    key: tag.slug,
+    label: tag.name,
+    isSelected: currentTagsSet.has(tag.slug),
+  }));
+
   return (
     <div className="w-full mb-16 flex flex-col gap-8">
       {/* Search Input Bar */}
@@ -116,7 +202,8 @@ export default function ArticlesFilterBar({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={dict.searchPlaceholder}
+          placeholder={mergedDict.searchPlaceholder}
+          aria-label={mergedDict.searchPlaceholder}
           className="w-full bg-transparent border-b border-charcoal/30 py-4 px-4 pr-12 text-lg sm:text-xl font-sans text-charcoal focus:outline-none focus:border-gold transition-colors placeholder:text-charcoal/40"
         />
         <span
@@ -128,79 +215,27 @@ export default function ArticlesFilterBar({
       </div>
 
       {/* 1. Publication Type Filter Row */}
-      <div className="flex flex-col items-center gap-3">
-        <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-charcoal/50 font-semibold select-none">
-          {dict.filterByType || 'Tipo de publicación'}
-        </span>
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
-          <button
-            type="button"
-            onClick={() => setTypeFilter('')}
-            className={`px-4 sm:px-5 py-1.5 border font-sans text-xs uppercase tracking-[0.16em] transition-all duration-300 cursor-pointer ${
-              !currentType
-                ? 'bg-gold text-parchment border-gold shadow-sm font-semibold'
-                : 'border-lines text-charcoal/70 bg-surface/50 hover:border-gold/60 hover:text-charcoal'
-            }`}
-          >
-            {dict.all || 'Todos'}
-          </button>
-          {PUBLICATION_TYPE_OPTIONS.map((tKey) => {
-            const label = documentTypes[tKey] || tKey;
-            const isSelected = currentType.toLowerCase() === tKey.toLowerCase();
-            return (
-              <button
-                type="button"
-                key={tKey}
-                onClick={() => setTypeFilter(tKey)}
-                className={`px-4 sm:px-5 py-1.5 border font-sans text-xs uppercase tracking-[0.16em] transition-all duration-300 cursor-pointer ${
-                  isSelected
-                    ? 'bg-gold text-parchment border-gold shadow-sm font-semibold'
-                    : 'border-lines text-charcoal/70 bg-surface/50 hover:border-gold/60 hover:text-charcoal'
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <FilterButtonGroup
+        label={mergedDict.filterByType}
+        allLabel={mergedDict.all}
+        isAllSelected={!currentType}
+        onSelectAll={() => setTypeFilter('')}
+        options={typeOptions}
+        onSelectOption={setTypeFilter}
+        tone="gold"
+      />
 
       {/* 2. Topic Taxonomy Filter Row */}
-      <div className="flex flex-col items-center gap-3 pt-2 border-t border-lines/50">
-        <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-charcoal/50 font-semibold select-none">
-          {dict.filterByTopic || 'Temática'}
-        </span>
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
-          <button
-            type="button"
-            onClick={() => toggleTag('')}
-            className={`px-4 sm:px-5 py-1.5 border font-sans text-xs uppercase tracking-[0.16em] transition-all duration-300 cursor-pointer ${
-              currentTags.length === 0
-                ? 'bg-charcoal text-parchment border-charcoal shadow-sm font-semibold'
-                : 'border-lines text-charcoal/70 bg-surface/50 hover:border-charcoal hover:text-charcoal'
-            }`}
-          >
-            {dict.all || 'Todas'}
-          </button>
-          {availableTags.map((tag) => {
-            const isSelected = currentTagsSet.has(tag.slug);
-            return (
-              <button
-                type="button"
-                key={tag.slug}
-                onClick={() => toggleTag(tag.slug)}
-                className={`px-4 sm:px-5 py-1.5 border font-sans text-xs uppercase tracking-[0.16em] transition-all duration-300 cursor-pointer ${
-                  isSelected
-                    ? 'bg-charcoal text-parchment border-charcoal shadow-sm font-semibold'
-                    : 'border-lines text-charcoal/70 bg-surface/50 hover:border-charcoal hover:text-charcoal'
-                }`}
-              >
-                {tag.name}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <FilterButtonGroup
+        label={mergedDict.filterByTopic}
+        allLabel={mergedDict.all}
+        isAllSelected={currentTags.length === 0}
+        onSelectAll={() => toggleTag('')}
+        options={tagOptions}
+        onSelectOption={toggleTag}
+        tone="charcoal"
+        className="pt-2 border-t border-lines/50"
+      />
     </div>
   );
 }

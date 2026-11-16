@@ -1,6 +1,7 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
+import { resolveLocale } from '@/i18n-config';
 import ProfileDashboard from '@/components/features/ProfileDashboard';
 
 interface PageProps {
@@ -10,17 +11,16 @@ interface PageProps {
 export default async function PerfilPage({ params }: PageProps) {
   const [{ user, profile }, resolvedParams] = await Promise.all([
     getAuthenticatedUser(),
-    params
+    params,
   ]);
-  const lang = resolvedParams?.lang || 'es';
-  
+  const lang = resolveLocale(resolvedParams?.lang);
+
   if (!user) redirect(`/${lang}/login`);
 
   return (
     <main className="px-5 md:px-16 pb-24 pt-4">
       {/* Profile Section */}
       <section className="py-8 w-full max-w-280 mx-auto">
-
         <ProfileDashboard profile={profile} user={user} />
       </section>
     </main>

@@ -3,7 +3,7 @@
  * Optimized aggregates for multi-section layouts (e.g. Homepage).
  */
 
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import { resolveClient } from '../resolveClient';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   PublicationCardItem,
@@ -16,11 +16,6 @@ import {
 } from './publications';
 import { getColumnists } from './users';
 import { formatDbError } from '../formatDbError';
-
-async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient> {
-  if (provided) return provided;
-  return await createServerClient();
-}
 
 export interface HomepageData {
   featured: PublicationCardItem | null;

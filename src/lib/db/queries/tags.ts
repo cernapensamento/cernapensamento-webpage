@@ -3,7 +3,7 @@
  * Typed queries for topic taxonomies and translations.
  */
 
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import { resolveClient } from '../resolveClient';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
 import {
   DB_TABLES,
@@ -23,9 +23,13 @@ interface RawTagRow {
   }> | null;
 }
 
-async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient> {
-  if (provided) return provided;
-  return await createServerClient();
+export interface TagWithAllTranslations {
+  id?: string | number;
+  slug: string;
+  tag_translations: Array<{
+    lang: string;
+    name: string;
+  }>;
 }
 
 /**
@@ -130,6 +134,40 @@ export async function setPublicationTags(
 }
 
 /**
+ * Synchronize publication tags by slug list.
+ * Resolves tag slugs to tag IDs and atomically syncs links via `setPublicationTags`.
+ */
+export async function syncPublicationTagsBySlugs(
+  publicationId: string,
+  tagSlugs: string[],
+  client?: SupabaseClient
+): Promise<{ success: boolean; error: PostgrestError | null }> {
+  try {
+    const supabase = await resolveClient(client);
+
+    if (!tagSlugs || tagSlugs.length === 0) {
+      return await setPublicationTags(publicationId, [], supabase);
+    }
+
+    const { data: tagRows, error: selectError } = await supabase
+      .from(DB_TABLES.TAGS)
+      .select(TAG_COLS.ID)
+      .in(TAG_COLS.SLUG, tagSlugs);
+
+    if (selectError) {
+      console.warn('[DAL:tags] Failed to resolve tag slugs:', formatDbError(selectError));
+      return { success: false, error: selectError };
+    }
+
+    const tagIds = tagRows?.map((t) => t.id) || [];
+    return await setPublicationTags(publicationId, tagIds, supabase);
+  } catch (err) {
+    console.warn('[DAL:tags] Unexpected error syncing tags by slugs:', formatDbError(err));
+    return { success: false, error: err as PostgrestError };
+  }
+}
+
+/**
  * Fetch distinct publication IDs matching any supplied tag slug.
  * Empty input, no matches, query errors, and caught exceptions return an empty
  * array. Uses the supplied client or a request-bound server client.
@@ -170,5 +208,73 @@ export async function getPublicationIdsByTagSlugs(
   } catch (err) {
     console.warn('[DAL:tags] Unexpected error in getPublicationIdsByTagSlugs:', formatDbError(err));
     return [];
+  }
+}
+
+/**
+ * Fetch all tags together with every available language translation row.
+ */
+export async function getAllTagsWithAllTranslations(
+  client?: SupabaseClient
+): Promise<TagWithAllTranslations[]> {
+  try {
+    const supabase = await resolveClient(client);
+    const { data, error } = await supabase
+      .from(DB_TABLES.TAGS)
+      .select(`${TAG_COLS.SLUG}, ${DB_TABLES.TAG_TRANSLATIONS}(${TAG_TRANSLATION_COLS.LANG}, ${TAG_TRANSLATION_COLS.NAME})`);
+
+    if (error || !data) {
+      if (error) {
+        console.warn('[DAL:tags] Failed to fetch tags with translations:', formatDbError(error));
+      }
+      return [];
+    }
+
+    return data as unknown as TagWithAllTranslations[];
+  } catch (err) {
+    console.warn('[DAL:tags] Unexpected error in getAllTagsWithAllTranslations:', formatDbError(err));
+    return [];
+  }
+}
+
+/**
+ * Create a new tag and insert its localized translations across configured languages.
+ */
+export async function createTagWithTranslations(
+  slug: string,
+  translations: Array<{ lang: string; name: string }>,
+  client?: SupabaseClient
+): Promise<{ success: boolean; error: unknown | null }> {
+  try {
+    const supabase = await resolveClient(client);
+    const { data: tagData, error: tagError } = await supabase
+      .from(DB_TABLES.TAGS)
+      .insert({ [TAG_COLS.SLUG]: slug })
+      .select()
+      .single();
+
+    if (tagError || !tagData) {
+      return { success: false, error: tagError || new Error('Failed to create tag') };
+    }
+
+    if (translations.length > 0) {
+      const { error: transError } = await supabase
+        .from(DB_TABLES.TAG_TRANSLATIONS)
+        .insert(
+          translations.map((t) => ({
+            [TAG_TRANSLATION_COLS.TAG_ID]: tagData.id,
+            [TAG_TRANSLATION_COLS.LANG]: t.lang,
+            [TAG_TRANSLATION_COLS.NAME]: t.name,
+          }))
+        );
+
+      if (transError) {
+        return { success: false, error: transError };
+      }
+    }
+
+    return { success: true, error: null };
+  } catch (err) {
+    return { success: false, error: err };
   }
 }

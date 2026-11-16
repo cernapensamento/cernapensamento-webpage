@@ -1,26 +1,42 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import NewsMosaicGrid from '@/components/features/NewsMosaicGrid';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getPublicationCards, PUBLICATION_TYPES } from '@/lib/db';
 import { getDictionary } from '@/dictionaries';
-import type { Locale } from '@/i18n-config';
+import { resolveLocale } from '@/i18n-config';
+import { SITE_NAME } from '@/lib/constants';
 
 export const revalidate = 60;
 
-export default async function NoticiasPage({
-  params,
-}: {
+interface Props {
   params: Promise<{ lang: string }>;
-}) {
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+
+  return {
+    title: `${dict.noticias.pageTitle} | ${SITE_NAME}`,
+    description: dict.noticias.pageDescription,
+  };
+}
+
+export default async function NoticiasPage({ params }: Props) {
+  const { lang } = await params;
+  const locale = resolveLocale(lang);
 
   // Directly fetch all news publications from the database without filters
-  const publications = await getPublicationCards({
-    type: PUBLICATION_TYPES.NEWS,
-    limit: 100,
-    lang,
-  });
+  const [dict, publications] = await Promise.all([
+    getDictionary(locale),
+    getPublicationCards({
+      type: PUBLICATION_TYPES.NEWS,
+      limit: 100,
+      lang: locale,
+    }),
+  ]);
 
   const pageEyebrow = dict.noticias.eyebrow;
   const pageTitle = dict.noticias.pageTitle;
@@ -50,7 +66,7 @@ export default async function NoticiasPage({
         </RevealOnScroll>
 
         {/* Architectural News Mosaic Grid (based on diagram) */}
-        <NewsMosaicGrid news={publications} lang={lang} dict={dict} />
+        <NewsMosaicGrid news={publications} lang={locale} dict={dict} />
 
       </div>
     </main>

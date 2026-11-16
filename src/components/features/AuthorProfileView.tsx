@@ -6,8 +6,21 @@ import Image from 'next/image';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { Columnist } from '@/lib/columnists';
 import type { LocalizedString, TagItem } from '@/lib/db/types';
-import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import {
+  PUBLICATION_TYPES,
+  normalizePublicationType,
+  resolveRoleLabel,
+} from '@/lib/db/schema';
+import { getDictionaryClient } from '@/dictionaries/client';
 import FormattedDate from '@/components/ui/FormattedDate';
+import {
+  resolvePublicationCover,
+  resolvePublicationDate,
+  resolvePublicationHref,
+  resolvePublicationSubtitle,
+  resolvePublicationTitle,
+  resolvePublicationTypeLabel,
+} from './publicationCardHelpers';
 
 export interface ArticleData {
   id: string | number;
@@ -28,6 +41,7 @@ export interface ArticleData {
   tematicas?: string[] | null;
   created_at?: string;
   updated_at?: string;
+  published_at?: string | null;
   creado_en?: string;
   actualizado_en?: string;
   publicado_en?: string | null;
@@ -55,7 +69,7 @@ interface AuthorProfileViewProps {
   columnist?: Columnist;
   avatarSrc: string;
   bio: string;
-  roleLabel: string;
+  roleLabel?: string;
   worksCountLabel: string;
   availableTopics: TopicInfo[];
   articulos?: ArticleData[];
@@ -105,9 +119,241 @@ interface AuthorProfileViewProps {
     documentTypes?: Record<string, string>;
     articles?: {
       tag?: string;
+      unknownAuthor?: string;
+      [key: string]: unknown;
+    };
+    columnists?: {
+      instagramLabel?: string;
+      [key: string]: unknown;
     };
     [key: string]: unknown;
   };
+}
+
+interface FeaturedAuthorWorkProps {
+  article: ArticleData;
+  lang: string;
+  getTypeLabel: (rawType?: string) => string;
+  getTopicDisplayName: (slug: string) => string;
+  onTopicClick: (slug: string) => void;
+  featuredCoverAlt: string;
+  readFullTextLabel: string;
+}
+
+function FeaturedAuthorWork({
+  article,
+  lang,
+  getTypeLabel,
+  getTopicDisplayName,
+  onTopicClick,
+  featuredCoverAlt,
+  readFullTextLabel,
+}: FeaturedAuthorWorkProps) {
+  const titulo = resolvePublicationTitle(article, lang);
+  const subtitulo = resolvePublicationSubtitle(article, lang);
+  const dateStr = resolvePublicationDate(article);
+  const imageUrl = resolvePublicationCover(article);
+  const href = resolvePublicationHref(article, lang);
+  const articleTopics = article.tags
+    ? article.tags.map((t) => t.slug)
+    : article.tematicas || [];
+  const rawType = article.type || article.tipo || PUBLICATION_TYPES.ARTICLE;
+
+  return (
+    <RevealOnScroll delayMs={50}>
+      <article className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center bg-surface/40 border border-lines p-6 md:p-10 rounded-2xl group transition-all duration-500 hover:border-gold/50 hover:shadow-md">
+        <Link
+          href={href}
+          className="lg:col-span-6 relative w-full h-[260px] sm:h-[340px] rounded-xl overflow-hidden bg-lines/40 block shrink-0"
+          aria-label={titulo}
+        >
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={titulo || featuredCoverAlt}
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              priority
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-lines/20 to-surface">
+              <span className="text-7xl text-charcoal/15 font-serif select-none">§</span>
+            </div>
+          )}
+        </Link>
+
+        <div className="lg:col-span-6 flex flex-col justify-between h-full">
+          <div>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <span className="px-2.5 py-1 text-[11px] font-semibold text-gold bg-gold/10 rounded uppercase tracking-widest">
+                {getTypeLabel(rawType)}
+              </span>
+              <FormattedDate
+                date={dateStr}
+                lang={lang}
+                format="long"
+                className="text-xs text-charcoal/60 font-sans"
+              />
+            </div>
+
+            <Link href={href}>
+              <h2 className="font-serif text-3xl sm:text-4xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-tight mb-4">
+                {titulo}
+              </h2>
+            </Link>
+
+            {subtitulo && (
+              <p className="font-sans text-base sm:text-lg text-charcoal/80 line-clamp-3 md:line-clamp-4 leading-relaxed mb-6">
+                {subtitulo}
+              </p>
+            )}
+          </div>
+
+          <div className="pt-6 border-t border-lines/60 flex flex-wrap items-center justify-between gap-4">
+            {articleTopics.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {articleTopics.slice(0, 3).map((tag, idx) => (
+                  <button
+                    key={`${tag}-${idx}`}
+                    type="button"
+                    onClick={() => onTopicClick(tag)}
+                    className="text-[11px] uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
+                  >
+                    #{getTopicDisplayName(tag)}
+                  </button>
+                ))}
+              </div>
+            )}
+            <Link
+              href={href}
+              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal group-hover:text-gold transition-colors ml-auto group/btn"
+            >
+              <span>{readFullTextLabel}</span>
+              <span
+                className="material-symbols-outlined text-base transition-transform duration-300 group-hover/btn:translate-x-1"
+                aria-hidden="true"
+              >
+                arrow_forward
+              </span>
+            </Link>
+          </div>
+        </div>
+      </article>
+    </RevealOnScroll>
+  );
+}
+
+interface AuthorArchiveCardProps {
+  article: ArticleData;
+  index: number;
+  lang: string;
+  getTypeLabel: (rawType?: string) => string;
+  getTopicDisplayName: (slug: string) => string;
+  onTopicClick: (slug: string) => void;
+  thumbnailAlt: string;
+  readFullTextLabel: string;
+}
+
+function AuthorArchiveCard({
+  article,
+  index,
+  lang,
+  getTypeLabel,
+  getTopicDisplayName,
+  onTopicClick,
+  thumbnailAlt,
+  readFullTextLabel,
+}: AuthorArchiveCardProps) {
+  const titulo = resolvePublicationTitle(article, lang);
+  const subtitulo = resolvePublicationSubtitle(article, lang);
+  const dateStr = resolvePublicationDate(article);
+  const imageUrl = resolvePublicationCover(article);
+  const href = resolvePublicationHref(article, lang);
+  const articleTopics = article.tags
+    ? article.tags.map((t) => t.slug)
+    : article.tematicas || [];
+  const rawType = article.type || article.tipo || PUBLICATION_TYPES.ARTICLE;
+
+  return (
+    <RevealOnScroll key={article.id} delayMs={(index % 3) * 100} className="h-full">
+      <article className="group flex flex-col bg-surface/30 hover:bg-surface/70 border border-lines hover:border-gold/50 rounded-xl p-6 transition-all duration-300 hover:shadow-sm h-full">
+        {/* Optional thumbnail preview */}
+        {imageUrl && (
+          <Link
+            href={href}
+            className="relative w-full h-44 rounded-lg overflow-hidden bg-lines/30 mb-5 block"
+            aria-label={titulo}
+            tabIndex={-1}
+          >
+            <Image
+              src={imageUrl}
+              alt={titulo || thumbnailAlt}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          </Link>
+        )}
+
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <span className="text-xs font-semibold text-gold uppercase tracking-widest">
+            {getTypeLabel(rawType)}
+          </span>
+        </div>
+
+        <Link href={href}>
+          <h4 className="font-serif text-xl sm:text-2xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-snug mb-3 line-clamp-3">
+            {titulo}
+          </h4>
+        </Link>
+
+        {subtitulo && (
+          <p className="font-sans text-sm sm:text-base text-charcoal/70 line-clamp-3 leading-relaxed mb-4">
+            {subtitulo}
+          </p>
+        )}
+
+        {/* Labels / Temáticas: beneath subtitle, above publication date */}
+        {articleTopics.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-5">
+            {articleTopics.map((tag, i) => (
+              <button
+                key={`${tag}-${i}`}
+                type="button"
+                onClick={() => onTopicClick(tag)}
+                className="text-[11px] font-sans uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
+              >
+                #{getTopicDisplayName(tag)}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Time of publication in card footer */}
+        <div className="mt-auto pt-4 border-t border-lines/60 flex items-center justify-between text-xs text-charcoal/60">
+          <FormattedDate
+            date={dateStr}
+            lang={lang}
+            format="long"
+            className="font-sans"
+          />
+          <Link
+            href={href}
+            className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-charcoal/60 group-hover:text-gold transition-colors font-medium ml-auto group/read"
+          >
+            <span>{readFullTextLabel}</span>
+            <span
+              className="material-symbols-outlined text-sm transition-transform duration-300 group-hover/read:translate-x-1"
+              aria-hidden="true"
+            >
+              arrow_forward
+            </span>
+          </Link>
+        </div>
+      </article>
+    </RevealOnScroll>
+  );
 }
 
 export default function AuthorProfileView({
@@ -123,8 +369,14 @@ export default function AuthorProfileView({
   lang,
   dict,
 }: AuthorProfileViewProps) {
+  const fallbackDict = getDictionaryClient(lang);
+  const apDict = {
+    ...fallbackDict.authorPage,
+    ...dict.authorPage,
+  };
   const allArticles = useMemo(() => publications || articulos || [], [publications, articulos]);
-  const authorName = autor.full_name || autor.nombre || 'Autor';
+  const unknownAuthor = dict.articles?.unknownAuthor || fallbackDict.articles.unknownAuthor;
+  const authorName = autor.full_name || autor.nombre || unknownAuthor;
 
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
@@ -146,7 +398,7 @@ export default function AuthorProfileView({
   const typesSummary = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const art of allArticles) {
-      const t = (art.type || art.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
+      const t = normalizePublicationType(art.type || art.tipo || PUBLICATION_TYPES.ARTICLE);
       counts[t] = (counts[t] || 0) + 1;
     }
     return counts;
@@ -157,7 +409,7 @@ export default function AuthorProfileView({
   // Filter articles by type AND selected topic
   const filteredArticles = useMemo(() => {
     return allArticles.filter((a) => {
-      const artType = (a.type || a.tipo || PUBLICATION_TYPES.ARTICLE).toLowerCase();
+      const artType = normalizePublicationType(a.type || a.tipo || PUBLICATION_TYPES.ARTICLE);
       const matchesType = selectedType === 'all' || artType === selectedType;
       const aTopics = a.tags ? a.tags.map((t) => t.slug) : (Array.isArray(a.tematicas) ? a.tematicas : []);
       const matchesTopic = !selectedTopic || aTopics.includes(selectedTopic);
@@ -172,34 +424,56 @@ export default function AuthorProfileView({
   const gridArticles = showFeaturedSpotlight ? filteredArticles.slice(1) : filteredArticles;
 
   // Dictionary strings
-  const tAll = dict.authorPage?.allWorks || 'Todos';
-  const tReadFull = dict.authorPage?.readFullText || 'Ler texto completo';
-  const tLatest = dict.authorPage?.latestWork || 'Última publicación';
-  const tArchive = dict.authorPage?.archive || 'Arquivo de publicacións';
-  const tNoArticles = dict.authorPage?.noArticles || 'Non hai artigos publicados por este autor.';
-  const tClearFilter = dict.authorPage?.clearFilter || 'Limpar filtro';
-  const tHome = dict.nav?.inicio || dict.authorPage?.home || 'Inicio';
-  const tAuthors = dict.nav?.autores || dict.authorPage?.authors || 'Autores';
-  const tDefaultBio = dict.authorPage?.defaultBio || 'Autor e colaborador en Cerna.';
-  const tEmail = dict.authorPage?.email || 'Correo';
-  const tSendEmailTo = dict.authorPage?.sendEmailTo || 'Enviar correo a';
-  const tInstagramProfileOf = dict.authorPage?.instagramProfileOf || 'Perfil de Instagram de';
-  const tPortraitOf = dict.authorPage?.portraitOf || 'Retrato de';
-  const tFilterBy = dict.authorPage?.filterByTopic || 'Filtrar por';
-  const tPubSingular = dict.authorPage?.publicationSingular || 'publicación';
-  const tPubPlural = dict.authorPage?.publicationPlural || 'publicacións';
-  const tTextSingular = dict.authorPage?.textSingular || 'texto';
-  const tTextPlural = dict.authorPage?.textPlural || 'textos';
-  const tBreadcrumbsAria = dict.authorPage?.breadcrumbsAria || 'Ruta de navegación';
-  const tTypeFilterAria = dict.authorPage?.typeFilterAria || 'Filtro por tipo de publicación';
-  const tFeaturedCoverAlt = dict.authorPage?.featuredCoverAlt || 'Portada do artigo destacado';
-  const tThumbnailAlt = dict.authorPage?.thumbnailAlt || 'Miniatura do artigo';
+  const tAll = apDict.allWorks;
+  const tReadFull = apDict.readFullText;
+  const tLatest = apDict.latestWork;
+  const tArchive = apDict.archive;
+  const tNoArticles = apDict.noArticles;
+  const tClearFilter = apDict.clearFilter;
+  const tHome =
+    dict.nav?.inicio ||
+    dict.authorPage?.home ||
+    fallbackDict.nav.inicio ||
+    fallbackDict.authorPage.home;
+  const tAuthors =
+    dict.nav?.autores ||
+    dict.authorPage?.authors ||
+    fallbackDict.nav.autores ||
+    fallbackDict.authorPage.authors;
+  const tDefaultBio = apDict.defaultBio;
+  const tEmail = apDict.email;
+  const tSendEmailTo = apDict.sendEmailTo;
+  const tInstagramProfileOf = apDict.instagramProfileOf;
+  const tInstagramLabel = dict.columnists?.instagramLabel || fallbackDict.columnists.instagramLabel;
+  const tPortraitOf = apDict.portraitOf;
+  const tFilterBy = apDict.filterByTopic;
+  const tTopics = apDict.topics;
+  const tPubSingular = apDict.publicationSingular;
+  const tPubPlural = apDict.publicationPlural;
+  const tTextSingular = apDict.textSingular;
+  const tTextPlural = apDict.textPlural;
+  const tBreadcrumbsAria = apDict.breadcrumbsAria;
+  const tTypeFilterAria = apDict.typeFilterAria;
+  const tFeaturedCoverAlt = apDict.featuredCoverAlt;
+  const tThumbnailAlt = apDict.thumbnailAlt;
+  const resolvedRoleLabel =
+    roleLabel ||
+    resolveRoleLabel(autor.role || autor.rol, {
+      admin: apDict.editorialBoard,
+      founder: apDict.foundingMember,
+      writer: apDict.foundingMember,
+      member: apDict.cernaContributor,
+      guest: apDict.cernaContributor,
+      reader: apDict.cernaContributor,
+    });
 
-  const getTypeLabel = (rawType?: string) => {
-    if (!rawType) return dict.documentTypes?.artigo || 'Artigo';
-    const key = rawType.toLowerCase();
-    return dict.documentTypes?.[key] || rawType.charAt(0).toUpperCase() + rawType.slice(1);
-  };
+  const getTypeLabel = (rawType?: string) =>
+    resolvePublicationTypeLabel(
+      rawType,
+      dict.documentTypes,
+      fallbackDict,
+      PUBLICATION_TYPES.ARTICLE
+    );
 
   const handleTopicClick = (topicSlug: string) => {
     if (selectedTopic === topicSlug) {
@@ -274,7 +548,7 @@ export default function AuthorProfileView({
                       aria-label={`${tInstagramProfileOf} ${authorName}`}
                     >
                       <span className="material-symbols-outlined text-[16px] text-gold" aria-hidden="true">photo_camera</span>
-                      <span className="uppercase tracking-wider text-[11px] font-medium">Instagram</span>
+                      <span className="uppercase tracking-wider text-[11px] font-medium">{tInstagramLabel}</span>
                     </a>
                   )}
                 </div>
@@ -287,7 +561,7 @@ export default function AuthorProfileView({
               {/* Eyebrow & Stats Strip */}
               <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-widest mb-3">
                 <span className="font-semibold text-gold px-2.5 py-0.5 rounded bg-gold/10">
-                  {roleLabel}
+                  {resolvedRoleLabel}
                 </span>
                 <span className="text-charcoal/30">•</span>
                 <span className="font-sans text-charcoal/60 font-medium">
@@ -315,7 +589,7 @@ export default function AuthorProfileView({
               {availableTopics.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2 pt-6 border-t border-lines/60">
                   <span className="text-xs uppercase tracking-wider text-charcoal/50 font-medium mr-1 select-none">
-                    {dict.authorPage?.topics || 'Temáticas habituais'}:
+                    {tTopics}:
                   </span>
                   {availableTopics.map(topic => {
                     const isSelected = selectedTopic === topic.slug;
@@ -441,99 +715,15 @@ export default function AuthorProfileView({
                   </span>
                 </div>
 
-                {(() => {
-                  const titulo = featuredArticle.title
-                    ? (featuredArticle.title[lang] || featuredArticle.title.gl || featuredArticle.title.es || '')
-                    : (lang === 'es' ? featuredArticle.titulo_es : featuredArticle.titulo_gl) || featuredArticle.titulo_gl || featuredArticle.titulo_es || '';
-                  const subtitulo = featuredArticle.subtitle
-                    ? (featuredArticle.subtitle[lang] || featuredArticle.subtitle.gl || featuredArticle.subtitle.es || null)
-                    : (lang === 'es' ? featuredArticle.subtitulo_es : featuredArticle.subtitulo_gl) || featuredArticle.subtitulo_gl || featuredArticle.subtitulo_es || null;
-                  const dateStr = featuredArticle.created_at || featuredArticle.creado_en || featuredArticle.updated_at || featuredArticle.actualizado_en;
-                  const imageUrl = featuredArticle.cover_image_url || featuredArticle.imagen_url;
-                  const articleTopics = featuredArticle.tags ? featuredArticle.tags.map((t) => t.slug) : (featuredArticle.tematicas || []);
-                  const rawType = featuredArticle.type || featuredArticle.tipo || PUBLICATION_TYPES.ARTICLE;
-
-                  return (
-                    <RevealOnScroll delayMs={50}>
-                      <article className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center bg-surface/40 border border-lines p-6 md:p-10 rounded-2xl group transition-all duration-500 hover:border-gold/50 hover:shadow-md">
-                        <Link
-                          href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}
-                          className="lg:col-span-6 relative w-full h-[260px] sm:h-[340px] rounded-xl overflow-hidden bg-lines/40 block shrink-0"
-                          aria-label={titulo}
-                        >
-                          {imageUrl ? (
-                            <Image
-                              src={imageUrl}
-                              alt={titulo || tFeaturedCoverAlt}
-                              fill
-                              sizes="(max-width: 1024px) 100vw, 50vw"
-                              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                              priority
-                            />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-lines/20 to-surface">
-                              <span className="text-7xl text-charcoal/15 font-serif select-none">§</span>
-                            </div>
-                          )}
-                        </Link>
-
-                        <div className="lg:col-span-6 flex flex-col justify-between h-full">
-                          <div>
-                            <div className="flex flex-wrap items-center gap-3 mb-4">
-                              <span className="px-2.5 py-1 text-[11px] font-semibold text-gold bg-gold/10 rounded uppercase tracking-widest">
-                                {getTypeLabel(rawType)}
-                              </span>
-                              <FormattedDate
-                                date={dateStr}
-                                lang={lang}
-                                format="long"
-                                className="text-xs text-charcoal/60 font-sans"
-                              />
-                            </div>
-
-                            <Link href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}>
-                              <h2 className="font-serif text-3xl sm:text-4xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-tight mb-4">
-                                {titulo}
-                              </h2>
-                            </Link>
-
-                            {subtitulo && (
-                              <p className="font-sans text-base sm:text-lg text-charcoal/80 line-clamp-3 md:line-clamp-4 leading-relaxed mb-6">
-                                {subtitulo}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="pt-6 border-t border-lines/60 flex flex-wrap items-center justify-between gap-4">
-                            {articleTopics && articleTopics.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {articleTopics.slice(0, 3).map((tag, idx) => (
-                                  <button
-                                    key={idx}
-                                    type="button"
-                                    onClick={() => handleTopicClick(tag)}
-                                    className="text-[11px] uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
-                                  >
-                                    #{getTopicDisplayName(tag)}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                            <Link
-                              href={`/${lang}/articulo/${featuredArticle.slug || featuredArticle.id}`}
-                              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal group-hover:text-gold transition-colors ml-auto group/btn"
-                            >
-                              <span>{tReadFull}</span>
-                              <span className="material-symbols-outlined text-base transition-transform duration-300 group-hover/btn:translate-x-1" aria-hidden="true">
-                                arrow_forward
-                              </span>
-                            </Link>
-                          </div>
-                        </div>
-                      </article>
-                    </RevealOnScroll>
-                  );
-                })()}
+                <FeaturedAuthorWork
+                  article={featuredArticle}
+                  lang={lang}
+                  getTypeLabel={getTypeLabel}
+                  getTopicDisplayName={getTopicDisplayName}
+                  onTopicClick={handleTopicClick}
+                  featuredCoverAlt={tFeaturedCoverAlt}
+                  readFullTextLabel={tReadFull}
+                />
               </section>
             )}
 
@@ -551,97 +741,19 @@ export default function AuthorProfileView({
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {gridArticles.map((articulo, idx) => {
-                    const titulo = articulo.title
-                      ? (articulo.title[lang] || articulo.title.gl || articulo.title.es || '')
-                      : (lang === 'es' ? articulo.titulo_es : articulo.titulo_gl) || articulo.titulo_gl || articulo.titulo_es || '';
-                    const subtitulo = articulo.subtitle
-                      ? (articulo.subtitle[lang] || articulo.subtitle.gl || articulo.subtitle.es || null)
-                      : (lang === 'es' ? articulo.subtitulo_es : articulo.subtitulo_gl) || articulo.subtitulo_gl || articulo.subtitulo_es || null;
-                    const dateStr = articulo.created_at || articulo.creado_en || articulo.updated_at || articulo.actualizado_en;
-                    const imageUrl = articulo.cover_image_url || articulo.imagen_url;
-                    const articleTopics = articulo.tags ? articulo.tags.map((t) => t.slug) : (articulo.tematicas || []);
-                    const rawType = articulo.type || articulo.tipo || PUBLICATION_TYPES.ARTICLE;
-
-                    return (
-                      <RevealOnScroll key={articulo.id} delayMs={(idx % 3) * 100} className="h-full">
-                        <article
-                          className="group flex flex-col bg-surface/30 hover:bg-surface/70 border border-lines hover:border-gold/50 rounded-xl p-6 transition-all duration-300 hover:shadow-sm h-full"
-                        >
-                          {/* Optional thumbnail preview */}
-                          {imageUrl && (
-                            <Link
-                              href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
-                              className="relative w-full h-44 rounded-lg overflow-hidden bg-lines/30 mb-5 block"
-                              aria-label={titulo}
-                              tabIndex={-1}
-                            >
-                              <Image
-                                src={imageUrl}
-                                alt={titulo || tThumbnailAlt}
-                                fill
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                              />
-                            </Link>
-                          )}
-
-                          <div className="flex items-center justify-between gap-2 mb-3">
-                            <span className="text-xs font-semibold text-gold uppercase tracking-widest">
-                              {getTypeLabel(rawType)}
-                            </span>
-                          </div>
-
-                          <Link href={`/${lang}/articulo/${articulo.slug || articulo.id}`}>
-                            <h4 className="font-serif text-xl sm:text-2xl text-charcoal group-hover:text-gold transition-colors duration-300 leading-snug mb-3 line-clamp-3">
-                              {titulo}
-                            </h4>
-                          </Link>
-
-                          {subtitulo && (
-                            <p className="font-sans text-sm sm:text-base text-charcoal/70 line-clamp-3 leading-relaxed mb-4">
-                              {subtitulo}
-                            </p>
-                          )}
-
-                          {/* Labels / Temáticas: beneath subtitle, above publication date */}
-                          {articleTopics && articleTopics.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mb-5">
-                              {articleTopics.map((tag, i) => (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  onClick={() => handleTopicClick(tag)}
-                                  className="text-[11px] font-sans uppercase tracking-wider text-charcoal/70 bg-lines/30 hover:bg-gold/15 hover:text-charcoal px-2 py-0.5 rounded transition-colors cursor-pointer"
-                                >
-                                  #{getTopicDisplayName(tag)}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Time of publication in card footer */}
-                          <div className="mt-auto pt-4 border-t border-lines/60 flex items-center justify-between text-xs text-charcoal/60">
-                            <FormattedDate
-                              date={dateStr}
-                              lang={lang}
-                              format="long"
-                              className="font-sans"
-                            />
-                            <Link
-                              href={`/${lang}/articulo/${articulo.slug || articulo.id}`}
-                              className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-charcoal/60 group-hover:text-gold transition-colors font-medium ml-auto group/read"
-                            >
-                              <span>{tReadFull}</span>
-                              <span className="material-symbols-outlined text-sm transition-transform duration-300 group-hover/read:translate-x-1" aria-hidden="true">
-                                arrow_forward
-                              </span>
-                            </Link>
-                          </div>
-                        </article>
-                      </RevealOnScroll>
-                    );
-                  })}
+                  {gridArticles.map((articulo, idx) => (
+                    <AuthorArchiveCard
+                      key={articulo.id}
+                      article={articulo}
+                      index={idx}
+                      lang={lang}
+                      getTypeLabel={getTypeLabel}
+                      getTopicDisplayName={getTopicDisplayName}
+                      onTopicClick={handleTopicClick}
+                      thumbnailAlt={tThumbnailAlt}
+                      readFullTextLabel={tReadFull}
+                    />
+                  ))}
                 </div>
               </section>
             )}

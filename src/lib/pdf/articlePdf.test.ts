@@ -188,4 +188,53 @@ describe('buildArticlePdf Typesetting', () => {
       global.fetch = originalFetch;
     }
   });
+
+  it('renders an editorial table of contents block in the PDF only when showIndex is true', async () => {
+    const drawTextSpy = vi.spyOn(PDFPage.prototype, 'drawText');
+    const html = '<h1>Primeira Sección</h1><p>Corpo inicial.</p><h2>Subsección</h2><p>Detalle.</p>';
+
+    try {
+      await buildArticlePdf({
+        title: 'Artigo con Índice',
+        subtitle: null,
+        typeLabel: 'Ensaio',
+        authorName: 'Autor Proba',
+        date: '28 de outubro de 2026',
+        tags: [],
+        coverImageUrl: null,
+        html,
+        showIndex: true,
+        indexLabel: 'Índice de Contidos',
+        siteName: 'Cerna Pensamento',
+        siteUrl: 'https://cernapensamento.org',
+      });
+
+      const withIndexStrings = drawTextSpy.mock.calls.map((c) => c[0]);
+      expect(withIndexStrings).toContain('ÍNDICE DE CONTIDOS');
+      expect(withIndexStrings).toContain('1.');
+      expect(withIndexStrings).toContain('1.1.');
+
+      drawTextSpy.mockClear();
+
+      await buildArticlePdf({
+        title: 'Artigo sen Índice',
+        subtitle: null,
+        typeLabel: 'Ensaio',
+        authorName: 'Autor Proba',
+        date: '28 de outubro de 2026',
+        tags: [],
+        coverImageUrl: null,
+        html,
+        showIndex: false,
+        indexLabel: 'Índice de Contidos',
+        siteName: 'Cerna Pensamento',
+        siteUrl: 'https://cernapensamento.org',
+      });
+
+      const withoutIndexStrings = drawTextSpy.mock.calls.map((c) => c[0]);
+      expect(withoutIndexStrings).not.toContain('ÍNDICE DE CONTIDOS');
+    } finally {
+      drawTextSpy.mockRestore();
+    }
+  });
 });

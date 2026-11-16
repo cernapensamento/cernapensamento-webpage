@@ -1,20 +1,23 @@
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
-import { PUBLICATION_STATUSES } from '@/lib/db/schema';
+import { PUBLICATION_STATUSES, PUBLICATION_TYPES } from '@/lib/db/schema';
 import ReviewActionBar from '@/components/escritorio/ReviewActionBar';
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound, permanentRedirect } from 'next/navigation';
-import sanitizeHtml from 'sanitize-html';
 import 'katex/dist/katex.min.css';
 import { renderMathInHtml } from '@/lib/editor/renderMath';
 import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
+import { sanitizeArticleHtml } from '@/lib/editor/sanitizeArticleHtml';
+import { getHeadingsFromHtml, stripIndex } from '@/lib/editor/generateIndex';
 import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
 import FormattedDate from '@/components/ui/FormattedDate';
 import CommentsSection from '@/components/features/CommentsSection';
 import ArticleDownload from '@/components/features/ArticleDownload';
 import ArticleScrollManager from '@/components/features/ArticleScrollManager';
+import ArticleTableOfContents from '@/components/features/ArticleTableOfContents';
 import { getDictionary } from '@/dictionaries';
-import type { Locale } from '@/i18n-config';
+import { resolveLocale } from '@/i18n-config';
+import { resolveAuthorBio, resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 
 interface Props {
   params: Promise<{ slug: string; lang: string }>;
@@ -22,34 +25,37 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { slug, lang } = await params;
-  const publication = await getPublicationBySlug(slug, { lang });
+  const locale = resolveLocale(lang);
+  const [publication, dict] = await Promise.all([
+    getPublicationBySlug(slug, { lang: locale }),
+    getDictionary(locale),
+  ]);
 
   if (!publication) {
-    return { title: 'Artículo no encontrado' };
+    return { title: dict.article.notFoundTitle };
   }
 
-  const titulo = publication.title[lang] || publication.title.gl || publication.title.es;
-  const subtitulo = publication.subtitle
-    ? (publication.subtitle[lang] || publication.subtitle.gl || publication.subtitle.es)
-    : null;
+  const titulo = resolveLocalizedText(publication.title, locale);
+  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, locale) : null;
+  const authorName = publication.author.full_name || dict.article.unknownAuthor;
 
   return {
     title: titulo,
-    description: subtitulo || `Un artículo de ${publication.author.full_name}`,
+    description:
+      subtitulo ||
+      dict.article.defaultMetaDescription.replace('{author}', authorName),
   };
 }
 
 export const revalidate = 60;
 
-export default async function ArticuloPage({
-  params,
-}: {
-  params: Promise<{ lang: string; slug: string }>;
-}) {
+export default async function ArticuloPage({ params }: Props) {
   const { lang, slug } = await params;
-  const dict = await getDictionary(lang as Locale);
-  
-  const publication = await getPublicationBySlug(slug, { lang });
+  const locale = resolveLocale(lang);
+  const [dict, publication] = await Promise.all([
+    getDictionary(locale),
+    getPublicationBySlug(slug, { lang: locale }),
+  ]);
 
   if (!publication) {
     notFound();
@@ -57,23 +63,18 @@ export default async function ArticuloPage({
 
   // Canonical slug auto-redirect if accessed via a legacy or renamed slug with the same unique suffix
   if (publication.slug && publication.slug !== slug) {
-    permanentRedirect(`/${lang}/articulo/${publication.slug}`);
+    permanentRedirect(`/${locale}/articulo/${publication.slug}`);
   }
 
-  const titulo = publication.title[lang] || publication.title.gl || publication.title.es;
-  const subtitulo = publication.subtitle
-    ? (publication.subtitle[lang] || publication.subtitle.gl || publication.subtitle.es)
-    : null;
-  const contenido = publication.content[lang] || publication.content.gl || publication.content.es || '';
-  const isEnsaio = publication.type === 'essay';
+  const titulo = resolveLocalizedText(publication.title, locale);
+  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, locale) : null;
+  const contenido = resolveLocalizedText(publication.content, locale);
+  const bodyHtml = stripIndex(contenido);
+  const tocItems = publication.show_index ? getHeadingsFromHtml(bodyHtml) : [];
+  const isEnsaio = publication.type === PUBLICATION_TYPES.ESSAY;
 
-  const authorBio = publication.author.bio
-    ? (typeof publication.author.bio === 'object'
-        ? (publication.author.bio[lang] || publication.author.bio.gl || publication.author.bio.es || '')
-        : String(publication.author.bio))
-    : '';
-
-  const authorBioFinal = (publication.author.slug && dict.authors && (dict.authors as Record<string, string>)[publication.author.slug]) || authorBio;
+  const authorName = publication.author.full_name || dict.article.unknownAuthor;
+  const authorBioFinal = resolveAuthorBio(publication.author, dict.authors, locale);
 
   const typeLabel = dict.documentTypes?.[publication.type] || publication.type;
 
@@ -94,15 +95,15 @@ export default async function ArticuloPage({
           )}
           <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-charcoal/40 mt-8 border-y border-lines py-3">
             <Link 
-              href={`/${lang}/autor/${publication.author.slug || publication.author.id}`}
+              href={`/${locale}/autor/${publication.author.slug || publication.author.id}`}
               className="text-charcoal/80 hover:text-gold transition-colors font-medium hover:underline"
             >
-              {publication.author.full_name}
+              {authorName}
             </Link>
             <span>•</span>
-            <FormattedDate date={publication.created_at} lang={lang} format="long" />
+            <FormattedDate date={publication.published_at || publication.created_at} lang={locale} format="long" />
           </div>
-          {publication.original_language && publication.original_language !== lang && (
+          {publication.original_language && publication.original_language !== locale && (
             <div className="text-[10px] text-charcoal/60 uppercase tracking-[0.15em] mt-3">
               {dict.article.originalLanguage}{' '}
               <Link href={`/${publication.original_language}/articulo/${publication.slug}`} className="text-gold font-bold hover:underline transition-all">
@@ -115,7 +116,7 @@ export default async function ArticuloPage({
               {publication.tags.map((tag) => (
                 <Link
                   key={tag.slug}
-                  href={`/${lang}/articulos?tema=${tag.slug}`}
+                  href={`/${locale}/articulos?tema=${tag.slug}`}
                   className="border border-lines dark:border-white/15 bg-surface dark:bg-[#1a1a1a] px-3.5 py-1.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] hover:border-gold hover:text-gold transition-all"
                 >
                   {tag.name}
@@ -141,124 +142,23 @@ export default async function ArticuloPage({
 
         <ArticleScrollManager className="w-full">
           <article className="w-full max-w-2xl px-5 md:px-0 mx-auto min-w-0">
+            {publication.show_index && tocItems.length > 0 && (
+              <ArticleTableOfContents
+                items={tocItems}
+                label={dict.article.indexLabel}
+                ariaLabel={dict.article.indexAriaLabel}
+              />
+            )}
             <div 
               className={`article-content ${isEnsaio ? 'article-content-essay' : ''}`}
               dangerouslySetInnerHTML={{ 
-                __html: sanitizeHtml(renderHeadingAnchors(renderMathInHtml(contenido)), {
-                  allowedTags: [
-                    ...sanitizeHtml.defaults.allowedTags,
-                    'img', 'iframe', 'figure', 'figcaption',
-                    'span', 'div', 'hr', 'mark', 'code', 'pre', 'blockquote',
-                    'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'colgroup', 'col',
-                    'math', 'semantics', 'mrow', 'mi', 'mn', 'mo', 'ms', 'mspace', 'mtext',
-                    'mfrac', 'msqrt', 'mroot', 'msub', 'msup', 'msubsup', 'munder', 'mover',
-                    'munderover', 'mtable', 'mtr', 'mtd', 'mpadded', 'mphantom', 'annotation',
-                    'svg', 'path', 'line', 'nav', 'u', 's', 'sub', 'sup',
-                    'rect', 'mstyle', 'menclose'
-                  ],
-                  allowedAttributes: {
-                    ...sanitizeHtml.defaults.allowedAttributes,
-                    '*': ['class', 'style', 'id', 'data-type', 'data-items', 'data-colwidth'],
-                    img: ['src', 'srcset', 'alt', 'title', 'width', 'height', 'loading', 'class', 'style'],
-                    iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'class', 'style', 'title'],
-                    figure: ['class', 'style'],
-                    figcaption: ['class', 'style'],
-                    div: ['class', 'style', 'data-youtube-video', 'role', 'data-latex'],
-                    span: ['class', 'style', 'aria-hidden', 'data-latex', 'id'],
-                    table: ['class', 'style'],
-                    th: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
-                    td: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
-                    col: ['style', 'class', 'width'],
-                    colgroup: ['style', 'class'],
-                    math: ['xmlns', 'display', 'alttext'],
-                    mstyle: ['displaystyle', 'scriptlevel', 'mathsize', 'mathcolor', 'mathbackground'],
-                    mfrac: ['linethickness'],
-                    mspace: ['width', 'height', 'depth'],
-                    mpadded: ['width', 'height', 'depth', 'lspace', 'voffset'],
-                    mo: ['fence', 'separator', 'stretchy', 'symmetric', 'largeop', 'movablelimits', 'accent', 'lspace', 'rspace'],
-                    annotation: ['encoding'],
-                    svg: ['xmlns', 'width', 'height', 'viewBox', 'style', 'preserveAspectRatio'],
-                    path: ['d'],
-                    line: ['x1', 'x2', 'y1', 'y2', 'stroke', 'stroke-width'],
-                    rect: ['x', 'y', 'width', 'height', 'fill', 'stroke'],
-                    nav: ['data-type', 'data-items', 'lang', 'class', 'style', 'aria-label'],
-                    p: ['class', 'style'],
-                    ul: ['style', 'class'],
-                    ol: ['style', 'class'],
-                    li: ['style', 'class'],
-                    a: [...(sanitizeHtml.defaults.allowedAttributes['a'] ?? ['href']), 'style', 'class', 'target', 'rel'],
-                    u: ['style', 'class'],
-                    h1: ['id', 'style', 'class'],
-                    h2: ['id', 'style', 'class'],
-                    h3: ['id', 'style', 'class'],
-                  },
-                  allowedSchemes: ['http', 'https', 'mailto', 'data', 'blob'],
-                  allowedStyles: {
-                    '*': {
-                      'scroll-margin-top': [/./],
-                      'height': [/./],
-                      'width': [/./],
-                      'min-width': [/./],
-                      'max-width': [/./],
-                      'top': [/./],
-                      'bottom': [/./],
-                      'left': [/./],
-                      'right': [/./],
-                      'vertical-align': [/./],
-                      'position': [/./],
-                      'overflow': [/./],
-                      'font-size': [/./],
-                      'background-color': [/./],
-                      'text-align': [/./],
-                      'font-weight': [/./],
-                      'font-family': [/./],
-                      'font-variant-numeric': [/./],
-                      'letter-spacing': [/./],
-                      'text-transform': [/./],
-                      'text-decoration': [/./],
-                      'color': [/./],
-                      'opacity': [/./],
-                      'display': [/./],
-                      'flex-direction': [/./],
-                      'align-items': [/./],
-                      'gap': [/./],
-                      'padding': [/./],
-                      'padding-top': [/./],
-                      'padding-bottom': [/./],
-                      'padding-left': [/./],
-                      'padding-right': [/./],
-                      'margin': [/./],
-                      'margin-top': [/./],
-                      'margin-bottom': [/./],
-                      'margin-left': [/./],
-                      'margin-right': [/./],
-                      'border': [/./],
-                      'border-top': [/./],
-                      'border-bottom': [/./],
-                      'border-left': [/./],
-                      'border-right': [/./],
-                      'border-width': [/./],
-                      'border-top-width': [/./],
-                      'border-bottom-width': [/./],
-                      'border-left-width': [/./],
-                      'border-right-width': [/./],
-                      'border-color': [/./],
-                      'border-style': [/./],
-                      'border-radius': [/./],
-                      'flex-shrink': [/./],
-                      'line-height': [/./],
-                      'list-style': [/./],
-                      'transition': [/./],
-                    },
-                  },
-                  allowedIframeHostnames: ['www.youtube.com', 'www.youtube-nocookie.com', 'youtu.be']
-                }) 
+                __html: sanitizeArticleHtml(renderHeadingAnchors(renderMathInHtml(bodyHtml)))
               }}
             />
 
             <div className="mt-20 pt-8 border-t border-lines flex flex-col md:flex-row items-start gap-6">
               <Link 
-                href={`/${lang}/autor/${publication.author.slug || publication.author.id}`} 
+                href={`/${locale}/autor/${publication.author.slug || publication.author.id}`} 
                 className="w-16 h-16 rounded-full overflow-hidden border border-lines relative block shrink-0"
                 aria-hidden="true"
                 tabIndex={-1}
@@ -277,11 +177,11 @@ export default async function ArticuloPage({
                 </h3>
                 <p className="font-sans text-lg text-charcoal/80">
                   <Link 
-                    href={`/${lang}/autor/${publication.author.slug || publication.author.id}`} 
+                    href={`/${locale}/autor/${publication.author.slug || publication.author.id}`} 
                     className="hover:text-gold transition-colors font-serif font-bold text-charcoal"
                     aria-describedby="author-heading"
                   >
-                    {publication.author.full_name || dict.article.unknownAuthor}
+                    {authorName}
                   </Link> {dict.article.contributorOf} {SITE_NAME}.
                 </p>
                 {authorBioFinal && (
@@ -295,7 +195,7 @@ export default async function ArticuloPage({
             <CommentsSection publicationId={publication.id} />
 
             <ArticleDownload
-              href={`/api/articulo/${publication.slug}/pdf?lang=${lang}`}
+              href={`/api/articulo/${publication.slug}/pdf?lang=${locale}`}
               eyebrow={dict.article.download.eyebrow}
               title={dict.article.download.title}
               description={dict.article.download.description}

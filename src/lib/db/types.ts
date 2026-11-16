@@ -6,14 +6,13 @@
 import type { UserRoleValue, PublicationStatusValue, PublicationTypeValue } from './schema';
 
 /**
- * Mandatory Bilingual Text
- * Both Galician ('gl') and Spanish ('es') are strictly required by editorial policy.
- * Can be extended with additional locales (e.g. 'en', 'pt') without schema changes.
+ * Localized Multilingual Text
+ * Supports default locales ('gl', 'es') and dynamically extends to any additional locale.
  */
 export type LocalizedString = {
-  gl: string;
-  es: string;
-  [key: string]: string;
+  gl?: string;
+  es?: string;
+  [key: string]: string | undefined;
 };
 
 export type UserRole = UserRoleValue;
@@ -34,20 +33,30 @@ export interface UserRow {
   role: UserRole;
 }
 
+export type AuthProfile = {
+  role: UserRole;
+  avatar_url: string | null;
+  full_name?: string | null;
+};
+
+export type ProfileRow = UserRow & { rol: UserRole };
+
 export interface PublicationRow {
   id: string;
   slug: string;
   cover_image_url: string | null;
   status: PublicationStatus;
   type: PublicationType;
-  original_language: 'gl' | 'es';
+  original_language: string;
   is_pinned: boolean;
+  show_index: boolean;
   author_id: string;
   title: LocalizedString;
   subtitle: LocalizedString | null;
   content: LocalizedString;
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
   newsletter_sent_at?: string | null;
 }
 
@@ -115,6 +124,7 @@ export interface PublicationCardItem {
   is_pinned: boolean;
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
   author: AuthorSummary;
   tags: TagItem[];
 }
@@ -131,10 +141,12 @@ export interface PublicationDetail {
   cover_image_url: string | null;
   type: PublicationType;
   status: PublicationStatus;
-  original_language: 'gl' | 'es';
+  original_language: string;
   is_pinned: boolean;
+  show_index: boolean;
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
   author: AuthorSummary;
   tags: TagItem[];
 }
@@ -197,4 +209,38 @@ export interface PublishedAuthorItem {
   latest_publication_title: LocalizedString | null;
   latest_publication_slug: string | null;
   publication_types: PublicationType[];
+}
+
+/**
+ * Lightweight publication item for the writer desk dashboard.
+ * Never includes heavy content fields.
+ */
+export interface PublicationDashboardItem {
+  id: string;
+  slug: string;
+  title: LocalizedString;
+  subtitle: LocalizedString | null;
+  cover_image_url: string | null;
+  type: PublicationType;
+  status: PublicationStatus;
+  is_pinned: boolean | null;
+  created_at: string;
+  updated_at: string;
+  published_at?: string | null;
+  author_id: string;
+  author: {
+    id: string;
+    full_name: string;
+  } | null;
+}
+
+/**
+ * Computed publication quota status for guest authors.
+ */
+export interface GuestPublicationQuota {
+  totalCount: number;
+  yearlyCount: number;
+  totalLimit: number;
+  yearlyLimit: number;
+  canCreate: boolean;
 }

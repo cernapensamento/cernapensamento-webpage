@@ -1,8 +1,24 @@
 {
   "homepage": {
+    "title": "Cerna Pensamento · Revista Galega de Ensaio, Filosofía e Creación Literaria",
+    "ogImageAlt": "Cerna Pensamento · Revista de Ensaio e Filosofía",
     "description": "Revista dixital e asociación cultural independente en Galicia. Publicación periódica de ensaio, filosofía política, economía, crítica cultural, narrativa e poesía.",
     "organizationDescription": "Revista dixital e asociación cultural independente en Galicia dedicada ao ensaio, a filosofía política, a economía e a creación literaria.",
-    "websiteDescription": "Revista galega de ensaio, filosofía, economía e creación literaria."
+    "websiteDescription": "Revista galega de ensaio, filosofía, economía e creación literaria.",
+    "keywords": [
+      "Cerna",
+      "Cerna Pensamento",
+      "Cerna revista literaria",
+      "revista literaria",
+      "ensaio galego",
+      "filosofía política",
+      "escola austríaca",
+      "Galicia",
+      "revista cultural Galicia"
+    ]
+  },
+  "loading": {
+    "message": "Recompilando manuscritos..."
   },
   "nav": {
     "inicio": "Inicio",
@@ -40,6 +56,13 @@
     "closeMenu": "Pechar menú",
     "toggleMenu": "Abrir menú",
     "contacto": "Contacto",
+    "switchLanguageTo": "Cambiar a",
+    "toggleTheme": "Alternar tema",
+    "contactByEmail": "Contacto por Correo",
+    "defaultUser": "Usuario",
+    "userMenuAria": "Menú de usuario",
+    "accountLabel": "A túa Conta",
+    "profileAvatarAlt": "Perfil",
     "founderBios": {
       "diego": "Economía, teoría do valor e filosofía política.",
       "anxo": "Pensamento crítico, literatura e sociedade.",
@@ -148,6 +171,7 @@
   "articles": {
     "tag": "Arquivo Histórico",
     "title": "Todas as Publicacións",
+    "description": "Arquivo histórico de artigos, ensaios, columnas, narrativa, poesía e reportaxes publicados en Cerna Pensamento.",
     "searchPlaceholder": "Buscar por título ou contido...",
     "all": "Todos",
     "by": "Por",
@@ -161,13 +185,21 @@
     "loadMore": "Cargar máis publicacións",
     "loadingMore": "Cargando publicacións...",
     "unknownAuthor": "Autor Descoñecido",
-    "readArticle": "Ler artigo"
+    "readArticle": "Ler artigo",
+    "readShort": "Ler",
+    "loading": "Cargando...",
+    "featuredCoverAlt": "Portada do artigo destacado"
   },
   "article": {
     "aboutAuthor": "Sobre o autor",
     "contributorOf": "é un contribuínte de",
     "unknownAuthor": "Autor Descoñecido",
     "originalLanguage": "Idioma orixinal:",
+    "indexLabel": "Índice",
+    "indexAriaLabel": "Índice do artigo",
+    "notFoundTitle": "Artigo non atopado",
+    "defaultMetaDescription": "Un artigo de {author}",
+    "pdfGenerationError": "Non foi posible xerar o PDF",
     "download": {
       "eyebrow": "Copia impresa",
       "title": "Leva este texto contigo",
@@ -181,6 +213,9 @@
     "publishedArticles": "Artigos publicados",
     "emailLabel": "Correo",
     "instagramLabel": "Instagram",
+    "portraitOf": "Retrato de",
+    "sendEmailTo": "Enviar correo a",
+    "instagramProfileOf": "Perfil de Instagram de",
     "founderBadge": "Membro Fundador",
     "viewAllAuthors": "Ver todos os autores"
   },
@@ -311,6 +346,7 @@
     "fullName": "Nome completo",
     "namePlaceholder": "O teu nome",
     "email": "Correo electrónico",
+    "emailPlaceholder": "ti@correo.com",
     "password": "Contrasinal",
     "processing": "Procesando...",
     "loginBtn": "Ingresar",
@@ -390,6 +426,16 @@
     "approvedSuccess": "¡Artigo aprobado e publicado!",
     "rejectedSuccess": "Artigo rexeitado e devolto a borrador.",
     "unpublish": "Despublicar",
+    "changeAvatarAria": "Cambiar imaxe de perfil",
+    "changeAvatarLabel": "Cambiar",
+    "avatarAlt": "Retrato do autor",
+    "emailLabel": "Correo Electrónico",
+    "joinDateLabel": "Data de Ingreso",
+    "unknownDate": "Descoñecida",
+    "securitySectionTitle": "Seguridade",
+    "unknownError": "Erro descoñecido",
+    "updateErrorPrefix": "Erro ao actualizar:",
+    "genericUploadError": "Erro",
     "passwordForm": {
       "button": "Cambiar Contrasinal",
       "modalTitle": "Actualizar Contrasinal",
@@ -410,6 +456,7 @@
     "totalLimit": "Límite total",
     "createPost": "Crear nova publicación",
     "limitReached": "Límite alcanzado",
+    "limitReachedNotice": "Acadaches o límite de publicacións permitido para autores convidados.",
     "articles": "Artigos",
     "all": "Todos",
     "published": "Publicados",
@@ -419,9 +466,11 @@
     "draft": "Borrador",
     "edit": "Editar",
     "noArticles": "Aínda non tes artigos. Crea a túa primeira publicación.",
-    "pending": "Pendientes",
+    "pending": "Pendentes",
     "toApprove": "Para Aprobar",
-    "noPendingArticles": "Non hai publicacións pendentes de aprobación."
+    "noPendingArticles": "Non hai publicacións pendentes de aprobación.",
+    "defaultAuthorName": "Editor",
+    "defaultCoverAlt": "Publicación"
   },
   "articleEditor": {
     "backToArticles": "Artigos",
@@ -436,6 +485,7 @@
     "previewHeader": "Vista Previa de Publicación",
     "backToEditor": "Volver ao Editor",
     "saveDraft": "Gardar Borrador",
+    "saveDraftShort": "Borrador",
     "saveChanges": "Gardar Cambios",
     "galician": "Galego",
     "spanish": "Castelán",
@@ -443,24 +493,41 @@
     "translating": "Traducindo...",
     "articleType": "Tipo de artigo",
     "originalLang": "Idioma Orixinal",
+    "originalIn": "Orixinal:",
+    "titlePlaceholder": "O título da túa investigación...",
     "titlePlaceholderGl": "O título da túa investigación...",
     "titlePlaceholderEs": "El título de tu investigación...",
+    "subtitlePlaceholder": "Un subtítulo ou breve resumo...",
     "subtitlePlaceholderGl": "Un subtítulo ou breve resumo...",
     "subtitlePlaceholderEs": "Un subtítulo o breve resumen...",
     "noTitle": "Sen Título",
     "preview": "Vista Previa",
+    "defaultEditorContent": "<p>A natureza do pensamento contemporáneo esixe unha pausa deliberada...</p>",
+    "geminiQuotaExceeded": "Superaches o límite gratuíto de peticións de Gemini (máx. 15/min ou 20/día). Agarda un minuto e téntao de novo.",
+    "previewCoverAlt": "Vista previa da portada",
+    "authorAvatarAlt": "Avatar do autor",
     "tools": {
       "bold": "Negra",
       "italic": "Cursiva",
+      "fontSize": "Tamaño do texto",
       "h1": "Título 1",
       "h2": "Título 2",
       "h3": "Título 3",
       "quote": "Cita",
       "image": "Inserir Imaxe",
+      "imageTitle": "Imaxe",
       "video": "Inserir Vídeo",
+      "videoTitle": "Vídeo de YouTube",
       "list": "Lista con viñetas",
+      "listShort": "Lista",
       "justify": "Xustificar Texto",
-      "clear": "Limpar todo"
+      "justifyShort": "Xustificar",
+      "math": "Fórmula Matemática",
+      "mathTitle": "Fórmula Matemática (LaTeX)",
+      "insertTable": "Inserir Táboa",
+      "clear": "Limpar todo",
+      "changeCover": "Cambiar Imaxe de Portada",
+      "coverShort": "Portada"
     },
     "originalGl": "Orixinal Galego",
     "originalEs": "Orixinal Castelán",
@@ -476,7 +543,10 @@
     "newTagNotice": "As etiquetas deben estar dispoñibles en ambos idiomas para a correcta tradución do sitio.",
     "tagInSpanish": "En Castelán",
     "tagInGalician": "En Galego",
+    "tagTranslationIn": "En",
+    "tagExamplePlaceholder": "Ex: Medio Ambiente",
     "bothLangsRequired": "Debes completar ambos idiomas",
+    "allLangsRequired": "Debes completar tódolos idiomas",
     "createTagError": "Erro ao crear etiqueta: ",
     "createTagBtn": "+ CREAR NOVA ETIQUETA",
     "tableControls": {
@@ -488,9 +558,13 @@
       "red": "Vermello",
       "toolbarLabel": "Controis de táboa",
       "addColumn": "Engadir columna á dereita",
+      "addColumnShort": "+ Col",
       "deleteColumn": "Eliminar columna",
+      "deleteColumnShort": "− Col",
       "addRow": "Engadir fila abaixo",
+      "addRowShort": "+ Fila",
       "deleteRow": "Eliminar fila",
+      "deleteRowShort": "− Fila",
       "headerRow": "Cabeceira",
       "headerRowTitle": "Alternar fila de cabeceira",
       "mergeSplit": "Unir / Dividir",
@@ -515,6 +589,8 @@
     "clearAllConfirm": "¿Estás seguro de que queres borrar todo o contido deste artigo? Perderanse todos os cambios en galego e en castelán.",
     "clearAllTitle": "¿Borrar todo o contido?",
     "noHeadingsFound": "Non se atoparon seccións (H1, H2, H3) no artigo.",
+    "showIndexLabel": "Índice automático",
+    "showIndexHint": "Amosar táboa de contidos xerada a partir dos títulos H1–H3 ao inicio do artigo.",
     "translateSuccess": "Tradución xerada correctamente. Podes cambiar de idioma nas pestanas para revisala.",
     "translateError": "Erro ao traducir o contido. Revisa a consola ou a túa API KEY.",
     "insert": "Inserir",
@@ -535,7 +611,16 @@
       "title": "Pé de foto",
       "description": "Opcional: Engade unha lenda ou pé de foto para esta imaxe:",
       "placeholder": "Ex: Retrato do autor en Santiago..."
-    }
+    },
+    "unauthorized": "Non autorizado: sesión requirida.",
+    "insufficientRole": "Permisos insuficientes para xestionar publicacións.",
+    "onlyPrivilegedCanPublish": "Permisos insuficientes: só os fundadores e administradores poden publicar directamente.",
+    "publicationNotFound": "Publicación non atopada.",
+    "notAuthorOrPrivileged": "Non tes permiso para editar este artigo.",
+    "createDbError": "Erro ao crear a publicación na base de datos.",
+    "serverError": "Erro inesperado no servidor.",
+    "fetchMoreError": "Erro ao cargar máis publicacións.",
+    "statusUpdateError": "Erro ao actualizar o estado da publicación."
   },
   "contactForm": {
     "fullName": "Nome Completo",
@@ -565,6 +650,7 @@
     "successNote": "Agradecemos o teu contacto. O noso Consello Editorial revisará a túa proposta con atención.",
     "sendAnother": "Enviar outra mensaxe",
     "removeFile": "Eliminar ficheiro",
+    "honeypotLabel": "Non cubras este campo",
     "subjects": {
       "placeholder": "Seleccione un asunto",
       "article": "Envío de Artigo",
@@ -591,6 +677,12 @@
     "lastUpdatedLabel": "Última actualización",
     "lastUpdated": "22 de outubro de 2026",
     "contactNote": "Para exercer os teus dereitos ou formular calquera consulta, escribe a"
+  },
+  "estatutosPage": {
+    "eyebrow": "Asociación Cerna Pensamento",
+    "title": "Estatutos",
+    "metaDescription": "Estatutos oficiais da Asociación Cerna Pensamento.",
+    "approvalNote": "Documento aprobado en Cambados, 28 de xullo de 2026"
   },
   "autoresPage": {
     "eyebrow": "Directorio de autores",
@@ -634,6 +726,7 @@
       "title": "Proxecto Editorial",
       "description": "CERNA é un espazo de encontro para o pensamento crítico e a reflexión sosegada. O noso proxecto editorial estrutúrase en catro coleccións principais:",
       "readMore": "Ler máis",
+      "collectionPrefix": "COL.",
       "collections": [
         {
           "id": "narrativa",
@@ -891,7 +984,48 @@
       "internalErrorMessage": "Erro interno ao tramitar a baixa.",
       "returnHome": "Volver á portada",
       "manageProfile": "Xestionar preferencias no perfil"
+    },
+    "webhook": {
+      "configUnavailable": "Configuración non dispoñible",
+      "unauthorized": "Non autorizado",
+      "invalidPayload": "Payload de publicación inválido",
+      "ignoredNotPublished": "Non é un evento de publicación activa, ignorado.",
+      "ignoredAlreadySent": "Esta publicación xa foi notificada previamente aos subscritores.",
+      "claimError": "Erro ao bloquear o estado da publicación",
+      "alreadyClaimed": "A publicación xa foi reclamada ou enviada por outro proceso concorrente.",
+      "subscribersError": "Erro ao obter a lista de subscritores",
+      "noActiveSubscribers": "Non hai subscritores activos para notificar.",
+      "allDispatchesFailed": "Non se puido enviar ningún correo da newsletter",
+      "internalError": "Erro interno do servidor"
     }
+  },
+  "contactEmail": {
+    "defaultSubject": "Sen Asunto",
+    "subjectPrefix": "[Contacto]",
+    "heading": "Novo contacto recibido a través do formulario de Cerna",
+    "nameLabel": "Nome",
+    "emailLabel": "Email",
+    "subjectLabel": "Asunto",
+    "messageLabel": "Mensaxe",
+    "defaultAttachmentName": "documento.pdf"
+  },
+  "translateApi": {
+    "unauthorized": "Autenticación requerida",
+    "forbidden": "Permisos insuficientes para traducir",
+    "missingContent": "Falta contido para traducir",
+    "invalidLanguage": "Idioma de destino non soportado",
+    "payloadTooLarge": "O contido supera o tamaño máximo permitido",
+    "serviceUnavailable": "Servizo de tradución non dispoñible",
+    "translateFailed": "Non foi posible completar a tradución"
+  },
+  "markdown": {
+    "article": {
+      "authorLabel": "Autor",
+      "publicationLabel": "Publicación",
+      "serverError": "# 500 - Erro interno do servidor"
+    },
+    "notFound": "# 404 - Páxina non atopada (Not Found)\n\nO recurso solicitado non existe ou foi movido en Cerna Pensamento.\n\nPodes consultar os seguintes recursos para navegar pola publicación e atopar o contido:\n- [Portada de Cerna Pensamento]({siteUrl}/{lang})\n- [Arquivo xeral de publicacións]({siteUrl}/{lang}/articulos)\n- [Directorio de autores]({siteUrl}/{lang}/autores)\n- [Caderno de novas e convocatorias]({siteUrl}/{lang}/noticias)\n- [Mapa do sitio (Sitemap XML)]({siteUrl}/sitemap.xml)\n- [Instrucións para axentes de IA (llms.txt)]({siteUrl}/llms.txt)\n\nPara consultas editoriais ou asistencia técnica: contacto@cernapensamento.org\n",
+    "homepage": "# Cerna Pensamento · Revista Galega de Ensaio, Filosofía e Creación Literaria\n\n> Revista dixital e asociación cultural independente en Galicia dedicada ao ensaio, a filosofía política, a economía (incluíndo a tradición da Escola Austríaca de economía), o debate intelectual e a creación literaria en lingua galega e castelá.\n\n- **Sitio web:** {siteUrl}/{lang}\n- **Idioma principal:** Galego (`gl`), con versión bilingüe en castelán (`es`)\n- **Sede editorial:** Santiago de Compostela, Galicia, España\n- **Contacto editorial:** contacto@cernapensamento.org\n\n---\n\n## Estrutura da Publicación e Seccións Principais\n\n- [Arquivo Xeral de Publicacións]({siteUrl}/{lang}/articulos): Catálogo completo con filtros temáticos por ensaio, artigo de opinión, narrativa e poesía.\n- [Artigos de Opinión]({siteUrl}/{lang}/articulos?tipo=article): Columnas semanais, análise de actualidade e crítica política.\n- [Ensaios Filosóficos e Económicos]({siteUrl}/{lang}/articulos?tipo=essay): Monográficos extensos sobre teoría do valor, dereito, economía e sociedade aberta.\n- [Caderno de Novas]({siteUrl}/{lang}/noticias): Axenda cultural, convocatorias de ensaio e avisos editoriais.\n- [A Asociación Cerna]({siteUrl}/{lang}/asociacion): Manifesto fundacional, obxectivos e ideario da asociación civil independente.\n- [Estatutos Oficiais]({siteUrl}/{lang}/asociacion/estatutos): Marco legal, réxime interno e gobernanza da asociación.\n- [Directorio de Autores e Columnistas]({siteUrl}/{lang}/autores): Perfís dos autores, investigadores e membros do consello editorial.\n- [Contacto e Envío de Propostas]({siteUrl}/{lang}/contacto): Canle oficial para propostas de colaboración e cartas ao consello.\n- [Política de Privacidade]({siteUrl}/{lang}/privacidad): Tratamento de datos persoais, dereitos e información legal.\n\n---\n\n## Guía e Recursos para Axentes de Intelixencia Artificial\n\n- [Instrucións para Axentes de IA (llms.txt)]({siteUrl}/llms.txt): Guía de integración con casos de uso recomendados e protocolo de consulta.\n- [Mapa do Sitio (Sitemap XML)]({siteUrl}/sitemap.xml): Listaxe canónica de todas as URLs indexables con datas de última modificación.\n- **Negociación de contido (acceptmarkdown.com):** Podes enviar o encabezado HTTP `Accept: text/markdown` nas portadas, nos artigos e nas páxinas legais de privacidade e estatutos para recibir Markdown. Outras rutas válidas poden devolver HTML.\n"
   },
   "comments": {
     "title": "Comentarios",

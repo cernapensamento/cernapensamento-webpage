@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { i18n, type Locale } from '@/i18n-config';
 
 /**
  * Returns WEBHOOK_SECRET, throwing an error if unset or empty.
@@ -9,6 +10,26 @@ export function getNewsletterSecret(): string {
     throw new Error('WEBHOOK_SECRET environment variable is not set');
   }
   return secret;
+}
+
+/**
+ * Verifies a Bearer authorization header against WEBHOOK_SECRET using timing-safe comparison.
+ */
+export function verifyWebhookSecret(authHeader: string | null, secret: string): boolean {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return false;
+  }
+  const token = authHeader.slice('Bearer '.length);
+  try {
+    const secretBuf = Buffer.from(secret);
+    const tokenBuf = Buffer.from(token);
+    if (secretBuf.length !== tokenBuf.length) {
+      return false;
+    }
+    return crypto.timingSafeEqual(secretBuf, tokenBuf);
+  } catch {
+    return false;
+  }
 }
 
 export function getUnsubscribeTokenSecret(): string {
@@ -69,7 +90,7 @@ export function getSiteBaseUrl(): string {
  * locale query parameters for browser links and RFC 8058 headers.
  * Uses the configured site URL and defaults to Galician; token errors propagate.
  */
-export function buildUnsubscribeUrl(email: string, lang: 'gl' | 'es' = 'gl'): string {
+export function buildUnsubscribeUrl(email: string, lang: Locale | string = i18n.defaultLocale): string {
   const baseUrl = getSiteBaseUrl();
   const token = createUnsubscribeToken(email);
   const params = new URLSearchParams({

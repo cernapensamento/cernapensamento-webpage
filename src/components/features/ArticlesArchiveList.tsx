@@ -4,13 +4,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import ArticleCard from '@/components/features/ArticleCard';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
-import type { PublicationCardItem, PublicationType } from '@/lib/db';
+import type { PublicationCardItem, PublicationType } from '@/lib/db/types';
 import { fetchMoreArticlesAction } from '@/actions/articles';
+import { getDictionaryClient } from '@/dictionaries/client';
 
 interface ArticlesArchiveListProps {
   initialArticles: PublicationCardItem[];
   lang: string;
-  dict: {
+  dict?: {
     articles?: {
       noResults?: string;
       clearFilters?: string;
@@ -33,6 +34,12 @@ export default function ArticlesArchiveList({
   dict,
   filterOptions,
 }: ArticlesArchiveListProps) {
+  const fallbackDict = getDictionaryClient(lang);
+  const articlesDict = {
+    ...fallbackDict.articles,
+    ...dict?.articles,
+  };
+
   const [articles, setArticles] = useState<PublicationCardItem[]>(initialArticles);
   const [visibleCount, setVisibleCount] = useState<number>(10);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
@@ -41,12 +48,12 @@ export default function ArticlesArchiveList({
   if (!articles || articles.length === 0) {
     return (
       <div className="text-center py-32 border-t border-lines">
-        <p className="font-serif text-2xl text-charcoal/50 mb-6">{dict.articles?.noResults}</p>
+        <p className="font-serif text-2xl text-charcoal/50 mb-6">{articlesDict.noResults}</p>
         <Link
           href={`/${lang}/articulos`}
           className="group px-6 py-3 border border-charcoal text-xs font-sans uppercase tracking-[0.2em] text-charcoal hover:bg-charcoal hover:text-parchment transition-colors inline-flex items-center gap-2"
         >
-          <span>{dict.articles?.clearFilters}</span>
+          <span>{articlesDict.clearFilters}</span>
           <span
             className="material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1"
             aria-hidden="true"
@@ -139,8 +146,8 @@ export default function ArticlesArchiveList({
             >
               <span>
                 {isLoadingMore
-                  ? (dict.articles?.loadingMore || 'Cargando...')
-                  : (dict.articles?.loadMore || 'Cargar máis publicacións')}
+                  ? articlesDict.loadingMore
+                  : articlesDict.loadMore}
               </span>
               <span
                 className={`material-symbols-outlined text-base transition-transform duration-300 group-hover:translate-x-1 ${

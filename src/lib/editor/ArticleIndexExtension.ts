@@ -1,20 +1,86 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import type { DOMOutputSpec } from '@tiptap/pm/model';
+import {
+  INDEX_BLOCK_STYLES,
+  getIndexLabels,
+  getIndexRowStyles,
+  type IndexItem,
+  type Slug,
+} from './generateIndex';
 
-export type Slug = string & { readonly __brand: unique symbol };
-
-export interface IndexItem {
-  readonly path: readonly number[];
-  readonly text: string;
-  readonly slug: Slug;
-}
+export type { IndexItem, Slug };
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     articleIndex: {
-      insertArticleIndex: (options: { items: IndexItem[]; lang: 'gl' | 'es' }) => ReturnType;
+      insertArticleIndex: (options: { items: IndexItem[]; lang: string }) => ReturnType;
     };
   }
+}
+
+/**
+ * Normalizes a parsed item, migrating legacy `{ num: "1.2", text, slug }` entries
+ * into the current `{ path: [1, 2], text, slug }` shape.
+ */
+function normalizeIndexItem(raw: unknown): IndexItem {
+  const item = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const text = typeof item.text === 'string' ? item.text : '';
+  const slug = (typeof item.slug === 'string' ? item.slug : '') as Slug;
+
+  if (Array.isArray(item.path)) {
+    return { path: item.path as number[], text, slug };
+  }
+
+  const numStr = typeof item.num === 'string' ? item.num : '';
+  const parts = numStr.split('.').filter(Boolean).map(Number);
+
+  return {
+    path: parts.length > 0 ? parts : [1],
+    text,
+    slug,
+  };
+}
+
+function parseIndexItems(rawAttr: string | null): IndexItem[] {
+  if (!rawAttr) return [];
+  try {
+    const parsed = JSON.parse(rawAttr);
+    return Array.isArray(parsed) ? parsed.map(normalizeIndexItem) : [];
+  } catch {
+    return [];
+  }
+}
+
+function buildIndexRowSpec(item: IndexItem): DOMOutputSpec {
+  const level = item.path.length;
+  const num = `${item.path.join('.')}.`;
+  const styles = getIndexRowStyles(level);
+
+  return [
+    'div',
+    {
+      class: `index-row index-level-${level}`,
+      role: 'listitem',
+      style: styles.row,
+    },
+    [
+      'span',
+      {
+        class: 'index-num',
+        style: styles.num,
+      },
+      num,
+    ],
+    [
+      'a',
+      {
+        href: `#${item.slug}`,
+        class: 'index-link',
+        style: styles.link,
+      },
+      item.text,
+    ],
+  ];
 }
 
 export const ArticleIndex = Node.create({
@@ -28,28 +94,7 @@ export const ArticleIndex = Node.create({
     return {
       items: {
         default: [],
-        parseHTML: (element) => {
-          try {
-            const raw = JSON.parse(element.getAttribute('data-items') || '[]');
-            return raw.map((item: Record<string, unknown>) => {
-              if (Array.isArray(item.path)) {
-                return item as unknown as IndexItem;
-              }
-              // Migration for legacy structural format
-              const numStr = typeof item.num === 'string' ? item.num : '';
-              const parts = numStr.split('.').filter(Boolean).map(Number);
-              const text = typeof item.text === 'string' ? item.text : '';
-              const slug = typeof item.slug === 'string' ? item.slug : '';
-              return {
-                path: parts.length > 0 ? parts : [1],
-                text,
-                slug,
-              } as unknown as IndexItem;
-            });
-          } catch {
-            return [];
-          }
-        },
+        parseHTML: (element) => parseIndexItems(element.getAttribute('data-items')),
         renderHTML: (attributes) => ({
           'data-items': JSON.stringify(attributes.items || []),
         }),
@@ -65,67 +110,13 @@ export const ArticleIndex = Node.create({
   },
 
   parseHTML() {
-    return [
-      {
-        tag: 'nav[data-type="article-index"]',
-        getAttrs: (element) => {
-          const el = element as HTMLElement;
-          let items: IndexItem[] = [];
-          try {
-            items = JSON.parse(el.getAttribute('data-items') || '[]');
-          } catch {
-            items = [];
-          }
-          return {
-            items,
-            lang: el.getAttribute('lang') || 'gl',
-          };
-        },
-      },
-    ];
+    return [{ tag: 'nav[data-type="article-index"]' }];
   },
 
   renderHTML({ node, HTMLAttributes }) {
     const items = (node.attrs.items || []) as IndexItem[];
-    const lang = node.attrs.lang || 'gl';
-    const label = lang === 'es' ? 'Índice' : 'Índice';
-    const ariaLabel = lang === 'es' ? 'Índice del artículo' : 'Índice do artigo';
-
-    const rows: DOMOutputSpec[] = items.map((item) => {
-      const level = item.path.length;
-      const num = item.path.join('.') + '.';
-      const indent = level === 1 ? '0' : level === 2 ? '1.5rem' : '3rem';
-      const fontSize = level === 1 ? '1.15rem' : level === 2 ? '1.05rem' : '0.95rem';
-      const fontWeight = level === 1 ? '600' : '400';
-      const opacity = level === 3 ? '0.75' : level === 2 ? '0.9' : '1';
-      const numWidth = level === 1 ? '1.75rem' : level === 2 ? '2.75rem' : '3.75rem';
-
-      return [
-        'div',
-        {
-          class: `index-row index-level-${level}`,
-          role: 'listitem',
-          style: `display: flex; align-items: baseline; gap: 0.5rem; padding: 0.25rem 0 0.25rem ${indent}; margin: 0;`,
-        },
-        [
-          'span',
-          {
-            class: 'index-num',
-            style: `color: var(--color-gold); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.02em; min-width: ${numWidth}; flex-shrink: 0; font-variant-numeric: tabular-nums; font-family: var(--font-sans);`,
-          },
-          num,
-        ],
-        [
-          'a',
-          {
-            href: `#${item.slug}`,
-            class: 'index-link',
-            style: `color: var(--color-charcoal, inherit); opacity: ${opacity}; text-decoration: none; font-size: ${fontSize}; font-weight: ${fontWeight}; line-height: 1.5; font-family: var(--font-serif); transition: opacity 0.2s;`,
-          },
-          item.text,
-        ],
-      ];
-    });
+    const lang = (node.attrs.lang as string) || 'gl';
+    const { label, ariaLabel } = getIndexLabels(lang);
 
     return [
       'nav',
@@ -133,15 +124,13 @@ export const ArticleIndex = Node.create({
         'data-type': 'article-index',
         'aria-label': ariaLabel,
         class: 'article-index-block',
-        style:
-          'border-top: 1px solid rgba(197, 160, 89, 0.4); border-bottom: 1px solid rgba(197, 160, 89, 0.4); padding: 1.75rem 2rem; margin-bottom: 2.5rem;',
+        style: INDEX_BLOCK_STYLES.nav,
       }),
       [
         'div',
         {
           class: 'index-label',
-          style:
-            'display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-gold); margin-bottom: 1rem; font-family: var(--font-sans);',
+          style: INDEX_BLOCK_STYLES.label,
         },
         label,
       ],
@@ -150,9 +139,9 @@ export const ArticleIndex = Node.create({
         {
           class: 'index-list',
           role: 'list',
-          style: 'display: flex; flex-direction: column; gap: 0.25rem;',
+          style: INDEX_BLOCK_STYLES.list,
         },
-        ...rows,
+        ...items.map(buildIndexRowSpec),
       ],
     ];
   },
@@ -173,12 +162,10 @@ export const ArticleIndex = Node.create({
             }
           });
 
-          const node = this.type.create({ items, lang });
-
           if (existingPos !== null) {
             if (dispatch) {
-              const tr = state.tr.replaceWith(existingPos, existingPos + existingSize, node);
-              dispatch(tr);
+              const node = this.type.create({ items, lang });
+              dispatch(state.tr.replaceWith(existingPos, existingPos + existingSize, node));
             }
             return true;
           }

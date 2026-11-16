@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ArticleEditor from './ArticleEditor';
+import { parseDraft, serializeDraft } from './articleEditorUtils';
 import * as storage from '@/lib/storage';
 
 vi.mock('@/lib/supabase/client', () => ({
@@ -32,7 +33,8 @@ vi.mock('@/components/ui/FeedbackProvider', () => ({
 }));
 
 describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
-  let removeStorageImagesSpy: ReturnType<typeof vi.spyOn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let removeStorageImagesSpy: any;
   let mockStorage: Record<string, string> = {};
 
   beforeEach(() => {
@@ -249,5 +251,143 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
       const calledPaths = removeStorageImagesSpy.mock.calls[0][1];
       expect(calledPaths).not.toContain('publications/covers/u1/final-cover.webp');
     });
+  });
+
+  it('toggles declarative showIndex for live writing preview, publication preview modal, and save payload', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'art-toc-1',
+          title: { gl: 'Ensaio con Índice', es: 'Ensayo con Índice' },
+          content: {
+            gl: '<h1>Primeira Parte</h1><p>Texto inicial.</p><h2>Subparte</h2><p>Máis texto.</p>',
+            es: '<h1>Primera Parte</h1><p>Texto inicial.</p>',
+          },
+          show_index: false,
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    const tocSwitch = screen.getByRole('switch', { name: /índice automático/i });
+    expect(tocSwitch).toHaveAttribute('aria-checked', 'false');
+    expect(screen.queryByRole('navigation', { name: /índice do artigo/i })).not.toBeInTheDocument();
+
+    // Turn index on and confirm live writing preview appears above the editor body
+    fireEvent.click(tocSwitch);
+    expect(tocSwitch).toHaveAttribute('aria-checked', 'true');
+    const liveNav = await screen.findByRole('navigation', { name: /índice do artigo/i });
+    expect(liveNav).toHaveTextContent('Primeira Parte');
+    expect(liveNav).toHaveTextContent('Subparte');
+
+    // Open preview modal and confirm coupled index also appears in modal preview
+    const previewButton = screen.getByRole('button', { name: /vista previa/i });
+    fireEvent.click(previewButton);
+    const navLandmarks = await screen.findAllByRole('navigation', { name: /índice do artigo/i });
+    expect(navLandmarks.length).toBeGreaterThanOrEqual(2);
+
+    // Close preview modal and save draft
+    fireEvent.click(screen.getByRole('button', { name: /volver ao editor/i }));
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          show_index: true,
+        }),
+        'draft'
+      );
+    });
+    const savedPayload = onSave.mock.calls[0][0];
+    expect(savedPayload.content?.gl).not.toContain('data-type="article-index"');
+  });
+
+  it('infers showIndex=true and strips legacy embedded <nav data-type="article-index"> on load and save', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'art-legacy-1',
+          title: { gl: 'Artigo Legado', es: 'Artículo Legado' },
+          content: {
+            gl: '<nav data-type="article-index"><div>Old</div></nav><h1>Sección Legada</h1><p>Contido.</p>',
+            es: '',
+          },
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    const tocSwitch = screen.getByRole('switch', { name: /índice automático/i });
+    expect(tocSwitch).toHaveAttribute('aria-checked', 'true');
+    const liveNav = await screen.findByRole('navigation', { name: /índice do artigo/i });
+    expect(liveNav).toHaveTextContent('Sección Legada');
+
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    const savedPayload = onSave.mock.calls[0][0];
+    expect(savedPayload.show_index).toBe(true);
+    expect(savedPayload.content?.gl).not.toContain('data-type="article-index"');
+  });
+
+  it('switches locale tabs dynamically and saves updated localized titles', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'art-i18n-1',
+          title: { gl: 'Título Galego', es: 'Título Español' },
+          content: { gl: '<p>Contido</p>', es: '<p>Contenido</p>' },
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    const esTab = screen.getByRole('button', { name: /^castellano$/i });
+    fireEvent.click(esTab);
+
+    const titleInput = screen.getByDisplayValue('Título Español');
+    fireEvent.change(titleInput, { target: { value: 'Título Actualizado ES' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: { gl: 'Título Galego', es: 'Título Actualizado ES' },
+        }),
+        'draft'
+      );
+    });
+  });
+
+  it('parses both canonical and legacy localStorage drafts cleanly', () => {
+    const legacyParsed = parseDraft(JSON.stringify({ tituloGl: 'Borrador legado', tipo: 'essay' }));
+    expect(legacyParsed?.titles).toEqual({ gl: 'Borrador legado' });
+    expect(legacyParsed?.type).toBe('essay');
+
+    const serialized = serializeDraft({
+      title: { gl: 'Novo', es: 'Nuevo' },
+      subtitle: { gl: 'Sub', es: 'Sub ES' },
+      content: { gl: '<p>A</p>', es: '<p>B</p>' },
+      cover_image_url: '',
+      tags: ['etica'],
+      type: 'article',
+      original_language: 'gl',
+      show_index: true,
+    });
+    const canonicalParsed = parseDraft(serialized);
+    expect(canonicalParsed?.titles).toEqual({ gl: 'Novo', es: 'Nuevo' });
+    expect(canonicalParsed?.tags).toEqual(['etica']);
+    expect(canonicalParsed?.showIndex).toBe(true);
   });
 });

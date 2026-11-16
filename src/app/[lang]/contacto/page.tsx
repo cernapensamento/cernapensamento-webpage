@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import ContactForm from '@/components/forms/ContactForm';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getDictionary } from '@/dictionaries';
-import { Locale } from '@/i18n-config';
+import { resolveLocale } from '@/i18n-config';
+import { SITE_NAME } from '@/lib/constants';
 
 export const revalidate = 60;
 
@@ -13,18 +14,19 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  const dict = await getDictionary(lang as Locale);
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
 
   return {
-    title: `${dict.contactoPage.title} | Cerna Pensamento`,
+    title: `${dict.contactoPage.title} | ${SITE_NAME}`,
     description: dict.contactoPage.description,
   };
 }
 
 export default async function ContactoPage({ params }: Props) {
-  const resolvedParams = await params;
-  const lang = resolvedParams.lang;
-  const dict = await getDictionary(lang as Locale);
+  const { lang } = await params;
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
 
   return (
     <main className="flex-grow min-h-screen bg-parchment pt-8 sm:pt-12 pb-24">
@@ -51,7 +53,7 @@ export default async function ContactoPage({ params }: Props) {
 
         {/* Central Contact Form — Heroic Editorial Container */}
         <RevealOnScroll delayMs={100}>
-          <ContactForm dict={dict.contactForm} lang={lang} />
+          <ContactForm dict={dict.contactForm} lang={locale} />
         </RevealOnScroll>
 
         {/* Direct Email Auxiliary Note Below Form */}
@@ -61,10 +63,10 @@ export default async function ContactoPage({ params }: Props) {
               {dict.contactoPage.directEmailPrompt}{' '}
             </span>
             <a
-              href="mailto:contacto@cernapensamento.org"
+              href={`mailto:${dict.contact.email}`}
               className="font-mono font-semibold text-charcoal hover:text-gold transition-colors underline underline-offset-4 ml-1"
             >
-              contacto@cernapensamento.org
+              {dict.contact.email}
             </a>
           </div>
         </RevealOnScroll>

@@ -2,35 +2,160 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import esDict from '@/dictionaries/es.json';
-import glDict from '@/dictionaries/gl.json';
+import { useLocale } from '@/hooks/useLocale';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
+
+export type ContactFormDict = Dictionary['contactForm'];
 
 interface ContactFormProps {
-  dict?: typeof glDict.contactForm;
+  dict?: Partial<ContactFormDict>;
   lang?: string;
 }
 
+const CONTACT_API_ENDPOINT = '/api/contact';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PDF_MIME_TYPE = 'application/pdf';
+const BYTES_PER_MB = 1024 * 1024;
+const MAX_PDF_SIZE_BYTES = 3.5 * BYTES_PER_MB;
+
+const LABEL_CLASS =
+  'block font-mono text-[11px] font-semibold text-charcoal/80 mb-2 uppercase tracking-widest';
+const INPUT_CLASS =
+  'w-full border border-lines bg-parchment rounded-none px-4 py-3 font-sans text-sm text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors';
+
+function validateContactFormData(
+  formData: FormData,
+  dict: ContactFormDict
+): Record<string, string> {
+  const formErrors: Record<string, string> = {};
+  const fullNameVal = formData.get('fullName')?.toString().trim();
+  const emailVal = formData.get('email')?.toString().trim();
+  const subjectVal = formData.get('subject')?.toString().trim();
+  const messageVal = formData.get('message')?.toString().trim();
+  const guidelinesVal = formData.get('guidelines');
+
+  if (!fullNameVal) {
+    formErrors.fullName = dict.requiredName;
+  }
+  if (!emailVal) {
+    formErrors.email = dict.requiredEmail;
+  } else if (!EMAIL_REGEX.test(emailVal)) {
+    formErrors.email = dict.invalidEmail || dict.requiredEmail;
+  }
+  if (!subjectVal) {
+    formErrors.subject = dict.requiredSubject;
+  }
+  if (!messageVal) {
+    formErrors.message = dict.requiredMessage;
+  }
+  if (!guidelinesVal) {
+    formErrors.guidelines = dict.requiredGuidelines;
+  }
+
+  return formErrors;
+}
+
+function resolveContactApiError(
+  code: string | undefined,
+  httpStatus: number,
+  dict: ContactFormDict
+): string {
+  if (httpStatus === 429) {
+    return dict.rateLimited || dict.genericError;
+  }
+
+  const errorByCode: Record<string, string> = {
+    invalid_email: dict.invalidEmail || dict.requiredEmail,
+    too_long: dict.tooLong || dict.genericError,
+    invalid_file: dict.errorType,
+    file_too_large: dict.errorSize,
+    send_failed: dict.sendFailed || dict.genericError,
+  };
+
+  return (code && errorByCode[code]) || dict.genericError;
+}
+
+function RequiredLabel({ htmlFor, text }: { htmlFor: string; text: string }) {
+  return (
+    <label htmlFor={htmlFor} className={LABEL_CLASS}>
+      {text} <span aria-hidden="true" className="text-gold font-bold">*</span>
+    </label>
+  );
+}
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <span id={id} role="alert" className="text-error text-xs mt-1.5 block">
+      {message}
+    </span>
+  );
+}
+
+function ContactSuccessView({
+  dict,
+  onReset,
+}: {
+  dict: ContactFormDict;
+  onReset: () => void;
+}) {
+  return (
+    <div
+      className="p-10 sm:p-14 bg-surface border border-lines text-center shadow-sm relative overflow-hidden"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gold" />
+      <div className="w-16 h-16 rounded-full bg-gold/10 border border-gold/30 mx-auto flex items-center justify-center mb-6">
+        <span className="material-symbols-outlined text-3xl text-gold" aria-hidden="true">
+          check
+        </span>
+      </div>
+      <h3 className="font-serif text-2xl sm:text-3xl text-charcoal font-semibold mb-3">
+        {dict.success}
+      </h3>
+      <p className="font-sans text-sm sm:text-base text-charcoal/70 max-w-md mx-auto mb-8 leading-relaxed">
+        {dict.successNote}
+      </p>
+      <button
+        type="button"
+        onClick={onReset}
+        className="btn-outline text-xs tracking-[0.16em] uppercase font-bold py-3 px-6 inline-flex items-center gap-2"
+      >
+        <span>{dict.sendAnother}</span>
+        <span className="material-symbols-outlined text-base" aria-hidden="true">
+          refresh
+        </span>
+      </button>
+    </div>
+  );
+}
 
 export default function ContactForm({ dict: propDict, lang: propLang }: ContactFormProps) {
-  const params = useParams();
-  const routeLang = propLang || (params?.lang as string) || 'gl';
-  const dict = propDict || (routeLang === 'es' ? esDict.contactForm : glDict.contactForm);
+  const detectedLang = useLocale();
+  const routeLang = propLang || detectedLang;
+  const fallbackDict = getDictionaryClient(routeLang).contactForm;
+  const dict: ContactFormDict = {
+    ...fallbackDict,
+    ...propDict,
+    subjects: {
+      ...fallbackDict.subjects,
+      ...propDict?.subjects,
+    },
+  };
 
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const clearFieldError = (fieldName: string) => {
-    if (errors[fieldName]) {
-      setErrors((prev) => {
-        const copy = { ...prev };
-        delete copy[fieldName];
-        return copy;
-      });
-    }
+    if (!errors[fieldName]) return;
+    setErrors((prev) => {
+      const copy = { ...prev };
+      delete copy[fieldName];
+      return copy;
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,84 +165,32 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
       return;
     }
 
-    if (selected.type !== 'application/pdf') {
+    if (selected.type !== PDF_MIME_TYPE) {
       setErrors((prev) => ({ ...prev, file: dict.errorType }));
       setFile(null);
       return;
     }
-    if (selected.size > 3.5 * 1024 * 1024) {
+
+    if (selected.size > MAX_PDF_SIZE_BYTES) {
       setErrors((prev) => ({ ...prev, file: dict.errorSize }));
       setFile(null);
       return;
     }
 
-    setErrors((prev) => {
-      const copy = { ...prev };
-      delete copy.file;
-      return copy;
-    });
+    clearFieldError('file');
     setFile(selected);
   };
 
   const handleRemoveFile = () => {
     setFile(null);
-    setErrors((prev) => {
-      const copy = { ...prev };
-      delete copy.file;
-      return copy;
-    });
-  };
-
-  const mapApiErrorToMessage = (code: string, httpStatus: number): string => {
-    if (httpStatus === 429) {
-      return dict.rateLimited || dict.genericError;
-    }
-    switch (code) {
-      case 'invalid_email':
-        return dict.invalidEmail || dict.requiredEmail;
-      case 'too_long':
-        return dict.tooLong || dict.genericError;
-      case 'invalid_file':
-        return dict.errorType;
-      case 'file_too_large':
-        return dict.errorSize;
-      case 'send_failed':
-        return dict.sendFailed || dict.genericError;
-      default:
-        return dict.genericError;
-    }
+    clearFieldError('file');
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    // Form boundary validation
-    const formErrors: { [key: string]: string } = {};
-    const fullNameVal = formData.get('fullName')?.toString().trim();
-    const emailVal = formData.get('email')?.toString().trim();
-    const subjectVal = formData.get('subject')?.toString().trim();
-    const messageVal = formData.get('message')?.toString().trim();
-    const guidelinesVal = formData.get('guidelines');
-
-    if (!fullNameVal) {
-      formErrors.fullName = dict.requiredName;
-    }
-    if (!emailVal) {
-      formErrors.email = dict.requiredEmail;
-    } else if (!EMAIL_REGEX.test(emailVal)) {
-      formErrors.email = dict.invalidEmail || dict.requiredEmail;
-    }
-    if (!subjectVal) {
-      formErrors.subject = dict.requiredSubject;
-    }
-    if (!messageVal) {
-      formErrors.message = dict.requiredMessage;
-    }
-    if (!guidelinesVal) {
-      formErrors.guidelines = dict.requiredGuidelines;
-    }
-
+    const formErrors = validateContactFormData(formData, dict);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
@@ -134,64 +207,41 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
     setErrorMessage('');
 
     try {
-      const res = await fetch('/api/contact', {
+      const res = await fetch(CONTACT_API_ENDPOINT, {
         method: 'POST',
         body: formData,
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        const message = mapApiErrorToMessage(data.error, res.status);
-        throw new Error(message);
+        throw new Error(resolveContactApiError(data.error, res.status, dict));
       }
 
       setStatus('success');
     } catch (err: unknown) {
       setStatus('error');
-      setErrorMessage(
-        err instanceof Error
-          ? err.message
-          : dict.genericError
-      );
+      setErrorMessage(err instanceof Error ? err.message : dict.genericError);
     }
   };
 
   if (status === 'success') {
     return (
-      <div
-        className="p-10 sm:p-14 bg-surface border border-lines text-center shadow-sm relative overflow-hidden"
-        role="status"
-        aria-live="polite"
-      >
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gold" />
-        <div className="w-16 h-16 rounded-full bg-gold/10 border border-gold/30 mx-auto flex items-center justify-center mb-6">
-          <span className="material-symbols-outlined text-3xl text-gold" aria-hidden="true">
-            check
-          </span>
-        </div>
-        <h3 className="font-serif text-2xl sm:text-3xl text-charcoal font-semibold mb-3">
-          {dict.success}
-        </h3>
-        <p className="font-sans text-sm sm:text-base text-charcoal/70 max-w-md mx-auto mb-8 leading-relaxed">
-          {dict.successNote}
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            setStatus('idle');
-            setFile(null);
-            setErrors({});
-          }}
-          className="btn-outline text-xs tracking-[0.16em] uppercase font-bold py-3 px-6 inline-flex items-center gap-2"
-        >
-          <span>{dict.sendAnother}</span>
-          <span className="material-symbols-outlined text-base" aria-hidden="true">
-            refresh
-          </span>
-        </button>
-      </div>
+      <ContactSuccessView
+        dict={dict}
+        onReset={() => {
+          setStatus('idle');
+          setFile(null);
+          setErrors({});
+        }}
+      />
     );
   }
+
+  const subjectOptions = [
+    dict.subjects.article,
+    dict.subjects.association,
+    dict.subjects.question,
+  ];
 
   return (
     <form
@@ -203,7 +253,7 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
 
       {/* Honeypot field for spam prevention (hidden from real users) */}
       <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
-        <label htmlFor="contact-form-website">Do not fill this field</label>
+        <label htmlFor="contact-form-website">{dict.honeypotLabel}</label>
         <input
           id="contact-form-website"
           name="website"
@@ -228,12 +278,7 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
       {/* Row 1: Full Name & Email */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
-          <label
-            htmlFor="fullName"
-            className="block font-mono text-[11px] font-semibold text-charcoal/80 mb-2 uppercase tracking-widest"
-          >
-            {dict.fullName} <span aria-hidden="true" className="text-gold font-bold">*</span>
-          </label>
+          <RequiredLabel htmlFor="fullName" text={dict.fullName} />
           <input
             id="fullName"
             name="fullName"
@@ -243,22 +288,13 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
             aria-invalid={!!errors.fullName}
             aria-describedby={errors.fullName ? 'fullName-error' : undefined}
             onChange={() => clearFieldError('fullName')}
-            className="w-full border border-lines bg-parchment rounded-none px-4 py-3 font-sans text-sm text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
+            className={INPUT_CLASS}
           />
-          {errors.fullName && (
-            <span id="fullName-error" role="alert" className="text-error text-xs mt-1.5 block">
-              {errors.fullName}
-            </span>
-          )}
+          <FieldError id="fullName-error" message={errors.fullName} />
         </div>
 
         <div>
-          <label
-            htmlFor="email"
-            className="block font-mono text-[11px] font-semibold text-charcoal/80 mb-2 uppercase tracking-widest"
-          >
-            {dict.email} <span aria-hidden="true" className="text-gold font-bold">*</span>
-          </label>
+          <RequiredLabel htmlFor="email" text={dict.email} />
           <input
             id="email"
             name="email"
@@ -268,24 +304,15 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? 'email-error' : undefined}
             onChange={() => clearFieldError('email')}
-            className="w-full border border-lines bg-parchment rounded-none px-4 py-3 font-sans text-sm text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors"
+            className={INPUT_CLASS}
           />
-          {errors.email && (
-            <span id="email-error" role="alert" className="text-error text-xs mt-1.5 block">
-              {errors.email}
-            </span>
-          )}
+          <FieldError id="email-error" message={errors.email} />
         </div>
       </div>
 
       {/* Row 2: Subject Dropdown */}
       <div>
-        <label
-          htmlFor="subject"
-          className="block font-mono text-[11px] font-semibold text-charcoal/80 mb-2 uppercase tracking-widest"
-        >
-          {dict.subject} <span aria-hidden="true" className="text-gold font-bold">*</span>
-        </label>
+        <RequiredLabel htmlFor="subject" text={dict.subject} />
         <div className="relative">
           <select
             id="subject"
@@ -295,15 +322,17 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
             aria-invalid={!!errors.subject}
             aria-describedby={errors.subject ? 'subject-error' : undefined}
             onChange={() => clearFieldError('subject')}
-            className="w-full border border-lines bg-parchment rounded-none px-4 py-3 pr-10 font-sans text-sm text-charcoal focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors appearance-none cursor-pointer"
+            className={`${INPUT_CLASS} pr-10 appearance-none cursor-pointer`}
             defaultValue=""
           >
             <option value="" disabled>
               {dict.subjects.placeholder}
             </option>
-            <option value={dict.subjects.article}>{dict.subjects.article}</option>
-            <option value={dict.subjects.association}>{dict.subjects.association}</option>
-            <option value={dict.subjects.question}>{dict.subjects.question}</option>
+            {subjectOptions.map((optionLabel) => (
+              <option key={optionLabel} value={optionLabel}>
+                {optionLabel}
+              </option>
+            ))}
           </select>
           <span
             className="material-symbols-outlined absolute right-3 top-3 text-charcoal/50 pointer-events-none text-xl"
@@ -312,21 +341,12 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
             expand_more
           </span>
         </div>
-        {errors.subject && (
-          <span id="subject-error" role="alert" className="text-error text-xs mt-1.5 block">
-            {errors.subject}
-          </span>
-        )}
+        <FieldError id="subject-error" message={errors.subject} />
       </div>
 
       {/* Row 3: Message Textarea */}
       <div>
-        <label
-          htmlFor="message"
-          className="block font-mono text-[11px] font-semibold text-charcoal/80 mb-2 uppercase tracking-widest"
-        >
-          {dict.message} <span aria-hidden="true" className="text-gold font-bold">*</span>
-        </label>
+        <RequiredLabel htmlFor="message" text={dict.message} />
         <textarea
           id="message"
           name="message"
@@ -338,19 +358,12 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
           onChange={() => clearFieldError('message')}
           className="w-full p-4 border border-lines bg-parchment font-sans text-sm text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold resize-y transition-colors"
         />
-        {errors.message && (
-          <span id="message-error" role="alert" className="text-error text-xs mt-1.5 block">
-            {errors.message}
-          </span>
-        )}
+        <FieldError id="message-error" message={errors.message} />
       </div>
 
       {/* Row 4: File Upload (PDF Optional) */}
       <div>
-        <label
-          htmlFor="file-upload"
-          className="block font-mono text-[11px] font-semibold text-charcoal/80 mb-2 uppercase tracking-widest"
-        >
+        <label htmlFor="file-upload" className={LABEL_CLASS}>
           {dict.fileUpload}
         </label>
 
@@ -365,7 +378,7 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
                   {file.name}
                 </span>
                 <span className="font-mono text-[10px] text-charcoal/60">
-                  {(file.size / (1024 * 1024)).toFixed(2)} MB
+                  {(file.size / BYTES_PER_MB).toFixed(2)} MB
                 </span>
               </div>
             </div>
@@ -411,11 +424,7 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
           </div>
         )}
 
-        {errors.file && (
-          <span id="file-error" role="alert" className="text-error text-xs mt-1.5 block">
-            {errors.file}
-          </span>
-        )}
+        <FieldError id="file-error" message={errors.file} />
       </div>
 
       {/* Row 5: Agreement Checkbox & Submit */}
@@ -449,11 +458,7 @@ export default function ContactForm({ dict: propDict, lang: propLang }: ContactF
             >
               {dict.privacyLink}
             </Link>
-            {errors.guidelines && (
-              <span id="guidelines-error" role="alert" className="text-error text-xs mt-1.5 block">
-                {errors.guidelines}
-              </span>
-            )}
+            <FieldError id="guidelines-error" message={errors.guidelines} />
           </div>
         </div>
 

@@ -27,15 +27,15 @@ Comprehensive operating guide and architectural reference for AI coding agents a
 | **Core Framework** | Next.js App Router, React, React DOM | Next `16.2.x`, React `19.2.x` |
 | **Language & Typings** | TypeScript (`strict` mode), ESLint 9 | TS `5.x`, ESLint `9.x` |
 | **Styling & Design** | Tailwind CSS v4 (`@tailwindcss/postcss`), CSS Variables | Tailwind `4.x` |
-| **Typography & Icons** | `Libre Caslon Text` (Serif), `Source Sans 3` (Sans), Google Material Symbols | Next Font / Google Fonts |
+| **Typography & Icons** | `Libre Caslon Text` (Serif), `Source Sans 3` (Body), `Plus Jakarta Sans` (UI), Material Symbols | Next Font / Google Fonts |
 | **Database & Auth** | Supabase PostgreSQL, `@supabase/ssr`, `@supabase/supabase-js`, GoTrue | Postgres 15+, Supabase SSR `0.12.x` |
 | **Data Access Layer (DAL)** | Strongly-typed queries, constants & models (`src/lib/db/`) | Custom TypeScript DAL |
-| **WYSIWYG Editor** | TipTap 3, ProseMirror, KaTeX (math), custom tables, custom index | TipTap `3.27.x`, KaTeX `0.16.x` |
-| **Sanitization** | `sanitize-html` | `2.17.x` |
+| **WYSIWYG Editor** | TipTap 3, ProseMirror, KaTeX (math), custom tables, TOC | TipTap `3.27.x`, KaTeX `0.16.x` |
+| **Sanitization** | `sanitize-html` (`src/lib/editor/sanitizeArticleHtml.ts`) | `2.17.x` |
 | **Edge & Rate Limiting** | Next.js Edge Middleware (`src/proxy.ts`), Upstash Redis, `@upstash/ratelimit` | Upstash Redis `1.38.x` |
-| **AI Translation** | Google Gemini (`@google/genai`) | Gemini Flash-Lite / 2.5 |
-| **Transactional Email** | Resend API | Resend `6.17.x` |
-| **Observability** | Sentry Next.js SDK | `@sentry/nextjs` |
+| **AI Translation** | Google Gemini (`@google/genai`) | `gemini-3.5-flash-lite` |
+| **Transactional Email & PDF** | Resend API, `@react-email/components`, `pdf-lib` | Resend `6.17.x`, pdf-lib `1.17.x` |
+| **Observability & Testing** | Sentry (`@sentry/nextjs`), Vitest, Playwright | Sentry `10.x`, Vitest `3.2.x` |
 
 ---
 
@@ -47,50 +47,73 @@ cerna/
 │   ├── actions/                  # Next.js Server Actions (articles.ts, auth.ts)
 │   ├── app/                      # Next.js App Router tree
 │   │   ├── [lang]/               # Localized public and private routes
-│   │   │   ├── articulo/[slug]/  # Public article reader & comments
+│   │   │   ├── articulo/[slug]/  # Public article reader (ISR), TOC, PDF link & comments
 │   │   │   ├── articulos/        # Articles archive & topic filter
 │   │   │   ├── asociacion/       # Institutional pages (manifesto, statutes, editorial collections)
 │   │   │   ├── autor/[slug]/     # Author profile & author's publications
+│   │   │   ├── autores/          # Published authors directory
 │   │   │   ├── contacto/         # Contact form page
 │   │   │   ├── escritorio/       # Private dashboard & TipTap editor (/nuevo, /editar/[slug], /perfil)
 │   │   │   ├── login/            # Authentication page (Google OAuth + Email/Password)
-│   │   │   ├── layout.tsx        # Root localized layout (NavBar, Footer, ThemeProvider)
-│   │   │   └── page.tsx          # Homepage (Hero, Pinned, Columnists, Themes)
+│   │   │   ├── noticias/         # News & editorial announcements channel
+│   │   │   ├── privacidad/       # Privacy policy page
+│   │   │   ├── recuperar-password/ & actualizar-password/  # Password reset flow
+│   │   │   ├── layout.tsx        # Root localized layout (NavBar, Footer, Theme/Auth/Feedback providers)
+│   │   │   ├── loading.tsx       # Fullscreen loading overlay
+│   │   │   └── page.tsx          # Homepage (Hero, Mosaic, Association & News, Columnists, Themes, FAQ)
 │   │   ├── api/                  # Route Handlers
-│   │   │   ├── contact/          # POST: sends contact inquiries via Resend
+│   │   │   ├── articulo/[slug]/pdf/  # GET: server-side editorial PDF generator
+│   │   │   ├── contact/          # POST: sends contact inquiries (+ optional PDF) via Resend
+│   │   │   ├── markdown/         # GET: Markdown representation for AI agents
+│   │   │   ├── newsletter/unsubscribe/  # GET/POST: HMAC 1-click & RFC 8058 unsubscribe
 │   │   │   ├── translate/        # POST: bilingual translations via Gemini AI
-│   │   │   └── webhooks/         # Database webhooks (e.g. newsletter dispatch)
-│   │   ├── auth/                 # Auth OAuth callbacks (/callback, /confirm)
-│   │   └── globals.css           # Tailwind v4 theme definitions and base styles
+│   │   │   └── webhooks/newsletter/  # POST: database webhook newsletter dispatch
+│   │   ├── auth/                 # Auth OAuth & OTP callbacks (/callback, /confirm)
+│   │   ├── robots.ts & sitemap.ts # Dynamic SEO robots and localized sitemap
+│   │   └── globals.css           # Tailwind v4 theme definitions and canonical editorial CSS
 │   ├── components/               # Modular React components by domain
-│   │   ├── escritorio/           # TipTap editor, toolbars, metadata sidebars, table controls
-│   │   ├── features/             # Article cards, comments, topic filter bar, author profile
-│   │   ├── forms/                # ContactForm, ArticleSubmissionForm, CommentForm, EditarArticuloForm
-│   │   ├── layout/               # PublicNavBar, SideMenu drawer, SiteFooter
-│   │   ├── sections/             # Homepage sections (FeaturedHero, Columnists, Themes)
-│   │   └── ui/                   # Shared UI primitives (SocialLinks, ThemeToggle, LanguageToggle)
+│   │   ├── errors/               # LiteraryError boundary component
+│   │   ├── escritorio/           # TipTap editor, toolbars, metadata sidebars, table & tag controls
+│   │   ├── estatutos/            # Statutes cards
+│   │   ├── features/             # Article cards, TOC, PDF download, comments, filters, mosaics, profiles
+│   │   ├── forms/                # ContactForm, CommentForm, PasswordForm, EditarArticuloForm
+│   │   ├── layout/               # PublicNavBar, SideMenu drawer, SiteFooter, visibility wrappers
+│   │   ├── providers/            # AuthProvider
+│   │   ├── sections/             # Homepage sections (HeroIntro, ArticlesMosaic, Columnists, Themes, FAQ)
+│   │   └── ui/                   # Shared UI primitives (SocialLinks, ThemeToggle, LanguageToggle, dialogs)
+│   ├── content/                  # Localized institutional Markdown documents (estatutos, privacidad, colecciones)
 │   ├── dictionaries/             # Canonical i18n JSONs: gl.json (default), es.json
 │   ├── hooks/                    # React hooks (useAuth, useLocale)
-│   ├── lib/                      # Unified library: Supabase clients, auth, DAL, editor, email, PDF
+│   ├── lib/                      # Unified library: Supabase clients, auth, DAL, editor, email, PDF, storage
+│   │   ├── agent/                # Markdown content negotiation & HTML-to-Markdown conversion
 │   │   ├── auth.ts               # Authenticated user & role resolver
 │   │   ├── supabase/             # Supabase SSR clients (server.ts, client.ts)
 │   │   ├── db/                   # Strongly-Typed Data Access Layer (DAL)
-│   │   │   ├── schema.ts         # Constants: DB_TABLES, column names, enums
+│   │   │   ├── schema.ts         # Constants: DB_TABLES, column names, enums, role helpers
 │   │   │   ├── types.ts          # Table rows, aggregates, and view interfaces
-│   │   │   ├── queries/          # Modular typed query modules (publications, users, comments, tags)
+│   │   │   ├── client.ts         # Cookie-free public anon client for ISR/sitemap
+│   │   │   ├── formatDbError.ts  # Safe DB error formatter
+│   │   │   ├── queries/          # Modular typed query modules (publications, users, comments, tags, newsletter, composite)
+│   │   │   ├── __rls__/          # PostgreSQL RLS integration tests
 │   │   │   └── index.ts          # Barrel export for lib/db
-│   │   ├── editor/               # TipTap extensions and KaTeX renderers
-│   │   ├── email/                # Newsletter email templates and token utilities
-│   │   ├── pdf/                  # Article PDF export generator
-│   │   └── storage/              # Unified storage service, WebP compression & path helpers
-│   └── proxy.ts                  # Perimeter Edge middleware (i18n, rate limiting, auth gating)
+│   │   ├── editor/               # TipTap extensions, KaTeX renderers, TOC & heading anchors, HTML sanitizer
+│   │   ├── email/                # Newsletter React Email templates, HTML renderer & HMAC token utilities
+│   │   ├── i18n/                 # deepMerge & resolveLocalizedText helpers
+│   │   ├── pdf/                  # Article PDF export generator (pdf-lib)
+│   │   ├── storage/              # Unified storage service, WebP compression & path helpers
+│   │   └── utils/                # Slug generation & normalization helpers
+│   └── proxy.ts                  # Perimeter Edge middleware (i18n, Markdown negotiation, rate limiting, auth gating)
 ├── database/                     # PostgreSQL schema definitions
 │   └── full_schema.sql           # Complete canonical database schema dump (tables, RLS, functions)
-├── docs/                         # Architecture codemaps and operational protocols
-│   ├── CODEMAPS/                 # Modular architectural blueprints (frontend, backend, editor, etc.)
-│   ├── style-guide.md            # Visual style guide for executive reports
-│   └── RELEASE_PROTOCOL.md       # 4-phase branch release, commits, and PR preparation guide
-└── public/                       # Static assets (images, logos, fonts)
+├── docs/                         # Technical architecture documentation
+│   ├── INDEX.md                  # Architecture overview & module index
+│   ├── frontend.md               # App Router, layouts, design tokens, i18n
+│   ├── editor.md                 # TipTap 3 suite, KaTeX, tables, TOC, sanitization
+│   ├── backend.md                # Edge proxy, Server Actions, API Route Handlers
+│   ├── database.md               # PostgreSQL schema, DAL, RLS, Storage, dispatches
+│   └── integrations.md           # Supabase, Upstash, Resend, Gemini AI, Sentry, AI agents
+├── supabase/                     # Local Supabase CLI stack (config.toml, migrations, seed.sql, tests/)
+└── public/                       # Static assets (images, logos, llms.txt, agent-instructions.md)
 ```
 
 ---
@@ -137,14 +160,15 @@ cerna/
 ### 4.3. Data Access Layer (DAL) & Supabase Guardrails
 * **Zero Magic Strings:**  
   Never hardcode table names, column names, statuses, or roles in application code. Always import identifiers from `@/lib/db/schema`:
-  - Tables: `DB_TABLES.PUBLICATIONS`, `DB_TABLES.USERS`, `DB_TABLES.COMMENTS`, `DB_TABLES.TAGS`, `DB_TABLES.PUBLICATION_TAGS`.
+  - Tables: `DB_TABLES.PUBLICATIONS`, `DB_TABLES.USERS`, `DB_TABLES.COMMENTS`, `DB_TABLES.TAGS`, `DB_TABLES.TAG_TRANSLATIONS`, `DB_TABLES.PUBLICATION_TAGS`.
   - Columns: `PUBLICATION_COLS`, `USER_COLS`, `COMMENT_COLS`, `TAG_COLS`, `PUBLICATION_TAG_COLS`.
-  - Enums: `USER_ROLES`, `PUBLICATION_STATUSES`, `PUBLICATION_TYPES`.
+  - Enums: `USER_ROLES`, `PUBLICATION_STATUSES`, `PUBLICATION_TYPES`, `EDITOR_ACTIONS`, `GUEST_PUBLICATION_LIMITS`.
 * **Standard Schema Tables:**
-  - `publications` (formerly `articulos`): id, slug, title, subtitle, content, cover_image_url, status, type, original_language, is_pinned, author_id, created_at, updated_at.
+  - `publications` (formerly `articulos`): id, slug, title, subtitle, content, cover_image_url, status, type, original_language, is_pinned, show_index, published_at, newsletter_sent_at, author_id, created_at, updated_at.
   - `users` (formerly `perfiles`): id, full_name, slug, bio, avatar_url, newsletter_subscribed, role.
   - `comments` (formerly `comentarios`): id, publication_id, author_id, content, updated_at.
-  - `tags` & `tag_translations`: taxonomy table with localized names connected to publications via `publication_tags`.
+  - `tags` & `tag_translations`: taxonomy tables with localized names connected to publications via `publication_tags`.
+  - `newsletter_dispatches`: database-internal retry bookkeeping table used by PostgreSQL triggers (`trigger_publication_published_newsletter`), `pg_net`, and `pg_cron` (`reconcile_newsletter_dispatches()`).
 * **Editorial Roles & Permissions:**
   - Roles: `reader`, `guest`, `member`, `founder`, `admin`.
   - Direct Publishing: Only `founder` and `admin` can directly publish (`status = 'published'`).
@@ -168,11 +192,12 @@ cerna/
 ### 4.4. TipTap Editor & HTML Sanitization Pipeline
 * **Rendering Order:**  
   When rendering article content in `src/app/[lang]/articulo/[slug]/page.tsx`, the sequence is strict:
-  1. `renderMathInHtml(content)` (converts `$math$` and LaTeX blocks to KaTeX HTML).
-  2. `renderHeadingAnchors(...)` (injects slug IDs into headings for TOC linking).
-  3. `sanitizeHtml(...)` (cleans unsafe tags, attributes, and scripts).
+  1. `stripIndex(content)` (strips legacy inline `<nav data-type="article-index">` nodes; the TOC is rendered declaratively via `<ArticleTableOfContents />` when `show_index` is enabled).
+  2. `renderMathInHtml(content)` (`src/lib/editor/renderMath.ts` — converts `$math$` and LaTeX blocks to KaTeX HTML).
+  3. `renderHeadingAnchors(...)` (`src/lib/editor/renderHeadingAnchors.ts` — injects deterministic slug IDs into headings for TOC linking).
+  4. `sanitizeArticleHtml(...)` (`src/lib/editor/sanitizeArticleHtml.ts` — applies `ARTICLE_SANITIZER_CONFIG` via `sanitize-html`).
 * **Sanitization Whitelist:**  
-  Any custom TipTap node, inline style, or attribute generated by the editor (e.g., `<nav data-type="article-index">`, `<figure>`, `<table>`, KaTeX math elements) **must be explicitly whitelisted** in `sanitizeHtml` options in `articulo/[slug]/page.tsx`. If omitted, production will silently drop the element.
+  Any custom TipTap node, inline style, or attribute generated by the editor (e.g., `<nav data-type="article-index">`, `<figure>`, `<table>`, KaTeX math elements) **must be explicitly whitelisted** in `ARTICLE_SANITIZER_CONFIG` inside `src/lib/editor/sanitizeArticleHtml.ts`. If omitted, production will silently drop the element.
 
 ### 4.5. Editorial Design Tokens (Tailwind v4)
 Always use semantic CSS variables via Tailwind classes to ensure dark mode works automatically:
@@ -200,7 +225,11 @@ Every agent working on this codebase must strictly adhere to the following 5-sta
 * The `.worktrees/` directory is git-ignored and excluded from TypeScript to avoid language server conflicts or watcher pollution.
 
 ### Stage 2: Surgical Implementation & Local Verification
-* **Plan before executing**: Review existing components, DAL queries in `src/lib/db/`, and codemaps in `docs/CODEMAPS/` before introducing new abstractions.
+* **Plan before executing**: Review existing components, DAL queries in `src/lib/db/`, and architecture docs directly under `docs/` (`docs/INDEX.md`, `docs/frontend.md`, `docs/editor.md`, `docs/backend.md`, `docs/database.md`, `docs/integrations.md`) before introducing new abstractions.
+* **Documentation & Protocol Governance**:
+  - Do **not** create `docs/issues/`, `docs/reports/`, `docs/CODEMAPS/`, or standalone protocol/style-guide markdown files.
+  - All agent, workflow, and release protocols belong strictly in `AGENTS.md`.
+  - Technical docs belong directly under `docs/*.md` and should be kept synchronized with code changes. Local interactive visualizers (such as `docs/architecture.html` and `.archify/`) must stay git-ignored.
 * **Surgical, high-cohesion edits**: Keep changes minimal, focused, and immutable. Do not reformat unrelated code, reorder imports gratuitously, or remove existing comments and docstrings.
 * **Verify locally**: Always ensure the build and linter pass cleanly before presenting changes:
   ```bash
@@ -250,7 +279,10 @@ Every agent working on this codebase must strictly adhere to the following 5-sta
   git worktree remove .worktrees/<branch-name>
   git branch -d <branch-name>
   ```
-* For major production releases or client-facing milestones from `development` to `main`, adhere to [`docs/RELEASE_PROTOCOL.md`](docs/RELEASE_PROTOCOL.md).
+* **Production Release & Pull Request Protocol (`development` → `main`):**
+  1. **Pre-flight checks:** Confirm local `development` matches `origin/development`, inspect `git log main..development --oneline`, and verify `npm run lint`, `npm run build`, `npm test`, and `npm run db:reset` pass cleanly.
+  2. **Pending DB migrations:** Before promoting `development` to `main`, push any unapplied migrations (`npx supabase db push` against linked production) and confirm `database/full_schema.sql` is in sync.
+  3. **Pull Request Summary (`development` → `main`):** Create the PR via `gh pr create --base main --head development` with sections for Summary, Database/Env impact, Verification results (`lint`, `build`, `test`, `db:reset`), and Post-merge tag (`vX.Y.Z`) + Vercel production smoke-test checks. Keep this protocol inside `AGENTS.md` (do not re-create standalone protocol files).
 
 ---
 
@@ -288,6 +320,10 @@ The project uses **Vitest** for unit, API, and component tests and **Playwright*
 * **Database & RLS integration tests (requires local Supabase running via `npm run db:start`):**
   ```bash
   npm run test:db
+  ```
+* **PostgreSQL / pgTAP migration & newsletter dispatch tests (inside Supabase CLI stack):**
+  ```bash
+  npx supabase test db
   ```
 * **End-to-End tests (Playwright):**
   ```bash

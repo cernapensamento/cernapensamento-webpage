@@ -3,7 +3,7 @@
  * Typed queries for user discussions and feedback on publications.
  */
 
-import { createClient as createServerClient } from '@/lib/supabase/server';
+import { resolveClient } from '../resolveClient';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
 import { DB_TABLES, COMMENT_COLS, USER_COLS } from '../schema';
 import type { CommentItem, CommentRow } from '../types';
@@ -21,11 +21,6 @@ interface RawCommentRow {
     avatar_url: string | null;
     slug: string | null;
   } | null;
-}
-
-async function resolveClient(provided?: SupabaseClient): Promise<SupabaseClient> {
-  if (provided) return provided;
-  return await createServerClient();
 }
 
 /**
@@ -85,6 +80,30 @@ export async function getCommentsForPublication(
 }
 
 /**
+ * Insert a new user comment (enforces unique constraints instead of upserting).
+ */
+export async function createComment(
+  publicationId: string,
+  authorId: string,
+  content: string,
+  client?: SupabaseClient
+): Promise<{ data: CommentRow | null; error: PostgrestError | null }> {
+  const supabase = await resolveClient(client);
+
+  const { data, error } = await supabase
+    .from(DB_TABLES.COMMENTS)
+    .insert({
+      [COMMENT_COLS.PUBLICATION_ID]: publicationId,
+      [COMMENT_COLS.AUTHOR_ID]: authorId,
+      [COMMENT_COLS.CONTENT]: content,
+    })
+    .select()
+    .single();
+
+  return { data: (data as CommentRow) || null, error };
+}
+
+/**
  * Add or upsert a user comment.
  */
 export async function addComment(
@@ -129,18 +148,27 @@ export async function updateComment(
 }
 
 /**
- * Delete a comment.
+ * Delete a comment and verify a row was deleted (detecting silent RLS rejections).
  */
 export async function deleteComment(
   id: string,
   client?: SupabaseClient
-): Promise<{ success: boolean; error: PostgrestError | null }> {
+): Promise<{ success: boolean; error: unknown | null }> {
   const supabase = await resolveClient(client);
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from(DB_TABLES.COMMENTS)
     .delete()
-    .eq(COMMENT_COLS.ID, id);
+    .eq(COMMENT_COLS.ID, id)
+    .select(COMMENT_COLS.ID);
 
-  return { success: !error, error };
+  if (error) {
+    return { success: false, error };
+  }
+
+  if (Array.isArray(data) && data.length === 0) {
+    return { success: false, error: new Error('RLS blocked deletion or comment not found') };
+  }
+
+  return { success: true, error: null };
 }

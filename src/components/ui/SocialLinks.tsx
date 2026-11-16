@@ -1,25 +1,24 @@
 import React from 'react';
+import { getDictionaryClient } from '@/dictionaries/client';
 
 interface SocialLinksProps {
   className?: string;
   itemClassName?: string;
+  lang?: string;
+  contactLabel?: string;
 }
 
 interface SocialItem {
+  id: string;
   href: string;
   label: string;
   isExternal: boolean;
   icon: React.ReactNode;
 }
 
-const SOCIAL_ITEMS: SocialItem[] = [
+const EXTERNAL_SOCIAL_ITEMS: SocialItem[] = [
   {
-    href: 'mailto:contacto@cernapensamento.org',
-    label: 'Contacto por Correo',
-    isExternal: false,
-    icon: <span className="material-symbols-outlined text-[22px]" aria-hidden="true">mail</span>,
-  },
-  {
+    id: 'instagram',
     href: 'https://www.instagram.com/cernapensamento',
     label: 'Instagram',
     isExternal: true,
@@ -43,6 +42,7 @@ const SOCIAL_ITEMS: SocialItem[] = [
     ),
   },
   {
+    id: 'linkedin',
     href: 'https://www.linkedin.com/company/cerna-pensamento/',
     label: 'LinkedIn',
     isExternal: true,
@@ -66,6 +66,7 @@ const SOCIAL_ITEMS: SocialItem[] = [
     ),
   },
   {
+    id: 'github',
     href: 'https://github.com/cernapensamento/cernapensamento-webpage',
     label: 'GitHub',
     isExternal: true,
@@ -87,12 +88,25 @@ const SOCIAL_ITEMS: SocialItem[] = [
 export default function SocialLinks({
   className = 'flex items-center gap-4',
   itemClassName = 'bg-surface hover:shadow-sm',
+  lang,
+  contactLabel,
 }: SocialLinksProps) {
+  const dict = getDictionaryClient(lang);
+  const resolvedContactLabel = contactLabel || dict.nav.contactByEmail;
+  const emailItem: SocialItem = {
+    id: 'email',
+    href: `mailto:${dict.contact.email}`,
+    label: resolvedContactLabel,
+    isExternal: false,
+    icon: <span className="material-symbols-outlined text-[22px]" aria-hidden="true">mail</span>,
+  };
+  const socialItems = [emailItem, ...EXTERNAL_SOCIAL_ITEMS];
+
   return (
     <div className={className}>
-      {SOCIAL_ITEMS.map((item) => (
+      {socialItems.map((item) => (
         <a
-          key={item.label}
+          key={item.id}
           href={item.href}
           {...(item.isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
           className={`w-12 h-12 flex items-center justify-center border border-lines rounded-full text-charcoal hover:text-gold hover:border-gold transition-all duration-300 ${itemClassName}`}

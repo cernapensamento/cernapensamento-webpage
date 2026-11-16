@@ -36,7 +36,7 @@ describe('Newsletter Unsubscribe API Route (/api/newsletter/unsubscribe)', () =>
 
       expect(res.status).toBe(400);
       const html = await res.text();
-      expect(html).toContain('<!DOCTYPE html>');
+      expect(html).toContain('<!DOCTYPE html');
       expect(mockRpc).not.toHaveBeenCalled();
     });
 
@@ -51,7 +51,7 @@ describe('Newsletter Unsubscribe API Route (/api/newsletter/unsubscribe)', () =>
         target_email: testEmail,
       });
       const html = await res.text();
-      expect(html).toContain('<!DOCTYPE html>');
+      expect(html).toContain('<!DOCTYPE html');
     });
 
     it('returns 500 HTML when Supabase RPC returns an error', async () => {

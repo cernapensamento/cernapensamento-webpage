@@ -1,60 +1,57 @@
 import { getPublicationBySlug } from '@/lib/db/queries/publications';
 import { PUBLICATION_STATUSES } from '@/lib/db/schema';
-import { getDictionary } from '@/dictionaries';
+import { getDictionary, type Dictionary } from '@/dictionaries';
 import { buildArticlePdf } from '@/lib/pdf/articlePdf';
 import { formatArticleDate } from '@/lib/date';
 import { SITE_NAME } from '@/lib/constants';
-import type { Locale } from '@/i18n-config';
+import { getSiteBaseUrl } from '@/lib/email/newsletter';
+import { i18n, resolveLocale, type Locale } from '@/i18n-config';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 
 export const runtime = 'nodejs';
-
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://cernapensamento.org').replace(/\/$/, '');
 
 interface RouteContext {
   params: Promise<{ slug: string }>;
 }
 
 /**
- * Renders the article as a downloadable PDF.
+ * Renders the publication as a downloadable PDF.
  *
  * The PDF is generated server-side so the reader receives a real file with
  * selectable text instead of opening the browser print dialog.
- * Uses Spanish only for `lang=es`, otherwise Galician, with content fallback to
- * the other locale. Returns 404 when lookup produces no publication (including
- * DAL failures) or 500 for caught generation errors; successful PDFs have
- * attachment and shared-cache headers. Parameter resolution errors propagate.
+ * Resolves the requested locale (defaulting to Galician), with content fallback
+ * across locales. Returns 404 when lookup produces no published publication
+ * (including DAL failures) or 500 for caught errors; successful PDFs have
+ * attachment and shared-cache headers.
  */
 export async function GET(request: Request, { params }: RouteContext) {
+  let lang: Locale = i18n.defaultLocale;
+  let dict: Dictionary | undefined;
   try {
     const { slug } = await params;
     const { searchParams } = new URL(request.url);
-    const lang: Locale = searchParams.get('lang') === 'es' ? 'es' : 'gl';
+    lang = resolveLocale(searchParams.get('lang'));
 
-    const publication = await getPublicationBySlug(slug, { lang });
+    const [publication, loadedDict] = await Promise.all([
+      getPublicationBySlug(slug, { lang }),
+      getDictionary(lang),
+    ]);
+    dict = loadedDict;
 
     if (!publication || publication.status !== PUBLICATION_STATUSES.PUBLISHED) {
-      return new Response('Artigo non atopado', {
+      return new Response(dict.article.notFoundTitle, {
         status: 404,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
     }
 
-    const dict = await getDictionary(lang);
+    const title = resolveLocalizedText(publication.title, lang);
+    const subtitle = publication.subtitle ? resolveLocalizedText(publication.subtitle, lang) : null;
+    const content = resolveLocalizedText(publication.content, lang);
 
-    const title = publication.title[lang] || publication.title.gl || publication.title.es;
-    const subtitle = publication.subtitle
-      ? publication.subtitle[lang] || publication.subtitle.gl || publication.subtitle.es || null
-      : null;
-    const content =
-      publication.content[lang] || publication.content.gl || publication.content.es || '';
+    const date = formatArticleDate(publication.published_at || publication.created_at, lang, { format: 'long' });
 
-    const date = formatArticleDate(publication.created_at, lang, { format: 'long' });
-
-    const dbBio = publication.author.bio
-      ? typeof publication.author.bio === 'object'
-        ? publication.author.bio[lang] || publication.author.bio.gl || publication.author.bio.es || ''
-        : String(publication.author.bio)
-      : '';
+    const dbBio = resolveLocalizedText(publication.author.bio, lang);
     const dictBio = publication.author.slug
       ? (dict.authors as Record<string, string>)[publication.author.slug]
       : '';
@@ -70,8 +67,10 @@ export async function GET(request: Request, { params }: RouteContext) {
       tags: publication.tags.map((tag) => tag.name),
       coverImageUrl: publication.cover_image_url,
       html: content,
+      showIndex: publication.show_index,
+      indexLabel: dict.article.indexLabel,
       siteName: SITE_NAME,
-      siteUrl: SITE_URL,
+      siteUrl: getSiteBaseUrl(),
     });
 
     const filename = `cerna-${slug.replace(/[^a-zA-Z0-9-]/g, '-')}.pdf`;
@@ -86,7 +85,8 @@ export async function GET(request: Request, { params }: RouteContext) {
     });
   } catch (error) {
     console.error('Error generating article PDF:', error);
-    return new Response('Non foi posible xerar o PDF', {
+    const errorMsg = (dict ?? (await getDictionary(lang))).article.pdfGenerationError;
+    return new Response(errorMsg, {
       status: 500,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
