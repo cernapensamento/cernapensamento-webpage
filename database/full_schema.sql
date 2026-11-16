@@ -1189,6 +1189,10 @@ GRANT INSERT("published_at"),UPDATE("published_at") ON TABLE "public"."publicati
 
 
 
+GRANT INSERT("show_index"),UPDATE("show_index") ON TABLE "public"."publications" TO "authenticated";
+
+
+
 REVOKE ALL ON FUNCTION "public"."dispatch_newsletter_webhook"("publication" "public"."publications") FROM PUBLIC;
 
 

@@ -264,4 +264,57 @@ describe.skipIf(!isDbTestEnabled)('Publications RLS Integration Tests (Local Sup
     expect(error).not.toBeNull();
     expect(error?.code).toBe('42501'); // Permission denied for column newsletter_subscribed
   });
+
+  it('allows an anonymous client to read public author profile columns on users', async () => {
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    const { data, error } = await anonClient
+      .from('users')
+      .select('id, full_name, slug, bio, avatar_url, role')
+      .limit(1);
+
+    expect(error).toBeNull();
+    expect(Array.isArray(data)).toBe(true);
+  });
+
+  it('allows an authenticated founder to insert and update show_index on publications', async () => {
+    const { client, user } = await createAuthenticatedClient('diegoaraujo@cernapensamento.org');
+    const slug = `test-show-index-${Date.now()}`;
+
+    const { data: inserted, error: insertError } = await client
+      .from('publications')
+      .insert({
+        author_id: user.id,
+        slug,
+        title: { gl: 'Índice test', es: 'Índice test' },
+        content: { gl: '<h2>Sección</h2><p>Texto</p>', es: '<h2>Sección</h2><p>Texto</p>' },
+        status: 'draft',
+        type: 'article',
+        show_index: true,
+      })
+      .select('id, show_index')
+      .single();
+
+    expect(insertError).toBeNull();
+    expect(inserted?.show_index).toBe(true);
+
+    const { data: updated, error: updateError } = await client
+      .from('publications')
+      .update({ show_index: false })
+      .eq('id', inserted!.id)
+      .select('id, show_index')
+      .single();
+
+    expect(updateError).toBeNull();
+    expect(updated?.show_index).toBe(false);
+
+    const adminClient = createClient(
+      supabaseUrl,
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
+    );
+    await adminClient.from('publications').delete().eq('id', inserted!.id);
+  });
 });
