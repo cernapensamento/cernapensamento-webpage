@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <strong>Cerna Pensamento</strong> é unha revista cultural dixital e plataforma editorial bilingüe (<strong>galego <code>gl</code></strong> por defecto e <strong>castelán <code>es</code></strong>) dedicada ao ensaio, á filosofía política, á economía austríaca, á poesía e á narrativa. Combina lectura literaria con caché ISR, edición avanzada en TipTap 3, tradución asistida por IA, exportación PDF e boletíns automatizados desde PostgreSQL.
+  <strong>Cerna Pensamento</strong> é unha asociación cultural independente e unha revista dixital bilingüe (<strong>galego <code>gl</code></strong> por defecto e <strong>castelán <code>es</code></strong>) dedicada ao ensaio, á filosofía política, á economía austríaca, ás ciencias sociais, á poesía e á narrativa. Esta páxina web nace como un <strong>proxecto de código aberto (open source)</strong> para ofrecer un espazo de reflexión acougada, lectura coidada e debate libre aberto á colaboración da comunidade.
 </p>
 
 ---
@@ -102,7 +102,16 @@ cerna/
   <img src="assets/readme/section-quickstart.svg" alt="03 — Posta en marcha local, base de datos Supabase CLI e scripts dispoñibles" width="100%" />
 </p>
 
-## Posta en Marcha Local
+## Contribuír e Desenvolvemento Local
+
+Este repositorio é aberto a contribucións da comunidade: melloras de deseño e accesibilidade, traducións nos dicionarios (`gl.json` / `es.json`), corrección de erros ou novas funcionalidades editoriais.
+
+### Fluxo para Contribuír
+
+1. Fai un **fork** do repositorio e crea unha rama nova a partir de `development` (`git checkout -b feat/a-tua-mellora development`).
+2. Desprega o sistema en local seguindo os pasos de abaixo para probar os teus cambios nunha contorna real.
+3. Respecta as convencións do proxecto (bilingüismo `gl`/`es` sen textos hardcodeados, regras de seguridade e estilo descritas en [`AGENTS.md`](AGENTS.md)).
+4. Antes de abrir o **Pull Request** cara a `development`, verifica que `npm run lint`, `npm test` e `npm run build` pasan sen erros.
 
 ### Requisitos Previos
 
