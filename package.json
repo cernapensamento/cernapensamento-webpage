@@ -21,6 +21,8 @@
     "act:check": "act --dryrun",
     "act:test": "act push -j test",
     "act:pr": "act pull_request -j test",
+    "act:secrets": "act push -j secrets-scan",
+    "scan:secrets": "which gitleaks > /dev/null 2>&1 && gitleaks detect --source=. --config=.gitleaks.toml --verbose || docker run --rm -v \"$(pwd):/path\" zricethezav/gitleaks:latest detect --source=\"/path\" --config=\"/path/.gitleaks.toml\" --verbose",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",

@@ -1,0 +1,21 @@
+title = "Cerna Pensamento Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for tests, mocks and local development fixtures"
+paths = [
+  '''src/lib/db/__rls__/.*''',
+  '''\.(test|spec)\.(ts|tsx|js)$''',
+  '''\.env\.example$''',
+  '''supabase/seed\.sql$''',
+  '''supabase/config\.toml$''',
+  '''docs/.*'''
+]
+regexes = [
+  '''re_mock_ci_key''',
+  '''re_123456789''',
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.mock''',
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1v'''
+]

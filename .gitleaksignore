@@ -1,0 +1,6 @@
+# Gitleaks ignore baseline for legacy historic commits and local testing mocks
+a8c0526065093d60a80dbdea91a681ddba98165b:src/lib/db/__rls__/publications.rls.test.ts:jwt:10
+a8c0526065093d60a80dbdea91a681ddba98165b:src/lib/db/__rls__/publications.rls.test.ts:jwt:69
+a8c0526065093d60a80dbdea91a681ddba98165b:src/lib/db/__rls__/publications.rls.test.ts:jwt:101
+8e48dbfc39f09db32ab698c5cd661db663cbb778:src/app/api/contact/route.ts:generic-api-key:4
+bd010c2bb948f10842c891d1ede20a26a836915f:src/app/api/submit-article/route.ts:generic-api-key:4
