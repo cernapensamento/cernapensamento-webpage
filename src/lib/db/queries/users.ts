@@ -15,6 +15,7 @@ import {
 } from '../schema';
 import type {
   UserRow,
+  PublicUserRow,
   ColumnistItem,
   AuthorProfileDetail,
   PublishedAuthorItem,
@@ -23,9 +24,20 @@ import type {
   UserRole,
 } from '../types';
 import { getPublicationCards } from './publications';
-import { formatDbError } from '../formatDbError';
+import { formatDbError, isMissingColumnError } from '../formatDbError';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const PUBLIC_USER_SELECT = [
+  USER_COLS.ID,
+  USER_COLS.FULL_NAME,
+  USER_COLS.SLUG,
+  USER_COLS.BIO,
+  USER_COLS.AVATAR_URL,
+  USER_COLS.ROLE,
+].join(', ');
+
+const PRIVATE_USER_SELECT = `${PUBLIC_USER_SELECT}, ${USER_COLS.NEWSLETTER_SUBSCRIBED}`;
 
 /**
  * Normalizes a biography into a LocalizedString map across all configured locales.
@@ -58,19 +70,20 @@ function parseBio(rawBio: unknown): LocalizedString | null {
 }
 
 /**
- * Shared lookup helper to fetch a user by any column.
+ * Shared lookup helper to fetch a user by any column with explicit column projection.
  */
-async function getUserBy(
+async function getUserBy<T>(
   column: string,
   value: string,
+  selectColumns: string,
   client?: SupabaseClient
-): Promise<UserRow | null> {
+): Promise<T | null> {
   try {
     const supabase = await resolveClient(client);
 
     const { data, error } = await supabase
       .from(DB_TABLES.USERS)
-      .select('*')
+      .select(selectColumns)
       .eq(column, value)
       .single();
 
@@ -81,7 +94,7 @@ async function getUserBy(
       return null;
     }
 
-    return data as UserRow;
+    return data as T;
   } catch (err) {
     console.warn(`[DAL:users] Unexpected error fetching user by ${column} "${value}":`, formatDbError(err));
     return null;
@@ -89,34 +102,34 @@ async function getUserBy(
 }
 
 /**
- * Fetch a user profile by internal UUID.
+ * Fetch an authenticated user profile by internal UUID (includes private preferences).
  */
 export async function getUserById(
   id: string,
   client?: SupabaseClient
 ): Promise<UserRow | null> {
-  return getUserBy(USER_COLS.ID, id, client);
+  return getUserBy<UserRow>(USER_COLS.ID, id, PRIVATE_USER_SELECT, client);
 }
 
 /**
- * Fetch a user profile by public author slug.
+ * Fetch a public user profile by author slug (excludes private columns such as newsletter_subscribed).
  */
 export async function getUserBySlug(
   slug: string,
   client?: SupabaseClient
-): Promise<UserRow | null> {
-  return getUserBy(USER_COLS.SLUG, slug, client);
+): Promise<PublicUserRow | null> {
+  return getUserBy<PublicUserRow>(USER_COLS.SLUG, slug, PUBLIC_USER_SELECT, client);
 }
 
 /**
- * Fetch a user profile by slug or internal UUID.
+ * Fetch a public user profile by slug or internal UUID (safe for anonymous requests).
  */
 export async function getUserBySlugOrId(
   slugOrId: string,
   client?: SupabaseClient
-): Promise<UserRow | null> {
+): Promise<PublicUserRow | null> {
   const column = UUID_REGEX.test(slugOrId) ? USER_COLS.ID : USER_COLS.SLUG;
-  return getUserBy(column, slugOrId, client);
+  return getUserBy<PublicUserRow>(column, slugOrId, PUBLIC_USER_SELECT, client);
 }
 
 /**
@@ -172,6 +185,45 @@ interface RawAuthorPublicationRow {
   } | null;
 }
 
+async function fetchPublishedAuthorsPage(
+  supabase: SupabaseClient,
+  offset: number,
+  pageSize: number,
+  includePublishedAt: boolean
+) {
+  const selectCols = [
+    PUBLICATION_COLS.ID,
+    PUBLICATION_COLS.TYPE,
+    PUBLICATION_COLS.CREATED_AT,
+    ...(includePublishedAt ? [PUBLICATION_COLS.PUBLISHED_AT] : []),
+    PUBLICATION_COLS.SLUG,
+    PUBLICATION_COLS.TITLE,
+    PUBLICATION_COLS.AUTHOR_ID,
+    `author:${DB_TABLES.USERS} (
+      ${USER_COLS.ID},
+      ${USER_COLS.FULL_NAME},
+      ${USER_COLS.SLUG},
+      ${USER_COLS.BIO},
+      ${USER_COLS.AVATAR_URL},
+      ${USER_COLS.ROLE}
+    )`,
+  ].join(', ');
+
+  let query = supabase
+    .from(DB_TABLES.PUBLICATIONS)
+    .select(selectCols)
+    .eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.PUBLISHED);
+
+  if (includePublishedAt) {
+    query = query.order(PUBLICATION_COLS.PUBLISHED_AT, { ascending: false, nullsFirst: false });
+  }
+
+  return await query
+    .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
+    .order(PUBLICATION_COLS.ID, { ascending: false })
+    .range(offset, offset + pageSize - 1);
+}
+
 /**
  * Fetch every author with at least one published publication, aggregating
  * lightweight publication metadata for the public author directory.
@@ -184,32 +236,25 @@ export async function getPublishedAuthors(
     const supabase = await resolveClient(client);
     const pageSize = 1000;
     const authorsById = new Map<string, PublishedAuthorItem>();
+    let includePublishedAt = true;
 
     for (let offset = 0; ; offset += pageSize) {
-      const { data, error } = await supabase
-        .from(DB_TABLES.PUBLICATIONS)
-        .select(`
-          ${PUBLICATION_COLS.ID},
-          ${PUBLICATION_COLS.TYPE},
-          ${PUBLICATION_COLS.CREATED_AT},
-          ${PUBLICATION_COLS.PUBLISHED_AT},
-          ${PUBLICATION_COLS.SLUG},
-          ${PUBLICATION_COLS.TITLE},
-          ${PUBLICATION_COLS.AUTHOR_ID},
-          author:${DB_TABLES.USERS} (
-            ${USER_COLS.ID},
-            ${USER_COLS.FULL_NAME},
-            ${USER_COLS.SLUG},
-            ${USER_COLS.BIO},
-            ${USER_COLS.AVATAR_URL},
-            ${USER_COLS.ROLE}
-          )
-        `)
-        .eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.PUBLISHED)
-        .order(PUBLICATION_COLS.PUBLISHED_AT, { ascending: false, nullsFirst: false })
-        .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
-        .order(PUBLICATION_COLS.ID, { ascending: false })
-        .range(offset, offset + pageSize - 1);
+      let { data, error } = await fetchPublishedAuthorsPage(
+        supabase,
+        offset,
+        pageSize,
+        includePublishedAt
+      );
+
+      if (includePublishedAt && isMissingColumnError(error, PUBLICATION_COLS.PUBLISHED_AT)) {
+        includePublishedAt = false;
+        ({ data, error } = await fetchPublishedAuthorsPage(
+          supabase,
+          offset,
+          pageSize,
+          false
+        ));
+      }
 
       if (error || !data) {
         console.warn('[DAL:users] Failed to fetch published authors:', formatDbError(error));

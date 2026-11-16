@@ -33,3 +33,21 @@ export function formatDbError(error: unknown): string {
     return String(error);
   }
 }
+
+/**
+ * Checks whether a PostgREST/PostgreSQL error indicates a missing column
+ * (e.g., PostgreSQL 42703 undefined_column or PostgREST PGRST204 schema cache miss).
+ */
+export function isMissingColumnError(error: unknown, columnName: string): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const pgError = error as Partial<PostgrestError> & {
+    code?: string;
+    message?: string;
+    details?: string;
+  };
+  if (pgError.code !== '42703' && pgError.code !== 'PGRST204') {
+    return false;
+  }
+  const haystack = `${pgError.message || ''} ${pgError.details || ''}`;
+  return haystack.includes(columnName);
+}
