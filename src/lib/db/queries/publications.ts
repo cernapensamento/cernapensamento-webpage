@@ -15,7 +15,7 @@ import {
   GUEST_PUBLICATION_LIMITS,
 } from '../schema';
 import { getPublicationIdsByTagSlugs } from './tags';
-import { formatDbError } from '../formatDbError';
+import { formatDbError, isMissingColumnError } from '../formatDbError';
 import type {
   PublicationRow,
   PublicationCardItem,
@@ -314,6 +314,82 @@ function sanitizeSearchQuery(term: string): string {
   return term.replace(/[,().%*"\\]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+async function runPublicationCardsQuery(
+  supabase: SupabaseClient,
+  params: {
+    includePublishedAt: boolean;
+    limit: number;
+    offset: number;
+    status: PublicationStatus;
+    allowedIds: string[] | null;
+    type?: PublicationType;
+    authorId?: string;
+    isPinned?: boolean;
+    searchQuery?: string;
+  }
+) {
+  const selectCols = [
+    PUBLICATION_COLS.ID,
+    PUBLICATION_COLS.SLUG,
+    PUBLICATION_COLS.TITLE,
+    PUBLICATION_COLS.SUBTITLE,
+    PUBLICATION_COLS.COVER_IMAGE_URL,
+    PUBLICATION_COLS.TYPE,
+    PUBLICATION_COLS.STATUS,
+    PUBLICATION_COLS.IS_PINNED,
+    PUBLICATION_COLS.CREATED_AT,
+    PUBLICATION_COLS.UPDATED_AT,
+    ...(params.includePublishedAt ? [PUBLICATION_COLS.PUBLISHED_AT] : []),
+    `author:${DB_TABLES.USERS} (
+      ${USER_COLS.ID},
+      ${USER_COLS.FULL_NAME},
+      ${USER_COLS.SLUG},
+      ${USER_COLS.AVATAR_URL}
+    )`,
+    `publication_tags (
+      tag:${DB_TABLES.TAGS} (
+        id, slug,
+        translations:${DB_TABLES.TAG_TRANSLATIONS} (lang, name)
+      )
+    )`,
+  ].join(', ');
+
+  let query = supabase
+    .from(DB_TABLES.PUBLICATIONS)
+    .select(selectCols)
+    .eq(PUBLICATION_COLS.STATUS, params.status);
+
+  if (params.includePublishedAt) {
+    query = query.order(PUBLICATION_COLS.PUBLISHED_AT, { ascending: false, nullsFirst: false });
+  }
+
+  query = query
+    .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
+    .order(PUBLICATION_COLS.ID, { ascending: false })
+    .range(params.offset, params.offset + params.limit - 1);
+
+  if (params.allowedIds !== null) {
+    query = query.in(PUBLICATION_COLS.ID, params.allowedIds);
+  }
+  if (params.type) {
+    query = query.eq(PUBLICATION_COLS.TYPE, params.type);
+  }
+  if (params.authorId) {
+    query = query.eq(PUBLICATION_COLS.AUTHOR_ID, params.authorId);
+  }
+  if (params.isPinned !== undefined) {
+    query = query.eq(PUBLICATION_COLS.IS_PINNED, params.isPinned);
+  }
+  if (params.searchQuery) {
+    const q = sanitizeSearchQuery(params.searchQuery);
+    if (q) {
+      query = query.or(`title->>gl.ilike.%${q}%,title->>es.ilike.%${q}%,subtitle->>gl.ilike.%${q}%,subtitle->>es.ilike.%${q}%`);
+    }
+  }
+
+  return await query;
+}
+
 /**
  * Fetch lightweight cards without full content, newest creation time first.
  * Defaults to 20 published items at zero-based offset 0. Filters can restrict type,
@@ -346,59 +422,28 @@ export async function getPublicationCards(
       }
     }
 
-    let query = supabase
-      .from(DB_TABLES.PUBLICATIONS)
-      .select(`
-        ${PUBLICATION_COLS.ID},
-        ${PUBLICATION_COLS.SLUG},
-        ${PUBLICATION_COLS.TITLE},
-        ${PUBLICATION_COLS.SUBTITLE},
-        ${PUBLICATION_COLS.COVER_IMAGE_URL},
-        ${PUBLICATION_COLS.TYPE},
-        ${PUBLICATION_COLS.STATUS},
-        ${PUBLICATION_COLS.IS_PINNED},
-        ${PUBLICATION_COLS.CREATED_AT},
-        ${PUBLICATION_COLS.UPDATED_AT},
-        ${PUBLICATION_COLS.PUBLISHED_AT},
-        author:${DB_TABLES.USERS} (
-          ${USER_COLS.ID},
-          ${USER_COLS.FULL_NAME},
-          ${USER_COLS.SLUG},
-          ${USER_COLS.AVATAR_URL}
-        ),
-        publication_tags (
-          tag:${DB_TABLES.TAGS} (
-            id, slug,
-            translations:${DB_TABLES.TAG_TRANSLATIONS} (lang, name)
-          )
-        )
-      `)
-      .eq(PUBLICATION_COLS.STATUS, status)
-      .order(PUBLICATION_COLS.PUBLISHED_AT, { ascending: false, nullsFirst: false })
-      .order(PUBLICATION_COLS.CREATED_AT, { ascending: false })
-      .order(PUBLICATION_COLS.ID, { ascending: false })
-      .range(offset, offset + limit - 1);
+    const queryParams = {
+      limit,
+      offset,
+      status,
+      allowedIds,
+      type: options?.type,
+      authorId: options?.authorId,
+      isPinned: options?.isPinned,
+      searchQuery: options?.searchQuery,
+    };
 
-    if (allowedIds !== null) {
-      query = query.in(PUBLICATION_COLS.ID, allowedIds);
-    }
-    if (options?.type) {
-      query = query.eq(PUBLICATION_COLS.TYPE, options.type);
-    }
-    if (options?.authorId) {
-      query = query.eq(PUBLICATION_COLS.AUTHOR_ID, options.authorId);
-    }
-    if (options?.isPinned !== undefined) {
-      query = query.eq(PUBLICATION_COLS.IS_PINNED, options.isPinned);
-    }
-    if (options?.searchQuery) {
-      const q = sanitizeSearchQuery(options.searchQuery);
-      if (q) {
-        query = query.or(`title->>gl.ilike.%${q}%,title->>es.ilike.%${q}%,subtitle->>gl.ilike.%${q}%,subtitle->>es.ilike.%${q}%`);
-      }
-    }
+    let { data, error } = await runPublicationCardsQuery(supabase, {
+      ...queryParams,
+      includePublishedAt: true,
+    });
 
-    const { data, error } = await query;
+    if (isMissingColumnError(error, PUBLICATION_COLS.PUBLISHED_AT)) {
+      ({ data, error } = await runPublicationCardsQuery(supabase, {
+        ...queryParams,
+        includePublishedAt: false,
+      }));
+    }
     if (error || !data) {
       if (error?.code === 'PGRST205') {
         let legQuery = supabase
@@ -603,10 +648,17 @@ export async function updatePublicationStatus(
   if (status === PUBLICATION_STATUSES.DRAFT || status === PUBLICATION_STATUSES.IN_REVIEW) {
     updatePayload[PUBLICATION_COLS.PUBLISHED_AT] = null;
   }
-  const { error } = await supabase
+  let { error } = await supabase
     .from(DB_TABLES.PUBLICATIONS)
     .update(updatePayload)
     .eq(PUBLICATION_COLS.ID, id);
+
+  if (isMissingColumnError(error, PUBLICATION_COLS.PUBLISHED_AT)) {
+    ({ error } = await supabase
+      .from(DB_TABLES.PUBLICATIONS)
+      .update({ [PUBLICATION_COLS.STATUS]: status })
+      .eq(PUBLICATION_COLS.ID, id));
+  }
 
   return { success: !error, error };
 }
@@ -711,6 +763,44 @@ export interface GetDashboardPublicationsOptions {
   client?: SupabaseClient;
 }
 
+async function runDashboardPublicationsQuery(
+  supabase: SupabaseClient,
+  options: GetDashboardPublicationsOptions,
+  includePublishedAt: boolean
+) {
+  const selectCols = [
+    PUBLICATION_COLS.ID,
+    PUBLICATION_COLS.SLUG,
+    PUBLICATION_COLS.TITLE,
+    PUBLICATION_COLS.SUBTITLE,
+    PUBLICATION_COLS.COVER_IMAGE_URL,
+    PUBLICATION_COLS.TYPE,
+    PUBLICATION_COLS.STATUS,
+    PUBLICATION_COLS.IS_PINNED,
+    PUBLICATION_COLS.CREATED_AT,
+    PUBLICATION_COLS.UPDATED_AT,
+    ...(includePublishedAt ? [PUBLICATION_COLS.PUBLISHED_AT] : []),
+    PUBLICATION_COLS.AUTHOR_ID,
+    `author:${DB_TABLES.USERS} (
+      ${USER_COLS.ID},
+      ${USER_COLS.FULL_NAME}
+    )`,
+  ].join(', ');
+
+  let query = supabase
+    .from(DB_TABLES.PUBLICATIONS)
+    .select(selectCols)
+    .order(PUBLICATION_COLS.CREATED_AT, { ascending: false });
+
+  if (options.forApproval) {
+    query = query.eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.IN_REVIEW);
+  } else {
+    query = query.eq(PUBLICATION_COLS.AUTHOR_ID, options.authorId);
+  }
+
+  return await query;
+}
+
 /**
  * Fetch lightweight publication records for the writer desk dashboard.
  * Returns either publications awaiting approval (when `forApproval` is true)
@@ -723,35 +813,11 @@ export async function getDashboardPublications(
   try {
     const supabase = await resolveClient(options.client);
 
-    let query = supabase
-      .from(DB_TABLES.PUBLICATIONS)
-      .select(`
-        ${PUBLICATION_COLS.ID},
-        ${PUBLICATION_COLS.SLUG},
-        ${PUBLICATION_COLS.TITLE},
-        ${PUBLICATION_COLS.SUBTITLE},
-        ${PUBLICATION_COLS.COVER_IMAGE_URL},
-        ${PUBLICATION_COLS.TYPE},
-        ${PUBLICATION_COLS.STATUS},
-        ${PUBLICATION_COLS.IS_PINNED},
-        ${PUBLICATION_COLS.CREATED_AT},
-        ${PUBLICATION_COLS.UPDATED_AT},
-        ${PUBLICATION_COLS.PUBLISHED_AT},
-        ${PUBLICATION_COLS.AUTHOR_ID},
-        author:${DB_TABLES.USERS} (
-          ${USER_COLS.ID},
-          ${USER_COLS.FULL_NAME}
-        )
-      `)
-      .order(PUBLICATION_COLS.CREATED_AT, { ascending: false });
-
-    if (options.forApproval) {
-      query = query.eq(PUBLICATION_COLS.STATUS, PUBLICATION_STATUSES.IN_REVIEW);
-    } else {
-      query = query.eq(PUBLICATION_COLS.AUTHOR_ID, options.authorId);
+    let { data, error } = await runDashboardPublicationsQuery(supabase, options, true);
+    if (isMissingColumnError(error, PUBLICATION_COLS.PUBLISHED_AT)) {
+      ({ data, error } = await runDashboardPublicationsQuery(supabase, options, false));
     }
 
-    const { data, error } = await query;
     if (error || !data) {
       console.warn('[DAL:publications] Failed to fetch dashboard publications:', formatDbError(error));
       return [];
