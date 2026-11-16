@@ -11,6 +11,8 @@ import {
   DB_TABLES,
   PUBLICATION_COLS,
   USER_COLS,
+  TAG_COLS,
+  TAG_TRANSLATION_COLS,
   PUBLICATION_STATUSES,
   GUEST_PUBLICATION_LIMITS,
 } from '../schema';
@@ -64,6 +66,25 @@ interface RawPublicationCard {
   } | null;
   publication_tags: RawTagRelation[] | null;
 }
+
+const PUBLICATION_TAGS_SELECT = `${DB_TABLES.PUBLICATION_TAGS} (
+  tag:${DB_TABLES.TAGS} (
+    ${TAG_COLS.ID}, ${TAG_COLS.SLUG},
+    translations:${DB_TABLES.TAG_TRANSLATIONS} (${TAG_TRANSLATION_COLS.LANG}, ${TAG_TRANSLATION_COLS.NAME})
+  )
+)` as const;
+
+const PUBLICATION_DETAIL_SELECT = `
+  *,
+  author:${DB_TABLES.USERS} (
+    ${USER_COLS.ID},
+    ${USER_COLS.FULL_NAME},
+    ${USER_COLS.SLUG},
+    ${USER_COLS.AVATAR_URL},
+    ${USER_COLS.BIO}
+  ),
+  ${PUBLICATION_TAGS_SELECT}
+` as const;
 
 /**
  * Rewrites the former Supabase image hostname to the current one, or returns
@@ -139,22 +160,7 @@ export async function getPublicationBySlug(
 
     const { data, error } = await supabase
       .from(DB_TABLES.PUBLICATIONS)
-      .select(`
-        *,
-        author:${DB_TABLES.USERS} (
-          ${USER_COLS.ID},
-          ${USER_COLS.FULL_NAME},
-          ${USER_COLS.SLUG},
-          ${USER_COLS.AVATAR_URL},
-          ${USER_COLS.BIO}
-        ),
-        publication_tags (
-          tag:${DB_TABLES.TAGS} (
-            id, slug,
-            translations:${DB_TABLES.TAG_TRANSLATIONS} (lang, name)
-          )
-        )
-      `)
+      .select(PUBLICATION_DETAIL_SELECT)
       .eq(columnKey, slugOrId)
       .maybeSingle();
 
@@ -164,22 +170,7 @@ export async function getPublicationBySlug(
     if (!activeData && suffix && error?.code !== 'PGRST205') {
       const { data: suffixData, error: suffixError } = await supabase
         .from(DB_TABLES.PUBLICATIONS)
-        .select(`
-          *,
-          author:${DB_TABLES.USERS} (
-            ${USER_COLS.ID},
-            ${USER_COLS.FULL_NAME},
-            ${USER_COLS.SLUG},
-            ${USER_COLS.AVATAR_URL},
-            ${USER_COLS.BIO}
-          ),
-          publication_tags (
-            tag:${DB_TABLES.TAGS} (
-              id, slug,
-              translations:${DB_TABLES.TAG_TRANSLATIONS} (lang, name)
-            )
-          )
-        `)
+        .select(PUBLICATION_DETAIL_SELECT)
         .ilike(PUBLICATION_COLS.SLUG, `%-${suffix}`)
         .limit(1)
         .maybeSingle();
@@ -346,12 +337,7 @@ async function runPublicationCardsQuery(
       ${USER_COLS.SLUG},
       ${USER_COLS.AVATAR_URL}
     )`,
-    `publication_tags (
-      tag:${DB_TABLES.TAGS} (
-        id, slug,
-        translations:${DB_TABLES.TAG_TRANSLATIONS} (lang, name)
-      )
-    )`,
+    PUBLICATION_TAGS_SELECT,
   ].join(', ');
 
   let query = supabase
@@ -383,7 +369,13 @@ async function runPublicationCardsQuery(
   if (params.searchQuery) {
     const q = sanitizeSearchQuery(params.searchQuery);
     if (q) {
-      query = query.or(`title->>gl.ilike.%${q}%,title->>es.ilike.%${q}%,subtitle->>gl.ilike.%${q}%,subtitle->>es.ilike.%${q}%`);
+      const searchClauses = [
+        `${PUBLICATION_COLS.TITLE}->>gl.ilike.%${q}%`,
+        `${PUBLICATION_COLS.TITLE}->>es.ilike.%${q}%`,
+        `${PUBLICATION_COLS.SUBTITLE}->>gl.ilike.%${q}%`,
+        `${PUBLICATION_COLS.SUBTITLE}->>es.ilike.%${q}%`,
+      ];
+      query = query.or(searchClauses.join(','));
     }
   }
 
