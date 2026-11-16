@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { formatDbError } from './formatDbError';
+import { formatDbError, isMissingColumnError } from './formatDbError';
 import { getAllTagsWithTranslations } from './queries/tags';
-import { getPublicationCards, getPublicationBySlug } from './queries/publications';
-import { getColumnists, getPublishedAuthors, getUserById } from './queries/users';
+import { getPublicationCards, getPublicationBySlug, getDashboardPublications } from './queries/publications';
+import { getColumnists, getPublishedAuthors, getUserById, getUserBySlug, getUserBySlugOrId } from './queries/users';
 import { getCommentsForPublication } from './queries/comments';
 import { getHomepageData } from './queries/composite';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -149,5 +149,161 @@ describe('DAL Graceful Degradation on Database Disconnection/Failure', () => {
       latest: [],
       columnists: [],
     });
+  });
+});
+
+describe('Schema Skew & Column Privilege Resilience', () => {
+  it('isMissingColumnError detects PostgreSQL 42703 and PostgREST PGRST204 for a column', () => {
+    expect(isMissingColumnError({ code: '42703', message: 'column publications.published_at does not exist' }, 'published_at')).toBe(true);
+    expect(isMissingColumnError({ code: 'PGRST204', message: "Could not find the 'published_at' column" }, 'published_at')).toBe(true);
+    expect(isMissingColumnError({ code: '42703', message: 'column other does not exist' }, 'published_at')).toBe(false);
+    expect(isMissingColumnError({ code: '42501', message: 'permission denied for published_at' }, 'published_at')).toBe(false);
+  });
+
+  function createMissingPublishedAtClient(rows: unknown[]) {
+    const selectedColumns: string[] = [];
+    const client = {
+      from: vi.fn(() => {
+        let hasPublishedAt = false;
+        const builder = {
+          select: vi.fn((cols: string) => {
+            selectedColumns.push(cols);
+            hasPublishedAt = cols.includes('published_at');
+            return builder;
+          }),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn((col: string) => {
+            if (col === 'published_at') hasPublishedAt = true;
+            return builder;
+          }),
+          range: vi.fn().mockReturnThis(),
+          then: (resolve: (val: unknown) => void) =>
+            resolve(
+              hasPublishedAt
+                ? {
+                    data: null,
+                    error: {
+                      code: '42703',
+                      message: 'column publications.published_at does not exist',
+                    },
+                  }
+                : { data: rows, error: null }
+            ),
+        };
+        return builder;
+      }),
+    } as unknown as SupabaseClient;
+
+    return { client, selectedColumns };
+  }
+
+  it('getPublicationCards falls back to created_at when published_at is missing', async () => {
+    const { client, selectedColumns } = createMissingPublishedAtClient([
+      {
+        id: 'pub-1',
+        slug: 'ensayo-1',
+        title: { gl: 'Ensaio', es: 'Ensayo' },
+        subtitle: null,
+        cover_image_url: null,
+        type: 'essay',
+        status: 'published',
+        is_pinned: false,
+        created_at: '2026-10-20T10:00:00Z',
+        updated_at: '2026-10-20T10:00:00Z',
+        author_id: 'auth-1',
+        author: { id: 'auth-1', full_name: 'Diego', slug: 'diego', avatar_url: null },
+        publication_tags: [],
+      },
+    ]);
+
+    const cards = await getPublicationCards({ client });
+    expect(cards).toHaveLength(1);
+    expect(cards[0].slug).toBe('ensayo-1');
+    expect(cards[0].published_at).toBe('2026-10-20T10:00:00Z');
+    expect(selectedColumns).toHaveLength(2);
+    expect(selectedColumns[0]).toContain('published_at');
+    expect(selectedColumns[1]).not.toContain('published_at');
+  });
+
+  it('getPublishedAuthors falls back to created_at when published_at is missing', async () => {
+    const { client, selectedColumns } = createMissingPublishedAtClient([
+      {
+        id: 'pub-1',
+        type: 'article',
+        created_at: '2026-10-20T10:00:00Z',
+        slug: 'artigo-1',
+        title: { gl: 'Artigo', es: 'Artículo' },
+        author_id: 'auth-1',
+        author: {
+          id: 'auth-1',
+          full_name: 'Diego Araújo',
+          slug: 'diego-araujo',
+          bio: null,
+          avatar_url: null,
+          role: 'founder',
+        },
+      },
+    ]);
+
+    const authors = await getPublishedAuthors(client);
+    expect(authors).toHaveLength(1);
+    expect(authors[0].slug).toBe('diego-araujo');
+    expect(authors[0].latest_publication_at).toBe('2026-10-20T10:00:00Z');
+    expect(selectedColumns).toHaveLength(2);
+    expect(selectedColumns[1]).not.toContain('published_at');
+  });
+
+  it('getDashboardPublications falls back when published_at is missing', async () => {
+    const { client, selectedColumns } = createMissingPublishedAtClient([
+      {
+        id: 'pub-1',
+        slug: 'draft-1',
+        title: { gl: 'Borrador', es: 'Borrador' },
+        subtitle: null,
+        cover_image_url: null,
+        type: 'article',
+        status: 'draft',
+        is_pinned: false,
+        created_at: '2026-10-20T10:00:00Z',
+        updated_at: '2026-10-20T10:00:00Z',
+        author_id: 'auth-1',
+        author: { id: 'auth-1', full_name: 'Diego' },
+      },
+    ]);
+
+    const rows = await getDashboardPublications({ authorId: 'auth-1', client });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].slug).toBe('draft-1');
+    expect(selectedColumns).toHaveLength(2);
+    expect(selectedColumns[1]).not.toContain('published_at');
+  });
+
+  it('public user lookups select only anon-safe columns while getUserById includes newsletter_subscribed', async () => {
+    const selectCalls: string[] = [];
+    const mockClient = {
+      from: vi.fn(() => ({
+        select: vi.fn((cols: string) => {
+          selectCalls.push(cols);
+          return {
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({
+              data: { id: 'u1', full_name: 'Diego', slug: 'diego', bio: null, avatar_url: null, role: 'founder' },
+              error: null,
+            }),
+          };
+        }),
+      })),
+    } as unknown as SupabaseClient;
+
+    await getUserBySlug('diego', mockClient);
+    await getUserBySlugOrId('diego', mockClient);
+    await getUserById('c7b8d6f0-1234-5678-90ab-cdef12345678', mockClient);
+
+    expect(selectCalls[0]).not.toContain('*');
+    expect(selectCalls[0]).not.toContain('newsletter_subscribed');
+    expect(selectCalls[1]).not.toContain('*');
+    expect(selectCalls[1]).not.toContain('newsletter_subscribed');
+    expect(selectCalls[2]).toContain('newsletter_subscribed');
   });
 });
