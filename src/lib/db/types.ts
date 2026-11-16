@@ -33,6 +33,12 @@ export interface UserRow {
   role: UserRole;
 }
 
+/**
+ * Public user columns safe for anonymous (anon) reads.
+ * Excludes private fields such as newsletter_subscribed.
+ */
+export type PublicUserRow = Omit<UserRow, 'newsletter_subscribed'>;
+
 export type AuthProfile = {
   role: UserRole;
   avatar_url: string | null;
