@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 100" role="img" aria-labelledby="qs-title qs-desc">
-  <title id="qs-title">03 — Desenvolvemento Local e Operacións</title>
+  <title id="qs-title">03 — Local Development, Database and Scripts</title>
   <desc id="qs-desc">Editorial section divider for local development setup, database CLI, and scripts.</desc>
   <rect width="1200" height="100" fill="#121212" />
   <line x1="0" y1="0.5" x2="1200" y2="0.5" stroke="#2a2a2a" stroke-width="1" />
   <line x1="0" y1="99.5" x2="1200" y2="99.5" stroke="#2a2a2a" stroke-width="1" />
   <rect x="48" y="24" width="3" height="52" fill="#c5a059" />
-  <text x="68" y="42" fill="#c5a059" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'Liberation Sans', sans-serif" font-size="18" font-weight="600" letter-spacing="3">03 · POSTA EN MARCHA</text>
-  <text x="68" y="76" fill="#fbf9f8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'Liberation Sans', sans-serif" font-size="36" font-weight="700" letter-spacing="-0.4">Desenvolvemento Local, Base de Datos e Scripts</text>
+  <text x="68" y="42" fill="#c5a059" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'Liberation Sans', sans-serif" font-size="18" font-weight="600" letter-spacing="3">03 · GETTING STARTED</text>
+  <text x="68" y="76" fill="#fbf9f8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'Liberation Sans', sans-serif" font-size="36" font-weight="700" letter-spacing="-0.4">Local Development, Database and Scripts</text>
 </svg>
