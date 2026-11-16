@@ -317,4 +317,38 @@ describe.skipIf(!isDbTestEnabled)('Publications RLS Integration Tests (Local Sup
     );
     await adminClient.from('publications').delete().eq('id', inserted!.id);
   });
+
+  it('denies a reader from updating an unpublished publication they own', async () => {
+    const { client: readerClient, user: readerUser } = await createAuthenticatedClient('lector@cerna.org');
+    const adminClient = createClient(
+      supabaseUrl,
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
+    );
+
+    const { data: draftPub } = await adminClient
+      .from('publications')
+      .insert({
+        author_id: readerUser.id,
+        slug: `test-reader-owned-draft-${Date.now()}`,
+        title: { gl: 'Borrador lector', es: 'Borrador lector' },
+        content: { gl: '<p>c</p>', es: '<p>c</p>' },
+        status: 'draft',
+        type: 'article',
+      })
+      .select('id')
+      .single();
+
+    expect(draftPub?.id).toBeDefined();
+
+    const { data: updatedRows, error: updateErr } = await readerClient
+      .from('publications')
+      .update({ title: { gl: 'Modificado', es: 'Modificado' } })
+      .eq('id', draftPub!.id)
+      .select('id');
+
+    expect(updateErr?.code === '42501' || (Array.isArray(updatedRows) && updatedRows.length === 0)).toBe(true);
+
+    await adminClient.from('publications').delete().eq('id', draftPub!.id);
+  });
 });
