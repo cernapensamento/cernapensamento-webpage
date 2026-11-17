@@ -27,6 +27,7 @@ All technical documentation lives directly under `docs/`:
 | **[backend.md](backend.md)** | Edge middleware, rate limiting, API route handlers, Server Actions | `src/proxy.ts`, `src/app/api/`, `src/actions/` |
 | **[database.md](database.md)** | PostgreSQL schema, RLS, quotas, newsletter cron retries, DAL, Storage | `database/full_schema.sql`, `supabase/`, `src/lib/db/`, `src/lib/storage/` |
 | **[integrations.md](integrations.md)** | Supabase Auth/Vault, Upstash Redis, Resend, Gemini AI, Sentry, Agent Discovery | `src/app/api/`, `src/lib/email/`, `src/lib/agent/`, `public/` |
+| **[stack-diagram.html](stack-diagram.html)** | Self-contained system topology diagram (light &amp; dark themes) | `Vercel`, `Supabase`, `GitHub CI`, external services |
 
 > **Local-only visualizer:** If generated locally, `docs/architecture.html` provides an interactive source-linked architecture diagram. It is intentionally git-ignored (`.gitignore`) and never committed to the repository.
 

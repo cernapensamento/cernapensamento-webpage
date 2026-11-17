@@ -60,6 +60,7 @@ tsconfig.tsbuildinfo
 .archify/
 /docs/.archify/
 /docs/*.html
+!/docs/stack-diagram.html
 /docs/*.json
 
 # temporal directory
