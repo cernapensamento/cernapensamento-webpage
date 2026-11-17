@@ -1338,7 +1338,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0001-0000-0000-000000000001',
   'a-sociedade-aberta-e-os-seus-desafios',
-  'https://upload.wikimedia.org/wikipedia/commons/4/43/Karl_Popper.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/01-karl-popper.webp',
   'published'::public.publication_status,
   'article'::public.publication_type,
   'gl',
@@ -1346,7 +1346,7 @@ INSERT INTO public.publications (
   'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
   '{"gl": "A sociedade aberta e os seus desafíos", "es": "La sociedad abierta y sus desafíos"}'::jsonb,
   '{"gl": "Reflexións arredor da vixencia do pensamento de Karl Popper", "es": "Reflexiones en torno a la vigencia del pensamiento de Karl Popper"}'::jsonb,
-  '{"gl": "<p>A defensa da sociedade aberta esixe unha vixilancia constante fronte a calquera tentación de impoñer receitas definitivas para o benestar colectivo. No canto de buscar deseños utópicos dirixidos dende arriba, a fortaleza dunha comunidade libre reside na súa capacidade para ensaiar solucións parciais, recoñecer os seus erros e manter aberta a posibilidade permanente da crítica e da corrección institucional.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG/1280px-Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG\" alt=\"O Pensador de Rodin\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">O Pensador de Auguste Rodin: símbolo do espírito crítico da sociedade aberta.</figcaption></figure>", "es": "<p>La defensa de la sociedad abierta exige una vigilancia constante frente a cualquier tentación de imponer recetas definitivas para el bienestar colectivo. En lugar de buscar diseños utópicos dirigidos desde arriba, la fortaleza de una comunidad libre reside en su capacidad para ensayar soluciones parciales, reconocer sus errores y mantener abierta la posibilidad permanente de la crítica y de la corrección institucional.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG/1280px-Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG\" alt=\"El Pensador de Rodin\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">El Pensador de Auguste Rodin: símbolo del espíritu crítico de la sociedad abierta.</figcaption></figure>"}'::jsonb,
+  '{"gl": "<p>A defensa da sociedade aberta esixe unha vixilancia constante fronte a calquera tentación de impoñer receitas definitivas para o benestar colectivo. No canto de buscar deseños utópicos dirixidos dende arriba, a fortaleza dunha comunidade libre reside na súa capacidade para ensaiar solucións parciais, recoñecer os seus erros e manter aberta a posibilidade permanente da crítica e da corrección institucional.</p><figure class=\"image-figure w-full my-8\"><img src=\"http://127.0.0.1:54321/storage/v1/object/public/media/seed/02-le-penseur-by-rodin-kunsthalle-bielefeld-2014-04-10.webp\" alt=\"O Pensador de Rodin\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">O Pensador de Auguste Rodin: símbolo do espírito crítico da sociedade aberta.</figcaption></figure>", "es": "<p>La defensa de la sociedad abierta exige una vigilancia constante frente a cualquier tentación de imponer recetas definitivas para el bienestar colectivo. En lugar de buscar diseños utópicos dirigidos desde arriba, la fortaleza de una comunidad libre reside en su capacidad para ensayar soluciones parciales, reconocer sus errores y mantener abierta la posibilidad permanente de la crítica y de la corrección institucional.</p><figure class=\"image-figure w-full my-8\"><img src=\"http://127.0.0.1:54321/storage/v1/object/public/media/seed/02-le-penseur-by-rodin-kunsthalle-bielefeld-2014-04-10.webp\" alt=\"El Pensador de Rodin\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">El Pensador de Auguste Rodin: símbolo del espíritu crítico de la sociedad abierta.</figcaption></figure>"}'::jsonb,
   now() - interval '28 days',
   now() - interval '28 days',
   now()
@@ -1357,7 +1357,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0002-0000-0000-000000000002',
   'o-calculo-economico-e-a-coordinacion-social',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Adam_Smith_The_Muir_portrait.jpg/1280px-Adam_Smith_The_Muir_portrait.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/03-adam-smith-the-muir-portrait.webp',
   'published'::public.publication_status,
   'essay'::public.publication_type,
   'es',
@@ -1376,7 +1376,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0003-0000-0000-000000000003',
   'a-beleza-oculta-dos-sistemas-complexos',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/Ephesus_Celsus_Library_Fa%C3%A7ade.jpg/1280px-Ephesus_Celsus_Library_Fa%C3%A7ade.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/04-ephesus-celsus-library-fa-ade.webp',
   'published'::public.publication_status,
   'article'::public.publication_type,
   'gl',
@@ -1395,7 +1395,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0004-0000-0000-000000000004',
   'entropia-tempo-e-a-frecha-da-historia',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6a/Foro_Romano_Musei_Capitolini_Roma.jpg/1280px-Foro_Romano_Musei_Capitolini_Roma.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/05-foro-romano-musei-capitolini-roma.webp',
   'published'::public.publication_status,
   'essay'::public.publication_type,
   'es',
@@ -1414,7 +1414,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0005-0000-0000-000000000005',
   'seguridade-xuridica-e-iniciativa-xuvenil',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/Santiago_Cathedral_2021_-_west_panorama.jpg/1280px-Santiago_Cathedral_2021_-_west_panorama.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/06-santiago-cathedral-2021-west-panorama.webp',
   'published'::public.publication_status,
   'article'::public.publication_type,
   'gl',
@@ -1433,7 +1433,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0006-0000-0000-000000000006',
   'o-valor-dos-contratos-e-a-confianza-social',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/Bust_of_Cicero_%281st-cent._BC%29_-_Palazzo_Nuovo_-_Musei_Capitolini_-_Rome_2016.jpg/1280px-Bust_of_Cicero_%281st-cent._BC%29_-_Palazzo_Nuovo_-_Musei_Capitolini_-_Rome_2016.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/07-bust-of-cicero-1st-cent-bc-palazzo-nuovo-musei-capitolini-ro.webp',
   'published'::public.publication_status,
   'essay'::public.publication_type,
   'es',
@@ -1452,7 +1452,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0007-0000-0000-000000000007',
   'a-palabra-poetica-como-resistencia',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/Biblioth%C3%A8que_de_l%27Assembl%C3%A9e_Nationale_%28Lunon%29.jpg/1280px-Biblioth%C3%A8que_de_l%27Assembl%C3%A9e_Nationale_%28Lunon%29.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/08-biblioth-que-de-l-assembl-e-nationale-lunon.webp',
   'published'::public.publication_status,
   'essay'::public.publication_type,
   'gl',
@@ -1471,7 +1471,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0008-0000-0000-000000000008',
   'rosalia-de-castro-e-o-pensamento-do-desarraigo',
-  'https://upload.wikimedia.org/wikipedia/commons/5/51/Rosal%C3%ADa_Castro_de_Murgu%C3%ADa_por_Luis_Sellier.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/09-rosal-a-castro-de-murgu-a-por-luis-sellier.webp',
   'published'::public.publication_status,
   'article'::public.publication_type,
   'gl',
@@ -1479,7 +1479,7 @@ INSERT INTO public.publications (
   'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4',
   '{"gl": "Rosalía de Castro e o pensamento do desarraigo", "es": "Rosalía de Castro y el pensamiento del desarraigo"}'::jsonb,
   '{"gl": "Unha relectura existencial alén do folclorismo", "es": "Una relectura existencial más allá del folclorismo"}'::jsonb,
-  '{"gl": "<p>A obra de Rosalía de Castro contén unha reflexión metafísica sobre a soidade, a dor e a fenda ontolóxica da emigración que supera con fartura calquera redución costumista. Ao escoitar a súa voz desprovista de adornos tópicos, atopámonos cunha pensadora lúcida e desgarrada que soubo elevar a saudade galega a unha categoría filosófica de alcance universal.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Pontevedra_13_Praza_da_le%C3%B1a_modified.jpg/1280px-Pontevedra_13_Praza_da_le%C3%B1a_modified.jpg\" alt=\"Praza da Leña en Pontevedra\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">A paisaxe urbana galega que acompañou a escrita rosaliana.</figcaption></figure>", "es": "<p>La obra de Rosalía de Castro encierra una reflexión metafísica sobre la soledad, el dolor y la grieta ontológica de la emigración que supera con creces cualquier reducción costumbrista. Al escuchar su voz desprovista de adornos tópicos, nos encontramos ante una pensadora lúcida y desgarrada que supo elevar la saudade gallega a una categoría filosófica de alcance universal.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Pontevedra_13_Praza_da_le%C3%B1a_modified.jpg/1280px-Pontevedra_13_Praza_da_le%C3%B1a_modified.jpg\" alt=\"Plaza de la Leña en Pontevedra\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">El paisaje urbano gallego que acompañó la escritura rosaliana.</figcaption></figure>"}'::jsonb,
+  '{"gl": "<p>A obra de Rosalía de Castro contén unha reflexión metafísica sobre a soidade, a dor e a fenda ontolóxica da emigración que supera con fartura calquera redución costumista. Ao escoitar a súa voz desprovista de adornos tópicos, atopámonos cunha pensadora lúcida e desgarrada que soubo elevar a saudade galega a unha categoría filosófica de alcance universal.</p><figure class=\"image-figure w-full my-8\"><img src=\"http://127.0.0.1:54321/storage/v1/object/public/media/seed/10-pontevedra-13-praza-da-le-a-modified.webp\" alt=\"Praza da Leña en Pontevedra\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">A paisaxe urbana galega que acompañou a escrita rosaliana.</figcaption></figure>", "es": "<p>La obra de Rosalía de Castro encierra una reflexión metafísica sobre la soledad, el dolor y la grieta ontológica de la emigración que supera con creces cualquier reducción costumbrista. Al escuchar su voz desprovista de adornos tópicos, nos encontramos ante una pensadora lúcida y desgarrada que supo elevar la saudade gallega a una categoría filosófica de alcance universal.</p><figure class=\"image-figure w-full my-8\"><img src=\"http://127.0.0.1:54321/storage/v1/object/public/media/seed/10-pontevedra-13-praza-da-le-a-modified.webp\" alt=\"Plaza de la Leña en Pontevedra\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">El paisaje urbano gallego que acompañó la escritura rosaliana.</figcaption></figure>"}'::jsonb,
   now() - interval '17 days',
   now() - interval '17 days',
   now()
@@ -1490,7 +1490,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0009-0000-0000-000000000009',
   'a-vulnerabilidade-compartida-e-a-xustiza',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/Plato_Silanion_Musei_Capitolini_MC1377.png/1280px-Plato_Silanion_Musei_Capitolini_MC1377.png',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/11-plato-silanion-musei-capitolini-mc1377.webp',
   'published'::public.publication_status,
   'essay'::public.publication_type,
   'gl',
@@ -1509,7 +1509,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0010-0000-0000-000000000010',
   'o-dialogo-como-practica-da-humildade',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ae/Aristotle_Altemps_Inv8575.jpg/1280px-Aristotle_Altemps_Inv8575.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/12-aristotle-altemps-inv8575.webp',
   'published'::public.publication_status,
   'article'::public.publication_type,
   'es',
@@ -1528,7 +1528,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0011-0000-0000-000000000011',
   'os-montes-vecinais-e-a-propiedade-comunitaria',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Nobel_Prize_2009-Press_Conference_KVA-30.jpg/1280px-Nobel_Prize_2009-Press_Conference_KVA-30.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/13-nobel-prize-2009-press-conference-kva-30.webp',
   'published'::public.publication_status,
   'essay'::public.publication_type,
   'gl',
@@ -1547,7 +1547,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0012-0000-0000-000000000012',
   'a-cidade-a-escala-humana',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/67/Roman_bridge%2C_Ourense_%28Spain%29.jpg/1280px-Roman_bridge%2C_Ourense_%28Spain%29.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/14-roman-bridge-ourense-spain.webp',
   'published'::public.publication_status,
   'article'::public.publication_type,
   'gl',
@@ -1566,7 +1566,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0013-0000-0000-000000000013',
   'as-virtudes-civicas-no-seculo-xxi',
-  'https://upload.wikimedia.org/wikipedia/commons/d/da/The_Parthenon_in_Athens.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/15-the-parthenon-in-athens.webp',
   'published'::public.publication_status,
   'essay'::public.publication_type,
   'gl',
@@ -1585,7 +1585,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0014-0000-0000-000000000014',
   'o-republicanismo-clasico-e-a-liberdade-sen-dominacion',
-  'https://upload.wikimedia.org/wikipedia/commons/9/99/John_Stuart_Mill_by_London_Stereoscopic_Company%2C_c1870.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/16-john-stuart-mill-by-london-stereoscopic-company-c1870.webp',
   'published'::public.publication_status,
   'article'::public.publication_type,
   'es',
@@ -1604,7 +1604,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0015-0000-0000-000000000015',
   'cooperacion-evolutiva-e-estratexias-resilientes',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/David_Hume_Ramsay.jpg/1280px-David_Hume_Ramsay.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/17-david-hume-ramsay.webp',
   'published'::public.publication_status,
   'essay'::public.publication_type,
   'gl',
@@ -1623,7 +1623,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0016-0000-0000-000000000016',
   'incentivos-perversos-na-politica-publica',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Casa_Consistorial_de_la_Ciudad_de_Lugo_edited.jpg/1280px-Casa_Consistorial_de_la_Ciudad_de_Lugo_edited.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/18-casa-consistorial-de-la-ciudad-de-lugo-edited.webp',
   'published'::public.publication_status,
   'article'::public.publication_type,
   'es',
@@ -1642,7 +1642,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0017-0000-0000-000000000017',
   'a-novela-europea-e-o-desencanto-do-mundo',
-  'https://upload.wikimedia.org/wikipedia/commons/9/95/Thomas_Mann_1929.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/19-thomas-mann-1929.webp',
   'published'::public.publication_status,
   'essay'::public.publication_type,
   'gl',
@@ -1661,7 +1661,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0018-0000-0000-000000000018',
   'o-ensaio-como-forma-de-hospitalidade-intelectual',
-  'https://upload.wikimedia.org/wikipedia/commons/5/5a/Portrait_of_Michel_de_Montaigne%2C_circa_unknown.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/20-portrait-of-michel-de-montaigne-circa-unknown.webp',
   'published'::public.publication_status,
   'article'::public.publication_type,
   'es',
@@ -1680,7 +1680,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0019-0000-0000-000000000019',
   'o-porto-da-coruna-e-as-rutas-do-atlantico',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/Torre_de_H%C3%A9rcules_2023.jpg/1280px-Torre_de_H%C3%A9rcules_2023.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/21-torre-de-h-rcules-2023.webp',
   'published'::public.publication_status,
   'essay'::public.publication_type,
   'gl',
@@ -1688,7 +1688,7 @@ INSERT INTO public.publications (
   'a4a4a4a4-a4a4-a4a4-a4a4-a4a4a4a4a4a4',
   '{"gl": "O porto da Coruña e as rutas do Atlántico", "es": "El puerto de A Coruña y las rutas del Atlántico"}'::jsonb,
   '{"gl": "Comercio marítimo, ilustración e apertura exterior no século XVIII", "es": "Comercio marítimo, ilustración y apertura exterior en el siglo XVIII"}'::jsonb,
-  '{"gl": "<p>A apertura do porto da Coruña ao comercio directo coas colonias americanas a finais do século XVIII supuxo un verdadeiro catalizador de modernización mercantil e renovación das ideas en Galicia. Aquela puxante burguesía ilustrada demostrou que o progreso económico galego estivo sempre estreitamente vencellado á súa proxección atlántica e á súa capacidade para competir nos mercados internacionais.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Ayuntamiento%2C_La_Coru%C3%B1a%2C_Espa%C3%B1a%2C_2015-09-25%2C_DD_44.jpg/1280px-Ayuntamiento%2C_La_Coru%C3%B1a%2C_Espa%C3%B1a%2C_2015-09-25%2C_DD_44.jpg\" alt=\"Praza de María Pita na Coruña\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">A Coruña: praza de María Pita e a tradición marítimo-comercial galega.</figcaption></figure>", "es": "<p>La apertura del puerto de A Coruña al comercio directo con las colonias americanas a finales del siglo XVIII supuso un verdadero catalizador de modernización mercantil y renovación de las ideas en Galicia. Aquella pujante burguesía ilustrada demostró que el progreso económico gallego estuvo siempre estrechamente vinculado a su proyección atlántica y a su capacidad para competir en los mercados internacionales.</p><figure class=\"image-figure w-full my-8\"><img src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Ayuntamiento%2C_La_Coru%C3%B1a%2C_Espa%C3%B1a%2C_2015-09-25%2C_DD_44.jpg/1280px-Ayuntamiento%2C_La_Coru%C3%B1a%2C_Espa%C3%B1a%2C_2015-09-25%2C_DD_44.jpg\" alt=\"Plaza de María Pita en A Coruña\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">A Coruña: plaza de María Pita y la tradición marítimo-comercial gallega.</figcaption></figure>"}'::jsonb,
+  '{"gl": "<p>A apertura do porto da Coruña ao comercio directo coas colonias americanas a finais do século XVIII supuxo un verdadeiro catalizador de modernización mercantil e renovación das ideas en Galicia. Aquela puxante burguesía ilustrada demostrou que o progreso económico galego estivo sempre estreitamente vencellado á súa proxección atlántica e á súa capacidade para competir nos mercados internacionais.</p><figure class=\"image-figure w-full my-8\"><img src=\"http://127.0.0.1:54321/storage/v1/object/public/media/seed/22-ayuntamiento-la-coru-a-espa-a-2015-09-25-dd-44.webp\" alt=\"Praza de María Pita na Coruña\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">A Coruña: praza de María Pita e a tradición marítimo-comercial galega.</figcaption></figure>", "es": "<p>La apertura del puerto de A Coruña al comercio directo con las colonias americanas a finales del siglo XVIII supuso un verdadero catalizador de modernización mercantil y renovación de las ideas en Galicia. Aquella pujante burguesía ilustrada demostró que el progreso económico gallego estuvo siempre estrechamente vinculado a su proyección atlántica y a su capacidad para competir en los mercados internacionales.</p><figure class=\"image-figure w-full my-8\"><img src=\"http://127.0.0.1:54321/storage/v1/object/public/media/seed/22-ayuntamiento-la-coru-a-espa-a-2015-09-25-dd-44.webp\" alt=\"Plaza de María Pita en A Coruña\" class=\"w-full object-cover\"><figcaption class=\"text-center text-base text-charcoal/60 italic mt-2\">A Coruña: plaza de María Pita y la tradición marítimo-comercial gallega.</figcaption></figure>"}'::jsonb,
   now() - interval '2 days',
   now() - interval '2 days',
   now()
@@ -1699,7 +1699,7 @@ INSERT INTO public.publications (
 ) VALUES (
   'd1000001-0020-0000-0000-000000000020',
   'as-raices-institucionais-do-atraso-e-do-crecemento',
-  'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Les_salons_au_XVIIIe_si%C3%A8cle_-_Histoire_Image.jpg/1280px-Les_salons_au_XVIIIe_si%C3%A8cle_-_Histoire_Image.jpg',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/23-les-salons-au-xviiie-si-cle-histoire-image.webp',
   'published'::public.publication_status,
   'article'::public.publication_type,
   'es',
@@ -1902,7 +1902,7 @@ INSERT INTO public.publications (
 (
   'e1000001-0001-0000-0000-000000000001',
   'cerna-presenta-o-seu-manifesto-editorial-en-compostela',
-  'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&w=1200&q=80',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/24-unsplash-photo-1541963463532-d68292c34b19.webp',
   'published'::public.publication_status,
   'news'::public.publication_type,
   'gl',
@@ -1918,7 +1918,7 @@ INSERT INTO public.publications (
 (
   'e1000001-0002-0000-0000-000000000002',
   'convocatoria-aberta-artigos-ensaio-outono',
-  'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/25-unsplash-photo-1455390582262-044cdead277a.webp',
   'published'::public.publication_status,
   'news'::public.publication_type,
   'gl',
@@ -1934,7 +1934,7 @@ INSERT INTO public.publications (
 (
   'e1000001-0003-0000-0000-000000000003',
   'coloquio-sobre-a-filosofia-politica-e-a-liberdade',
-  'https://images.unsplash.com/photo-1471107340929-a87cd0f5b5f3?auto=format&fit=crop&w=1200&q=80',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/26-unsplash-photo-1471107340929-a87cd0f5b5f3.webp',
   'published'::public.publication_status,
   'news'::public.publication_type,
   'gl',
@@ -1950,7 +1950,7 @@ INSERT INTO public.publications (
 (
   'e1000001-0004-0000-0000-000000000004',
   'nova-edicion-dixital-do-boletin-cerna',
-  'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/27-unsplash-photo-1505373877841-8d25f7d46678.webp',
   'published'::public.publication_status,
   'news'::public.publication_type,
   'gl',
@@ -1966,7 +1966,7 @@ INSERT INTO public.publications (
 (
   'e1000001-0005-0000-0000-000000000005',
   'acordo-de-colaboracion-con-asociacions-culturais-europeas',
-  'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=1200&q=80',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/28-unsplash-photo-1526778548025-fa2f459cd5c1.webp',
   'published'::public.publication_status,
   'news'::public.publication_type,
   'gl',
@@ -1982,7 +1982,7 @@ INSERT INTO public.publications (
 (
   'e1000001-0006-0000-0000-000000000006',
   'publicacion-dos-estatutos-sociais-e-codigo-de-etica-editorial',
-  'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&w=1200&q=80',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/29-unsplash-photo-1450133064473-71024230f91b.webp',
   'published'::public.publication_status,
   'news'::public.publication_type,
   'gl',
@@ -1998,7 +1998,7 @@ INSERT INTO public.publications (
 (
   'e1000001-0007-0000-0000-000000000007',
   'inauguracion-do-ciclo-de-seminarios-sobre-a-orde-espontanea',
-  'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=1200&q=80',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/30-unsplash-photo-1497633762265-9d179a990aa6.webp',
   'published'::public.publication_status,
   'news'::public.publication_type,
   'gl',
@@ -2014,7 +2014,7 @@ INSERT INTO public.publications (
 (
   'e1000001-0008-0000-0000-000000000008',
   'lanzamento-do-novo-portal-web-e-lector-editorial',
-  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/31-unsplash-photo-1460925895917-afdab827c52f.webp',
   'published'::public.publication_status,
   'news'::public.publication_type,
   'gl',
@@ -2030,7 +2030,7 @@ INSERT INTO public.publications (
 (
   'e1000001-0009-0000-0000-000000000009',
   'mesa-redonda-ciencia-etica-e-futuro-da-intelixencia-artificial',
-  'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=1200&q=80',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/32-unsplash-photo-1507413245164-6160d8298b31.webp',
   'published'::public.publication_status,
   'news'::public.publication_type,
   'gl',
@@ -2046,7 +2046,7 @@ INSERT INTO public.publications (
 (
   'e1000001-0010-0000-0000-000000000010',
   'apertura-do-fondo-documental-e-hemeroteca-historica',
-  'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=1200&q=80',
+  'http://127.0.0.1:54321/storage/v1/object/public/media/seed/33-unsplash-photo-1461360370896-922624d12aa1.webp',
   'published'::public.publication_status,
   'news'::public.publication_type,
   'gl',
