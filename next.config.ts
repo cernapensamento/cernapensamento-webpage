@@ -9,17 +9,26 @@ const isWorktree = cwd.includes(`${path.sep}.worktrees${path.sep}`);
 const repoRoot = isWorktree ? path.resolve(cwd, '../..') : cwd;
 
 if (isWorktree) {
-  const parentEnv = path.join(repoRoot, '.env.local');
-  const localEnv = path.join(cwd, '.env.local');
-  if (fs.existsSync(parentEnv) && !fs.existsSync(localEnv)) {
-    try {
-      fs.symlinkSync('../../.env.local', localEnv);
-    } catch {
-      // Ignore if symlink already exists
+  for (const file of fs.readdirSync(repoRoot)) {
+    if (!file.startsWith('.env') || file === '.env.example') continue;
+    const localEnv = path.join(cwd, file);
+    if (!fs.existsSync(localEnv)) {
+      try {
+        fs.symlinkSync(path.join('../..', file), localEnv);
+      } catch {
+        // Ignore if symlink already exists
+      }
     }
   }
   loadEnvConfig(repoRoot);
 }
+
+const httpsRemoteHosts = [
+  '*.supabase.co',
+  'lh3.googleusercontent.com',
+];
+
+const httpLocalHosts = ['127.0.0.1', 'localhost'];
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -28,45 +37,11 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['sharp'],
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'srbrnpbtfmilohkicpbb.supabase.co',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'imgs.search.brave.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'thumb.wikimedia.org',
-      },
-      {
-        protocol: 'https',
-        hostname: 'upload.wikimedia.org',
-      },
-      {
-        protocol: 'http',
-        hostname: '127.0.0.1',
-      },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-      },
+      ...httpsRemoteHosts.map((hostname) => ({ protocol: 'https' as const, hostname })),
+      ...httpLocalHosts.map((hostname) => ({ protocol: 'http' as const, hostname })),
     ],
   },
-  allowedDevOrigins: ['cyan-swans-wear.loca.lt', 'loca.lt', '*.loca.lt', '*.trycloudflare.com', 'trycloudflare.com'],
+  allowedDevOrigins: ['loca.lt', '*.loca.lt', '*.trycloudflare.com', 'trycloudflare.com'],
   async headers() {
     return [
       {
@@ -83,38 +58,21 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
-  // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-
   org: "cerna-pensamento",
-
   project: "javascript-nextjs",
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
 
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
-
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
 
-  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
-  // tunnelRoute: "/monitoring",
-
   webpack: {
     // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
     automaticVercelMonitors: true,
 
-    // Tree-shaking options for reducing bundle size
+    // Tree-shake Sentry logger statements to reduce bundle size
     treeshake: {
-      // Automatically tree-shake Sentry logger statements to reduce bundle size
       removeDebugLogging: true,
     },
   },
