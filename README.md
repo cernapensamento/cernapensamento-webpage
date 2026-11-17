@@ -55,6 +55,22 @@
 | **AI, Email & Observability** | `@google/genai`, `resend`, `@react-email/components`, `@sentry/nextjs` | `gemini-3.5-flash-lite`, transactional/newsletter email, and error telemetry |
 | **Testing & CI** | Vitest `3.2`, Playwright `1.61`, `act` | Unit, component, local Supabase RLS, and E2E tests |
 
+### System Topology
+
+<p align="center">
+  <a href="docs/stack-diagram.html">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/readme/stack-diagram-dark.png" />
+      <source media="(prefers-color-scheme: light)" srcset="assets/readme/stack-diagram.png" />
+      <img src="assets/readme/stack-diagram.png" alt="Cerna Pensamento system topology: Browser, Vercel (Upstash Redis, Next.js 16, TipTap 3), Supabase (Auth, PostgreSQL, Storage), Resend, Google Gemini, Sentry, and GitHub CI (Playwright, Vitest)" width="100%" />
+    </picture>
+  </a>
+</p>
+
+<p align="center">
+  <sub>Interactive self-contained version: <a href="docs/stack-diagram.html"><code>docs/stack-diagram.html</code></a></sub>
+</p>
+
 ## Technical Documentation
 
 All technical documentation lives directly under [`docs/`](docs/INDEX.md), while operational protocols and Git/release workflows are centralized in [`AGENTS.md`](AGENTS.md):
@@ -67,6 +83,7 @@ All technical documentation lives directly under [`docs/`](docs/INDEX.md), while
 | [`docs/backend.md`](docs/backend.md) | Edge middleware (`src/proxy.ts`), rate limiting, 6 Route Handlers, and Server Actions |
 | [`docs/database.md`](docs/database.md) | Relational schema, RLS, `newsletter_dispatches` retries, DAL (`src/lib/db/`), and Storage |
 | [`docs/integrations.md`](docs/integrations.md) | Supabase Auth/Vault, Upstash Redis, Resend, Gemini AI, Sentry, `llms.txt`, and environment variables |
+| [`docs/stack-diagram.html`](docs/stack-diagram.html) | Self-contained system topology diagram (light &amp; dark themes) |
 | [`AGENTS.md`](AGENTS.md) | Critical development rules, isolated worktrees, commit protocol, and release checklist |
 
 > **Local interactive diagram:** If you generate `docs/architecture.html` locally using the `archify` skill, it remains excluded in `.gitignore` so generated artifacts are never committed to the repository.
