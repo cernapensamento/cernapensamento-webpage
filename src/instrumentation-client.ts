@@ -22,6 +22,9 @@ Sentry.init({
 
   // Define how likely Replay events are sampled when an error occurs.
   replaysOnErrorSampleRate: 1.0,
+
+  // Preserve the SDK defaults for user and request context collection.
+  dataCollection: {},
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

@@ -16,13 +16,13 @@ VALUES (
   'media',
   'media',
   true,
-  5242880,
-  ARRAY['image/webp', 'image/jpeg', 'image/png']
+  52428800,
+  ARRAY['image/webp', 'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']
 )
 ON CONFLICT (id) DO UPDATE SET
   public = true,
-  file_size_limit = 5242880,
-  allowed_mime_types = ARRAY['image/webp', 'image/jpeg', 'image/png'];
+  file_size_limit = 52428800,
+  allowed_mime_types = ARRAY['image/webp', 'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (

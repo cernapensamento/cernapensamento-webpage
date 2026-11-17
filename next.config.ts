@@ -20,7 +20,7 @@ if (isWorktree) {
       }
     }
   }
-  loadEnvConfig(repoRoot);
+  loadEnvConfig(repoRoot, process.env.NODE_ENV !== 'production', console, true);
 }
 
 const httpsRemoteHosts = [
@@ -28,7 +28,8 @@ const httpsRemoteHosts = [
   'lh3.googleusercontent.com',
 ];
 
-const httpLocalHosts = ['127.0.0.1', 'localhost'];
+const isDevelopment = process.env.NODE_ENV === 'development';
+const httpLocalHosts = isDevelopment ? ['127.0.0.1', 'localhost'] : [];
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -36,9 +37,16 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ['sharp'],
   images: {
+    dangerouslyAllowLocalIP: isDevelopment,
     remotePatterns: [
       ...httpsRemoteHosts.map((hostname) => ({ protocol: 'https' as const, hostname })),
-      ...httpLocalHosts.map((hostname) => ({ protocol: 'http' as const, hostname })),
+      ...httpLocalHosts.map((hostname) => ({
+        protocol: 'http' as const,
+        hostname,
+        port: '54321',
+        pathname: '/storage/v1/object/public/media/**',
+        search: '',
+      })),
     ],
   },
   allowedDevOrigins: ['loca.lt', '*.loca.lt', '*.trycloudflare.com', 'trycloudflare.com'],
