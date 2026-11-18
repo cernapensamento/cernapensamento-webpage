@@ -281,6 +281,16 @@ input[type="submit"]:disabled {
     transition: none !important;
     animation: none !important;
   }
+
+  .animate-marquee-infinite {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  [data-marquee-clone='true'] {
+    display: none;
+  }
 }
 
 /* ============================================================
