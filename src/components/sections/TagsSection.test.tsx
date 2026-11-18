@@ -1,5 +1,6 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { render, screen, within } from '@testing-library/react';
 import TagsSection from './TagsSection';
 import { getDictionaryClient } from '@/dictionaries/client';
@@ -15,6 +16,27 @@ function makeTags(count: number): TagItem[] {
 }
 
 describe('TagsSection', () => {
+  it('lets keyboard users toggle a persistent pause for all rows', async () => {
+    const dict = getDictionaryClient('gl');
+    const user = userEvent.setup();
+    const { container } = render(<TagsSection lang="gl" dict={dict.tags} tags={makeTags(12)} />);
+    const button = screen.getByRole('button', { name: dict.tags.pauseAnimation });
+    const marquee = container.querySelector('.tags-marquee');
+
+    await user.tab();
+    expect(button).toHaveFocus();
+    await user.keyboard(' ');
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(marquee).toHaveAttribute('data-paused', 'true');
+    await user.tab();
+    expect(button).not.toHaveFocus();
+    expect(marquee).toHaveAttribute('data-paused', 'true');
+    button.focus();
+    await user.keyboard('{Enter}');
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    expect(marquee).toHaveAttribute('data-paused', 'false');
+  });
+
   it('renders all supplied tags as uppercase links without section numbers or descriptions', () => {
     const dict = getDictionaryClient('gl');
     const tags = makeTags(16);
