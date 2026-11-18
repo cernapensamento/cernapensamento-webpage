@@ -35,4 +35,16 @@ describe('Dictionary loading and fallback', () => {
     const fallback2 = getDictionaryClient('fr');
     expect(fallback2.nav.articulos).toBe('Arquivo');
   });
+
+  it('exposes matching tags dictionary keys in gl and es without legacy themes keys', async () => {
+    const gl = await getDictionary('gl');
+    const es = await getDictionary('es');
+
+    expect('themes' in gl).toBe(false);
+    expect('themes' in es).toBe(false);
+
+    const expectedKeys = ['exploreButton', 'list', 'searchPrompt', 'tag', 'title'];
+    expect(Object.keys(gl.tags).sort()).toEqual(expectedKeys);
+    expect(Object.keys(es.tags).sort()).toEqual(expectedKeys);
+  });
 });
