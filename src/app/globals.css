@@ -267,7 +267,6 @@ input[type="submit"]:disabled {
   will-change: transform;
 }
 
-.tags-marquee[data-paused='true'] .animate-marquee-infinite,
 .tags-marquee-row:focus-within .animate-marquee-infinite,
 .animate-marquee-infinite:hover {
   animation-play-state: paused;

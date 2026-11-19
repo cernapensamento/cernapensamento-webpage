@@ -1,6 +1,4 @@
-'use client';
-
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import type { TagItem } from '@/lib/db/types';
 import type { Dictionary } from '@/dictionaries';
@@ -83,7 +81,6 @@ function normalizeTags(tags: TagItem[] | undefined, fallbackList: string[]): Tag
  * multi-row horizontal marquee (2 mobile, 3 tablet, 4 desktop) linking into the archive.
  */
 export default function TagsSection({ lang, dict, tags }: TagsSectionProps) {
-  const [paused, setPaused] = useState(false);
   const normalizedTags = normalizeTags(tags, dict.list);
 
   return (
@@ -108,19 +105,11 @@ export default function TagsSection({ lang, dict, tags }: TagsSectionProps) {
               {dict.title}
             </h2>
           </div>
-          <button
-            type="button"
-            aria-pressed={paused}
-            onClick={() => setPaused((value) => !value)}
-            className="motion-reduce:hidden shrink-0 border border-lines px-4 py-2 text-sm text-charcoal hover:border-gold focus-visible:outline-2 focus-visible:outline-gold"
-          >
-            {dict.pauseAnimation}
-          </button>
         </div>
       </div>
 
       {/* Responsive Multi-Row Horizontal Tag Marquee */}
-      <div className="tags-marquee relative w-full overflow-hidden py-1" data-paused={paused}>
+      <div className="tags-marquee relative w-full overflow-hidden py-1">
         <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-10 sm:w-20 md:w-28 bg-gradient-to-r from-parchment to-transparent z-10" />
         <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 sm:w-20 md:w-28 bg-gradient-to-l from-parchment to-transparent z-10" />
 
