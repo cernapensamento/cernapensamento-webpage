@@ -43,7 +43,7 @@ describe('Dictionary loading and fallback', () => {
     expect('themes' in gl).toBe(false);
     expect('themes' in es).toBe(false);
 
-    const expectedKeys = ['exploreButton', 'list', 'pauseAnimation', 'searchPrompt', 'tag', 'title'];
+    const expectedKeys = ['exploreButton', 'list', 'searchPrompt', 'tag', 'title'];
     expect(Object.keys(gl.tags).sort()).toEqual(expectedKeys);
     expect(Object.keys(es.tags).sort()).toEqual(expectedKeys);
   });
