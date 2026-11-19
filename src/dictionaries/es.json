@@ -176,10 +176,9 @@
     "entrevista": "Entrevista",
     "poesía": "Poesía"
   },
-  "themes": {
+  "tags": {
     "tag": "Variedad Temática",
     "title": "Un abanico de perspectivas para un mundo complejo",
-    "description": "Creemos firmemente que la realidad no puede entenderse desde una única disciplina. Nuestros autores cruzan las fronteras del conocimiento empírico y humanístico para ofrecer reflexiones pausadas y transversales.",
     "list": [
       "Economía",
       "Filosofía",
@@ -190,46 +189,7 @@
       "Crítica Social"
     ],
     "exploreButton": "Explorar el archivo de artículos",
-    "items": [
-      {
-        "id": "01",
-        "title": "Economía",
-        "desc": "Teoría del valor, Escuela Austríaca, política monetaria, comercio y mercados libres."
-      },
-      {
-        "id": "02",
-        "title": "Filosofía",
-        "desc": "Ética, epistemología, filosofía política clásica e historia de las ideas morales."
-      },
-      {
-        "id": "03",
-        "title": "Literatura y Poesía",
-        "desc": "Creación poética contemporánea, ficción en prosa, ensayo lírico y crítica de textos."
-      },
-      {
-        "id": "04",
-        "title": "Derecho y Justicia",
-        "desc": "Marco institucional, estado de derecho, separación de poderes y libertades individuales."
-      },
-      {
-        "id": "05",
-        "title": "Ciencia y Divulgación",
-        "desc": "Metodología empírica, evolución tecnológica, teoría de la información y progreso humano."
-      },
-      {
-        "id": "06",
-        "title": "Historia",
-        "desc": "Historia de Galicia, evolución institucional europea e hitos del pensamiento político."
-      },
-      {
-        "id": "07",
-        "title": "Crítica Social",
-        "desc": "Análisis de la esfera pública, educación, tendencias culturales y debate cívico abierto."
-      }
-    ],
-    "cardAction": "Ver publicaciones",
-    "searchPrompt": "¿Buscas un texto o autor en específico? Utiliza el buscador y los filtros temáticos en el archivo.",
-    "continuousScroll": "Desplazamiento continuo"
+    "searchPrompt": "¿Buscas un texto o autor en específico? Utiliza el buscador y los filtros temáticos en el archivo."
   },
   "articles": {
     "tag": "Archivo Histórico",

@@ -6,7 +6,7 @@ import ArticlesMosaicSkeleton from '@/components/sections/ArticlesMosaicSkeleton
 import AssociationAndNewsSection from '@/components/sections/AssociationAndNewsSection';
 import ColumnistsSection from '@/components/sections/ColumnistsSection';
 import AboutUsSection from '@/components/sections/AboutUsSection';
-import ThemesSection from '@/components/sections/ThemesSection';
+import TagsSection from '@/components/sections/TagsSection';
 import FAQSection from '@/components/sections/FAQSection';
 import ContactSection from '@/components/sections/ContactSection';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
@@ -73,7 +73,6 @@ export default async function HomePage({ params }: PageProps) {
     getDictionary(locale),
     getAllTagsWithTranslations({ lang: locale }),
   ]);
-  const themesTags = tags.slice(0, 12);
 
   // Schema.org JSON-LD Structured Data (Organization + NewsMediaOrganization + Periodical + WebSite)
   const jsonLd = {
@@ -160,9 +159,9 @@ export default async function HomePage({ params }: PageProps) {
       {/* 4. ABOUT US SECTION (Grey / Dark-Grey: bg-surface) */}
       <AboutUsSection lang={locale} dict={dict.about} />
 
-      {/* 5. THEMES CAROUSEL OF TAGS (White / Black: bg-parchment) */}
+      {/* 5. TAGS MARQUEE SECTION (White / Black: bg-parchment) */}
       <RevealOnScroll delayMs={50}>
-        <ThemesSection lang={locale} dict={dict.themes} tags={themesTags} />
+        <TagsSection lang={locale} dict={dict.tags} tags={tags} />
       </RevealOnScroll>
 
       {/* 6. COLUMNISTS / AUTHORS SECTION (Grey / Dark-Grey: bg-surface) */}
