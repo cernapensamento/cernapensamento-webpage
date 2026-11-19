@@ -76,6 +76,10 @@ describe('TagsSection', () => {
 
     for (const rowCount of [2, 3, 4]) {
       const layout = screen.getByTestId(`tags-marquee-${rowCount}-rows`);
+      expect(layout.className).toContain('flex-col');
+      expect(layout.className).toContain('gap-3');
+      expect(layout.className).not.toMatch(/\b(sm:|lg:)?block\b/);
+
       const rows = within(layout).getAllByRole('list');
       expect(rows).toHaveLength(rowCount);
 
