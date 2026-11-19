@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import HeroIntroSection from '@/components/sections/HeroIntroSection';
 import ArticlesMosaicLoader from '@/components/sections/ArticlesMosaicLoader';
 import ArticlesMosaicSkeleton from '@/components/sections/ArticlesMosaicSkeleton';
-import AssociationAndNewsSection from '@/components/sections/AssociationAndNewsSection';
+import OpenPublishingSection from '@/components/sections/OpenPublishingSection';
 import ColumnistsSection from '@/components/sections/ColumnistsSection';
 import AboutUsSection from '@/components/sections/AboutUsSection';
 import TagsSection from '@/components/sections/TagsSection';
@@ -153,8 +153,8 @@ export default async function HomePage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* 3. ASSOCIATION & NEWS SECTION (White / Black: bg-parchment) */}
-      <AssociationAndNewsSection lang={locale} dict={dict.associationAndNews} />
+      {/* 3. OPEN PUBLISHING SECTION (White / Black: bg-parchment) */}
+      <OpenPublishingSection lang={locale} dict={dict.openPublishing} />
 
       {/* 4. ABOUT US SECTION (Grey / Dark-Grey: bg-surface) */}
       <AboutUsSection lang={locale} dict={dict.about} />
