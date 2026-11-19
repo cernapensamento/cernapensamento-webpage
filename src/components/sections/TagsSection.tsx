@@ -23,15 +23,15 @@ interface TagsSectionProps {
 }
 
 const RESPONSIVE_LAYOUTS = [
-  { rowCount: 2, visibilityClass: 'sm:hidden' },
-  { rowCount: 3, visibilityClass: 'hidden sm:block lg:hidden' },
-  { rowCount: 4, visibilityClass: 'hidden lg:block' },
+  { rowCount: 2, visibilityClass: 'flex sm:hidden' },
+  { rowCount: 3, visibilityClass: 'hidden sm:flex lg:hidden' },
+  { rowCount: 4, visibilityClass: 'hidden lg:flex' },
 ] as const;
 
 const MIN_ITEMS_PER_HALF_TRACK = 8;
 const MIN_ESTIMATED_HALF_WIDTH_PX = 2400;
-const ROW_DURATIONS = ['54s', '66s', '48s', '60s'] as const;
-const ROW_OFFSETS = ['0s', '-18s', '-9s', '-27s'] as const;
+const ROW_DURATIONS = ['96s', '114s', '88s', '104s'] as const;
+const ROW_OFFSETS = ['0s', '-32s', '-16s', '-48s'] as const;
 
 function estimateHalfTrackWidth(items: TagDisplayItem[]): number {
   return items.reduce((total, item) => total + item.name.length * 10 + 64, 0);
@@ -130,7 +130,7 @@ export default function TagsSection({ lang, dict, tags }: TagsSectionProps) {
             <div
               key={rowCount}
               data-testid={`tags-marquee-${rowCount}-rows`}
-              className={`flex flex-col gap-3 ${visibilityClass}`}
+              className={`flex-col gap-3 ${visibilityClass}`}
             >
               {rows.map((row, rowIndex) => {
                 const loopItems = [...row.items, ...row.items];
