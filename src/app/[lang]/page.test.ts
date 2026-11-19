@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import HomePage, { generateMetadata } from './page';
+import OpenPublishingSection from '@/components/sections/OpenPublishingSection';
 import TagsSection from '@/components/sections/TagsSection';
 import { getDictionary } from '@/dictionaries';
 import { getOpenGraphLocale, i18n } from '@/i18n-config';
@@ -101,5 +102,19 @@ describe('Homepage Metadata & Agent Readiness', () => {
     expect(props.lang).toBe('gl');
     expect(props.dict).toEqual(dict.tags);
     expect(props.tags).toHaveLength(20);
+  });
+
+  it('passes lang and dict.openPublishing to OpenPublishingSection', async () => {
+    const dict = await getDictionary('es');
+    const tree = await HomePage({ params: Promise.resolve({ lang: 'es' }) });
+    const sections = findElementsByType(tree, OpenPublishingSection);
+
+    expect(sections).toHaveLength(1);
+    const props = sections[0].props as {
+      lang: string;
+      dict: unknown;
+    };
+    expect(props.lang).toBe('es');
+    expect(props.dict).toEqual(dict.openPublishing);
   });
 });
