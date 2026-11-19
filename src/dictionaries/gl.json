@@ -113,10 +113,9 @@
     },
     "privacy": "Privacidade"
   },
-  "themes": {
+  "tags": {
     "tag": "Variedade Temática",
     "title": "Un abano de perspectivas para un mundo complexo",
-    "description": "Cremos firmemente que a realidade non pode entenderse desde unha única disciplina. Os nosos autores cruzan as fronteiras do coñecemento empírico e humanístico para ofrecer reflexións pausadas e transversais.",
     "list": [
       "Economía",
       "Filosofía",
@@ -127,46 +126,7 @@
       "Crítica Social"
     ],
     "exploreButton": "Explorar o arquivo de artigos",
-    "items": [
-      {
-        "id": "01",
-        "title": "Economía",
-        "desc": "Teoría do valor, Escola Austríaca, política monetaria, comercio e mercados libres."
-      },
-      {
-        "id": "02",
-        "title": "Filosofía",
-        "desc": "Ética, epistemoloxía, filosofía política clásica e historia das ideas morais."
-      },
-      {
-        "id": "03",
-        "title": "Literatura e Poesía",
-        "desc": "Creación poética contemporánea, ficción en prosa, ensaio lírico e crítica de textos."
-      },
-      {
-        "id": "04",
-        "title": "Dereito e Xustiza",
-        "desc": "Marco institucional, estado de dereito, separación de poderes e liberdades individuais."
-      },
-      {
-        "id": "05",
-        "title": "Ciencia e Divulgación",
-        "desc": "Metodoloxía empírica, evolución tecnolóxica, teoría da información e progreso humano."
-      },
-      {
-        "id": "06",
-        "title": "Historia",
-        "desc": "Historia de Galicia, evolución institucional europea e fitos do pensamento político."
-      },
-      {
-        "id": "07",
-        "title": "Crítica Social",
-        "desc": "Análise da esfera pública, educación, tendencias culturais e debate cívico aberto."
-      }
-    ],
-    "cardAction": "Ver publicacións",
-    "searchPrompt": "Buscas un texto ou autor en específico? Emprega o buscador e os filtros temáticos no arquivo.",
-    "continuousScroll": "Desprazamento continuo"
+    "searchPrompt": "Buscas un texto ou autor en específico? Emprega o buscador e os filtros temáticos no arquivo."
   },
   "articles": {
     "tag": "Arquivo Histórico",
