@@ -79,7 +79,7 @@ Configured in `src/app/globals.css` (Tailwind CSS v4 `@theme` + custom propertie
 Components are partitioned strictly by domain responsibility:
 
 - **`layout/`:** `PublicNavBar.tsx`, `SideMenu.tsx` (responsive drawer navigation), `SiteFooter.tsx`, `HeaderVisibilityWrapper.tsx`, `FooterVisibilityWrapper.tsx`.
-- **`sections/`:** Modular homepage bands (`FeaturedArticleHero.tsx`, `HeroIntroSection.tsx`, `HeroAnimatedLogo.tsx`, `PinnedArticlesPanel.tsx`, `ArticlesMosaicSection.tsx` + skeleton/loader, `AssociationAndNewsSection.tsx`, `ColumnistsSection.tsx`, `TagsSection.tsx`, `ContactSection.tsx`, `FAQSection.tsx`, `AboutUsSection.tsx`, plus `sectionArticleHelpers.ts`).
+- **`sections/`:** Modular homepage bands (`FeaturedArticleHero.tsx`, `HeroIntroSection.tsx`, `HeroAnimatedLogo.tsx`, `PinnedArticlesPanel.tsx`, `ArticlesMosaicSection.tsx` + skeleton/loader, `OpenPublishingSection.tsx`, `ColumnistsSection.tsx`, `TagsSection.tsx`, `ContactSection.tsx`, `FAQSection.tsx`, `AboutUsSection.tsx`, plus `sectionArticleHelpers.ts`).
 - **`features/`:** Reusable domain widgets (`ArticleCard.tsx`, `ArticleTableOfContents.tsx`, `ArticleScrollManager.tsx`, `ArticleDownload.tsx`, `ArticlesFilterBar.tsx`, `ArticlesArchiveList.tsx`, `CommentsSection.tsx`, `AuthorProfileView.tsx`, `AuthorsDirectory.tsx`, `EditorialCollectionPage.tsx`, `NewsMosaicGrid.tsx`, `ProfileDashboard.tsx`, `RecentArticlesMosaicGrid.tsx`).
 - **`escritorio/`:** `ArticleEditor.tsx` (TipTap 3), `EscritorioShell.tsx`, `ReviewActionBar.tsx`, `TagManager.tsx`, `TableControls.tsx`, `PinArticleButton.tsx`, `DeleteArticleButton.tsx`.
 - **`forms/`:** `EditarArticuloForm.tsx`, `ContactForm.tsx`, `CommentForm.tsx`, `PasswordForm.tsx`.

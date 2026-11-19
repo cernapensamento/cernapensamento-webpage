@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${dict.nav.asociacion} | ${SITE_NAME}`,
-    description: dict.associationAndNews.description,
+    description: dict.asociacion.metaDescription,
   };
 }
 
