@@ -718,6 +718,7 @@
   },
   "asociacion": {
     "title": "A Asociación Cerna Pensamento",
+    "metaDescription": "Un proxecto independente comprometido coa difusión de toda clase de ideas mediante o ensaio rigoroso.",
     "tag": "Asociación Cultural",
     "navAriaLabel": "Seccións da asociación",
     "navManifesto": "§ I. Manifesto & Ideario",
@@ -841,39 +842,35 @@
     "readArticle": "Ler artigo",
     "by": "Por"
   },
-  "associationAndNews": {
-    "badge": "Institución e Actualidade",
-    "title": "A Asociación e Caderno de Novas",
-    "description": "Un proxecto independente comprometido coa difusión de toda clase de ideas mediante o ensaio rigoroso.",
-    "associationCard": {
-      "tag": "A Asociación Cerna",
-      "title": "Pensamento libre, diálogo e sociedade civil",
-      "description": "Constituída legalmente en Galicia, Cerna Pensamento artella unha comunidade de escritores, investigadores e cidadáns que defenden o rigor intelectual, a liberdade individual e o debate sen tutelas ideolóxicas.",
-      "manifestoLink": "Manifesto e principios fundacionais",
-      "statutesLink": "Estatutos oficiais da asociación",
-      "collectionsLink": "Estrutura e coleccións editoriais",
-      "button": "Coñece a Asociación"
-    },
-    "newsCard": {
-      "tag": "Caderno de Novas",
-      "title": "Convocatorias, eventos e vida editorial",
-      "description": "Segue o pulso das nosas publicacións, presentacións de libros, colaboracións académicas e comunicados institucionais na nosa canle de novas e actualidade.",
-      "previews": [
-        {
-          "category": "Editorial",
-          "title": "Apertura da convocatoria de ensaios para o novo ciclo editorial"
-        },
-        {
-          "category": "Publicación",
-          "title": "Dispoñibles as catro coleccións: Ensaio, Poesía, Narrativa e Opinión"
-        },
-        {
-          "category": "Asociación",
-          "title": "Publicación do manifesto e bases de afiliación para socios colaboradores"
-        }
-      ],
-      "button": "Ver todas as Novas"
-    }
+  "openPublishing": {
+    "badge": "Publicación Aberta",
+    "title": "Un espazo aberto a quen teña algo que dicir",
+    "lead": "Cerna aspira a ser unha tribuna aberta a calquera persoa con vocación de escribir e pensar con rigor. Recibimos propostas de autores externos baixo os criterios de calidade e honestidade intelectual do noso Consello Editorial.",
+    "stepsLabel": "Como publicar en Cerna",
+    "steps": [
+      {
+        "num": "01",
+        "tag": "Proposta",
+        "title": "Escríbenos co teu texto ou idea",
+        "description": "Envíanos un correo a través do formulario de contacto achegando o teu manuscrito ou explicándonos a túa intención de escribir e o tema que queres abordar."
+      },
+      {
+        "num": "02",
+        "tag": "Acceso de Autor Convidado",
+        "title": "Habilitamos o teu Escritorio de Autor",
+        "description": "Se o Consello Editorial acepta a proposta, asociamos o teu correo con privilexios de Autor Convidado para que poidas redactar, maquetar e editar o texto ao teu ritmo."
+      },
+      {
+        "num": "03",
+        "tag": "Avaliación e Certificación",
+        "title": "Revisión editorial e publicación",
+        "description": "Unha vez rematado o texto e listo para saír á luz, os membros do Consello Editorial avalíano e certifican a súa publicación definitiva nas nosas páxinas."
+      }
+    ],
+    "quotaLabel": "Réxime de Autor Convidado",
+    "quotaNote": "Os autores convidados poden publicar un máximo de 2 textos ao ano e até 4 publicacións en total ao longo de varios anos.",
+    "primaryCta": "Enviar proposta",
+    "secondaryCta": "Consultar criterios de publicación"
   },
   "hero": {
     "tag": "Revista e Asociación",
