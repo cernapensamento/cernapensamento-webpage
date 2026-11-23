@@ -272,7 +272,10 @@ export async function getPublicationBySlug(
       show_index: activeData.show_index ?? false,
       created_at: activeData.created_at,
       updated_at: activeData.updated_at,
-      published_at: activeData.published_at ?? activeData.created_at,
+      published_at:
+        activeData.status === PUBLICATION_STATUSES.PUBLISHED
+          ? activeData.published_at ?? activeData.created_at
+          : activeData.published_at ?? null,
       author: normalizedAuthor,
       tags: normalizeTags(activeData.publication_tags, options?.lang),
     };
@@ -515,7 +518,10 @@ export async function getPublicationCards(
       is_pinned: row.is_pinned ?? false,
       created_at: row.created_at,
       updated_at: row.updated_at,
-      published_at: row.published_at ?? row.created_at,
+      published_at:
+        row.status === PUBLICATION_STATUSES.PUBLISHED
+          ? row.published_at ?? row.created_at
+          : row.published_at ?? null,
       author: row.author || {
         id: row.author_id,
         full_name: 'Anónimo',
