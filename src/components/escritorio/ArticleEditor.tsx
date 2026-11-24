@@ -29,6 +29,13 @@ import { getDictionaryClient } from '@/dictionaries/client';
 import { createClient } from '@/lib/supabase/client';
 import { i18n, isSupportedLocale, type Locale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
+import {
+  getAvailablePublicationLocales,
+  getPublicationLanguageMode,
+  hasMeaningfulHtmlContent,
+  resolvePublicationLocale,
+  type PublicationLanguageMode,
+} from '@/lib/i18n/publicationLanguage';
 import { getUserById, type LocalizedString, type UserRow } from '@/lib/db';
 import {
   USER_ROLES,
@@ -64,6 +71,7 @@ export interface ArticleData {
   status?: string;
   type?: string;
   original_language?: string;
+  language_mode?: PublicationLanguageMode;
   show_index?: boolean;
   published_at?: string | null;
   // Backwards compatibility aliases
@@ -148,8 +156,48 @@ export default function ArticleEditor({
     /data-type="article-index"/i.test(initialRawContents[loc])
   );
 
+  const rawOrigLang = initialData?.original_language || initialData?.idioma_original;
+  const normalizedOrigLang: Locale = isSupportedLocale(rawOrigLang)
+    ? rawOrigLang
+    : i18n.defaultLocale;
+
+  const initialLanguageMode: PublicationLanguageMode =
+    mode === 'edit' && initialData
+      ? initialData.language_mode ??
+        getPublicationLanguageMode({
+          title: initialTitles,
+          content: initialCleanContents,
+          original_language: normalizedOrigLang,
+        })
+      : 'bilingual';
+
+  const initialActiveLang: Locale =
+    initialLanguageMode === 'monolingual'
+      ? resolvePublicationLocale(
+          {
+            title: initialTitles,
+            content: initialCleanContents,
+            original_language: normalizedOrigLang,
+          },
+          normalizedOrigLang
+        ).actualLocale
+      : i18n.defaultLocale;
+
+  const initialSavedLocales = useMemo<Locale[]>(
+    () =>
+      mode === 'edit' && initialData
+        ? getAvailablePublicationLocales({
+            title: initialTitles,
+            content: initialCleanContents,
+            original_language: normalizedOrigLang,
+          })
+        : [],
+    [mode, initialData, initialTitles, initialCleanContents, normalizedOrigLang]
+  );
+
   const [showPublishModal, setShowPublishModal] = useState(false);
-  const [activeLang, setActiveLang] = useState<Locale>(i18n.defaultLocale);
+  const [languageMode, setLanguageMode] = useState<PublicationLanguageMode>(initialLanguageMode);
+  const [activeLang, setActiveLang] = useState<Locale>(initialActiveLang);
   const [titles, setTitles] = useState<LocalizedFieldMap>(initialTitles);
   const [subtitles, setSubtitles] = useState<LocalizedFieldMap>(initialSubtitles);
   const [contents, setContents] = useState<LocalizedFieldMap>(initialCleanContents);
@@ -159,9 +207,8 @@ export default function ArticleEditor({
   const [tocData, setTocData] = useState<TableOfContentData>([]);
   const [isTranslating, setIsTranslating] = useState(false);
 
-  const rawOrigLang = initialData?.original_language || initialData?.idioma_original;
   const [idiomaOriginal, setIdiomaOriginal] = useState<Locale>(
-    isSupportedLocale(rawOrigLang) ? rawOrigLang : i18n.defaultLocale
+    initialLanguageMode === 'monolingual' ? initialActiveLang : normalizedOrigLang
   );
 
   const activeLangRef = useRef<Locale>(activeLang);
@@ -270,9 +317,9 @@ export default function ArticleEditor({
       }),
     ],
     content:
-      initialCleanContents[i18n.defaultLocale] ||
+      initialCleanContents[initialActiveLang] ||
       (mode === 'create'
-        ? getDictionaryClient(i18n.defaultLocale).articleEditor.defaultEditorContent
+        ? getDictionaryClient(initialActiveLang).articleEditor.defaultEditorContent
         : ''),
     immediatelyRender: false,
     editorProps: {
@@ -301,6 +348,7 @@ export default function ArticleEditor({
         tags: tematicas,
         type: tipo,
         original_language: idiomaOriginal,
+        language_mode: languageMode,
         show_index: showIndex,
       });
       localStorage.setItem(draftKey, serialized);
@@ -317,6 +365,7 @@ export default function ArticleEditor({
     tematicas,
     tipo,
     idiomaOriginal,
+    languageMode,
     showIndex,
     draftKey,
     editor,
@@ -342,6 +391,7 @@ export default function ArticleEditor({
             }
             if (patch.type) setTipo(patch.type);
             if (patch.originalLanguage) setIdiomaOriginal(patch.originalLanguage);
+            if (patch.languageMode) setLanguageMode(patch.languageMode);
             if (patch.coverImageUrl) setCoverImageUrl(patch.coverImageUrl);
             if (patch.tags) setTematicas(patch.tags);
             if (typeof patch.showIndex === 'boolean') setShowIndex(patch.showIndex);
@@ -373,9 +423,22 @@ export default function ArticleEditor({
     }
     activeLangRef.current = nextLang;
     setActiveLang(nextLang);
+    if (languageMode === 'monolingual') {
+      setIdiomaOriginal(nextLang);
+    }
     setTocData([]);
     const targetContent = stripIndex(contents[nextLang] || '');
     setTimeout(() => editor?.commands.setContent(targetContent), 0);
+  };
+
+  const handleToggleLanguageMode = () => {
+    setLanguageMode((prev) => {
+      const next: PublicationLanguageMode = prev === 'bilingual' ? 'monolingual' : 'bilingual';
+      if (next === 'monolingual') {
+        setIdiomaOriginal(activeLang);
+      }
+      return next;
+    });
   };
 
   const handleCoverFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -627,10 +690,76 @@ export default function ArticleEditor({
     }
   };
 
+  const validateForPublishOrReview = (): boolean => {
+    const currentHtml = editor?.getHTML() || '';
+    const rawByLocale: LocalizedFieldMap = {
+      ...contents,
+      [activeLang]: currentHtml,
+    };
+
+    if (languageMode === 'monolingual') {
+      const hasTitle = Boolean(titles[activeLang]?.trim());
+      const hasBody = hasMeaningfulHtmlContent(stripIndex(rawByLocale[activeLang] || ''));
+      if (!hasTitle || !hasBody) {
+        const label = i18n.localeLabels[activeLang] || activeLang.toUpperCase();
+        toast.error(dict.validationMissingMonolingual.replace('{language}', label));
+        return false;
+      }
+      return true;
+    }
+
+    const missingLocales = i18n.locales.filter(
+      (loc) =>
+        !titles[loc]?.trim() || !hasMeaningfulHtmlContent(stripIndex(rawByLocale[loc] || ''))
+    );
+    if (missingLocales.length > 0) {
+      const missingLabels = missingLocales
+        .map((loc) => i18n.localeLabels[loc] || loc.toUpperCase())
+        .join(', ');
+      toast.error(dict.validationMissingBilingual.replace('{languages}', missingLabels));
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleOpenPublishModal = () => {
+    if (!validateForPublishOrReview()) return;
+    setShowPublishModal(true);
+  };
+
   const handleSubmit = async (action: EditorAction = EDITOR_ACTIONS.PUBLISH) => {
     if (isUploadingCover.current || isUploadingInline.current) {
       toast.warning(storageDict.uploadWait);
       return;
+    }
+
+    const requiresFullContent =
+      action === EDITOR_ACTIONS.PUBLISH ||
+      action === EDITOR_ACTIONS.SUBMIT_APPROVAL ||
+      action === EDITOR_ACTIONS.APPROVE;
+    if (requiresFullContent && !validateForPublishOrReview()) {
+      return;
+    }
+
+    if (languageMode === 'monolingual') {
+      const droppedSavedLocales = initialSavedLocales.filter((loc) => loc !== activeLang);
+      if (droppedSavedLocales.length > 0) {
+        const droppedLabels = droppedSavedLocales
+          .map((loc) => i18n.localeLabels[loc] || loc.toUpperCase())
+          .join(', ');
+        const keptLabel = i18n.localeLabels[activeLang] || activeLang.toUpperCase();
+        const confirmed = await confirm({
+          title: dict.downgradeConfirmTitle,
+          description: dict.downgradeConfirmDesc.replace('{language}', droppedLabels),
+          confirmLabel: dict.downgradeConfirmAction.replace('{language}', keptLabel),
+          cancelLabel: routeDict.common.cancel,
+          variant: 'danger',
+        });
+        if (!confirmed) {
+          return;
+        }
+      }
     }
 
     const {
@@ -645,7 +774,10 @@ export default function ArticleEditor({
     };
 
     const sanitizedContents = createEmptyLocalizedMap();
-    for (const loc of i18n.locales) {
+    const localesToPersist: readonly Locale[] =
+      languageMode === 'monolingual' ? [activeLang] : i18n.locales;
+
+    for (const loc of localesToPersist) {
       const stripped = stripIndex(rawByLocale[loc] || '');
       sanitizedContents[loc] = await sanitizeBase64Images(
         stripped,
@@ -654,6 +786,20 @@ export default function ArticleEditor({
         (url) => uploadedInlineImages.current.push(url)
       );
     }
+
+    const effectiveOriginalLanguage: Locale =
+      languageMode === 'monolingual' ? activeLang : idiomaOriginal;
+
+    const payloadTitle: LocalizedString =
+      languageMode === 'monolingual' ? { [activeLang]: titles[activeLang] ?? '' } : { ...titles };
+    const payloadSubtitle: LocalizedString =
+      languageMode === 'monolingual'
+        ? { [activeLang]: subtitles[activeLang] ?? '' }
+        : { ...subtitles };
+    const payloadContent: LocalizedString =
+      languageMode === 'monolingual'
+        ? { [activeLang]: sanitizedContents[activeLang] ?? '' }
+        : { ...sanitizedContents };
 
     const pathsToDelete = collectSupersededStoragePaths({
       initialContents: initialRawContents,
@@ -667,25 +813,26 @@ export default function ArticleEditor({
     try {
       const saveResult = await onSave(
         {
-          title: { ...titles },
-          subtitle: { ...subtitles },
-          content: sanitizedContents,
+          title: payloadTitle,
+          subtitle: payloadSubtitle,
+          content: payloadContent,
           cover_image_url: coverImageUrl,
           tags: tematicas,
           type: tipo,
-          original_language: idiomaOriginal,
+          original_language: effectiveOriginalLanguage,
+          language_mode: languageMode,
           show_index: showIndex,
           published_at: initialData?.published_at,
-          titulo_gl: titles.gl ?? '',
-          titulo_es: titles.es ?? '',
-          subtitulo_gl: subtitles.gl ?? '',
-          subtitulo_es: subtitles.es ?? '',
-          contenido_gl: sanitizedContents.gl ?? '',
-          contenido_es: sanitizedContents.es ?? '',
+          titulo_gl: payloadTitle.gl ?? '',
+          titulo_es: payloadTitle.es ?? '',
+          subtitulo_gl: payloadSubtitle.gl ?? '',
+          subtitulo_es: payloadSubtitle.es ?? '',
+          contenido_gl: payloadContent.gl ?? '',
+          contenido_es: payloadContent.es ?? '',
           imagen_url: coverImageUrl,
           tematicas,
           tipo,
-          idioma_original: idiomaOriginal,
+          idioma_original: effectiveOriginalLanguage,
         },
         action
       );
@@ -749,6 +896,8 @@ export default function ArticleEditor({
           routeLang={routeLang}
           mode={mode}
           isPublishing={isPublishing}
+          languageMode={languageMode}
+          activeLang={activeLang}
           onCancel={() => setShowPublishModal(false)}
           onConfirm={() => handleSubmit(EDITOR_ACTIONS.PUBLISH)}
         />
@@ -773,7 +922,7 @@ export default function ArticleEditor({
             onChangeCover={() => coverInputRef.current?.click()}
             onOpenPreview={() => setShowPreview(true)}
             onSubmitAction={handleSubmit}
-            onOpenPublishModal={() => setShowPublishModal(true)}
+            onOpenPublishModal={handleOpenPublishModal}
           />
 
           <div className="max-w-[800px] mx-auto py-8 px-8 editor-container">
@@ -781,6 +930,8 @@ export default function ArticleEditor({
               routeLang={routeLang}
               activeLang={activeLang}
               onSwitchLang={handleSwitchLang}
+              languageMode={languageMode}
+              onToggleLanguageMode={handleToggleLanguageMode}
               isTranslating={isTranslating}
               onTranslate={handleTranslate}
               tags={tematicas}
