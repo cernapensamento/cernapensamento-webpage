@@ -5,7 +5,7 @@ import { i18n, type Locale } from '@/i18n-config';
  * Returns WEBHOOK_SECRET, throwing an error if unset or empty.
  */
 export function getNewsletterSecret(): string {
-  const secret = process.env.WEBHOOK_SECRET;
+  const secret = process.env.WEBHOOK_SECRET?.trim();
   if (!secret) {
     throw new Error('WEBHOOK_SECRET environment variable is not set');
   }

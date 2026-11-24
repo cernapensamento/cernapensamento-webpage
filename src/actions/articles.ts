@@ -225,9 +225,10 @@ export async function saveArticleAction(
       oldSlug = existing.slug;
       finalId = input.id;
 
+      const wasAlreadyPublished = existing.status === PUBLICATION_STATUSES.PUBLISHED;
       const targetPublishedAt =
         targetStatus === PUBLICATION_STATUSES.PUBLISHED
-          ? existing.published_at || new Date().toISOString()
+          ? (wasAlreadyPublished && existing.published_at) || new Date().toISOString()
           : null;
 
       const updatePayload = {
