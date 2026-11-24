@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import {
   resolveSectionArticle,
   stripHtmlExcerpt,
@@ -28,6 +29,7 @@ export default function FeaturedArticleHero({ articulo, lang, dict }: FeaturedAr
     coverAlt,
     authorName,
     byLabel,
+    alternateLocaleBadge,
   } = resolveSectionArticle(articulo, lang, dict);
 
   return (
@@ -49,9 +51,12 @@ export default function FeaturedArticleHero({ articulo, lang, dict }: FeaturedAr
         )}
       </Link>
       <div className="md:col-span-5 flex flex-col gap-6 pt-6 md:pt-0">
-        <span className="text-sm font-semibold text-gold uppercase tracking-widest">
-          {typeLabel}
-        </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-semibold text-gold uppercase tracking-widest">
+            {typeLabel}
+          </span>
+          <AlternateLocaleBadge label={alternateLocaleBadge} />
+        </div>
         <Link href={href}>
           <h1 className="font-serif text-4xl md:text-5xl text-charcoal cursor-pointer hover:text-gold transition-colors duration-300 leading-tight">
             {titulo}

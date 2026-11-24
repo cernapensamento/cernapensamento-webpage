@@ -174,6 +174,7 @@ interface RawAuthorPublicationRow {
   published_at?: string | null;
   slug: string | null;
   title: LocalizedString;
+  original_language?: string | null;
   author_id: string;
   author: {
     id: string;
@@ -198,6 +199,7 @@ async function fetchPublishedAuthorsPage(
     ...(includePublishedAt ? [PUBLICATION_COLS.PUBLISHED_AT] : []),
     PUBLICATION_COLS.SLUG,
     PUBLICATION_COLS.TITLE,
+    PUBLICATION_COLS.ORIGINAL_LANGUAGE,
     PUBLICATION_COLS.AUTHOR_ID,
     `author:${DB_TABLES.USERS} (
       ${USER_COLS.ID},
@@ -278,6 +280,7 @@ export async function getPublishedAuthors(
             latest_publication_at: row.published_at || row.created_at,
             latest_publication_title: row.title,
             latest_publication_slug: row.slug,
+            latest_publication_original_language: row.original_language || i18n.defaultLocale,
             publication_types: [row.type],
           });
           continue;

@@ -13,7 +13,9 @@ import {
 } from '@/lib/db/schema';
 import { getDictionaryClient } from '@/dictionaries/client';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import {
+  resolveAlternateLocaleBadge,
   resolvePublicationCover,
   resolvePublicationDate,
   resolvePublicationHref,
@@ -27,6 +29,8 @@ export interface ArticleData {
   slug?: string | null;
   type?: string;
   tipo?: string;
+  original_language?: string | null;
+  idioma_original?: string | null;
   title?: LocalizedString;
   subtitle?: LocalizedString | null;
   titulo_es?: string;
@@ -154,6 +158,7 @@ function FeaturedAuthorWork({
   const dateStr = resolvePublicationDate(article);
   const imageUrl = resolvePublicationCover(article);
   const href = resolvePublicationHref(article, lang);
+  const alternateLocaleBadge = resolveAlternateLocaleBadge(article, lang);
   const articleTopics = article.tags
     ? article.tags.map((t) => t.slug)
     : article.tematicas || [];
@@ -189,6 +194,7 @@ function FeaturedAuthorWork({
               <span className="px-2.5 py-1 text-[11px] font-semibold text-gold bg-gold/10 rounded uppercase tracking-widest">
                 {getTypeLabel(rawType)}
               </span>
+              <AlternateLocaleBadge label={alternateLocaleBadge} />
               <FormattedDate
                 date={dateStr}
                 lang={lang}
@@ -270,6 +276,7 @@ function AuthorArchiveCard({
   const dateStr = resolvePublicationDate(article);
   const imageUrl = resolvePublicationCover(article);
   const href = resolvePublicationHref(article, lang);
+  const alternateLocaleBadge = resolveAlternateLocaleBadge(article, lang);
   const articleTopics = article.tags
     ? article.tags.map((t) => t.slug)
     : article.tematicas || [];
@@ -300,6 +307,7 @@ function AuthorArchiveCard({
           <span className="text-xs font-semibold text-gold uppercase tracking-widest">
             {getTypeLabel(rawType)}
           </span>
+          <AlternateLocaleBadge label={alternateLocaleBadge} />
         </div>
 
         <Link href={href}>

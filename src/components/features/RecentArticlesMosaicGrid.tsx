@@ -6,8 +6,10 @@ import Image from 'next/image';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { ArticleCardData } from '@/components/features/ArticleCard';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import { getDictionaryClient } from '@/dictionaries/client';
 import {
+  resolveAlternateLocaleBadge,
   resolvePublicationAuthor,
   resolvePublicationCover,
   resolvePublicationDate,
@@ -62,6 +64,7 @@ function RecentArticleCard({
     documentTypes: dict?.documentTypes,
     fallbackDict,
   });
+  const alternateLocaleBadge = resolveAlternateLocaleBadge(item, lang, dict, fallbackDict);
   const rawDate = resolvePublicationDate(item);
   const coverUrl = resolvePublicationCover(item);
   const hasCover = Boolean(coverUrl);
@@ -109,6 +112,7 @@ function RecentArticleCard({
                   {lbl}
                 </span>
               ))}
+              <AlternateLocaleBadge label={alternateLocaleBadge} />
             </div>
             <FormattedDate
               date={rawDate}
@@ -192,6 +196,7 @@ function RecentArticleCard({
                   {lbl}
                 </span>
               ))}
+              <AlternateLocaleBadge label={alternateLocaleBadge} />
             </div>
             <FormattedDate
               date={rawDate}

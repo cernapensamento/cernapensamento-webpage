@@ -5,12 +5,12 @@ import ArticleEditor from './ArticleEditor';
 import { parseDraft, serializeDraft } from './articleEditorUtils';
 import * as storage from '@/lib/storage';
 
+const mockGetUser = vi.fn().mockResolvedValue({ data: { user: { id: 'usr-test' } } });
+
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: { user: { id: 'usr-test' } },
-      }),
+      getUser: mockGetUser,
     },
     from: () => ({
       select: () => ({
@@ -22,14 +22,20 @@ vi.mock('@/lib/supabase/client', () => ({
   }),
 }));
 
+const mockToastSuccess = vi.fn();
+const mockToastError = vi.fn();
+const mockToastWarning = vi.fn();
+const mockConfirm = vi.fn().mockResolvedValue(true);
+const mockPrompt = vi.fn().mockResolvedValue('test');
+
 vi.mock('@/components/ui/FeedbackProvider', () => ({
   useToast: () => ({
-    success: vi.fn(),
-    error: vi.fn(),
-    warning: vi.fn(),
+    success: mockToastSuccess,
+    error: mockToastError,
+    warning: mockToastWarning,
   }),
-  useConfirm: () => vi.fn().mockResolvedValue(true),
-  usePrompt: () => vi.fn().mockResolvedValue('test'),
+  useConfirm: () => mockConfirm,
+  usePrompt: () => mockPrompt,
 }));
 
 describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
@@ -39,6 +45,8 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockConfirm.mockResolvedValue(true);
+    mockPrompt.mockResolvedValue('test');
     removeStorageImagesSpy = vi.spyOn(storage, 'removeStorageImages').mockResolvedValue();
     mockStorage = {};
 
@@ -273,13 +281,14 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
       />
     );
 
-    const tocSwitch = screen.getByRole('switch', { name: /índice automático/i });
-    expect(tocSwitch).toHaveAttribute('aria-checked', 'false');
+    const tocButton = screen.getByRole('button', { name: /táboa de contidos/i });
+    expect(tocButton).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('switch', { name: /índice automático/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: /índice do artigo/i })).not.toBeInTheDocument();
 
-    // Turn index on and confirm live writing preview appears above the editor body
-    fireEvent.click(tocSwitch);
-    expect(tocSwitch).toHaveAttribute('aria-checked', 'true');
+    // Turn index on via top toolbar and confirm live writing preview appears above the editor body
+    fireEvent.click(tocButton);
+    expect(tocButton).toHaveAttribute('aria-pressed', 'true');
     const liveNav = await screen.findByRole('navigation', { name: /índice do artigo/i });
     expect(liveNav).toHaveTextContent('Primeira Parte');
     expect(liveNav).toHaveTextContent('Subparte');
@@ -325,8 +334,8 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
       />
     );
 
-    const tocSwitch = screen.getByRole('switch', { name: /índice automático/i });
-    expect(tocSwitch).toHaveAttribute('aria-checked', 'true');
+    const tocButton = screen.getByRole('button', { name: /táboa de contidos/i });
+    expect(tocButton).toHaveAttribute('aria-pressed', 'true');
     const liveNav = await screen.findByRole('navigation', { name: /índice do artigo/i });
     expect(liveNav).toHaveTextContent('Sección Legada');
 
@@ -389,5 +398,434 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     expect(canonicalParsed?.titles).toEqual({ gl: 'Novo', es: 'Nuevo' });
     expect(canonicalParsed?.tags).toEqual(['etica']);
     expect(canonicalParsed?.showIndex).toBe(true);
+  });
+
+  it('defaults to Bilingual mode for new publications with AI Translate and Original Language visible', () => {
+    render(
+      <ArticleEditor
+        mode="create"
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+
+    const modeSwitch = screen.getByRole('switch', { name: /modo de idioma/i });
+    expect(modeSwitch).toHaveAttribute('aria-checked', 'false');
+    expect(modeSwitch).toHaveTextContent(/bilingüe/i);
+    expect(screen.getByRole('button', { name: /traducir a/i })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /idioma orixinal/i })).toBeInTheDocument();
+  });
+
+  it('initializes an existing Spanish-only Monolingual Publication directly in Monolingual mode on Spanish', async () => {
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'art-mono-es',
+          title: { es: 'Ensayo solo en español' },
+          content: { es: '<p>Cuerpo exclusivamente en español.</p>' },
+          original_language: 'es',
+        }}
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+
+    const modeSwitch = screen.getByRole('switch', { name: /modo de idioma/i });
+    expect(modeSwitch).toHaveAttribute('aria-checked', 'true');
+    expect(modeSwitch).toHaveTextContent(/monolingüe/i);
+
+    // Spanish title and body loaded directly (not empty Galician tab)
+    expect(screen.getByDisplayValue('Ensayo solo en español')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Cuerpo exclusivamente en español.')).toBeInTheDocument();
+    });
+
+    // Only the active Spanish tab is shown in Monolingual mode (Galician tab hidden)
+    expect(screen.getByRole('button', { name: /^castellano$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^galego$/i })).not.toBeInTheDocument();
+
+    // AI Translate button is hidden; single-language selector is shown with 'es' selected
+    expect(screen.queryByRole('button', { name: /traducir a/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /idioma orixinal/i })).not.toBeInTheDocument();
+    const singleLangSelect = screen.getByRole('combobox', { name: /idioma da publicación/i });
+    expect(singleLangSelect).toHaveValue('es');
+  });
+
+  it('shows only the selected language tab and updates both active language and original_language via the monolingual selector', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="create"
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    // Toggle to Monolingual mode -> only Galego tab visible
+    fireEvent.click(screen.getByRole('switch', { name: /modo de idioma/i }));
+    expect(screen.getByRole('button', { name: /^galego$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^castellano$/i })).not.toBeInTheDocument();
+
+    // Switch single language to Spanish via the monolingual selector
+    const singleLangSelect = screen.getByRole('combobox', { name: /idioma da publicación/i });
+    fireEvent.change(singleLangSelect, { target: { value: 'es' } });
+
+    // Now only Castellano tab is visible
+    expect(screen.getByRole('button', { name: /^castellano$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^galego$/i })).not.toBeInTheDocument();
+
+    const titleInput = screen.getByPlaceholderText(/el título de tu investigación/i);
+    fireEvent.change(titleInput, { target: { value: 'Título Monolingüe ES' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          language_mode: 'monolingual',
+          original_language: 'es',
+          title: { es: 'Título Monolingüe ES' },
+        }),
+        'draft'
+      );
+    });
+  });
+
+  it('preserves inactive language unsaved edits in memory and draft serialization across Bilingual -> Monolingual -> Bilingual toggles', () => {
+    render(
+      <ArticleEditor
+        mode="create"
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+
+    // Edit Galician title
+    fireEvent.change(screen.getByPlaceholderText(/o título da túa investigación/i), {
+      target: { value: 'Título GL sen gardar' },
+    });
+
+    // Switch to Spanish and edit Spanish title
+    fireEvent.click(screen.getByRole('button', { name: /^castellano$/i }));
+    fireEvent.change(screen.getByPlaceholderText(/el título de tu investigación/i), {
+      target: { value: 'Título ES sen gardar' },
+    });
+
+    // Switch back to Galician, toggle to Monolingual, then back to Bilingual
+    fireEvent.click(screen.getByRole('button', { name: /^galego$/i }));
+    const modeSwitch = screen.getByRole('switch', { name: /modo de idioma/i });
+    fireEvent.click(modeSwitch); // -> Monolingual
+    expect(modeSwitch).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(modeSwitch); // -> Bilingual
+    expect(modeSwitch).toHaveAttribute('aria-checked', 'false');
+
+    // Switch to Spanish tab and verify unsaved Spanish title is still intact
+    fireEvent.click(screen.getByRole('button', { name: /^castellano$/i }));
+    expect(screen.getByDisplayValue('Título ES sen gardar')).toBeInTheDocument();
+
+    // Draft serialization preserves language_mode
+    const serialized = serializeDraft({
+      title: { gl: 'GL', es: 'ES' },
+      subtitle: { gl: '', es: '' },
+      content: { gl: '<p>GL</p>', es: '<p>ES</p>' },
+      cover_image_url: '',
+      tags: [],
+      type: 'article',
+      original_language: 'gl',
+      language_mode: 'monolingual',
+      show_index: false,
+    });
+    const parsed = parseDraft(serialized);
+    expect(parsed?.languageMode).toBe('monolingual');
+    expect(parsed?.titles).toEqual({ gl: 'GL', es: 'ES' });
+  });
+
+  it('allows upgrading an existing Monolingual Publication to Bilingual and saving both languages', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'art-upgrade-1',
+          title: { gl: 'Título Galego Orixinal' },
+          content: { gl: '<p>Contido en galego.</p>' },
+          original_language: 'gl',
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    const modeSwitch = screen.getByRole('switch', { name: /modo de idioma/i });
+    expect(modeSwitch).toHaveAttribute('aria-checked', 'true');
+
+    // Flip to Bilingual
+    fireEvent.click(modeSwitch);
+    expect(modeSwitch).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('button', { name: /traducir a/i })).toBeInTheDocument();
+
+    // Author Spanish title
+    fireEvent.click(screen.getByRole('button', { name: /^castellano$/i }));
+    fireEvent.change(screen.getByPlaceholderText(/el título de tu investigación/i), {
+      target: { value: 'Título Español Añadido' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          language_mode: 'bilingual',
+          title: { gl: 'Título Galego Orixinal', es: 'Título Español Añadido' },
+        }),
+        'draft'
+      );
+    });
+  });
+
+  it('restores and saves a Spanish monolingual local draft over the initial Galician locale', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    window.localStorage.setItem('cerna_draft_restore-es', JSON.stringify({
+      title: { es: 'Título del borrador' },
+      content: { es: '<p>Cuerpo del borrador</p>' },
+      original_language: 'es',
+      language_mode: 'monolingual',
+    }));
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'restore-es',
+          title: { gl: 'Título orixinal', es: 'Título guardado' },
+          content: { gl: '<p>Corpo orixinal</p>', es: '<p>Cuerpo guardado</p>' },
+          original_language: 'gl',
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    await screen.findByText('Cuerpo del borrador');
+    expect(screen.getByRole('combobox', { name: 'Idioma da publicación' })).toHaveValue('es');
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          original_language: 'es',
+          title: { es: 'Título del borrador' },
+          content: { es: '<p>Cuerpo del borrador</p>' },
+        }),
+        'draft'
+      );
+    });
+  });
+
+  it('saves the original tab body if the locale changes during the auth lookup', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'auth-wait',
+          title: { gl: 'Título GL', es: 'Título ES' },
+          content: { gl: '<p>Corpo galego</p>', es: '<p>Cuerpo español</p>' },
+          original_language: 'gl',
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    await screen.findByText('Corpo galego');
+    let resolveAuth!: (result: { data: { user: { id: string } } }) => void;
+    mockGetUser.mockReturnValueOnce(new Promise((resolve) => { resolveAuth = resolve; }));
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^castellano$/i }));
+    await screen.findByText('Cuerpo español');
+    resolveAuth({ data: { user: { id: 'usr-test' } } });
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: { gl: '<p>Corpo galego</p>', es: '<p>Cuerpo español</p>' },
+        }),
+        'draft'
+      );
+    });
+  });
+
+  it('prompts for confirmation before downgrading a saved bilingual publication to monolingual and cleans up dropped-language inline images once confirmed', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'art-downgrade-1',
+          cover_image_url: 'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/covers/u1/cover.webp',
+          title: { gl: 'Título Galego', es: 'Título Español' },
+          content: {
+            gl: '<p>Contido GL <img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/inline/u1/shared.webp" /></p>',
+            es: '<p>Contenido ES <img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/inline/u1/shared.webp" /><img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/inline/u1/es-only.webp" /><img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/covers/u1/cover.webp" /></p>',
+          },
+          original_language: 'gl',
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    // Toggle to Monolingual (keeping Galician, dropping Spanish)
+    fireEvent.click(screen.getByRole('switch', { name: /modo de idioma/i }));
+
+    // First attempt: user cancels downgrade confirmation
+    mockConfirm.mockResolvedValueOnce(false);
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+
+    await waitFor(() => {
+      expect(mockConfirm).toHaveBeenCalledTimes(1);
+    });
+    expect(onSave).not.toHaveBeenCalled();
+
+    // Second attempt: user confirms downgrade
+    mockConfirm.mockResolvedValueOnce(true);
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          language_mode: 'monolingual',
+          original_language: 'gl',
+          title: { gl: 'Título Galego' },
+        }),
+        'draft'
+      );
+    });
+
+    const savedPayload = onSave.mock.calls[0][0];
+    expect(savedPayload.title).not.toHaveProperty('es');
+    expect(savedPayload.content).not.toHaveProperty('es');
+
+    await waitFor(() => {
+      expect(removeStorageImagesSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        ['publications/inline/u1/es-only.webp']
+      );
+    });
+  });
+
+  it('validates required title and meaningful body for the chosen mode before publishing or submitting for review', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    // Member submitting incomplete Bilingual publication (missing Spanish)
+    const { unmount } = render(
+      <ArticleEditor
+        mode="edit"
+        userRole="member"
+        initialData={{
+          id: 'art-val-bi',
+          title: { gl: 'Título Galego', es: '' },
+          content: { gl: '<p>Contido en galego.</p>', es: '<p></p>' },
+          original_language: 'gl',
+          language_mode: 'bilingual',
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /enviar para aprobación/i }));
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith(expect.stringMatching(/bilingüe/i));
+    });
+    expect(onSave).not.toHaveBeenCalled();
+    unmount();
+
+    // Founder publishing incomplete Monolingual publication (empty body)
+    mockToastError.mockClear();
+    render(
+      <ArticleEditor
+        mode="edit"
+        userRole="founder"
+        initialData={{
+          id: 'art-val-mono',
+          title: { es: 'Solo título' },
+          content: { es: '<p></p>' },
+          original_language: 'es',
+          language_mode: 'monolingual',
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /^publicar$/i }));
+    expect(mockToastError).toHaveBeenCalledWith(expect.stringMatching(/castellano/i));
+    expect(screen.queryByText(/¿publicar cambios\?/i)).not.toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('displays exact target language summary in PublishConfirmModal for Galician-only, Spanish-only, and Bilingual modes', () => {
+    // 1. Bilingual
+    const { unmount: unmountBi } = render(
+      <ArticleEditor
+        mode="edit"
+        userRole="founder"
+        initialData={{
+          id: 'art-pub-bi',
+          title: { gl: 'Título GL', es: 'Título ES' },
+          content: { gl: '<p>Contido GL</p>', es: '<p>Contenido ES</p>' },
+          original_language: 'gl',
+        }}
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^publicar$/i }));
+    expect(screen.getByText(/galego e castelán/i)).toBeInTheDocument();
+    unmountBi();
+
+    // 2. Monolingual Galician
+    const { unmount: unmountGl } = render(
+      <ArticleEditor
+        mode="edit"
+        userRole="founder"
+        initialData={{
+          id: 'art-pub-gl',
+          title: { gl: 'Título GL' },
+          content: { gl: '<p>Contido GL</p>' },
+          original_language: 'gl',
+        }}
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^publicar$/i }));
+    expect(screen.getByText(/idiomas a publicar/i).parentElement).toHaveTextContent(/só en galego/i);
+    unmountGl();
+
+    // 3. Monolingual Spanish
+    render(
+      <ArticleEditor
+        mode="edit"
+        userRole="founder"
+        initialData={{
+          id: 'art-pub-es',
+          title: { es: 'Título ES' },
+          content: { es: '<p>Contenido ES</p>' },
+          original_language: 'es',
+        }}
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^publicar$/i }));
+    expect(screen.getByText(/idiomas a publicar/i).parentElement).toHaveTextContent(/só en castellano/i);
   });
 });
