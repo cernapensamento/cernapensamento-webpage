@@ -7,7 +7,7 @@
 -- 2. dispatch_newsletter_webhook():
 --    Make Vault secret lookup deterministic (prefer 'webhook_secret' over
 --    'app.settings.webhook_secret', newest updated_at first) and btrim() the
---    secret to avoid silent whitespace mismatches.
+--    secret using the same whitespace set as JavaScript String.trim().
 -- ==============================================================================
 
 BEGIN;
@@ -47,6 +47,8 @@ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
+  -- ECMAScript WhiteSpace and LineTerminator code points.
+  v_trim_chars constant text := U&'\0009\000A\000B\000C\000D\0020\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000\FEFF';
   v_secret text;
   v_site_url text;
   v_url text;
@@ -63,9 +65,9 @@ BEGIN
   END IF;
 
   BEGIN
-    v_secret := btrim(current_setting('app.settings.webhook_secret', true));
+    v_secret := btrim(current_setting('app.settings.webhook_secret', true), v_trim_chars);
     IF v_secret IS NULL OR v_secret = '' THEN
-      SELECT btrim(decrypted_secret) INTO v_secret
+      SELECT btrim(decrypted_secret, v_trim_chars) INTO v_secret
       FROM vault.decrypted_secrets
       WHERE name IN ('webhook_secret', 'app.settings.webhook_secret')
       ORDER BY CASE WHEN name = 'webhook_secret' THEN 0 ELSE 1 END, updated_at DESC

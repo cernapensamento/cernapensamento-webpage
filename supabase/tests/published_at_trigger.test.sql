@@ -3,7 +3,7 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
-SELECT no_plan();
+SELECT plan(5);
 
 INSERT INTO auth.users (id, email, raw_user_meta_data)
 VALUES ('10000000-0000-0000-0000-000000000021', 'pubdate-test@example.test',
@@ -60,10 +60,10 @@ SELECT is(published_at, NULL, 'reverting to draft clears published_at')
 FROM public.publications WHERE id = '10000000-0000-0000-0000-000000000022';
 
 -- 5. dispatch_newsletter_webhook prefers canonical webhook_secret over app.settings.webhook_secret and trims whitespace
-SET LOCAL app.settings.webhook_secret = '';
+SELECT set_config('app.settings.webhook_secret', U&'\0009\00A0', true);
 SET LOCAL app.settings.site_url = 'https://newsletter.example.test';
 SELECT vault.create_secret('stale-legacy-secret', 'app.settings.webhook_secret', 'legacy');
-SELECT vault.create_secret('  canonical-vault-secret  ', 'webhook_secret', 'canonical');
+SELECT vault.create_secret(U&' \0009canonical-vault-secret\00A0 ', 'webhook_secret', 'canonical');
 
 INSERT INTO public.publications (id, author_id, slug, status, title, content)
 VALUES (
