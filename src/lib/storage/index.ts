@@ -1,14 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
-  STORAGE_BUCKET,
-  STORAGE_CACHE_CONTROL,
   STORAGE_PRESETS,
   ALLOWED_IMAGE_MIME_TYPES,
   type StorageCategory,
 } from './constants';
-import { compressImageClient } from './compress';
+import { prepareImageForUpload } from './compress';
 import {
-  buildStoragePath,
   extractBucketAndPathFromUrl,
   extractInlineStoragePaths,
 } from './paths';
@@ -18,10 +15,15 @@ export * from './compress';
 export * from './paths';
 
 export interface UploadStorageImageOptions {
-  supabase: SupabaseClient;
+  /**
+   * @deprecated Uploads now route through `POST /api/storage/upload` using the server SSR client.
+   * Kept optional for backwards compatibility with existing callers.
+   */
+  supabase?: SupabaseClient;
   file: File | Blob;
   category: StorageCategory;
-  userId: string;
+  userId?: string;
+  publicationId?: string;
   /**
    * @deprecated Superseded asset cleanup is now the caller's responsibility after
    * successful persistence (e.g. using `removeStorageImages`). This prevents deleting
@@ -39,17 +41,16 @@ export interface UploadStorageImageResult {
 }
 
 /**
- * Validates, optimizes (WebP compression & downscaling), and uploads an image
- * to Supabase Storage according to the category's preset.
+ * Validates, conditionally pre-resizes on the client (when > ~3.5 MB or exceeding
+ * category pixel bounds), and uploads an image via `POST /api/storage/upload`.
  * Rejects with `INVALID_FORMAT` for a nonempty unsupported MIME type or
  * `FILE_TOO_LARGE:<rounded MiB limit>` when the input exceeds its size limit.
- * Compression failures, upload errors, and uncaught storage SDK errors propagate.
  */
 export async function uploadStorageImage({
-  supabase,
   file,
   category,
   userId,
+  publicationId,
   originalFilename,
 }: UploadStorageImageOptions): Promise<UploadStorageImageResult> {
   const preset = STORAGE_PRESETS[category];
@@ -64,40 +65,42 @@ export async function uploadStorageImage({
     throw new Error(`FILE_TOO_LARGE:${maxMb}`);
   }
 
-  // 2. Client-side compression & WebP encoding
-  const compressed = await compressImageClient(file, category);
+  // 2. Conditional client-side pre-resize (only when > ~3.5 MB or exceeding max pixel bounds)
+  const payloadFile = await prepareImageForUpload(file, category);
 
-  // 3. Structured path generation
-  const path = buildStoragePath(
-    category,
-    userId,
-    compressed.extension,
-    originalFilename || (file instanceof File ? file.name : undefined)
-  );
-
-  // 4. Storage upload with immutable cache headers
-  const { error } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .upload(path, compressed.blob, {
-      contentType: compressed.blob.type,
-      cacheControl: STORAGE_CACHE_CONTROL,
-      upsert: false,
-    });
-
-  if (error) {
-    throw error;
+  // 3. POST multipart form data to the hybrid WebP upload endpoint
+  const filename = originalFilename || (file instanceof File ? file.name : 'upload');
+  const formData = new FormData();
+  formData.append('file', payloadFile, filename);
+  formData.append('category', category);
+  if (userId) {
+    formData.append('userId', userId);
+  }
+  if (publicationId) {
+    formData.append('publicationId', publicationId);
+  }
+  if (originalFilename) {
+    formData.append('originalFilename', originalFilename);
   }
 
-  // 5. Public URL resolution
-  const { data: urlData } = supabase.storage
-    .from(STORAGE_BUCKET)
-    .getPublicUrl(path);
+  const response = await fetch('/api/storage/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = (await response.json().catch(() => null)) as
+    | (UploadStorageImageResult & { error?: string })
+    | null;
+
+  if (!response.ok || !data?.publicUrl) {
+    throw new Error(data?.error || 'UPLOAD_FAILED');
+  }
 
   return {
-    publicUrl: urlData.publicUrl,
-    path,
-    width: compressed.width,
-    height: compressed.height,
+    publicUrl: data.publicUrl,
+    path: data.path,
+    width: data.width,
+    height: data.height,
   };
 }
 

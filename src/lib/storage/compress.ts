@@ -1,6 +1,8 @@
 import {
   type StorageCategory,
   STORAGE_PRESETS,
+  CLIENT_PRE_RESIZE_BYTES_THRESHOLD,
+  CLIENT_JPEG_FALLBACK_QUALITY,
 } from './constants';
 
 export interface CompressedImageResult {
@@ -90,7 +92,7 @@ export async function compressImageClient(
               return;
             }
 
-            // Fallback to JPEG if WebP is unsupported
+            // Fallback to high-quality JPEG if WebP is unsupported (e.g., Safari/iOS)
             canvas.toBlob(
               (jpegBlob) => {
                 if (!jpegBlob) {
@@ -106,7 +108,7 @@ export async function compressImageClient(
                 });
               },
               'image/jpeg',
-              preset.quality
+              CLIENT_JPEG_FALLBACK_QUALITY
             );
           },
           'image/webp',
@@ -124,4 +126,55 @@ export async function compressImageClient(
 
     img.src = objectUrl;
   });
+}
+
+function readImageDimensionsClient(file: File | Blob): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve({
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height,
+      });
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load image dimensions'));
+    };
+
+    img.src = objectUrl;
+  });
+}
+
+/**
+ * Conditionally pre-resizes/compresses an image on the client only when the raw file
+ * exceeds ~3.5 MB or exceeds the category's maximum pixel bounds.
+ * Smaller, in-bounds files are returned untouched for direct upload to `/api/storage/upload`.
+ */
+export async function prepareImageForUpload(
+  file: File | Blob,
+  category: StorageCategory
+): Promise<File | Blob> {
+  const preset = STORAGE_PRESETS[category];
+
+  if (file.size > CLIENT_PRE_RESIZE_BYTES_THRESHOLD) {
+    const compressed = await compressImageClient(file, category);
+    return compressed.blob;
+  }
+
+  if (typeof Image === 'undefined' || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
+    return file;
+  }
+
+  const { width, height } = await readImageDimensionsClient(file);
+  if (width > preset.maxWidth || height > preset.maxHeight) {
+    const compressed = await compressImageClient(file, category);
+    return compressed.blob;
+  }
+
+  return file;
 }

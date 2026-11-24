@@ -72,3 +72,15 @@ export const STORAGE_PRESETS: Record<StorageCategory, StorageCompressionPreset> 
 };
 
 export const STORAGE_CACHE_CONTROL = 'public, max-age=31536000, immutable' as const;
+
+/**
+ * Raw file size threshold (~3.5 MB) above which the browser pre-resizes/compresses
+ * before POSTing to `/api/storage/upload` to stay comfortably under Vercel Hobby's 4.5 MB ceiling.
+ */
+export const CLIENT_PRE_RESIZE_BYTES_THRESHOLD = Math.round(3.5 * 1024 * 1024);
+
+/**
+ * High-quality JPEG fallback quality used on browsers without canvas WebP encoding (Safari/iOS)
+ * before server-side `sharp` converts the payload to WebP.
+ */
+export const CLIENT_JPEG_FALLBACK_QUALITY = 0.92 as const;
