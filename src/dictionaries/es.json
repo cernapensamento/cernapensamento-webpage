@@ -218,6 +218,10 @@
     "contributorOf": "es un colaborador de",
     "unknownAuthor": "Autor Desconocido",
     "originalLanguage": "Idioma original:",
+    "onlyAvailableIn": {
+      "gl": "Este texto solo está disponible en gallego.",
+      "es": "Este texto solo está disponible en español."
+    },
     "indexLabel": "Índice",
     "indexAriaLabel": "Índice del artículo",
     "notFoundTitle": "Artículo no encontrado",
