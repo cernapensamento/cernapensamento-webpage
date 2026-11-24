@@ -155,6 +155,10 @@
     "contributorOf": "é un contribuínte de",
     "unknownAuthor": "Autor Descoñecido",
     "originalLanguage": "Idioma orixinal:",
+    "onlyAvailableIn": {
+      "gl": "Este texto só está dispoñible en galego.",
+      "es": "Este texto só está dispoñible en castelán."
+    },
     "indexLabel": "Índice",
     "indexAriaLabel": "Índice do artigo",
     "notFoundTitle": "Artigo non atopado",
