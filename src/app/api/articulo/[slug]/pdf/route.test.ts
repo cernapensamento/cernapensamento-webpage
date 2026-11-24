@@ -191,4 +191,86 @@ describe('PDF Export API Route (GET /api/articulo/[slug]/pdf)', () => {
 
     consoleErrorSpy.mockRestore();
   });
+
+  it('resolves Spanish-only publication via original_language when requested with lang=gl', async () => {
+    const mockPdfBytes = new Uint8Array([37, 80, 68, 70]);
+    vi.mocked(getPublicationBySlug).mockResolvedValueOnce({
+      id: 'pub-es-only',
+      slug: 'solo-espanol',
+      status: PUBLICATION_STATUSES.PUBLISHED,
+      title: { es: 'Título Solo Español' },
+      subtitle: { es: 'Subtítulo Solo Español' },
+      content: { es: '<p>Cuerpo solo en español</p>' },
+      cover_image_url: null,
+      type: PUBLICATION_TYPES.ESSAY,
+      original_language: 'es',
+      is_pinned: false,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+      author: {
+        id: 'user-1',
+        full_name: 'Autor Proba',
+        slug: 'autor-proba',
+        avatar_url: null,
+        bio: null,
+      },
+      tags: [],
+    } as unknown as PublicationDetail);
+    vi.mocked(buildArticlePdf).mockResolvedValueOnce(mockPdfBytes);
+
+    const request = new Request('https://cernapensamento.org/api/articulo/solo-espanol/pdf?lang=gl');
+    const response = await GET(request, {
+      params: Promise.resolve({ slug: 'solo-espanol' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(buildArticlePdf).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Título Solo Español',
+        subtitle: 'Subtítulo Solo Español',
+        html: '<p>Cuerpo solo en español</p>',
+      })
+    );
+  });
+
+  it('resolves Galician-only publication via original_language when requested with lang=es', async () => {
+    const mockPdfBytes = new Uint8Array([37, 80, 68, 70]);
+    vi.mocked(getPublicationBySlug).mockResolvedValueOnce({
+      id: 'pub-gl-only',
+      slug: 'so-galego',
+      status: PUBLICATION_STATUSES.PUBLISHED,
+      title: { gl: 'Título Só Galego' },
+      subtitle: { gl: 'Subtítulo Só Galego' },
+      content: { gl: '<p>Corpo só en galego</p>' },
+      cover_image_url: null,
+      type: PUBLICATION_TYPES.ESSAY,
+      original_language: 'gl',
+      is_pinned: false,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+      author: {
+        id: 'user-1',
+        full_name: 'Autor Proba',
+        slug: 'autor-proba',
+        avatar_url: null,
+        bio: null,
+      },
+      tags: [],
+    } as unknown as PublicationDetail);
+    vi.mocked(buildArticlePdf).mockResolvedValueOnce(mockPdfBytes);
+
+    const request = new Request('https://cernapensamento.org/api/articulo/so-galego/pdf?lang=es');
+    const response = await GET(request, {
+      params: Promise.resolve({ slug: 'so-galego' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(buildArticlePdf).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Título Só Galego',
+        subtitle: 'Subtítulo Só Galego',
+        html: '<p>Corpo só en galego</p>',
+      })
+    );
+  });
 });

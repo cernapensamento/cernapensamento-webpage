@@ -269,4 +269,62 @@ describe('Newsletter Webhook API Route (/api/webhooks/newsletter)', () => {
     expect(mockPublicationsUpdate).toHaveBeenCalledTimes(1);
     expect(mockResendBatchSend).toHaveBeenCalledTimes(1);
   });
+
+  it('dispatches newsletter cleanly for a Galician-only monolingual publication', async () => {
+    mockPublicationsMaybeSingle.mockResolvedValueOnce({
+      data: {
+        id: 'pub-gl-only',
+        title: { gl: 'Ensaio Só Galego' },
+        subtitle: { gl: 'Subtítulo galego' },
+        slug: 'ensaio-so-galego',
+        original_language: 'gl',
+        type: PUBLICATION_TYPES.ESSAY,
+        author_id: 'author-uuid-1',
+      },
+      error: null,
+    });
+
+    const req = createRequest(
+      { record: { id: 'pub-gl-only', status: PUBLICATION_STATUSES.PUBLISHED } },
+      `Bearer ${WEBHOOK_SECRET}`
+    );
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(mockResendBatchSend).toHaveBeenCalledTimes(1);
+    const [batch] = mockResendBatchSend.mock.calls[0];
+    expect(batch).toHaveLength(2);
+    expect(batch[0].subject).toContain('Ensaio Só Galego');
+    expect(batch[0].html).toContain('/gl/articulo/ensaio-so-galego');
+    expect(batch[0].text).toContain('Subtítulo galego');
+  });
+
+  it('dispatches newsletter cleanly for a Spanish-only monolingual publication', async () => {
+    mockPublicationsMaybeSingle.mockResolvedValueOnce({
+      data: {
+        id: 'pub-es-only',
+        title: { es: 'Ensayo Solo Español' },
+        subtitle: { es: 'Subtítulo español' },
+        slug: 'ensayo-solo-espanol',
+        original_language: 'es',
+        type: PUBLICATION_TYPES.ESSAY,
+        author_id: 'author-uuid-1',
+      },
+      error: null,
+    });
+
+    const req = createRequest(
+      { record: { id: 'pub-es-only', status: PUBLICATION_STATUSES.PUBLISHED } },
+      `Bearer ${WEBHOOK_SECRET}`
+    );
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(mockResendBatchSend).toHaveBeenCalledTimes(1);
+    const [batch] = mockResendBatchSend.mock.calls[0];
+    expect(batch).toHaveLength(2);
+    expect(batch[0].subject).toContain('Ensayo Solo Español');
+    expect(batch[0].html).toContain('/es/articulo/ensayo-solo-espanol');
+    expect(batch[0].text).toContain('Subtítulo español');
+  });
 });
