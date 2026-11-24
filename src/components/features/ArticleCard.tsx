@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getDictionaryClient } from '@/dictionaries/client';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import {
   resolveAlternateLocaleBadge,
   resolvePublicationAuthor,
@@ -93,15 +94,6 @@ function CardTagBadges({
         </span>
       ))}
     </div>
-  );
-}
-
-function AlternateLocaleBadge({ label }: { label: string | null }) {
-  if (!label) return null;
-  return (
-    <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-2 py-0.5 shrink-0">
-      {label}
-    </span>
   );
 }
 

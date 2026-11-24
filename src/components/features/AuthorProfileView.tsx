@@ -13,6 +13,7 @@ import {
 } from '@/lib/db/schema';
 import { getDictionaryClient } from '@/dictionaries/client';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import {
   resolveAlternateLocaleBadge,
   resolvePublicationCover,
@@ -193,11 +194,7 @@ function FeaturedAuthorWork({
               <span className="px-2.5 py-1 text-[11px] font-semibold text-gold bg-gold/10 rounded uppercase tracking-widest">
                 {getTypeLabel(rawType)}
               </span>
-              {alternateLocaleBadge && (
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-2 py-0.5">
-                  {alternateLocaleBadge}
-                </span>
-              )}
+              <AlternateLocaleBadge label={alternateLocaleBadge} />
               <FormattedDate
                 date={dateStr}
                 lang={lang}
@@ -310,11 +307,7 @@ function AuthorArchiveCard({
           <span className="text-xs font-semibold text-gold uppercase tracking-widest">
             {getTypeLabel(rawType)}
           </span>
-          {alternateLocaleBadge && (
-            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-2 py-0.5">
-              {alternateLocaleBadge}
-            </span>
-          )}
+          <AlternateLocaleBadge label={alternateLocaleBadge} />
         </div>
 
         <Link href={href}>

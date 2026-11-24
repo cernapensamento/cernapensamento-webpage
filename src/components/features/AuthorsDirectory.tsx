@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import { i18n } from '@/i18n-config';
 import { getDictionaryClient } from '@/dictionaries/client';
 import {
@@ -236,11 +237,7 @@ function AuthorCard({
             <span className="block font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-gold">
               {dict.latestWork}
             </span>
-            {author.latest_publication_language_badge && (
-              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-1.5 py-0.5">
-                {author.latest_publication_language_badge}
-              </span>
-            )}
+            <AlternateLocaleBadge label={author.latest_publication_language_badge} />
           </div>
           <span className="mt-0.5 block truncate font-serif text-xs sm:text-sm font-semibold text-charcoal/85">
             {author.latest_publication_title || '—'}

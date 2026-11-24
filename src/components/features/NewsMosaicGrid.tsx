@@ -6,6 +6,7 @@ import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
 import type { PublicationCardItem } from '@/lib/db/types';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import { getDictionaryClient } from '@/dictionaries/client';
 import {
   resolveAlternateLocaleBadge,
@@ -100,11 +101,7 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
             >
               {category}
             </span>
-            {alternateLocaleBadge && (
-              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-2 py-0.5">
-                {alternateLocaleBadge}
-              </span>
-            )}
+            <AlternateLocaleBadge label={alternateLocaleBadge} />
             <FormattedDate
               date={rawDate}
               lang={lang}
@@ -151,11 +148,7 @@ function NewsCard({ item, lang, variant, theme, dict }: NewsCardProps) {
             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-charcoal/80 dark:text-[#c4c1ba] bg-surface dark:bg-white/[0.04] border border-lines dark:border-white/15 px-2.5 py-1">
               {category}
             </span>
-            {alternateLocaleBadge && (
-              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-2 py-0.5">
-                {alternateLocaleBadge}
-              </span>
-            )}
+            <AlternateLocaleBadge label={alternateLocaleBadge} />
             <FormattedDate
               date={rawDate}
               lang={lang}

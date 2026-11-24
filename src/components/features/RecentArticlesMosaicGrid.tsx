@@ -6,6 +6,7 @@ import Image from 'next/image';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { ArticleCardData } from '@/components/features/ArticleCard';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import { getDictionaryClient } from '@/dictionaries/client';
 import {
   resolveAlternateLocaleBadge,
@@ -111,11 +112,7 @@ function RecentArticleCard({
                   {lbl}
                 </span>
               ))}
-              {alternateLocaleBadge && (
-                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-2 py-0.5">
-                  {alternateLocaleBadge}
-                </span>
-              )}
+              <AlternateLocaleBadge label={alternateLocaleBadge} />
             </div>
             <FormattedDate
               date={rawDate}
@@ -199,11 +196,7 @@ function RecentArticleCard({
                   {lbl}
                 </span>
               ))}
-              {alternateLocaleBadge && (
-                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-2 py-0.5">
-                  {alternateLocaleBadge}
-                </span>
-              )}
+              <AlternateLocaleBadge label={alternateLocaleBadge} />
             </div>
             <FormattedDate
               date={rawDate}
