@@ -4,7 +4,7 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
 SELECT no_plan();
-SET LOCAL app.settings.webhook_secret = 'synthetic-newsletter-test-secret';
+SELECT set_config('app.settings.webhook_secret', U&'\0009synthetic-newsletter-test-secret\00A0', true);
 SET LOCAL app.settings.site_url = 'https://newsletter.example.test';
 
 INSERT INTO auth.users (id, email, raw_user_meta_data)

@@ -228,11 +228,12 @@ BEGIN
   END IF;
 
   BEGIN
-    v_secret := current_setting('app.settings.webhook_secret', true);
+    v_secret := btrim(current_setting('app.settings.webhook_secret', true));
     IF v_secret IS NULL OR v_secret = '' THEN
-      SELECT decrypted_secret INTO v_secret
+      SELECT btrim(decrypted_secret) INTO v_secret
       FROM vault.decrypted_secrets
-      WHERE name = 'app.settings.webhook_secret' OR name = 'webhook_secret'
+      WHERE name IN ('webhook_secret', 'app.settings.webhook_secret')
+      ORDER BY CASE WHEN name = 'webhook_secret' THEN 0 ELSE 1 END, updated_at DESC
       LIMIT 1;
     END IF;
 
@@ -428,10 +429,11 @@ BEGIN
     IF TG_OP = 'INSERT' AND NEW.published_at IS NULL THEN
       NEW.published_at := timezone('utc'::text, now());
     ELSIF TG_OP = 'UPDATE' THEN
-      IF OLD.status IS DISTINCT FROM 'published'::public.publication_status AND NEW.published_at IS NULL THEN
+      IF OLD.status IS DISTINCT FROM 'published'::public.publication_status THEN
+        -- Always stamp real publication time when transitioning from draft/in_review to published
         NEW.published_at := timezone('utc'::text, now());
       ELSIF OLD.status = 'published'::public.publication_status THEN
-        -- Preserve original published_at when edited while published (unless explicitly set)
+        -- Preserve original published_at when edited while already published
         NEW.published_at := COALESCE(OLD.published_at, NEW.published_at, timezone('utc'::text, now()));
       END IF;
     END IF;

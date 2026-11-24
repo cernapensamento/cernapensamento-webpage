@@ -196,6 +196,50 @@ describe('saveArticleAction', () => {
     );
   });
 
+  it('stamps a fresh published_at when publishing an existing draft even if stale published_at is present', async () => {
+    const staleDraftDate = '2026-01-01T10:00:00Z';
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'author-1' } as unknown as User,
+      profile: { id: 'author-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
+      role: USER_ROLES.FOUNDER,
+    });
+
+    vi.mocked(dbModule.getPublicationById).mockResolvedValue({
+      id: 'pub-draft-1',
+      slug: 'borrador-antigo-abc123',
+      status: PUBLICATION_STATUSES.DRAFT,
+      created_at: staleDraftDate,
+      published_at: staleDraftDate,
+      author: { id: 'author-1' },
+    } as unknown as PublicationDetail);
+
+    vi.mocked(dbModule.updatePublication).mockResolvedValue({
+      data: { id: 'pub-draft-1' } as unknown as PublicationRow,
+      error: null,
+    });
+    vi.mocked(dbModule.syncPublicationTagsBySlugs).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+
+    const result = await saveArticleAction({
+      ...baseInput,
+      id: 'pub-draft-1',
+      action: EDITOR_ACTIONS.PUBLISH,
+    });
+
+    expect(result.success).toBe(true);
+    expect(dbModule.updatePublication).toHaveBeenCalledWith(
+      'pub-draft-1',
+      expect.objectContaining({
+        status: PUBLICATION_STATUSES.PUBLISHED,
+        published_at: expect.any(String),
+      })
+    );
+    const [, payload] = vi.mocked(dbModule.updatePublication).mock.calls[0];
+    expect(payload.published_at).not.toBe(staleDraftDate);
+  });
+
   it('clears published_at when an existing publication is returned to draft', async () => {
     vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
       user: { id: 'author-1' } as unknown as User,
