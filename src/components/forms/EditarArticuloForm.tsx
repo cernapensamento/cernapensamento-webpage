@@ -12,6 +12,7 @@ import { saveArticleAction, type SaveArticleInput } from '@/actions/articles';
 import { isDraftAction } from '@/lib/db/schema';
 import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 import { i18n, type Locale } from '@/i18n-config';
+import { getPublicationLanguageMode } from '@/lib/i18n/publicationLanguage';
 import { useLocale } from '@/hooks/useLocale';
 
 type ArticleEditorDict = Partial<Dictionary['articleEditor']>;
@@ -80,6 +81,7 @@ export function buildEditorSaveInput(
     tags: data.tags || data.tematicas || [],
     type: data.type || data.tipo,
     original_language: data.original_language || data.idioma_original || i18n.defaultLocale,
+    ...(data.language_mode ? { language_mode: data.language_mode } : {}),
     show_index: Boolean(data.show_index),
     action: options.action,
     lang: options.lang || i18n.defaultLocale,
@@ -157,6 +159,7 @@ export default function EditarArticuloForm({
         status: pub.status,
         type: pub.type,
         original_language: pub.original_language,
+        language_mode: getPublicationLanguageMode(pub),
         show_index: pub.show_index ?? false,
         published_at: pub.published_at,
       }
