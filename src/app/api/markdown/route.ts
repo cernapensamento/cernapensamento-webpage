@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       const subtitle = resolveLocalizedText(publication.subtitle, lang, actualLocale);
       const htmlContent = resolveLocalizedText(publication.content, lang, actualLocale);
       const authorName = publication.author?.full_name || SITE_FULL_NAME;
-      const canonicalUrl = `${SITE_URL}/${lang}/articulo/${publication.slug}`;
+      const canonicalUrl = `${SITE_URL}/${actualLocale}/articulo/${publication.slug}`;
 
       const markdown = formatArticleMarkdown({
         title,

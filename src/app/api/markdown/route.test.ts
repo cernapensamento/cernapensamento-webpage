@@ -144,6 +144,8 @@ describe('Markdown API Route (/api/markdown)', () => {
     expect(body).toContain('# Ensayo Solo Español');
     expect(body).toContain('Subtítulo en español');
     expect(body).toContain('Cuerpo del ensayo solo en español.');
+    expect(body).toContain('https://cernapensamento.org/es/articulo/solo-espanol');
+    expect(body).not.toContain('/gl/articulo/solo-espanol');
   });
 
   it('resolves Galician-only publication via original_language when requested with lang=es', async () => {
@@ -169,6 +171,8 @@ describe('Markdown API Route (/api/markdown)', () => {
     expect(body).toContain('# Ensaio Só Galego');
     expect(body).toContain('Subtítulo en galego');
     expect(body).toContain('Corpo do ensaio só en galego.');
+    expect(body).toContain('https://cernapensamento.org/gl/articulo/so-galego');
+    expect(body).not.toContain('/es/articulo/so-galego');
   });
 
 });
