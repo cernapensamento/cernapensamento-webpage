@@ -4,6 +4,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ArticleEditor from './ArticleEditor';
 import { parseDraft, serializeDraft } from './articleEditorUtils';
 import * as storage from '@/lib/storage';
+import * as articlesActions from '@/actions/articles';
+
+vi.mock('@/actions/articles', () => ({
+  saveArticleAction: vi.fn(),
+}));
 
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
@@ -22,11 +27,15 @@ vi.mock('@/lib/supabase/client', () => ({
   }),
 }));
 
+const mockToastSuccess = vi.fn();
+const mockToastError = vi.fn();
+const mockToastWarning = vi.fn();
+
 vi.mock('@/components/ui/FeedbackProvider', () => ({
   useToast: () => ({
-    success: vi.fn(),
-    error: vi.fn(),
-    warning: vi.fn(),
+    success: mockToastSuccess,
+    error: mockToastError,
+    warning: mockToastWarning,
   }),
   useConfirm: () => vi.fn().mockResolvedValue(true),
   usePrompt: () => vi.fn().mockResolvedValue('test'),
@@ -389,5 +398,239 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     expect(canonicalParsed?.titles).toEqual({ gl: 'Novo', es: 'Nuevo' });
     expect(canonicalParsed?.tags).toEqual(['etica']);
     expect(canonicalParsed?.showIndex).toBe(true);
+  });
+
+  it('passes publicationId to uploadStorageImage for cover and inline uploads on an existing publication', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    const uploadSpy = vi.spyOn(storage, 'uploadStorageImage')
+      .mockResolvedValueOnce({
+        publicUrl: 'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/pub-existing-42/cover-123.webp',
+        path: 'publications/pub-existing-42/cover-123.webp',
+        width: 1200,
+        height: 800,
+      })
+      .mockResolvedValueOnce({
+        publicUrl: 'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/pub-existing-42/inline/fig-123.webp',
+        path: 'publications/pub-existing-42/inline/fig-123.webp',
+        width: 800,
+        height: 600,
+      });
+
+    const { container } = render(
+      <ArticleEditor
+        mode="edit"
+        userRole="admin"
+        initialData={{
+          id: 'pub-existing-42',
+          title: { gl: 'Artigo doutra autora', es: 'Artículo de otra autora' },
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    const [coverFileInput, inlineFileInput] = container.querySelectorAll('input[type="file"]');
+
+    fireEvent.change(coverFileInput, {
+      target: { files: [new File(['cover'], 'cover.png', { type: 'image/png' })] },
+    });
+
+    await waitFor(() => {
+      expect(uploadSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: storage.STORAGE_CATEGORIES.PUBLICATION_COVER,
+          publicationId: 'pub-existing-42',
+        })
+      );
+    });
+
+    fireEvent.change(inlineFileInput, {
+      target: { files: [new File(['inline'], 'figure.png', { type: 'image/png' })] },
+    });
+
+    await waitFor(() => {
+      expect(uploadSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: storage.STORAGE_CATEGORIES.PUBLICATION_INLINE,
+          publicationId: 'pub-existing-42',
+          originalFilename: 'figure.png',
+        })
+      );
+    });
+
+    expect(articlesActions.saveArticleAction).not.toHaveBeenCalled();
+  });
+
+  it('lazily creates a draft via saveArticleAction, updates URL with replaceState, and reuses publicationId on subsequent uploads', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    const onDraftCreated = vi.fn();
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+
+    vi.mocked(articlesActions.saveArticleAction).mockResolvedValue({
+      success: true,
+      id: 'pub-lazy-99',
+      slug: 'sen-titulo-99',
+    });
+
+    const uploadSpy = vi.spyOn(storage, 'uploadStorageImage')
+      .mockResolvedValueOnce({
+        publicUrl: 'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/pub-lazy-99/cover-1.webp',
+        path: 'publications/pub-lazy-99/cover-1.webp',
+        width: 1200,
+        height: 800,
+      })
+      .mockResolvedValueOnce({
+        publicUrl: 'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/pub-lazy-99/inline/chart-1.webp',
+        path: 'publications/pub-lazy-99/inline/chart-1.webp',
+        width: 800,
+        height: 600,
+      });
+
+    const { container } = render(
+      <ArticleEditor
+        mode="create"
+        onSave={onSave}
+        onDraftCreated={onDraftCreated}
+        isPublishing={false}
+      />
+    );
+
+    const [coverFileInput, inlineFileInput] = container.querySelectorAll('input[type="file"]');
+
+    // First upload: cover triggers lazy draft creation
+    fireEvent.change(coverFileInput, {
+      target: { files: [new File(['cover'], 'cover.jpg', { type: 'image/jpeg' })] },
+    });
+
+    await waitFor(() => {
+      expect(articlesActions.saveArticleAction).toHaveBeenCalledTimes(1);
+      expect(articlesActions.saveArticleAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'draft',
+          lang: 'gl',
+        })
+      );
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '/gl/escritorio/editar/sen-titulo-99');
+      expect(onDraftCreated).toHaveBeenCalledWith({ id: 'pub-lazy-99', slug: 'sen-titulo-99' });
+      expect(uploadSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: storage.STORAGE_CATEGORIES.PUBLICATION_COVER,
+          publicationId: 'pub-lazy-99',
+        })
+      );
+    });
+
+    // Second upload: inline reuses bound publicationId without calling saveArticleAction again
+    fireEvent.change(inlineFileInput, {
+      target: { files: [new File(['inline'], 'chart.png', { type: 'image/png' })] },
+    });
+
+    await waitFor(() => {
+      expect(uploadSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: storage.STORAGE_CATEGORIES.PUBLICATION_INLINE,
+          publicationId: 'pub-lazy-99',
+          originalFilename: 'chart.png',
+        })
+      );
+    });
+    expect(articlesActions.saveArticleAction).toHaveBeenCalledTimes(1);
+
+    replaceStateSpy.mockRestore();
+  });
+
+  it('surfaces error toast and aborts upload without calling uploadStorageImage when lazy draft creation fails (e.g. Guest Author quota)', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+    const uploadSpy = vi.spyOn(storage, 'uploadStorageImage');
+
+    vi.mocked(articlesActions.saveArticleAction).mockResolvedValue({
+      success: false,
+      error: 'Alcanzaches o límite anual de publicacións para autores convidados.',
+    });
+
+    const { container } = render(
+      <ArticleEditor
+        mode="create"
+        userRole="guest"
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    const [coverFileInput] = container.querySelectorAll('input[type="file"]');
+    fireEvent.change(coverFileInput, {
+      target: { files: [new File(['cover'], 'cover.png', { type: 'image/png' })] },
+    });
+
+    await waitFor(() => {
+      expect(articlesActions.saveArticleAction).toHaveBeenCalledTimes(1);
+      expect(mockToastError).toHaveBeenCalledWith(
+        'Alcanzaches o límite anual de publicacións para autores convidados.'
+      );
+    });
+
+    expect(uploadSpy).not.toHaveBeenCalled();
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+
+    replaceStateSpy.mockRestore();
+  });
+
+  it('cleans up superseded cover and removed inline image after save succeeds for a monolingual publication', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    vi.spyOn(storage, 'uploadStorageImage').mockResolvedValue({
+      publicUrl: 'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/pub-mono-1/cover-new.webp',
+      path: 'publications/pub-mono-1/cover-new.webp',
+      width: 1200,
+      height: 800,
+    });
+
+    const { container } = render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'pub-mono-1',
+          title: { gl: 'Ensaio Monolingüe', es: '' },
+          content: {
+            gl: '<p>Texto</p><p><img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/pub-mono-1/inline/removed-fig.webp" /></p>',
+            es: '',
+          },
+          cover_image_url: 'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/pub-mono-1/cover-old.webp',
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    // Clear content to remove the inline image, then upload a new cover
+    fireEvent.click(screen.getByRole('button', { name: /limpar/i }));
+    await waitFor(() => {
+      expect(screen.queryByDisplayValue('Ensaio Monolingüe')).not.toBeInTheDocument();
+    });
+
+    const [coverFileInput] = container.querySelectorAll('input[type="file"]');
+    fireEvent.change(coverFileInput, {
+      target: { files: [new File(['new-cover'], 'new-cover.png', { type: 'image/png' })] },
+    });
+
+    await waitFor(() => {
+      expect(storage.uploadStorageImage).toHaveBeenCalledWith(
+        expect.objectContaining({ publicationId: 'pub-mono-1' })
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+      expect(removeStorageImagesSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.arrayContaining([
+          'publications/pub-mono-1/cover-old.webp',
+          'publications/pub-mono-1/inline/removed-fig.webp',
+        ])
+      );
+    });
   });
 });
