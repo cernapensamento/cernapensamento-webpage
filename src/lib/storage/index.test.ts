@@ -113,5 +113,22 @@ describe('Storage index module', () => {
         ])
       );
     });
+
+    it('inspects all locale keys present in a content map for monolingual and multilingual publications', async () => {
+      await cleanupPublicationImages(mockSupabase, {
+        coverUrl: 'https://supabase.co/storage/v1/object/public/media/publications/covers/u1/cover.webp',
+        content: {
+          es: '<p><img src="https://supabase.co/storage/v1/object/public/media/publications/inline/u1/only-es.webp" /></p>',
+        },
+      });
+
+      expect(mockFrom).toHaveBeenCalledWith('media');
+      expect(mockRemove).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          'publications/covers/u1/cover.webp',
+          'publications/inline/u1/only-es.webp',
+        ])
+      );
+    });
   });
 });

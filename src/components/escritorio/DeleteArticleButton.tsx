@@ -56,8 +56,7 @@ export default function DeleteArticleButton({ id, titulo }: Props) {
       if (pubData) {
         cleanupPublicationImages(supabase, {
           coverUrl: pubData.cover_image_url,
-          contentGl: pubData.content?.gl,
-          contentEs: pubData.content?.es,
+          content: pubData.content,
         }).catch(console.error);
       }
 

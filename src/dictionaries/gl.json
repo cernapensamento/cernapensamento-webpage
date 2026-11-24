@@ -507,6 +507,9 @@
     "tagExamplePlaceholder": "Ex: Medio Ambiente",
     "bothLangsRequired": "Debes completar ambos idiomas",
     "allLangsRequired": "Debes completar tódolos idiomas",
+    "validationMissingMonolingual": "Completa o título e o contido en {language} antes de publicar ou enviar para aprobación.",
+    "validationMissingBilingual": "En modo bilingüe debes completar o título e o contido en ambos idiomas (falta: {languages}).",
+    "validationEmptyDraft": "Escribe polo menos un título ou contido antes de gardar o borrador.",
     "createTagError": "Erro ao crear etiqueta: ",
     "createTagBtn": "+ CREAR NOVA ETIQUETA",
     "tableControls": {
