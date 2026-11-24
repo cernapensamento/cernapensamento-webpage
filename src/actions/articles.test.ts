@@ -3,11 +3,15 @@ import {
   saveArticleAction,
   fetchMoreArticlesAction,
   updateArticleState,
+  deleteArticleAction,
 } from './articles';
 import { USER_ROLES, PUBLICATION_STATUSES, EDITOR_ACTIONS } from '@/lib/db/schema';
 import * as authModule from '@/lib/auth';
 import * as dbModule from '@/lib/db';
-import type { User } from '@supabase/supabase-js';
+import * as supabaseServerModule from '@/lib/supabase/server';
+import * as storageModule from '@/lib/storage';
+import { revalidatePath } from 'next/cache';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type { ProfileRow, PublicationRow, PublicationDetail, PublicationCardItem } from '@/lib/db';
 
 vi.mock('next/cache', () => ({
@@ -18,6 +22,19 @@ vi.mock('@/lib/auth', () => ({
   getAuthenticatedUser: vi.fn(),
 }));
 
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(),
+}));
+
+vi.mock('@/lib/storage', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/storage')>();
+  return {
+    ...actual,
+    sweepPublicationStorageFolder: vi.fn(),
+    cleanupPublicationImages: vi.fn(),
+  };
+});
+
 vi.mock('@/lib/db', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/db')>();
   return {
@@ -25,6 +42,8 @@ vi.mock('@/lib/db', async (importOriginal) => {
     createPublication: vi.fn(),
     updatePublication: vi.fn(),
     getPublicationById: vi.fn(),
+    getPublicationAssetsForCleanup: vi.fn(),
+    deletePublication: vi.fn(),
     syncPublicationTagsBySlugs: vi.fn(),
     getPublicationCards: vi.fn(),
     updatePublicationStatus: vi.fn(),
@@ -414,5 +433,112 @@ describe('updateArticleState', () => {
     const result = await updateArticleState('pub-1', PUBLICATION_STATUSES.PUBLISHED);
     expect(result.success).toBe(true);
     expect(dbModule.updatePublicationStatus).toHaveBeenCalledWith('pub-1', PUBLICATION_STATUSES.PUBLISHED);
+  });
+});
+
+describe('deleteArticleAction', () => {
+  const mockSsrClient = { storage: {} } as unknown as SupabaseClient;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(supabaseServerModule.createClient).mockResolvedValue(mockSsrClient);
+    vi.mocked(storageModule.sweepPublicationStorageFolder).mockResolvedValue(undefined);
+    vi.mocked(storageModule.cleanupPublicationImages).mockResolvedValue(undefined);
+  });
+
+  it('rejects unauthenticated callers without touching DB or storage', async () => {
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: null,
+      profile: null,
+      role: null,
+    });
+
+    const result = await deleteArticleAction('pub-123', 'gl');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Non autorizado');
+    expect(dbModule.deletePublication).not.toHaveBeenCalled();
+    expect(storageModule.sweepPublicationStorageFolder).not.toHaveBeenCalled();
+    expect(storageModule.cleanupPublicationImages).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('deletes the DB row first via the authenticated SSR client and sweeps storage + legacy assets only after DB deletion succeeds', async () => {
+    const callOrder: string[] = [];
+
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'member-1' } as unknown as User,
+      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
+      role: USER_ROLES.MEMBER,
+    });
+
+    vi.mocked(dbModule.getPublicationAssetsForCleanup).mockImplementation(async () => {
+      callOrder.push('fetchAssets');
+      return {
+        cover_image_url: 'https://example.supabase.co/storage/v1/object/public/media/portadas/legacy-cover.webp',
+        content: {
+          gl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/legacy-gl.webp" /></p>',
+          es: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/legacy-es.webp" /></p>',
+        },
+      };
+    });
+
+    vi.mocked(dbModule.deletePublication).mockImplementation(async () => {
+      callOrder.push('deleteDb');
+      return { success: true, error: null };
+    });
+
+    vi.mocked(storageModule.sweepPublicationStorageFolder).mockImplementation(async () => {
+      callOrder.push('sweepFolder');
+    });
+
+    vi.mocked(storageModule.cleanupPublicationImages).mockImplementation(async () => {
+      callOrder.push('cleanupLegacy');
+    });
+
+    const result = await deleteArticleAction('pub-123', 'es');
+
+    expect(result).toEqual({ success: true });
+    expect(dbModule.getPublicationAssetsForCleanup).toHaveBeenCalledWith('pub-123', mockSsrClient);
+    expect(dbModule.deletePublication).toHaveBeenCalledWith('pub-123', mockSsrClient);
+    expect(callOrder).toEqual(['fetchAssets', 'deleteDb', 'sweepFolder', 'cleanupLegacy']);
+    expect(storageModule.sweepPublicationStorageFolder).toHaveBeenCalledWith(expect.anything(), 'pub-123');
+    expect(storageModule.cleanupPublicationImages).toHaveBeenCalledWith(expect.anything(), {
+      coverUrl: 'https://example.supabase.co/storage/v1/object/public/media/portadas/legacy-cover.webp',
+      contentGl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/legacy-gl.webp" /></p>',
+      contentEs: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/legacy-es.webp" /></p>',
+    });
+    expect(revalidatePath).toHaveBeenCalledWith('/gl');
+    expect(revalidatePath).toHaveBeenCalledWith('/gl/articulos');
+    expect(revalidatePath).toHaveBeenCalledWith('/gl/escritorio');
+    expect(revalidatePath).toHaveBeenCalledWith('/es');
+    expect(revalidatePath).toHaveBeenCalledWith('/es/articulos');
+    expect(revalidatePath).toHaveBeenCalledWith('/es/escritorio');
+  });
+
+  it('performs zero storage mutations and returns a localized error when DB deletion is blocked by RLS or fails', async () => {
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'member-1' } as unknown as User,
+      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
+      role: USER_ROLES.MEMBER,
+    });
+
+    vi.mocked(dbModule.getPublicationAssetsForCleanup).mockResolvedValue({
+      cover_image_url: 'https://example.supabase.co/storage/v1/object/public/media/publications/pub-published/cover.webp',
+      content: { gl: '', es: '' },
+    });
+
+    vi.mocked(dbModule.deletePublication).mockResolvedValue({
+      success: false,
+      error: new Error('RLS blocked deletion or row not found'),
+    });
+
+    const result = await deleteArticleAction('pub-published', 'es');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBeTruthy();
+    expect(storageModule.sweepPublicationStorageFolder).not.toHaveBeenCalled();
+    expect(storageModule.cleanupPublicationImages).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

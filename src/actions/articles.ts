@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from 'next/cache';
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getAuthenticatedUser } from '@/lib/auth';
+import { createClient as createServerSupabaseClient } from '@/lib/supabase/server';
 import { getDictionary } from '@/dictionaries';
 import { i18n, isSupportedLocale, type Locale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
@@ -9,6 +11,8 @@ import {
   updatePublicationStatus,
   getPublicationCards,
   getPublicationById,
+  getPublicationAssetsForCleanup,
+  deletePublication,
   createPublication,
   updatePublication,
   syncPublicationTagsBySlugs,
@@ -35,6 +39,10 @@ import {
   updatePublicationSlugIfNeeded,
 } from '@/lib/utils/slug';
 import { stripIndex } from '@/lib/editor/generateIndex';
+import {
+  cleanupPublicationImages,
+  sweepPublicationStorageFolder,
+} from '@/lib/storage';
 
 export interface SaveArticleInput {
   id?: string;
@@ -368,6 +376,84 @@ export async function updateArticleState(
     return { success: true };
   } catch (err: unknown) {
     console.error('[Action:updateArticleState] Unexpected error:', formatDbError(err));
+    const message = err instanceof Error ? err.message : edDict.serverError;
+    return { success: false, error: message };
+  }
+}
+
+export interface DeleteArticleResult {
+  success: boolean;
+  error?: string;
+}
+
+function createStorageSweepClient(fallback: SupabaseClient): SupabaseClient {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    return fallback;
+  }
+  return createSupabaseClient(supabaseUrl, serviceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
+/**
+ * Deletes a publication using the caller's authenticated Supabase SSR client first
+ * (preserving PostgreSQL RLS so writers cannot delete published articles or others' drafts),
+ * and only after DB deletion succeeds sweeps the entire `publications/{publicationId}/`
+ * storage folder plus any legacy asset references, then revalidates localized paths.
+ */
+export async function deleteArticleAction(
+  publicationId: string,
+  lang: Locale | string = i18n.defaultLocale
+): Promise<DeleteArticleResult> {
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+  const edDict = dict.articleEditor;
+
+  try {
+    const { user, profile } = await getAuthenticatedUser();
+    if (!user || !profile) {
+      return { success: false, error: edDict.unauthorized };
+    }
+
+    const supabase = await createServerSupabaseClient();
+    const pubAssets = await getPublicationAssetsForCleanup(publicationId, supabase);
+
+    const { success, error } = await deletePublication(publicationId, supabase);
+    if (!success || error) {
+      console.warn('[Action:deleteArticle] Failed to delete publication:', formatDbError(error));
+      const errMsg = error ? formatDbError(error) : '';
+      return {
+        success: false,
+        error: errMsg || dict.dashboard.deleteError,
+      };
+    }
+
+    const storageClient = createStorageSweepClient(supabase);
+    await sweepPublicationStorageFolder(storageClient, publicationId);
+
+    if (pubAssets) {
+      await cleanupPublicationImages(storageClient, {
+        coverUrl: pubAssets.cover_image_url,
+        contentGl: pubAssets.content?.gl,
+        contentEs: pubAssets.content?.es,
+      });
+    }
+
+    for (const loc of i18n.locales) {
+      revalidatePath(`/${loc}`);
+      revalidatePath(`/${loc}/articulos`);
+      revalidatePath(`/${loc}/escritorio`);
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error('[Action:deleteArticle] Unexpected error:', formatDbError(err));
     const message = err instanceof Error ? err.message : edDict.serverError;
     return { success: false, error: message };
   }
