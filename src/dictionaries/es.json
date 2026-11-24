@@ -527,6 +527,8 @@
     "languageModeLabel": "Modo de idioma",
     "languageModeBilingual": "Bilingüe",
     "languageModeMonolingual": "Monolingüe",
+    "monolingualLangLabel": "Idioma de la publicación",
+    "monolingualIn": "Solo en",
     "languageModeHint": "Alternar entre publicación bilingüe (gallego y castellano) y monolingüe (un solo idioma).",
     "downgradeConfirmTitle": "¿Eliminar la traducción existente?",
     "downgradeConfirmDesc": "Esta publicación tenía una traducción guardada en {language}. Al guardar en modo monolingüe se eliminará esa versión y sus imágenes exclusivas.",

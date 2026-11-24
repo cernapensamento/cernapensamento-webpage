@@ -281,13 +281,14 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
       />
     );
 
-    const tocSwitch = screen.getByRole('switch', { name: /índice automático/i });
-    expect(tocSwitch).toHaveAttribute('aria-checked', 'false');
+    const tocButton = screen.getByRole('button', { name: /táboa de contidos/i });
+    expect(tocButton).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('switch', { name: /índice automático/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: /índice do artigo/i })).not.toBeInTheDocument();
 
-    // Turn index on and confirm live writing preview appears above the editor body
-    fireEvent.click(tocSwitch);
-    expect(tocSwitch).toHaveAttribute('aria-checked', 'true');
+    // Turn index on via top toolbar and confirm live writing preview appears above the editor body
+    fireEvent.click(tocButton);
+    expect(tocButton).toHaveAttribute('aria-pressed', 'true');
     const liveNav = await screen.findByRole('navigation', { name: /índice do artigo/i });
     expect(liveNav).toHaveTextContent('Primeira Parte');
     expect(liveNav).toHaveTextContent('Subparte');
@@ -333,8 +334,8 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
       />
     );
 
-    const tocSwitch = screen.getByRole('switch', { name: /índice automático/i });
-    expect(tocSwitch).toHaveAttribute('aria-checked', 'true');
+    const tocButton = screen.getByRole('button', { name: /táboa de contidos/i });
+    expect(tocButton).toHaveAttribute('aria-pressed', 'true');
     const liveNav = await screen.findByRole('navigation', { name: /índice do artigo/i });
     expect(liveNav).toHaveTextContent('Sección Legada');
 
@@ -440,12 +441,18 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
       expect(screen.getByText('Cuerpo exclusivamente en español.')).toBeInTheDocument();
     });
 
-    // AI Translate button and Original Language selector hidden in Monolingual mode
+    // Only the active Spanish tab is shown in Monolingual mode (Galician tab hidden)
+    expect(screen.getByRole('button', { name: /^castellano$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^galego$/i })).not.toBeInTheDocument();
+
+    // AI Translate button is hidden; single-language selector is shown with 'es' selected
     expect(screen.queryByRole('button', { name: /traducir a/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /idioma orixinal/i })).not.toBeInTheDocument();
+    const singleLangSelect = screen.getByRole('combobox', { name: /idioma da publicación/i });
+    expect(singleLangSelect).toHaveValue('es');
   });
 
-  it('updates both active language and original_language when switching locales in Monolingual mode', async () => {
+  it('shows only the selected language tab and updates both active language and original_language via the monolingual selector', async () => {
     const onSave = vi.fn().mockResolvedValue(true);
 
     render(
@@ -456,10 +463,18 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
       />
     );
 
-    // Toggle to Monolingual mode
+    // Toggle to Monolingual mode -> only Galego tab visible
     fireEvent.click(screen.getByRole('switch', { name: /modo de idioma/i }));
-    // Switch to Spanish
-    fireEvent.click(screen.getByRole('button', { name: /^castellano$/i }));
+    expect(screen.getByRole('button', { name: /^galego$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^castellano$/i })).not.toBeInTheDocument();
+
+    // Switch single language to Spanish via the monolingual selector
+    const singleLangSelect = screen.getByRole('combobox', { name: /idioma da publicación/i });
+    fireEvent.change(singleLangSelect, { target: { value: 'es' } });
+
+    // Now only Castellano tab is visible
+    expect(screen.getByRole('button', { name: /^castellano$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^galego$/i })).not.toBeInTheDocument();
 
     const titleInput = screen.getByPlaceholderText(/el título de tu investigación/i);
     fireEvent.change(titleInput, { target: { value: 'Título Monolingüe ES' } });
@@ -717,7 +732,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
       />
     );
     fireEvent.click(screen.getByRole('button', { name: /^publicar$/i }));
-    expect(screen.getByText(/só en galego/i)).toBeInTheDocument();
+    expect(screen.getByText(/idiomas a publicar/i).parentElement).toHaveTextContent(/só en galego/i);
     unmountGl();
 
     // 3. Monolingual Spanish
@@ -736,6 +751,6 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
       />
     );
     fireEvent.click(screen.getByRole('button', { name: /^publicar$/i }));
-    expect(screen.getByText(/só en castellano/i)).toBeInTheDocument();
+    expect(screen.getByText(/idiomas a publicar/i).parentElement).toHaveTextContent(/só en castellano/i);
   });
 });

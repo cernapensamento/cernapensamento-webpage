@@ -940,8 +940,6 @@ export default function ArticleEditor({
               onChangeType={setTipo}
               originalLanguage={idiomaOriginal}
               onChangeOriginalLanguage={setIdiomaOriginal}
-              showIndex={showIndex}
-              onToggleShowIndex={() => setShowIndex((prev) => !prev)}
               title={titles[activeLang] || ''}
               onChangeTitle={(val) =>
                 setTitles((prev) => ({ ...prev, [activeLang]: val }))

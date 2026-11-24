@@ -28,8 +28,6 @@ interface ArticleMetadataSectionProps {
   onChangeType: (type: string) => void;
   originalLanguage: Locale;
   onChangeOriginalLanguage: (lang: Locale) => void;
-  showIndex: boolean;
-  onToggleShowIndex: () => void;
   title: string;
   onChangeTitle: (value: string) => void;
   subtitle: string;
@@ -50,8 +48,6 @@ export default function ArticleMetadataSection({
   onChangeType,
   originalLanguage,
   onChangeOriginalLanguage,
-  showIndex,
-  onToggleShowIndex,
   title,
   onChangeTitle,
   subtitle,
@@ -63,6 +59,7 @@ export default function ArticleMetadataSection({
   const activeEditorDict = getDictionaryClient(activeLang).articleEditor;
 
   const isMonolingual = languageMode === 'monolingual';
+  const visibleTabs = isMonolingual ? [activeLang] : i18n.locales;
   const targetLangs = i18n.locales.filter((loc) => loc !== activeLang);
   const translateTargetLabels = targetLangs
     .map((loc) => i18n.localeLabels[loc] || loc.toUpperCase())
@@ -72,7 +69,7 @@ export default function ArticleMetadataSection({
     <>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b border-lines">
         <div className="flex items-center gap-4">
-          {i18n.locales.map((loc) => {
+          {visibleTabs.map((loc) => {
             const label = i18n.localeLabels[loc] || loc.toUpperCase();
             return (
               <button
@@ -108,7 +105,7 @@ export default function ArticleMetadataSection({
               className="material-symbols-outlined text-[16px]"
               style={{ fontFamily: 'Material Symbols Outlined' }}
             >
-              {isMonolingual ? 'looks_one' : 'translate'}
+              translate
             </span>
             <span>
               {isMonolingual ? dict.languageModeMonolingual : dict.languageModeBilingual}
@@ -166,7 +163,34 @@ export default function ArticleMetadataSection({
             })}
           </select>
 
-          {!isMonolingual && (
+          {isMonolingual ? (
+            <select
+              aria-label={dict.monolingualLangLabel}
+              className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
+              value={activeLang}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (isSupportedLocale(val)) onSwitchLang(val);
+              }}
+              style={{ colorScheme: 'light dark' }}
+            >
+              {i18n.locales.map((loc) => {
+                const label = i18n.localeLabels[loc] || loc.toUpperCase();
+                return (
+                  <option
+                    key={loc}
+                    value={loc}
+                    style={{
+                      backgroundColor: 'var(--dynamic-surface)',
+                      color: 'var(--dynamic-charcoal)',
+                    }}
+                  >
+                    {`${dict.monolingualIn} ${label}`}
+                  </option>
+                );
+              })}
+            </select>
+          ) : (
             <select
               aria-label={dict.originalLang}
               className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
@@ -194,28 +218,6 @@ export default function ArticleMetadataSection({
               })}
             </select>
           )}
-
-          <button
-            type="button"
-            role="switch"
-            aria-checked={showIndex}
-            aria-label={dict.showIndexLabel}
-            title={dict.showIndexHint}
-            onClick={onToggleShowIndex}
-            className={`flex items-center gap-2 border px-3 py-2 text-xs font-sans uppercase tracking-widest font-bold transition-colors cursor-pointer ${
-              showIndex
-                ? 'border-gold bg-gold/10 text-gold'
-                : 'border-lines bg-transparent text-charcoal/60 hover:border-gold/60 hover:text-charcoal'
-            }`}
-          >
-            <span
-              className="material-symbols-outlined text-[16px]"
-              style={{ fontFamily: 'Material Symbols Outlined' }}
-            >
-              {showIndex ? 'check_box' : 'check_box_outline_blank'}
-            </span>
-            <span>{dict.showIndexLabel}</span>
-          </button>
         </div>
 
         <textarea
