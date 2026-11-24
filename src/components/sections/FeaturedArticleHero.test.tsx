@@ -131,4 +131,23 @@ describe('FeaturedArticleHero', () => {
     expect(screen.getByRole('heading', { name: 'Título legado ES' })).toBeInTheDocument();
     expect(screen.getByText('Subtítulo legado ES')).toBeInTheDocument();
   });
+
+  it('shows alternate-locale badge only when hero publication is monolingual in another locale', () => {
+    const monoEsHero = {
+      id: 'hero-es-1',
+      slug: 'heroe-es',
+      type: 'essay',
+      original_language: 'es',
+      title: { es: 'Ensayo destacado en español' },
+      subtitle: { es: 'Subtítulo destacado en español' },
+      author: { full_name: 'Diego Araújo' },
+    };
+
+    const { rerender } = render(<FeaturedArticleHero articulo={monoEsHero} lang="gl" />);
+    expect(screen.getByRole('heading', { name: 'Ensayo destacado en español' })).toBeInTheDocument();
+    expect(screen.getByText('En castelán')).toBeInTheDocument();
+
+    rerender(<FeaturedArticleHero articulo={monoEsHero} lang="es" />);
+    expect(screen.queryByText(/^(En español|En castelán|En gallego|En galego)$/i)).not.toBeInTheDocument();
+  });
 });

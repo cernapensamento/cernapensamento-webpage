@@ -27,6 +27,7 @@ export interface AuthorDirectoryItem {
   latest_publication_at: string | null;
   latest_publication_title: string | null;
   latest_publication_slug: string | null;
+  latest_publication_language_badge?: string | null;
   publication_types: PublicationType[];
 }
 
@@ -231,9 +232,16 @@ function AuthorCard({
       {/* Footer: Latest Work Leaf & Action */}
       <div className="pt-4 border-t border-lines/60 flex flex-col gap-3">
         <div className="min-w-0">
-          <span className="block font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-gold">
-            {dict.latestWork}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="block font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-gold">
+              {dict.latestWork}
+            </span>
+            {author.latest_publication_language_badge && (
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-1.5 py-0.5">
+                {author.latest_publication_language_badge}
+              </span>
+            )}
+          </div>
           <span className="mt-0.5 block truncate font-serif text-xs sm:text-sm font-semibold text-charcoal/85">
             {author.latest_publication_title || '—'}
           </span>

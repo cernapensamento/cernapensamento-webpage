@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
 import { resolveAuthorBio, resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
+import { resolveAlternateLocaleBadge } from '@/components/features/publicationCardHelpers';
 import { getColumnistBySlug } from '@/lib/columnists';
 import { SITE_NAME } from '@/lib/constants';
 import { getPublishedAuthors } from '@/lib/db';
@@ -46,7 +47,22 @@ export default async function AutoresPage({ params }: Props) {
     const bio = resolveAuthorBio(author, dict.authors, locale);
 
     const latestPublicationTitle = author.latest_publication_title
-      ? resolveLocalizedText(author.latest_publication_title, locale)
+      ? resolveLocalizedText(
+          author.latest_publication_title,
+          locale,
+          author.latest_publication_original_language || locale
+        )
+      : null;
+    const latestPublicationLanguageBadge = author.latest_publication_title
+      ? resolveAlternateLocaleBadge(
+          {
+            id: author.latest_publication_slug || author.id,
+            title: author.latest_publication_title,
+            original_language: author.latest_publication_original_language,
+          },
+          locale,
+          dict
+        )
       : null;
 
     return {
@@ -60,6 +76,7 @@ export default async function AutoresPage({ params }: Props) {
       latest_publication_at: author.latest_publication_at,
       latest_publication_title: latestPublicationTitle,
       latest_publication_slug: author.latest_publication_slug,
+      latest_publication_language_badge: latestPublicationLanguageBadge,
       publication_types: author.publication_types,
     };
   });
