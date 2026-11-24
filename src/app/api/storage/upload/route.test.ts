@@ -256,6 +256,25 @@ describe('POST /api/storage/upload', () => {
     });
   });
 
+  it('does not pass non-square WebP avatars through uncropped', async () => {
+    const nonSquareWebp = await createWebpBuffer(400, 200);
+    const req = makeUploadRequest(
+      {
+        file: new Blob([new Uint8Array(nonSquareWebp)], { type: 'image/webp' }),
+        category: 'profile_avatar',
+      },
+      'wide-avatar.webp'
+    );
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    const [, uploadedBuffer] = mockUpload.mock.calls[0];
+    expect(Buffer.compare(uploadedBuffer, nonSquareWebp)).not.toBe(0);
+    const meta = await sharp(uploadedBuffer).metadata();
+    expect(meta.format).toBe('webp');
+  });
+
   it('converts JPEG/PNG to WebP and resizes oversized images without upscaling', async () => {
     // Oversized avatar (1000x800) -> resized to 512x512 cover fit WebP
     const bigPng = await createPngBuffer(1000, 800);

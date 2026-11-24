@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import sharp from 'sharp';
+import sharp, { type Metadata } from 'sharp';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import {
@@ -102,7 +102,7 @@ export async function POST(req: Request) {
     }
 
     const inputBuffer = Buffer.from(await rawFile.arrayBuffer());
-    let metadata: sharp.Metadata;
+    let metadata: Metadata;
     try {
       metadata = await sharp(inputBuffer).metadata();
     } catch {
@@ -122,10 +122,13 @@ export async function POST(req: Request) {
     let width: number;
     let height: number;
 
+    const satisfiesFit = preset.fit !== 'cover' || metadata.width === metadata.height;
+
     const isAlreadyValidInBoundsWebp =
       metadata.format === 'webp' &&
       metadata.width <= preset.maxWidth &&
       metadata.height <= preset.maxHeight &&
+      satisfiesFit &&
       inputBuffer.byteLength <= MAX_OUTPUT_BYTES;
 
     if (isAlreadyValidInBoundsWebp) {
@@ -150,7 +153,8 @@ export async function POST(req: Request) {
     }
 
     if (outputBuffer.byteLength > MAX_OUTPUT_BYTES) {
-      return NextResponse.json({ error: 'FILE_TOO_LARGE:5' }, { status: 413 });
+      const maxOutputMb = Math.round(MAX_OUTPUT_BYTES / (1024 * 1024));
+      return NextResponse.json({ error: `FILE_TOO_LARGE:${maxOutputMb}` }, { status: 413 });
     }
 
     const filenameFromBlob = rawFile instanceof File ? rawFile.name : undefined;

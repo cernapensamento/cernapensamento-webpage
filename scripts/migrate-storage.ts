@@ -9,7 +9,7 @@
  * Environment variables:
  *   NEXT_PUBLIC_SUPABASE_URL    Supabase project URL
  *   SUPABASE_SERVICE_ROLE_KEY   Supabase service_role key (required for storage & DB)
- *   DATABASE_URL                Optional Postgres connection string for single-transaction SQL updates via psql
+ *   DATABASE_URL                Required for live migrate: Postgres connection string for single-transaction SQL updates via psql
  */
 
 import { execFileSync } from 'node:child_process';
@@ -156,65 +156,45 @@ function createSupabaseDbAdapter(
       return (data ?? []) as MigrationPublicationRow[];
     },
     async applyUpdatesInTransaction(updates: MigrationDbUpdates): Promise<void> {
-      if (databaseUrl) {
-        const statements: string[] = ['BEGIN;'];
-        for (const u of updates.users) {
-          statements.push(
-            `UPDATE public.${DB_TABLES.USERS} SET ${USER_COLS.AVATAR_URL} = ${sqlLiteral(
-              u.avatar_url
-            )} WHERE ${USER_COLS.ID} = ${sqlLiteral(u.id)};`
-          );
-        }
-        for (const p of updates.publications) {
-          const sets: string[] = [];
-          if (p.cover_image_url !== undefined) {
-            sets.push(
-              `${PUBLICATION_COLS.COVER_IMAGE_URL} = ${sqlLiteral(p.cover_image_url)}`
-            );
-          }
-          if (p.content !== undefined) {
-            sets.push(
-              `${PUBLICATION_COLS.CONTENT} = ${sqlLiteral(JSON.stringify(p.content))}::jsonb`
-            );
-          }
-          if (sets.length > 0) {
-            statements.push(
-              `UPDATE public.${DB_TABLES.PUBLICATIONS} SET ${sets.join(', ')} WHERE ${
-                PUBLICATION_COLS.ID
-              } = ${sqlLiteral(p.id)};`
-            );
-          }
-        }
-        statements.push('COMMIT;');
-        execFileSync('psql', [databaseUrl, '-v', 'ON_ERROR_STOP=1'], {
-          input: statements.join('\n'),
-          stdio: ['pipe', 'inherit', 'inherit'],
-        });
-        return;
+      if (!databaseUrl) {
+        throw new Error(
+          'DATABASE_URL is required to apply live database updates atomically in a single transaction.'
+        );
       }
 
-      // Fallback when DATABASE_URL is not provided: sequential service_role updates
+      const statements: string[] = ['BEGIN;'];
       for (const u of updates.users) {
-        const { error } = await supabase
-          .from(DB_TABLES.USERS)
-          .update({ [USER_COLS.AVATAR_URL]: u.avatar_url })
-          .eq(USER_COLS.ID, u.id);
-        if (error) throw new Error(`Failed to update user ${u.id}: ${error.message}`);
+        statements.push(
+          `UPDATE public.${DB_TABLES.USERS} SET ${USER_COLS.AVATAR_URL} = ${sqlLiteral(
+            u.avatar_url
+          )} WHERE ${USER_COLS.ID} = ${sqlLiteral(u.id)};`
+        );
       }
       for (const p of updates.publications) {
-        const payload: Record<string, unknown> = {};
+        const sets: string[] = [];
         if (p.cover_image_url !== undefined) {
-          payload[PUBLICATION_COLS.COVER_IMAGE_URL] = p.cover_image_url;
+          sets.push(
+            `${PUBLICATION_COLS.COVER_IMAGE_URL} = ${sqlLiteral(p.cover_image_url)}`
+          );
         }
         if (p.content !== undefined) {
-          payload[PUBLICATION_COLS.CONTENT] = p.content;
+          sets.push(
+            `${PUBLICATION_COLS.CONTENT} = ${sqlLiteral(JSON.stringify(p.content))}::jsonb`
+          );
         }
-        const { error } = await supabase
-          .from(DB_TABLES.PUBLICATIONS)
-          .update(payload)
-          .eq(PUBLICATION_COLS.ID, p.id);
-        if (error) throw new Error(`Failed to update publication ${p.id}: ${error.message}`);
+        if (sets.length > 0) {
+          statements.push(
+            `UPDATE public.${DB_TABLES.PUBLICATIONS} SET ${sets.join(', ')} WHERE ${
+              PUBLICATION_COLS.ID
+            } = ${sqlLiteral(p.id)};`
+          );
+        }
       }
+      statements.push('COMMIT;');
+      execFileSync('psql', [databaseUrl, '-v', 'ON_ERROR_STOP=1'], {
+        input: statements.join('\n'),
+        stdio: ['pipe', 'inherit', 'inherit'],
+      });
     },
   };
 }

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  STORAGE_BUCKET,
   STORAGE_PRESETS,
   ALLOWED_IMAGE_MIME_TYPES,
   type StorageCategory,
