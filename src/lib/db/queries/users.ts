@@ -280,7 +280,7 @@ export async function getPublishedAuthors(
             latest_publication_at: row.published_at || row.created_at,
             latest_publication_title: row.title,
             latest_publication_slug: row.slug,
-            latest_publication_original_language: row.original_language || 'gl',
+            latest_publication_original_language: row.original_language || i18n.defaultLocale,
             publication_types: [row.type],
           });
           continue;

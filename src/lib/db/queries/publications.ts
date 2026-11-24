@@ -6,6 +6,7 @@
 
 import { resolveClient } from '../resolveClient';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
+import { i18n } from '@/i18n-config';
 import { sanitizeStorageUrl } from '@/lib/storage/paths';
 import {
   DB_TABLES,
@@ -514,7 +515,7 @@ export async function getPublicationCards(
       cover_image_url: cleanImageUrl(row.cover_image_url),
       type: row.type,
       status: row.status,
-      original_language: row.original_language || 'gl',
+      original_language: row.original_language || i18n.defaultLocale,
       is_pinned: row.is_pinned ?? false,
       created_at: row.created_at,
       updated_at: row.updated_at,
