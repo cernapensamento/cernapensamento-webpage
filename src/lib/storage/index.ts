@@ -135,27 +135,34 @@ export async function removeStorageImages(
 
 /**
  * Attempts deletion of the cover and unique recognized inline image paths from
- * both Galician and Spanish HTML. Inline paths are resolved in `media`; the cover
- * retains its recognized bucket. Returned storage errors are ignored, while
- * thrown SDK errors propagate. Empty input performs no deletions.
+ * all locale entries present in `content` (and legacy `contentGl`/`contentEs` params).
+ * Inline paths are resolved in `media`; the cover retains its recognized bucket.
+ * Returned storage errors are ignored, while thrown SDK errors propagate.
+ * Empty input performs no deletions.
  */
 export async function cleanupPublicationImages(
   supabase: SupabaseClient,
   {
     coverUrl,
+    content,
     contentGl,
     contentEs,
   }: {
     coverUrl?: string | null;
+    content?: Record<string, string | null | undefined> | null;
     contentGl?: string | null;
     contentEs?: string | null;
   }
 ): Promise<void> {
-  const inlineGl = extractInlineStoragePaths(contentGl);
-  const inlineEs = extractInlineStoragePaths(contentEs);
+  const htmlValues: (string | null | undefined)[] = [
+    ...(content ? Object.values(content) : []),
+    contentGl,
+    contentEs,
+  ];
+  const inlinePaths = htmlValues.flatMap((html) => extractInlineStoragePaths(html));
 
   const allItems = Array.from(
-    new Set([...(coverUrl ? [coverUrl] : []), ...inlineGl, ...inlineEs])
+    new Set([...(coverUrl ? [coverUrl] : []), ...inlinePaths])
   );
 
   if (allItems.length > 0) {
