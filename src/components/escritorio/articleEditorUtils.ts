@@ -196,13 +196,13 @@ export function collectSupersededStoragePaths({
     .map((url) => extractStoragePathFromUrl(url))
     .filter((p): p is string => Boolean(p));
 
+  const newCoverPath = extractStoragePathFromUrl(currentCoverUrl);
   const inlinePathsToDelete = [
-    ...oldInlinePaths.filter((p) => !newInlinePaths.has(p)),
-    ...uploadedInlinePaths.filter((p) => !newInlinePaths.has(p)),
+    ...oldInlinePaths.filter((p) => p !== newCoverPath && !newInlinePaths.has(p)),
+    ...uploadedInlinePaths.filter((p) => p !== newCoverPath && !newInlinePaths.has(p)),
   ];
 
   const savedCoverPath = extractStoragePathFromUrl(savedCoverUrl);
-  const newCoverPath = extractStoragePathFromUrl(currentCoverUrl);
   const uploadedCoverPaths = uploadedCoverUrls
     .map((url) => extractStoragePathFromUrl(url))
     .filter((p): p is string => Boolean(p));

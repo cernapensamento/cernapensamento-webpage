@@ -47,13 +47,20 @@ Full review standards are in `CODING_STANDARDS.md`.
 ## Git Lifecycle & Verification Protocol
 
 ### Stage 1: Isolated Git Worktree
-Never work directly on `development` or `main`. Create a dedicated worktree under `.worktrees/` branched from `development`:
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:c266c95aa4454d50e42a02e5f54961a20b4c1e12cb8fc13731e9cbce0585b4ee -->
+
+Never work directly on `development` or `main`. From the checkout that hosts `development`, create a dedicated worktree under `.worktrees/` branched from `development`:
 ```bash
-git worktree add .worktrees/<branch-name> -b <branch-name> development
-cd .worktrees/<branch-name>
+repo_root="$(git rev-parse --show-toplevel)"
+git -C "$repo_root" worktree add .worktrees/<branch-name> -b <branch-name> development
+cd "$repo_root/.worktrees/<branch-name>"
 ln -snf ../../.env.local .env.local
 ln -snf ../../node_modules node_modules
 ```
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 ### Stage 2: Surgical Implementation & Local Verification
 Keep edits focused and minimal. Before reporting work ready, run:
@@ -82,15 +89,22 @@ npx supabase db dump --local -f database/full_schema.sql
 Stage files individually using Conventional Commits (`feat:`, `fix:`, `refactor:`, `style:`, `test:`, `docs:`, `chore:`). Never use blanket `git add .` or `git commit -am`.
 
 ### Stage 5: Merge to `development`, Cleanup & Release
-After explicit user approval:
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:e462f35cf30216d8e9388605fffdf1dc7f7438d47e3a8970cc4bb6f91bb94079 -->
+
+After explicit user approval, return to the checkout root recorded in Stage 1. If using a new shell, set `repo_root` to that checkout root first.
+
 ```bash
-cd /home/pablo/Projects/Cerna
-git checkout development
-git merge <branch-name> --no-ff -m "merge: merge <branch-name> into development"
-git push origin development
-git worktree remove .worktrees/<branch-name>
+cd "${repo_root:?Set repo_root to the checkout that hosts development}" &&
+git checkout development &&
+git merge <branch-name> --no-ff -m "merge: merge <branch-name> into development" &&
+git push origin development &&
+git worktree remove .worktrees/<branch-name> &&
 git branch -d <branch-name>
 ```
+
+<!-- /coderabbit-ai-generated:v1 -->
 **Production release (`development` → `main`):** Verify `development` matches `origin/development`, run `lint` / `typecheck` / `test` / `build` / `db:reset`, push pending migrations (`npx supabase db push`) and verify `database/full_schema.sql` is synced, then open the PR via `gh pr create --base main --head development` covering Summary, DB/Env impact, Verification results, and post-merge tag (`vX.Y.Z`) + production smoke checks.
 
 ## Local Supabase & Test Accounts

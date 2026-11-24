@@ -5,12 +5,12 @@ import ArticleEditor from './ArticleEditor';
 import { parseDraft, serializeDraft } from './articleEditorUtils';
 import * as storage from '@/lib/storage';
 
+const mockGetUser = vi.fn().mockResolvedValue({ data: { user: { id: 'usr-test' } } });
+
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: { user: { id: 'usr-test' } },
-      }),
+      getUser: mockGetUser,
     },
     from: () => ({
       select: () => ({
@@ -586,6 +586,80 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     });
   });
 
+  it('restores and saves a Spanish monolingual local draft over the initial Galician locale', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    window.localStorage.setItem('cerna_draft_restore-es', JSON.stringify({
+      title: { es: 'Título del borrador' },
+      content: { es: '<p>Cuerpo del borrador</p>' },
+      original_language: 'es',
+      language_mode: 'monolingual',
+    }));
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'restore-es',
+          title: { gl: 'Título orixinal', es: 'Título guardado' },
+          content: { gl: '<p>Corpo orixinal</p>', es: '<p>Cuerpo guardado</p>' },
+          original_language: 'gl',
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    await screen.findByText('Cuerpo del borrador');
+    expect(screen.getByRole('combobox', { name: 'Idioma da publicación' })).toHaveValue('es');
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          original_language: 'es',
+          title: { es: 'Título del borrador' },
+          content: { es: '<p>Cuerpo del borrador</p>' },
+        }),
+        'draft'
+      );
+    });
+  });
+
+  it('saves the original tab body if the locale changes during the auth lookup', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+
+    render(
+      <ArticleEditor
+        mode="edit"
+        initialData={{
+          id: 'auth-wait',
+          title: { gl: 'Título GL', es: 'Título ES' },
+          content: { gl: '<p>Corpo galego</p>', es: '<p>Cuerpo español</p>' },
+          original_language: 'gl',
+        }}
+        onSave={onSave}
+        isPublishing={false}
+      />
+    );
+
+    await screen.findByText('Corpo galego');
+    let resolveAuth!: (result: { data: { user: { id: string } } }) => void;
+    mockGetUser.mockReturnValueOnce(new Promise((resolve) => { resolveAuth = resolve; }));
+    fireEvent.click(screen.getByRole('button', { name: /borrador/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^castellano$/i }));
+    await screen.findByText('Cuerpo español');
+    resolveAuth({ data: { user: { id: 'usr-test' } } });
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: { gl: '<p>Corpo galego</p>', es: '<p>Cuerpo español</p>' },
+        }),
+        'draft'
+      );
+    });
+  });
+
   it('prompts for confirmation before downgrading a saved bilingual publication to monolingual and cleans up dropped-language inline images once confirmed', async () => {
     const onSave = vi.fn().mockResolvedValue(true);
 
@@ -594,10 +668,11 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
         mode="edit"
         initialData={{
           id: 'art-downgrade-1',
+          cover_image_url: 'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/covers/u1/cover.webp',
           title: { gl: 'Título Galego', es: 'Título Español' },
           content: {
             gl: '<p>Contido GL <img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/inline/u1/shared.webp" /></p>',
-            es: '<p>Contenido ES <img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/inline/u1/shared.webp" /><img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/inline/u1/es-only.webp" /></p>',
+            es: '<p>Contenido ES <img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/inline/u1/shared.webp" /><img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/inline/u1/es-only.webp" /><img src="https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/publications/covers/u1/cover.webp" /></p>',
           },
           original_language: 'gl',
         }}

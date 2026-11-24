@@ -392,15 +392,24 @@ export default function ArticleEditor({
             if (patch.type) setTipo(patch.type);
             if (patch.originalLanguage) setIdiomaOriginal(patch.originalLanguage);
             if (patch.languageMode) setLanguageMode(patch.languageMode);
+            const monolingualLocale =
+              patch.languageMode === 'monolingual' ? patch.originalLanguage : undefined;
+            if (monolingualLocale) {
+              activeLangRef.current = monolingualLocale;
+              setActiveLang(monolingualLocale);
+            }
             if (patch.coverImageUrl) setCoverImageUrl(patch.coverImageUrl);
             if (patch.tags) setTematicas(patch.tags);
             if (typeof patch.showIndex === 'boolean') setShowIndex(patch.showIndex);
             if (Object.keys(patch.contents).length > 0) {
               setContents((prev) => ({ ...prev, ...patch.contents }));
-              const restoredActive = patch.contents[currentActiveLang];
-              if (restoredActive) {
-                editor.commands.setContent(restoredActive);
-              }
+            }
+            if (monolingualLocale) {
+              editor.commands.setContent(
+                patch.contents[monolingualLocale] ?? initialCleanContentsRef.current[monolingualLocale]
+              );
+            } else if (patch.contents[currentActiveLang]) {
+              editor.commands.setContent(patch.contents[currentActiveLang]);
             }
             setHasUnsavedChanges(true);
           }, 0);
@@ -428,7 +437,7 @@ export default function ArticleEditor({
     }
     setTocData([]);
     const targetContent = stripIndex(contents[nextLang] || '');
-    setTimeout(() => editor?.commands.setContent(targetContent), 0);
+    editor?.commands.setContent(targetContent);
   };
 
   const handleToggleLanguageMode = () => {
@@ -742,6 +751,7 @@ export default function ArticleEditor({
       return;
     }
 
+    const currentHtml = editor?.getHTML() || '';
     if (languageMode === 'monolingual') {
       const droppedSavedLocales = initialSavedLocales.filter((loc) => loc !== activeLang);
       if (droppedSavedLocales.length > 0) {
@@ -767,7 +777,6 @@ export default function ArticleEditor({
     } = await supabase.auth.getUser();
     const userId = currentUser?.id || 'general';
 
-    const currentHtml = editor?.getHTML() || '';
     const rawByLocale: LocalizedFieldMap = {
       ...contents,
       [activeLang]: currentHtml,

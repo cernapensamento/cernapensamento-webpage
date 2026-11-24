@@ -132,5 +132,24 @@ SELECT throws_ok($$
   );
 $$, '23514', NULL, 'completely empty draft is rejected');
 
+-- A valid language-code format is not sufficient for a non-draft publication.
+SELECT throws_ok($$
+  UPDATE public.publications
+  SET original_language = 'pt',
+      title = title || '{"pt":"Título português"}',
+      content = content || '{"pt":"<p>Conteúdo português</p>"}'
+  WHERE slug = 'bilingual-published';
+$$, '23514', NULL, 'published row with unsupported original_language is rejected');
+
+SELECT throws_ok($$
+  UPDATE public.publications SET original_language = NULL
+  WHERE slug = 'mono-es-review';
+$$, '23514', NULL, 'in_review row with NULL original_language is rejected');
+
+SELECT lives_ok($$
+  UPDATE public.publications SET original_language = NULL
+  WHERE slug = 'draft-title-only-es';
+$$, 'draft row still accepts NULL original_language');
+
 SELECT * FROM finish();
 ROLLBACK;

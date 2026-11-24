@@ -21,10 +21,16 @@ Review-time standards enforced by `/code-review` (Standards axis) alongside dete
 
 ## Data Access Layer (DAL) & Storage
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:3e740081f0d05d15df3f78aab9d2b74e712962890bc0d362165da934e9d1306e -->
+
 - **Zero magic strings:** Import table names, columns, statuses, types, roles, and actions from `@/lib/db/schema` (`DB_TABLES`, `PUBLICATION_COLS`, `USER_COLS`, `COMMENT_COLS`, `TAG_COLS`, `PUBLICATION_TAG_COLS`, `USER_ROLES`, `PUBLICATION_STATUSES`, `PUBLICATION_TYPES`, `EDITOR_ACTIONS`, `GUEST_PUBLICATION_LIMITS`).
 - **Listing egress guardrail:** Homepage, archive, news, author profile, authors directory, sitemap, and Author Desk listing queries select only card metadata (including `title` and `original_language`) and never select full `content`.
 - **Editorial role boundaries:** Only `founder` and `admin` publish directly (`published`) or approve/reject submissions in review; `member` and `guest` submit to `in_review`; `reader` is read-only.
-- **WebP compression & orphan cleanup:** Route image uploads through `uploadStorageImage()` (bucket `media`, canonical paths under `profiles/` and `publications/`) and purge cover and inline images across all locale keys via `cleanupPublicationImages()` on deletion or translation removal.
+- **WebP compression & orphan cleanup:** Route image uploads through `uploadStorageImage()` (bucket `media`, canonical paths under `profiles/` and `publications/`). Use `cleanupPublicationImages()` for full publication deletion. When removing a translation, delete only its inline images that no remaining locale references and preserve the cover.
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 ## TipTap Editor & HTML Sanitization
 

@@ -7,6 +7,11 @@ ALTER TABLE public.publications
   DROP CONSTRAINT IF EXISTS publications_subtitle_bilingual_check,
   DROP CONSTRAINT IF EXISTS publications_content_bilingual_check;
 
+-- Legacy non-drafts used bilingual content and defaulted to Galician.
+UPDATE public.publications
+SET original_language = DEFAULT
+WHERE status IS DISTINCT FROM 'draft' AND original_language IS NULL;
+
 ALTER TABLE public.publications
   ADD CONSTRAINT publications_subtitle_jsonb_object_check CHECK (
     subtitle IS NULL OR jsonb_typeof(subtitle) = 'object'
@@ -24,6 +29,7 @@ ALTER TABLE public.publications
         )
         ELSE (
           original_language IS NOT NULL
+          AND original_language IN ('gl', 'es')
           AND length(btrim(coalesce(title ->> original_language, ''))) > 0
           AND length(btrim(coalesce(content ->> original_language, ''))) > 0
           AND (
