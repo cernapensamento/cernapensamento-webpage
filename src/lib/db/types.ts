@@ -127,6 +127,7 @@ export interface PublicationCardItem {
   cover_image_url: string | null;
   type: PublicationType;
   status: PublicationStatus;
+  original_language?: string;
   is_pinned: boolean;
   created_at: string;
   updated_at: string;
@@ -214,6 +215,7 @@ export interface PublishedAuthorItem {
   latest_publication_at: string | null;
   latest_publication_title: LocalizedString | null;
   latest_publication_slug: string | null;
+  latest_publication_original_language?: string | null;
   publication_types: PublicationType[];
 }
 
@@ -229,6 +231,7 @@ export interface PublicationDashboardItem {
   cover_image_url: string | null;
   type: PublicationType;
   status: PublicationStatus;
+  original_language?: string;
   is_pinned: boolean | null;
   created_at: string;
   updated_at: string;
