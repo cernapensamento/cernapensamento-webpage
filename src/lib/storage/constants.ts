@@ -19,15 +19,15 @@ export const STORAGE_CATEGORIES = {
 export type StorageCategory = (typeof STORAGE_CATEGORIES)[keyof typeof STORAGE_CATEGORIES];
 
 export const STORAGE_FOLDERS: Record<StorageCategory, string> = {
-  [STORAGE_CATEGORIES.PROFILE_AVATAR]: 'profiles',
-  [STORAGE_CATEGORIES.PUBLICATION_COVER]: 'publications/covers',
-  [STORAGE_CATEGORIES.PUBLICATION_INLINE]: 'publications/inline',
+  [STORAGE_CATEGORIES.PROFILE_AVATAR]: 'users',
+  [STORAGE_CATEGORIES.PUBLICATION_COVER]: 'publications',
+  [STORAGE_CATEGORIES.PUBLICATION_INLINE]: 'publications',
 };
 
 /**
  * Legacy folder prefixes supported for backwards-compatibility URL resolution and cleanup.
  */
-export const LEGACY_STORAGE_FOLDERS = ['avatares', 'portadas', 'contenido'] as const;
+export const LEGACY_STORAGE_FOLDERS = ['profiles', 'avatares', 'portadas', 'contenido'] as const;
 
 export const ALLOWED_IMAGE_MIME_TYPES = [
   'image/jpeg',
