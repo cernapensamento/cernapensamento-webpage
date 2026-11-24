@@ -53,6 +53,7 @@ interface RawPublicationCard {
   cover_image_url: string | null;
   type: PublicationType;
   status: PublicationStatus;
+  original_language?: string | null;
   is_pinned: boolean | null;
   created_at: string;
   updated_at: string;
@@ -327,6 +328,7 @@ async function runPublicationCardsQuery(
     PUBLICATION_COLS.COVER_IMAGE_URL,
     PUBLICATION_COLS.TYPE,
     PUBLICATION_COLS.STATUS,
+    PUBLICATION_COLS.ORIGINAL_LANGUAGE,
     PUBLICATION_COLS.IS_PINNED,
     PUBLICATION_COLS.CREATED_AT,
     PUBLICATION_COLS.UPDATED_AT,
@@ -512,6 +514,7 @@ export async function getPublicationCards(
       cover_image_url: cleanImageUrl(row.cover_image_url),
       type: row.type,
       status: row.status,
+      original_language: row.original_language || 'gl',
       is_pinned: row.is_pinned ?? false,
       created_at: row.created_at,
       updated_at: row.updated_at,
@@ -768,6 +771,7 @@ async function runDashboardPublicationsQuery(
     PUBLICATION_COLS.COVER_IMAGE_URL,
     PUBLICATION_COLS.TYPE,
     PUBLICATION_COLS.STATUS,
+    PUBLICATION_COLS.ORIGINAL_LANGUAGE,
     PUBLICATION_COLS.IS_PINNED,
     PUBLICATION_COLS.CREATED_AT,
     PUBLICATION_COLS.UPDATED_AT,

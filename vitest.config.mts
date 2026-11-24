@@ -42,7 +42,7 @@ export default defineConfig({
         test: {
           name: 'components',
           environment: 'jsdom',
-          include: ['src/components/**/*.test.tsx'],
+          include: ['src/components/**/*.test.tsx', 'src/app/**/*.test.tsx'],
           setupFiles: ['./vitest.setup.ts'],
         },
       },

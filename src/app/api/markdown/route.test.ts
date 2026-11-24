@@ -121,4 +121,54 @@ describe('Markdown API Route (/api/markdown)', () => {
     expect(getDocument).not.toHaveBeenCalled();
   });
 
+  it('resolves Spanish-only publication via original_language when requested with lang=gl', async () => {
+    vi.mocked(getPublicationBySlug).mockResolvedValue({
+      id: 'pub-es-only',
+      slug: 'solo-espanol',
+      title: { es: 'Ensayo Solo Español' },
+      subtitle: { es: 'Subtítulo en español' },
+      content: { es: '<p>Cuerpo del ensayo solo en español.</p>' },
+      original_language: 'es',
+      type: PUBLICATION_TYPES.ESSAY,
+      status: PUBLICATION_STATUSES.PUBLISHED,
+      author: { full_name: 'Autora Proba', slug: 'autora-proba' },
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-02T00:00:00Z',
+    } as unknown as PublicationDetail);
+
+    const request = new NextRequest('https://cernapensamento.org/api/markdown?type=article&slug=solo-espanol&lang=gl');
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).toContain('# Ensayo Solo Español');
+    expect(body).toContain('Subtítulo en español');
+    expect(body).toContain('Cuerpo del ensayo solo en español.');
+  });
+
+  it('resolves Galician-only publication via original_language when requested with lang=es', async () => {
+    vi.mocked(getPublicationBySlug).mockResolvedValue({
+      id: 'pub-gl-only',
+      slug: 'so-galego',
+      title: { gl: 'Ensaio Só Galego' },
+      subtitle: { gl: 'Subtítulo en galego' },
+      content: { gl: '<p>Corpo do ensaio só en galego.</p>' },
+      original_language: 'gl',
+      type: PUBLICATION_TYPES.ESSAY,
+      status: PUBLICATION_STATUSES.PUBLISHED,
+      author: { full_name: 'Autora Proba', slug: 'autora-proba' },
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-02T00:00:00Z',
+    } as unknown as PublicationDetail);
+
+    const request = new NextRequest('https://cernapensamento.org/api/markdown?type=article&slug=so-galego&lang=es');
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).toContain('# Ensaio Só Galego');
+    expect(body).toContain('Subtítulo en galego');
+    expect(body).toContain('Corpo do ensaio só en galego.');
+  });
+
 });

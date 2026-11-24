@@ -7,6 +7,7 @@ import { SITE_NAME } from '@/lib/constants';
 import { getSiteBaseUrl } from '@/lib/email/newsletter';
 import { i18n, resolveLocale, type Locale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
+import { resolvePublicationLocale } from '@/lib/i18n/publicationLanguage';
 
 export const runtime = 'nodejs';
 
@@ -45,9 +46,12 @@ export async function GET(request: Request, { params }: RouteContext) {
       });
     }
 
-    const title = resolveLocalizedText(publication.title, lang);
-    const subtitle = publication.subtitle ? resolveLocalizedText(publication.subtitle, lang) : null;
-    const content = resolveLocalizedText(publication.content, lang);
+    const { actualLocale } = resolvePublicationLocale(publication, lang);
+    const title = resolveLocalizedText(publication.title, lang, actualLocale);
+    const subtitle = publication.subtitle
+      ? resolveLocalizedText(publication.subtitle, lang, actualLocale)
+      : null;
+    const content = resolveLocalizedText(publication.content, lang, actualLocale);
 
     const date = formatArticleDate(publication.published_at || publication.created_at, lang, { format: 'long' });
 

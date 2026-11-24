@@ -148,13 +148,21 @@
     "readArticle": "Ler artigo",
     "readShort": "Ler",
     "loading": "Cargando...",
-    "featuredCoverAlt": "Portada do artigo destacado"
+    "featuredCoverAlt": "Portada do artigo destacado",
+    "languageBadge": {
+      "gl": "En galego",
+      "es": "En castelán"
+    }
   },
   "article": {
     "aboutAuthor": "Sobre o autor",
     "contributorOf": "é un contribuínte de",
     "unknownAuthor": "Autor Descoñecido",
     "originalLanguage": "Idioma orixinal:",
+    "onlyAvailableIn": {
+      "gl": "Este texto só está dispoñible en galego.",
+      "es": "Este texto só está dispoñible en castelán."
+    },
     "indexLabel": "Índice",
     "indexAriaLabel": "Índice do artigo",
     "notFoundTitle": "Artigo non atopado",
@@ -430,7 +438,13 @@
     "toApprove": "Para Aprobar",
     "noPendingArticles": "Non hai publicacións pendentes de aprobación.",
     "defaultAuthorName": "Editor",
-    "defaultCoverAlt": "Publicación"
+    "defaultCoverAlt": "Publicación",
+    "untitledDraft": "Borrador sen título",
+    "languageBadge": {
+      "gl": "GL",
+      "es": "ES",
+      "bilingual": "GL · ES"
+    }
   },
   "articleEditor": {
     "backToArticles": "Artigos",

@@ -1,6 +1,8 @@
 import type { LocalizedString } from '@/lib/db/types';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
+import { i18n } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
+import { resolveAlternateLocaleBadge } from '@/components/features/publicationCardHelpers';
 import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 
 export interface SectionArticleData {
@@ -8,6 +10,8 @@ export interface SectionArticleData {
   slug?: string | null;
   type?: string;
   tipo?: string;
+  original_language?: string | null;
+  idioma_original?: string | null;
   title?: LocalizedString;
   subtitle?: LocalizedString | null;
   content?: LocalizedString;
@@ -50,6 +54,7 @@ export interface ResolvedSectionArticle {
   coverAlt: string;
   authorName: string;
   byLabel: string;
+  alternateLocaleBadge: string | null;
 }
 
 /**
@@ -62,18 +67,20 @@ export function resolveSectionArticle(
   dict?: SectionArticleDict,
   fallbackDict: Dictionary = getDictionaryClient(lang)
 ): ResolvedSectionArticle {
+  const fallbackLang = articulo.original_language || articulo.idioma_original || i18n.defaultLocale;
+
   const titulo =
-    resolveLocalizedText(articulo.title, lang) ||
-    resolveLocalizedText({ gl: articulo.titulo_gl, es: articulo.titulo_es }, lang);
+    resolveLocalizedText(articulo.title, lang, fallbackLang) ||
+    resolveLocalizedText({ gl: articulo.titulo_gl, es: articulo.titulo_es }, lang, fallbackLang);
 
   const subtitulo =
-    resolveLocalizedText(articulo.subtitle, lang) ||
-    resolveLocalizedText({ gl: articulo.subtitulo_gl, es: articulo.subtitulo_es }, lang) ||
+    resolveLocalizedText(articulo.subtitle, lang, fallbackLang) ||
+    resolveLocalizedText({ gl: articulo.subtitulo_gl, es: articulo.subtitulo_es }, lang, fallbackLang) ||
     null;
 
   const rawContent =
-    resolveLocalizedText(articulo.content, lang) ||
-    resolveLocalizedText({ gl: articulo.contenido_gl, es: articulo.contenido_es }, lang);
+    resolveLocalizedText(articulo.content, lang, fallbackLang) ||
+    resolveLocalizedText({ gl: articulo.contenido_gl, es: articulo.contenido_es }, lang, fallbackLang);
 
   const documentTypes: Record<string, string> = {
     ...(fallbackDict.documentTypes as Record<string, string>),
@@ -100,6 +107,7 @@ export function resolveSectionArticle(
     unknownAuthor;
 
   const byLabel = dict?.articles?.by || dict?.mosaic?.by || fallbackDict.articles.by;
+  const alternateLocaleBadge = resolveAlternateLocaleBadge(articulo, lang, dict, fallbackDict);
 
   return {
     href: `/${lang}/articulo/${articulo.slug || articulo.id}`,
@@ -111,6 +119,7 @@ export function resolveSectionArticle(
     coverAlt,
     authorName,
     byLabel,
+    alternateLocaleBadge,
   };
 }
 

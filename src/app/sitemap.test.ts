@@ -108,4 +108,60 @@ describe('Sitemap Generator (src/app/sitemap.ts)', () => {
     expect(getPublicationCards).toHaveBeenCalledTimes(fullLastPage ? 3 : 2);
   });
 
+  it('emits URLs and alternates only for available locales on monolingual publications while keeping both for bilingual', async () => {
+    vi.mocked(getPublicationCards).mockResolvedValue([
+      {
+        id: 'pub-gl',
+        slug: 'so-galego',
+        title: { gl: 'Só en galego' },
+        original_language: 'gl',
+        created_at: '2026-01-01T10:00:00Z',
+      } as unknown as PublicationCardItem,
+      {
+        id: 'pub-es',
+        slug: 'solo-espanol',
+        title: { es: 'Solo en español' },
+        original_language: 'es',
+        created_at: '2026-01-02T10:00:00Z',
+      } as unknown as PublicationCardItem,
+      {
+        id: 'pub-bi',
+        slug: 'bilingue',
+        title: { gl: 'Bilingüe', es: 'Bilingüe ES' },
+        original_language: 'gl',
+        created_at: '2026-01-03T10:00:00Z',
+      } as unknown as PublicationCardItem,
+    ]);
+    vi.mocked(getPublishedAuthors).mockResolvedValue([]);
+
+    const entries = await sitemap();
+
+    const glOnlyEntries = entries.filter((e) => e.url.includes('/articulo/so-galego'));
+    expect(glOnlyEntries).toHaveLength(1);
+    expect(glOnlyEntries[0].url).toBe(`${SITE_URL}/gl/articulo/so-galego`);
+    expect(glOnlyEntries[0].alternates?.languages).toEqual({
+      gl: `${SITE_URL}/gl/articulo/so-galego`,
+    });
+
+    const esOnlyEntries = entries.filter((e) => e.url.includes('/articulo/solo-espanol'));
+    expect(esOnlyEntries).toHaveLength(1);
+    expect(esOnlyEntries[0].url).toBe(`${SITE_URL}/es/articulo/solo-espanol`);
+    expect(esOnlyEntries[0].alternates?.languages).toEqual({
+      es: `${SITE_URL}/es/articulo/solo-espanol`,
+    });
+
+    const biEntries = entries.filter((e) => e.url.includes('/articulo/bilingue'));
+    expect(biEntries).toHaveLength(2);
+    expect(biEntries.map((e) => e.url)).toEqual([
+      `${SITE_URL}/gl/articulo/bilingue`,
+      `${SITE_URL}/es/articulo/bilingue`,
+    ]);
+    for (const entry of biEntries) {
+      expect(entry.alternates?.languages).toEqual({
+        gl: `${SITE_URL}/gl/articulo/bilingue`,
+        es: `${SITE_URL}/es/articulo/bilingue`,
+      });
+    }
+  });
+
 });

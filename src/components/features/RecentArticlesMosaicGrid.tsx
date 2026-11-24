@@ -8,6 +8,7 @@ import type { ArticleCardData } from '@/components/features/ArticleCard';
 import FormattedDate from '@/components/ui/FormattedDate';
 import { getDictionaryClient } from '@/dictionaries/client';
 import {
+  resolveAlternateLocaleBadge,
   resolvePublicationAuthor,
   resolvePublicationCover,
   resolvePublicationDate,
@@ -62,6 +63,7 @@ function RecentArticleCard({
     documentTypes: dict?.documentTypes,
     fallbackDict,
   });
+  const alternateLocaleBadge = resolveAlternateLocaleBadge(item, lang, dict, fallbackDict);
   const rawDate = resolvePublicationDate(item);
   const coverUrl = resolvePublicationCover(item);
   const hasCover = Boolean(coverUrl);
@@ -109,6 +111,11 @@ function RecentArticleCard({
                   {lbl}
                 </span>
               ))}
+              {alternateLocaleBadge && (
+                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-2 py-0.5">
+                  {alternateLocaleBadge}
+                </span>
+              )}
             </div>
             <FormattedDate
               date={rawDate}
@@ -192,6 +199,11 @@ function RecentArticleCard({
                   {lbl}
                 </span>
               ))}
+              {alternateLocaleBadge && (
+                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.14em] text-gold border border-gold/35 bg-gold/10 px-2 py-0.5">
+                  {alternateLocaleBadge}
+                </span>
+              )}
             </div>
             <FormattedDate
               date={rawDate}

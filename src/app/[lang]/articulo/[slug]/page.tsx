@@ -9,7 +9,7 @@ import { renderMathInHtml } from '@/lib/editor/renderMath';
 import { renderHeadingAnchors } from '@/lib/editor/renderHeadingAnchors';
 import { sanitizeArticleHtml } from '@/lib/editor/sanitizeArticleHtml';
 import { getHeadingsFromHtml, stripIndex } from '@/lib/editor/generateIndex';
-import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
+import { DEFAULT_AVATAR_URL, SITE_NAME, SITE_URL } from '@/lib/constants';
 import FormattedDate from '@/components/ui/FormattedDate';
 import CommentsSection from '@/components/features/CommentsSection';
 import ArticleDownload from '@/components/features/ArticleDownload';
@@ -18,6 +18,7 @@ import ArticleTableOfContents from '@/components/features/ArticleTableOfContents
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
 import { resolveAuthorBio, resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
+import { resolvePublicationLocale } from '@/lib/i18n/publicationLanguage';
 
 interface Props {
   params: Promise<{ slug: string; lang: string }>;
@@ -35,8 +36,9 @@ export async function generateMetadata({ params }: Props) {
     return { title: dict.article.notFoundTitle };
   }
 
-  const titulo = resolveLocalizedText(publication.title, locale);
-  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, locale) : null;
+  const { actualLocale } = resolvePublicationLocale(publication, locale);
+  const titulo = resolveLocalizedText(publication.title, locale, actualLocale);
+  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, locale, actualLocale) : null;
   const authorName = publication.author.full_name || dict.article.unknownAuthor;
 
   return {
@@ -44,6 +46,9 @@ export async function generateMetadata({ params }: Props) {
     description:
       subtitulo ||
       dict.article.defaultMetaDescription.replace('{author}', authorName),
+    alternates: {
+      canonical: `${SITE_URL}/${actualLocale}/articulo/${publication.slug}`,
+    },
   };
 }
 
@@ -66,9 +71,10 @@ export default async function ArticuloPage({ params }: Props) {
     permanentRedirect(`/${locale}/articulo/${publication.slug}`);
   }
 
-  const titulo = resolveLocalizedText(publication.title, locale);
-  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, locale) : null;
-  const contenido = resolveLocalizedText(publication.content, locale);
+  const { actualLocale, isMonolingual, isFallback } = resolvePublicationLocale(publication, locale);
+  const titulo = resolveLocalizedText(publication.title, locale, actualLocale);
+  const subtitulo = publication.subtitle ? resolveLocalizedText(publication.subtitle, locale, actualLocale) : null;
+  const contenido = resolveLocalizedText(publication.content, locale, actualLocale);
   const bodyHtml = stripIndex(contenido);
   const tocItems = publication.show_index ? getHeadingsFromHtml(bodyHtml) : [];
   const isEnsaio = publication.type === PUBLICATION_TYPES.ESSAY;
@@ -103,7 +109,12 @@ export default async function ArticuloPage({ params }: Props) {
             <span>•</span>
             <FormattedDate date={publication.published_at || publication.created_at} lang={locale} format="long" />
           </div>
-          {publication.original_language && publication.original_language !== locale && (
+          {isMonolingual && isFallback && (
+            <p className="text-[11px] text-charcoal/70 uppercase tracking-[0.15em] mt-3">
+              {dict.article.onlyAvailableIn[actualLocale]}
+            </p>
+          )}
+          {!isMonolingual && publication.original_language && publication.original_language !== locale && (
             <div className="text-[10px] text-charcoal/60 uppercase tracking-[0.15em] mt-3">
               {dict.article.originalLanguage}{' '}
               <Link href={`/${publication.original_language}/articulo/${publication.slug}`} className="text-gold font-bold hover:underline transition-all">
@@ -150,6 +161,7 @@ export default async function ArticuloPage({ params }: Props) {
               />
             )}
             <div 
+              lang={actualLocale}
               className={`article-content ${isEnsaio ? 'article-content-essay' : ''}`}
               dangerouslySetInnerHTML={{ 
                 __html: sanitizeArticleHtml(renderHeadingAnchors(renderMathInHtml(bodyHtml)))
