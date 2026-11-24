@@ -351,4 +351,95 @@ describe.skipIf(!isDbTestEnabled)('Publications RLS Integration Tests (Local Sup
 
     await adminClient.from('publications').delete().eq('id', draftPub!.id);
   });
+
+  it('allows monolingual gl-only, es-only, and partial draft writes while rejecting invalid rows', async () => {
+    const { client: founderClient, user: founderUser } = await createAuthenticatedClient(
+      'diegoaraujo@cernapensamento.org'
+    );
+    const adminClient = createClient(
+      supabaseUrl,
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
+    );
+    const createdIds: string[] = [];
+
+    try {
+      // 1. gl-only published
+      const { data: glPub, error: glErr } = await founderClient
+        .from('publications')
+        .insert({
+          author_id: founderUser.id,
+          slug: `test-mono-gl-${Date.now()}`,
+          original_language: 'gl',
+          title: { gl: 'Só en galego' },
+          subtitle: { gl: 'Subtítulo' },
+          content: { gl: '<p>Contido en galego</p>' },
+          status: 'published',
+          type: 'article',
+        })
+        .select('id, original_language')
+        .single();
+
+      expect(glErr).toBeNull();
+      expect(glPub?.original_language).toBe('gl');
+      if (glPub?.id) createdIds.push(glPub.id);
+
+      // 2. es-only published
+      const { data: esPub, error: esErr } = await founderClient
+        .from('publications')
+        .insert({
+          author_id: founderUser.id,
+          slug: `test-mono-es-${Date.now()}`,
+          original_language: 'es',
+          title: { es: 'Solo en español' },
+          subtitle: null,
+          content: { es: '<p>Contenido en español</p>' },
+          status: 'published',
+          type: 'article',
+        })
+        .select('id, original_language')
+        .single();
+
+      expect(esErr).toBeNull();
+      expect(esPub?.original_language).toBe('es');
+      if (esPub?.id) createdIds.push(esPub.id);
+
+      // 3. Partial untitled draft (content only)
+      const { data: draftPub, error: draftErr } = await founderClient
+        .from('publications')
+        .insert({
+          author_id: founderUser.id,
+          slug: `test-partial-draft-${Date.now()}`,
+          original_language: 'es',
+          title: {},
+          content: { es: '<p>Borrador parcial</p>' },
+          status: 'draft',
+          type: 'article',
+        })
+        .select('id, status')
+        .single();
+
+      expect(draftErr).toBeNull();
+      expect(draftPub?.status).toBe('draft');
+      if (draftPub?.id) createdIds.push(draftPub.id);
+
+      // 4. Invalid published row (missing original_language content)
+      const { error: invalidErr } = await founderClient.from('publications').insert({
+        author_id: founderUser.id,
+        slug: `test-invalid-mono-${Date.now()}`,
+        original_language: 'es',
+        title: { gl: 'Só galego' },
+        content: { gl: '<p>Só galego</p>' },
+        status: 'published',
+        type: 'article',
+      });
+
+      expect(invalidErr).not.toBeNull();
+      expect(invalidErr?.code).toBe('23514');
+    } finally {
+      for (const id of createdIds) {
+        await adminClient.from('publications').delete().eq('id', id);
+      }
+    }
+  });
 });

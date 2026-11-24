@@ -197,10 +197,13 @@ CREATE TABLE IF NOT EXISTS "public"."publications" (
     "newsletter_sent_at" timestamp with time zone,
     "published_at" timestamp with time zone,
     "show_index" boolean DEFAULT false NOT NULL,
-    CONSTRAINT "publications_content_bilingual_check" CHECK ((("content" ? 'gl'::"text") AND ("content" ? 'es'::"text") AND ("length"(TRIM(BOTH FROM ("content" ->> 'gl'::"text"))) > 0) AND ("length"(TRIM(BOTH FROM ("content" ->> 'es'::"text"))) > 0))),
-    CONSTRAINT "publications_original_language_format_check" CHECK (("original_language" ~ '^[a-z]{2,5}(-[a-zA-Z0-9]{2,5})?$')),
-    CONSTRAINT "publications_subtitle_bilingual_check" CHECK ((("subtitle" IS NULL) OR ("subtitle" = '{}'::"jsonb") OR (("subtitle" ? 'gl'::"text") AND ("subtitle" ? 'es'::"text")))),
-    CONSTRAINT "publications_title_bilingual_check" CHECK ((("title" ? 'gl'::"text") AND ("title" ? 'es'::"text") AND ("length"(TRIM(BOTH FROM ("title" ->> 'gl'::"text"))) > 0) AND ("length"(TRIM(BOTH FROM ("title" ->> 'es'::"text"))) > 0)))
+    CONSTRAINT "publications_language_content_check" CHECK ((("jsonb_typeof"("title") = 'object'::"text") AND ("jsonb_typeof"("content") = 'object'::"text") AND
+CASE
+    WHEN ("status" = 'draft'::"public"."publication_status") THEN (("length"("btrim"(COALESCE(("title" ->> 'gl'::"text"), ''::"text"))) > 0) OR ("length"("btrim"(COALESCE(("title" ->> 'es'::"text"), ''::"text"))) > 0) OR ("length"("btrim"(COALESCE(("content" ->> 'gl'::"text"), ''::"text"))) > 0) OR ("length"("btrim"(COALESCE(("content" ->> 'es'::"text"), ''::"text"))) > 0))
+    ELSE (("original_language" IS NOT NULL) AND ("length"("btrim"(COALESCE(("title" ->> "original_language"), ''::"text"))) > 0) AND ("length"("btrim"(COALESCE(("content" ->> "original_language"), ''::"text"))) > 0) AND (("length"("btrim"(COALESCE(("title" ->> 'gl'::"text"), ''::"text"))) > 0) = ("length"("btrim"(COALESCE(("content" ->> 'gl'::"text"), ''::"text"))) > 0)) AND (("length"("btrim"(COALESCE(("title" ->> 'es'::"text"), ''::"text"))) > 0) = ("length"("btrim"(COALESCE(("content" ->> 'es'::"text"), ''::"text"))) > 0)))
+END)),
+    CONSTRAINT "publications_original_language_format_check" CHECK (("original_language" ~ '^[a-z]{2,5}(-[a-zA-Z0-9]{2,5})?$'::"text")),
+    CONSTRAINT "publications_subtitle_jsonb_object_check" CHECK ((("subtitle" IS NULL) OR ("jsonb_typeof"("subtitle") = 'object'::"text")))
 );
 
 
