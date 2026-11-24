@@ -4,7 +4,10 @@ import { revalidatePath } from 'next/cache';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { getDictionary } from '@/dictionaries';
 import { i18n, isSupportedLocale, type Locale } from '@/i18n-config';
-import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
+import {
+  hasMeaningfulHtmlContent,
+  type PublicationLanguageMode,
+} from '@/lib/i18n/publicationLanguage';
 import {
   updatePublicationStatus,
   getPublicationCards,
@@ -45,6 +48,7 @@ export interface SaveArticleInput {
   tags?: string[];
   type?: PublicationTypeValue | string;
   original_language?: Locale | string;
+  language_mode?: PublicationLanguageMode;
   show_index?: boolean;
   action: EditorAction;
   lang?: Locale | string;
@@ -93,54 +97,64 @@ function revalidateArticlePaths(slug: string, oldSlug?: string | null) {
   }
 }
 
-/**
- * Builds localized title payload guaranteeing a non-empty title for all configured locales.
- */
-async function buildTitlePayload(inputTitle?: LocalizedString): Promise<Record<string, string>> {
-  const dictPromises = i18n.locales.map(async (loc) => {
-    const d = await getDictionary(loc);
-    return [loc, d.articleEditor.noTitle] as const;
-  });
-  const fallbackEntries = await Promise.all(dictPromises);
-  const fallbackTitles: Record<string, string> = Object.fromEntries(fallbackEntries);
+function resolveLanguageMode(raw?: PublicationLanguageMode): PublicationLanguageMode {
+  return raw === 'monolingual' ? 'monolingual' : 'bilingual';
+}
 
+function getLocaleDisplayName(loc: Locale, edDict: { galician: string; spanish: string }): string {
+  return loc === 'gl' ? edDict.galician : edDict.spanish;
+}
+
+/**
+ * Builds localized title payload containing only non-empty trimmed titles for active locales.
+ * Never injects placeholder strings such as "Sen Título" / "Sin Título".
+ */
+function buildTitlePayload(
+  inputTitle: LocalizedString | undefined,
+  activeLocales: readonly Locale[]
+): Record<string, string> {
   const payload: Record<string, string> = {};
-  if (inputTitle) {
-    for (const [k, v] of Object.entries(inputTitle)) {
-      if (typeof v === 'string' && v.trim()) {
-        payload[k] = v.trim();
-      }
+  if (!inputTitle) return payload;
+
+  for (const loc of activeLocales) {
+    const val = inputTitle[loc];
+    if (typeof val === 'string' && val.trim().length > 0) {
+      payload[loc] = val.trim();
     }
   }
-
-  for (const loc of i18n.locales) {
-    payload[loc] = payload[loc] || fallbackTitles[loc] || fallbackTitles[i18n.defaultLocale];
-  }
-
   return payload;
 }
 
-function buildSubtitlePayload(subtitle?: LocalizedString | null): LocalizedString | null {
+function buildSubtitlePayload(
+  subtitle: LocalizedString | null | undefined,
+  activeLocales: readonly Locale[]
+): LocalizedString | null {
   if (!subtitle) return null;
-  const hasText = Object.values(subtitle).some((v) => Boolean(v && v.trim().length > 0));
-  if (!hasText) return null;
 
   const result: Record<string, string> = {};
-  for (const loc of i18n.locales) {
-    result[loc] = subtitle[loc] || '';
+  for (const loc of activeLocales) {
+    const val = subtitle[loc];
+    if (typeof val === 'string' && val.trim().length > 0) {
+      result[loc] = val.trim();
+    }
   }
-  return { ...result, ...subtitle };
+
+  return Object.keys(result).length > 0 ? result : null;
 }
 
-function buildContentPayload(content?: LocalizedString): LocalizedString {
+function buildContentPayload(
+  content: LocalizedString | undefined,
+  activeLocales: readonly Locale[]
+): Record<string, string> {
   const result: Record<string, string> = {};
-  for (const loc of i18n.locales) {
-    result[loc] = stripIndex(content?.[loc] || '');
-  }
-  if (content) {
-    for (const [k, v] of Object.entries(content)) {
-      if (typeof v === 'string') {
-        result[k] = stripIndex(v);
+  if (!content) return result;
+
+  for (const loc of activeLocales) {
+    const raw = content[loc];
+    if (typeof raw === 'string') {
+      const cleaned = stripIndex(raw);
+      if (hasMeaningfulHtmlContent(cleaned)) {
+        result[loc] = cleaned;
       }
     }
   }
@@ -192,16 +206,49 @@ export async function saveArticleAction(
     }
 
     const targetStatus = resolveTargetStatus(input.action, canDirectPublish);
+    const languageMode = resolveLanguageMode(input.language_mode);
     const origLang = resolveLocale(input.original_language);
-    const currentTitle =
-      resolveLocalizedText(input.title, origLang) ||
-      Object.values(input.title || {}).find((v) => Boolean(v?.trim())) ||
-      '';
+    const activeLocales: readonly Locale[] =
+      languageMode === 'monolingual' ? [origLang] : i18n.locales;
     const pubType = normalizePublicationType(input.type);
 
-    const titlePayload = await buildTitlePayload(input.title);
-    const subtitlePayload = buildSubtitlePayload(input.subtitle);
-    const contentPayload = buildContentPayload(input.content);
+    const titlePayload = buildTitlePayload(input.title, activeLocales);
+    const subtitlePayload = buildSubtitlePayload(input.subtitle, activeLocales);
+    const contentPayload = buildContentPayload(input.content, activeLocales);
+
+    if (targetStatus === PUBLICATION_STATUSES.DRAFT) {
+      const hasAnyDraftData = activeLocales.some(
+        (loc) => Boolean(titlePayload[loc]) || Boolean(contentPayload[loc])
+      );
+      if (!hasAnyDraftData) {
+        return { success: false, error: edDict.validationEmptyDraft };
+      }
+    } else {
+      const incompleteLocales = activeLocales.filter(
+        (loc) => !titlePayload[loc] || !contentPayload[loc]
+      );
+      if (incompleteLocales.length > 0) {
+        if (languageMode === 'monolingual') {
+          const langName = getLocaleDisplayName(origLang, edDict);
+          return {
+            success: false,
+            error: edDict.validationMissingMonolingual.replace('{language}', langName),
+          };
+        }
+        const missingNames = incompleteLocales
+          .map((loc) => getLocaleDisplayName(loc, edDict))
+          .join(', ');
+        return {
+          success: false,
+          error: edDict.validationMissingBilingual.replace('{languages}', missingNames),
+        };
+      }
+    }
+
+    const currentTitle =
+      titlePayload[origLang] ||
+      Object.values(titlePayload)[0] ||
+      '';
     const showIndex = Boolean(input.show_index);
 
     let finalId: string;
