@@ -98,34 +98,6 @@ interface Props {
   dict?: ArticleEditorDict;
 }
 
-function buildLocalizedField(
-  localized?: LocalizedString | null,
-  legacyValues?: Record<string, string | undefined>
-): LocalizedString {
-  const result: Record<string, string> = {};
-  for (const loc of i18n.locales) {
-    result[loc] = '';
-  }
-
-  if (localized) {
-    for (const [loc, value] of Object.entries(localized)) {
-      if (typeof value === 'string') {
-        result[loc] = value;
-      }
-    }
-  }
-
-  if (legacyValues) {
-    for (const [loc, value] of Object.entries(legacyValues)) {
-      if (!result[loc] && value) {
-        result[loc] = value;
-      }
-    }
-  }
-
-  return result;
-}
-
 export default function EditarArticuloForm({
   mode = 'edit',
   publication,
