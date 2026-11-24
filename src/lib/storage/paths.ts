@@ -15,13 +15,16 @@ function generateShortSlug(): string {
 }
 
 /**
- * Builds a category-specific path with a millisecond timestamp and random suffix.
- * Trims `userId`, using `general` when empty. Only inline image names use
+ * Builds an entity-grouped path with a millisecond timestamp and random suffix:
+ * - profile_avatar: `users/{userId}/avatar-{timestamp}-{slug}.{ext}`
+ * - publication_cover: `publications/{publicationId}/cover-{timestamp}-{slug}.{ext}`
+ * - publication_inline: `publications/{publicationId}/inline/{name}-{timestamp}-{slug}.{ext}`
+ * Trims `entityId`, using `general` when empty. Only inline image names use
  * `originalFilename`, cleaning and truncating its stem to at most 24 characters.
  */
 export function buildStoragePath(
   category: StorageCategory,
-  userId: string,
+  entityId: string,
   extension: 'webp' | 'jpeg' = 'webp',
   originalFilename?: string
 ): string {
@@ -29,14 +32,14 @@ export function buildStoragePath(
   const timestamp = Date.now();
   const slug = generateShortSlug();
 
-  const safeUserId = userId.trim() || 'general';
+  const safeEntityId = entityId.trim() || 'general';
 
   if (category === 'profile_avatar') {
-    return `${folder}/${safeUserId}/avatar-${timestamp}-${slug}.${extension}`;
+    return `${folder}/${safeEntityId}/avatar-${timestamp}-${slug}.${extension}`;
   }
 
   if (category === 'publication_cover') {
-    return `${folder}/${safeUserId}/cover-${timestamp}-${slug}.${extension}`;
+    return `${folder}/${safeEntityId}/cover-${timestamp}-${slug}.${extension}`;
   }
 
   // Publication inline image
@@ -51,7 +54,7 @@ export function buildStoragePath(
     if (clean) safeBase = clean;
   }
 
-  return `${folder}/${safeUserId}/${safeBase}-${timestamp}-${slug}.${extension}`;
+  return `${folder}/${safeEntityId}/inline/${safeBase}-${timestamp}-${slug}.${extension}`;
 }
 
 /**
@@ -65,6 +68,17 @@ export function extractBucketAndPathFromUrl(
 ): { bucket: string; path: string } | null {
   if (!url || typeof url !== 'string') return null;
 
+  // Check relative storage paths first so paths like `_orphans/media/...` are not misparsed by bucket markers
+  const validFolders = [
+    'users/',
+    'publications/',
+    '_orphans/',
+    ...LEGACY_STORAGE_FOLDERS.map((f) => `${f}/`),
+  ];
+  if (validFolders.some((f) => url.startsWith(f))) {
+    return { bucket: STORAGE_BUCKET, path: url.split('?')[0].split('#')[0] };
+  }
+
   const allBuckets = [STORAGE_BUCKET, ...LEGACY_STORAGE_BUCKETS];
   for (const bucket of allBuckets) {
     const bucketMarker = `${bucket}/`;
@@ -76,16 +90,6 @@ export function extractBucketAndPathFromUrl(
         return { bucket, path: cleanPath };
       }
     }
-  }
-
-  // If already a relative path inside the bucket
-  const validFolders = [
-    'profiles/',
-    'publications/',
-    ...LEGACY_STORAGE_FOLDERS.map((f) => `${f}/`),
-  ];
-  if (validFolders.some((f) => url.startsWith(f))) {
-    return { bucket: STORAGE_BUCKET, path: url.split('?')[0].split('#')[0] };
   }
 
   return null;
