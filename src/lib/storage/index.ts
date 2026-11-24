@@ -162,3 +162,46 @@ export async function cleanupPublicationImages(
     await removeStorageImages(supabase, allItems);
   }
 }
+
+/**
+ * Lists and removes all objects under `publications/{publicationId}/` in the primary
+ * `media` bucket, including top-level cover files and nested `inline/` files.
+ * Returned storage errors are logged and ignored so post-deletion cleanup never masks
+ * a completed database deletion.
+ */
+export async function sweepPublicationStorageFolder(
+  supabase: SupabaseClient,
+  publicationId: string
+): Promise<void> {
+  const safeId = publicationId.trim();
+  if (!safeId) return;
+
+  const rootPrefix = `publications/${safeId}`;
+  const prefixesToScan = [rootPrefix, `${rootPrefix}/inline`];
+  const pathsToRemove = new Set<string>();
+
+  for (const prefix of prefixesToScan) {
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .list(prefix, { limit: 1000 });
+
+    if (error) {
+      console.error(`Failed to list storage folder '${prefix}':`, error.message);
+      continue;
+    }
+
+    for (const item of data ?? []) {
+      // Subfolder placeholders returned by Supabase Storage have id === null
+      if (!item.name || item.id === null) continue;
+      pathsToRemove.add(`${prefix}/${item.name}`);
+    }
+  }
+
+  const paths = Array.from(pathsToRemove);
+  if (paths.length > 0) {
+    const { error } = await supabase.storage.from(STORAGE_BUCKET).remove(paths);
+    if (error) {
+      console.error(`Failed to sweep storage folder '${rootPrefix}':`, error.message);
+    }
+  }
+}
