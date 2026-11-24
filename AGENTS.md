@@ -6,411 +6,95 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # AGENTS.md — Cerna Pensamento
 
-Comprehensive operating guide and architectural reference for AI coding agents and engineers working on the **Cerna Pensamento** repository.
+Operating guide and navigation index for AI coding agents working on **Cerna Pensamento** (`https://cernapensamento.org`), a bilingual cultural journal in Galician (`gl`, default) and Spanish (`es`).
 
----
+## Agent skills
 
-## 1. Project Overview & Identity
+### Issue tracker
+Local Markdown under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
 
-* **Project Name:** Cerna Pensamento
-* **Production Domain:** `https://cernapensamento.org`
-* **Nature:** Digital cultural journal and intellectual magazine focused on political philosophy, Austrian economics, social sciences, essays, reviews, poetry, and narrative.
-* **Languages (i18n):** Bilingual platform with Galician (`gl` — default primary locale) and Spanish (`es`).
-* **Design Philosophy:** Sobriety, editorial typography, classical literary feeling, high readability, paper-like palette (`parchment`, `charcoal`, `gold`), responsive design, and seamless dark mode.
+### Triage labels
+Canonical 5-role label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
 
----
+### Domain docs
+Single-context layout (`GLOSSARY.md` at repo root + `docs/adr/`). Read `GLOSSARY.md` and relevant ADRs before exploring or editing domain code. See `docs/agents/domain.md`.
 
-## 2. Technology Stack
+### Coding standards
+Review-time standards for Next.js 16, i18n, DAL, sanitization, and UI composition live in `CODING_STANDARDS.md`.
 
-| Layer | Technologies & Dependencies | Version |
-|---|---|---|
-| **Core Framework** | Next.js App Router, React, React DOM | Next `16.2.x`, React `19.2.x` |
-| **Language & Typings** | TypeScript (`strict` mode), ESLint 9 | TS `5.x`, ESLint `9.x` |
-| **Styling & Design** | Tailwind CSS v4 (`@tailwindcss/postcss`), CSS Variables | Tailwind `4.x` |
-| **Typography & Icons** | `Libre Caslon Text` (Serif), `Source Sans 3` (Body), `Plus Jakarta Sans` (UI), Material Symbols | Next Font / Google Fonts |
-| **Database & Auth** | Supabase PostgreSQL, `@supabase/ssr`, `@supabase/supabase-js`, GoTrue | Postgres 15+, Supabase SSR `0.12.x` |
-| **Data Access Layer (DAL)** | Strongly-typed queries, constants & models (`src/lib/db/`) | Custom TypeScript DAL |
-| **WYSIWYG Editor** | TipTap 3, ProseMirror, KaTeX (math), custom tables, TOC | TipTap `3.27.x`, KaTeX `0.16.x` |
-| **Sanitization** | `sanitize-html` (`src/lib/editor/sanitizeArticleHtml.ts`) | `2.17.x` |
-| **Edge & Rate Limiting** | Next.js Edge Middleware (`src/proxy.ts`), Upstash Redis, `@upstash/ratelimit` | Upstash Redis `1.38.x` |
-| **AI Translation** | Google Gemini (`@google/genai`) | `gemini-3.5-flash-lite` |
-| **Transactional Email & PDF** | Resend API, `@react-email/components`, `pdf-lib` | Resend `6.17.x`, pdf-lib `1.17.x` |
-| **Observability & Testing** | Sentry (`@sentry/nextjs`), Vitest, Playwright | Sentry `10.x`, Vitest `3.2.x` |
+## Architecture & Reference Docs
 
----
+Consult the relevant reference doc before changing a subsystem (and keep it synced when contracts change):
+- `docs/INDEX.md` — architecture overview & module map
+- `docs/frontend.md` — App Router, layouts, design tokens, i18n
+- `docs/editor.md` — TipTap 3, KaTeX, tables, TOC, sanitization pipeline
+- `docs/backend.md` — Edge proxy (`src/proxy.ts`), Server Actions, Route Handlers
+- `docs/database.md` — PostgreSQL schema, constraints, DAL, RLS, Storage, newsletter dispatches
+- `docs/integrations.md` — Supabase, Upstash, Resend, Gemini AI, Sentry, AI agent Markdown
+- `docs/adr/` — accepted Architecture Decision Records (e.g., `0001-monolingual-publications.md`)
 
-## 3. Repository Directory Structure
+Do not create `docs/issues/`, `docs/reports/`, `docs/CODEMAPS/`, or standalone protocol files; keep local visualizers (`docs/architecture.html`, `.archify/`) git-ignored.
 
+## Core Invariants
+
+1. **Next.js 16 async APIs:** Always await `params`, `searchParams`, `cookies()`, and `headers()`. Keep public reader pages (`/articulo/[slug]`) decoupled from `getAuthenticatedUser()` / `cookies()` to preserve ISR.
+2. **Bilingual UI & Monolingual/Bilingual Publications:** Keep `src/dictionaries/gl.json` and `src/dictionaries/es.json` in strict key parity and prefix all internal links with `/${lang}/...`. Publications support both **Bilingual** (`gl` + `es`) and **Monolingual** (`gl`-only or `es`-only) publishing derived from stored JSONB keys (`@/lib/i18n/publicationLanguage`; see `docs/adr/0001-monolingual-publications.md`).
+3. **DAL & Egress:** Import schema identifiers from `@/lib/db/schema` (zero magic strings). Never select full `content` in listing, archive, author, sitemap, or dashboard queries.
+4. **Sanitization & Storage:** Render publication HTML in strict order (`stripIndex` → `renderMathInHtml` → `renderHeadingAnchors` → `sanitizeArticleHtml`) with editor nodes whitelisted in `ARTICLE_SANITIZER_CONFIG`. Upload via `uploadStorageImage()` (WebP) and clean up covers/inline images across all locale keys via `cleanupPublicationImages()`.
+
+Full review standards are in `CODING_STANDARDS.md`.
+
+## Git Lifecycle & Verification Protocol
+
+### Stage 1: Isolated Git Worktree
+Never work directly on `development` or `main`. Create a dedicated worktree under `.worktrees/` branched from `development`:
+```bash
+git worktree add .worktrees/<branch-name> -b <branch-name> development
+cd .worktrees/<branch-name>
+ln -snf ../../.env.local .env.local
+ln -snf ../../node_modules node_modules
 ```
-cerna/
-├── src/
-│   ├── actions/                  # Next.js Server Actions (articles.ts, auth.ts)
-│   ├── app/                      # Next.js App Router tree
-│   │   ├── [lang]/               # Localized public and private routes
-│   │   │   ├── articulo/[slug]/  # Public article reader (ISR), TOC, PDF link & comments
-│   │   │   ├── articulos/        # Articles archive & topic filter
-│   │   │   ├── asociacion/       # Institutional pages (manifesto, statutes, editorial collections)
-│   │   │   ├── autor/[slug]/     # Author profile & author's publications
-│   │   │   ├── autores/          # Published authors directory
-│   │   │   ├── contacto/         # Contact form page
-│   │   │   ├── escritorio/       # Private dashboard & TipTap editor (/nuevo, /editar/[slug], /perfil)
-│   │   │   ├── login/            # Authentication page (Google OAuth + Email/Password)
-│   │   │   ├── noticias/         # News & editorial announcements channel
-│   │   │   ├── privacidad/       # Privacy policy page
-│   │   │   ├── recuperar-password/ & actualizar-password/  # Password reset flow
-│   │   │   ├── layout.tsx        # Root localized layout (NavBar, Footer, Theme/Auth/Feedback providers)
-│   │   │   ├── loading.tsx       # Fullscreen loading overlay
-│   │   │   └── page.tsx          # Homepage (Hero, Mosaic, Association & News, Columnists, Themes, FAQ)
-│   │   ├── api/                  # Route Handlers
-│   │   │   ├── articulo/[slug]/pdf/  # GET: server-side editorial PDF generator
-│   │   │   ├── contact/          # POST: sends contact inquiries (+ optional PDF) via Resend
-│   │   │   ├── markdown/         # GET: Markdown representation for AI agents
-│   │   │   ├── newsletter/unsubscribe/  # GET/POST: HMAC 1-click & RFC 8058 unsubscribe
-│   │   │   ├── translate/        # POST: bilingual translations via Gemini AI
-│   │   │   └── webhooks/newsletter/  # POST: database webhook newsletter dispatch
-│   │   ├── auth/                 # Auth OAuth & OTP callbacks (/callback, /confirm)
-│   │   ├── robots.ts & sitemap.ts # Dynamic SEO robots and localized sitemap
-│   │   └── globals.css           # Tailwind v4 theme definitions and canonical editorial CSS
-│   ├── components/               # Modular React components by domain
-│   │   ├── errors/               # LiteraryError boundary component
-│   │   ├── escritorio/           # TipTap editor, toolbars, metadata sidebars, table & tag controls
-│   │   ├── estatutos/            # Statutes cards
-│   │   ├── features/             # Article cards, TOC, PDF download, comments, filters, mosaics, profiles
-│   │   ├── forms/                # ContactForm, CommentForm, PasswordForm, EditarArticuloForm
-│   │   ├── layout/               # PublicNavBar, SideMenu drawer, SiteFooter, visibility wrappers
-│   │   ├── providers/            # AuthProvider
-│   │   ├── sections/             # Homepage sections (HeroIntro, ArticlesMosaic, Columnists, Themes, FAQ)
-│   │   └── ui/                   # Shared UI primitives (SocialLinks, ThemeToggle, LanguageToggle, dialogs)
-│   ├── content/                  # Localized institutional Markdown documents (estatutos, privacidad, colecciones)
-│   ├── dictionaries/             # Canonical i18n JSONs: gl.json (default), es.json
-│   ├── hooks/                    # React hooks (useAuth, useLocale)
-│   ├── lib/                      # Unified library: Supabase clients, auth, DAL, editor, email, PDF, storage
-│   │   ├── agent/                # Markdown content negotiation & HTML-to-Markdown conversion
-│   │   ├── auth.ts               # Authenticated user & role resolver
-│   │   ├── supabase/             # Supabase SSR clients (server.ts, client.ts)
-│   │   ├── db/                   # Strongly-Typed Data Access Layer (DAL)
-│   │   │   ├── schema.ts         # Constants: DB_TABLES, column names, enums, role helpers
-│   │   │   ├── types.ts          # Table rows, aggregates, and view interfaces
-│   │   │   ├── client.ts         # Cookie-free public anon client for ISR/sitemap
-│   │   │   ├── formatDbError.ts  # Safe DB error formatter
-│   │   │   ├── queries/          # Modular typed query modules (publications, users, comments, tags, newsletter, composite)
-│   │   │   ├── __rls__/          # PostgreSQL RLS integration tests
-│   │   │   └── index.ts          # Barrel export for lib/db
-│   │   ├── editor/               # TipTap extensions, KaTeX renderers, TOC & heading anchors, HTML sanitizer
-│   │   ├── email/                # Newsletter React Email templates, HTML renderer & HMAC token utilities
-│   │   ├── i18n/                 # deepMerge & resolveLocalizedText helpers
-│   │   ├── pdf/                  # Article PDF export generator (pdf-lib)
-│   │   ├── storage/              # Unified storage service, WebP compression & path helpers
-│   │   └── utils/                # Slug generation & normalization helpers
-│   └── proxy.ts                  # Perimeter Edge middleware (i18n, Markdown negotiation, rate limiting, auth gating)
-├── database/                     # PostgreSQL schema definitions
-│   └── full_schema.sql           # Complete canonical database schema dump (tables, RLS, functions)
-├── docs/                         # Technical architecture documentation
-│   ├── INDEX.md                  # Architecture overview & module index
-│   ├── frontend.md               # App Router, layouts, design tokens, i18n
-│   ├── editor.md                 # TipTap 3 suite, KaTeX, tables, TOC, sanitization
-│   ├── backend.md                # Edge proxy, Server Actions, API Route Handlers
-│   ├── database.md               # PostgreSQL schema, DAL, RLS, Storage, dispatches
-│   └── integrations.md           # Supabase, Upstash, Resend, Gemini AI, Sentry, AI agents
-├── supabase/                     # Local Supabase CLI stack (config.toml, migrations, seed.sql, tests/)
-└── public/                       # Static assets (images, logos, llms.txt, agent-instructions.md)
-```
-
----
-
-## 4. Critical Invariants & Rules (MUST NEVER BE BROKEN)
-
-### 4.1. Next.js 16 & React 19 Breaking API Conventions
-* **Asynchronous `params` and `searchParams`:**  
-  In Next.js 16 App Router, `params` and `searchParams` in page components and `generateMetadata` **are Promises**. Always await them:
-  ```tsx
-  // ✅ Correct:
-  export default async function Page({ params }: { params: Promise<{ lang: string; slug: string }> }) {
-    const { lang, slug } = await params;
-    ...
-  }
-  ```
-* **Asynchronous Cookies & Headers:**  
-  `cookies()` and `headers()` from `next/headers` must always be awaited: `const cookieStore = await cookies();`.
-* **Server Components by Default:**  
-  Keep components as Server Components unless interactivity, state, event listeners, or browser APIs require `'use client'`.
-
-### 4.2. Internationalization (i18n) Rules
-* **Mandatory i18n Standard via Dictionaries:**  
-  Cerna is a bilingual platform (`gl` default, `es`). **All public UI text, menu labels, button text, badges, placeholders, and link descriptions must be retrieved strictly from `src/dictionaries/gl.json` and `src/dictionaries/es.json`**. Never hardcode raw user-facing strings in TSX components or pages.
-* **Bilingual Parity:**  
-  Every dictionary key added to `src/dictionaries/gl.json` must exist with its translation in `src/dictionaries/es.json`. Regressions where a key exists only in one language break the UI and are strictly disallowed.
-* **No Hardcoded URLs / Enforce Dynamic Locale Prefixing:**  
-  **Never write hardcoded, unlocalized URLs** (e.g. `<Link href="/articulos">`, `<Link href="/contacto">`, or `router.push('/login')`).  
-  All internal links and programmatic redirects must strictly use the active locale prefix:
-  ```tsx
-  // ❌ FORBIDDEN:
-  <Link href="/articulos">Arquivo</Link>
-  <Link href="/gl/articulos">Arquivo</Link> // Hardcoded locale
-
-  // ✅ CORRECT:
-  <Link href={`/${lang}/articulos`}>{dict.nav.articulos}</Link>
-  <Link href={`/${lang}/articulo/${slug}`}>{title}</Link>
-  ```
-* **Database Multilingual Fields:**  
-  Publications and user profiles use unified JSONB fields: `title` (`{ gl, es }`), `subtitle` (`{ gl, es }`), `content` (`{ gl, es }`), and `bio` (`{ gl, es }`). Always supply and handle both language variants.
-* **Path Prefixing & Middleware Routing:**  
-  All public and private app routes live under `src/app/[lang]/`. The perimeter edge middleware (`src/proxy.ts`) enforces locale detection and redirection to `/${lang}/...`. Components must never bypass this structure.
-
-### 4.3. Data Access Layer (DAL) & Supabase Guardrails
-* **Zero Magic Strings:**  
-  Never hardcode table names, column names, statuses, or roles in application code. Always import identifiers from `@/lib/db/schema`:
-  - Tables: `DB_TABLES.PUBLICATIONS`, `DB_TABLES.USERS`, `DB_TABLES.COMMENTS`, `DB_TABLES.TAGS`, `DB_TABLES.TAG_TRANSLATIONS`, `DB_TABLES.PUBLICATION_TAGS`.
-  - Columns: `PUBLICATION_COLS`, `USER_COLS`, `COMMENT_COLS`, `TAG_COLS`, `PUBLICATION_TAG_COLS`.
-  - Enums: `USER_ROLES`, `PUBLICATION_STATUSES`, `PUBLICATION_TYPES`, `EDITOR_ACTIONS`, `GUEST_PUBLICATION_LIMITS`.
-* **Standard Schema Tables:**
-  - `publications` (formerly `articulos`): id, slug, title, subtitle, content, cover_image_url, status, type, original_language, is_pinned, show_index, published_at, newsletter_sent_at, author_id, created_at, updated_at.
-  - `users` (formerly `perfiles`): id, full_name, slug, bio, avatar_url, newsletter_subscribed, role.
-  - `comments` (formerly `comentarios`): id, publication_id, author_id, content, updated_at.
-  - `tags` & `tag_translations`: taxonomy tables with localized names connected to publications via `publication_tags`.
-  - `newsletter_dispatches`: database-internal retry bookkeeping table used by PostgreSQL triggers (`trigger_publication_published_newsletter`), `pg_net`, and `pg_cron` (`reconcile_newsletter_dispatches()`).
-* **Editorial Roles & Permissions:**
-  - Roles: `reader`, `guest`, `member`, `founder`, `admin`.
-  - Direct Publishing: Only `founder` and `admin` can directly publish (`status = 'published'`).
-  - Editorial Review: Submissions from `member` and `guest` enter review (`status = 'in_review'`).
-  - Approval Authority: `founder` and `admin` have rights to review, approve, or reject submissions in review.
-  - Readers: `reader` is read-only and redirected away from writer desk tools to `/escritorio/perfil`.
-* **Never Query Heavy Content on Listings (Egress Bandwidth Guardrail):**  
-  On the homepage (`page.tsx`), archive (`articulos/page.tsx`), news, author profiles, and dashboard lists, **never select full article content** (`content`). Select only the metadata needed for cards (`id, slug, title, subtitle, cover_image_url, type, created_at, users(full_name)`).
-* **Decouple Auth from Public Reader SSR:**  
-  Public article pages (`/articulo/[slug]`) must not call `getAuthenticatedUser()` / `cookies()` during initial server render. Doing so disables static caching/ISR and triggers dynamic SSR on every bot/crawler hit. Keep reader rendering cached (ISR `revalidate = 60` or on-demand revalidation) and handle user-specific review actions on the client.
-* **Storage Bucket Rules:**  
-  * Use the primary public bucket: `media` (with `imagenes-articulos` recognized for legacy assets).
-  * Standard canonical paths (via `@/lib/storage`):
-    * Profile avatars: `profiles/{userId}/avatar-{timestamp}-{slug}.webp` (max 512x512)
-    * Article covers: `publications/covers/{userId}/cover-{timestamp}-{slug}.webp` (max 1600x1200)
-    * In-article images: `publications/inline/{userId}/{name}-{timestamp}-{slug}.webp` (max 1400x1400)
-    * Legacy compatibility: `avatares/`, `portadas/`, and `contenido/` remain recognized for deletion/cleanup.
-  * Client-side WebP compression and dimension limits must always be enforced via `uploadStorageImage()` before uploading to avoid exhausting bandwidth egress quotas.
-  * Orphan prevention: Article covers and inline images must be purged via `cleanupPublicationImages()` when a publication is deleted.
-
-### 4.4. TipTap Editor & HTML Sanitization Pipeline
-* **Rendering Order:**  
-  When rendering article content in `src/app/[lang]/articulo/[slug]/page.tsx`, the sequence is strict:
-  1. `stripIndex(content)` (strips legacy inline `<nav data-type="article-index">` nodes; the TOC is rendered declaratively via `<ArticleTableOfContents />` when `show_index` is enabled).
-  2. `renderMathInHtml(content)` (`src/lib/editor/renderMath.ts` — converts `$math$` and LaTeX blocks to KaTeX HTML).
-  3. `renderHeadingAnchors(...)` (`src/lib/editor/renderHeadingAnchors.ts` — injects deterministic slug IDs into headings for TOC linking).
-  4. `sanitizeArticleHtml(...)` (`src/lib/editor/sanitizeArticleHtml.ts` — applies `ARTICLE_SANITIZER_CONFIG` via `sanitize-html`).
-* **Sanitization Whitelist:**  
-  Any custom TipTap node, inline style, or attribute generated by the editor (e.g., `<nav data-type="article-index">`, `<figure>`, `<table>`, KaTeX math elements) **must be explicitly whitelisted** in `ARTICLE_SANITIZER_CONFIG` inside `src/lib/editor/sanitizeArticleHtml.ts`. If omitted, production will silently drop the element.
-
-### 4.5. Editorial Design Tokens (Tailwind v4)
-Always use semantic CSS variables via Tailwind classes to ensure dark mode works automatically:
-* Backgrounds: `bg-parchment` (base), `bg-surface` (cards, drawers, inputs).
-* Text: `text-charcoal` (primary text), `text-charcoal/60` (subtitles/metadata), `text-gold` (accent labels, active links).
-* Borders: `border-lines` (dividers, table borders).
-* Fonts: `font-serif` (`Libre Caslon Text`) for headlines, pull quotes, and titles; `font-sans` (`Source Sans 3`) for body copy, UI, and buttons.
-
----
-
-## 5. Agent Behavioral Protocol & Git Lifecycle (Mandatory)
-
-Every agent working on this codebase must strictly adhere to the following 5-stage lifecycle for all tasks (features, bugfixes, refactoring, database changes, etc.):
-
-### Stage 1: Isolated Git Worktree Creation
-* **Never work directly on `development` or `main`**:
-  Always create an isolated Git worktree inside the dedicated, ignored `.worktrees/` directory on a separate branch branched off `development`:
-  ```bash
-  git worktree add .worktrees/<branch-name> -b <branch-name> development
-  cd .worktrees/<branch-name>
-  ln -snf ../../.env.local .env.local
-  ln -snf ../../node_modules node_modules
-  ```
-* All code editing, dependency installations, and local testing must take place strictly inside this dedicated worktree directory.
-* The `.worktrees/` directory is git-ignored and excluded from TypeScript to avoid language server conflicts or watcher pollution.
 
 ### Stage 2: Surgical Implementation & Local Verification
-* **Plan before executing**: Review existing components, DAL queries in `src/lib/db/`, and architecture docs directly under `docs/` (`docs/INDEX.md`, `docs/frontend.md`, `docs/editor.md`, `docs/backend.md`, `docs/database.md`, `docs/integrations.md`) before introducing new abstractions.
-* **Documentation & Protocol Governance**:
-  - Do **not** create `docs/issues/`, `docs/reports/`, `docs/CODEMAPS/`, or standalone protocol/style-guide markdown files.
-  - All agent, workflow, and release protocols belong strictly in `AGENTS.md`.
-  - Technical docs belong directly under `docs/*.md` and should be kept synchronized with code changes. Local interactive visualizers (such as `docs/architecture.html` and `.archify/`) must stay git-ignored.
-* **Surgical, high-cohesion edits**: Keep changes minimal, focused, and immutable. Do not reformat unrelated code, reorder imports gratuitously, or remove existing comments and docstrings.
-* **Verify locally**: Always ensure the build and linter pass cleanly before presenting changes:
-  ```bash
-  npm run lint
-  npm run build
-  ```
-  If touching database migrations, seed data, or schemas, also verify local DB reset:
-  ```bash
-  npm run db:reset
-  ```
-
-### Stage 3: Review Gating — Strict Zero Premature Commits
-* **CRITICAL RULE — ZERO COMMITS WITHOUT EXPLICIT APPROVAL**:
-  Under no circumstances may an agent run `git commit` autonomously during development.
-* All changes must remain unstaged or staged in the working tree for user review.
-* Present a concise, structured summary of modifications, files affected, and verification test results to the user.
-* Request explicit approval from the user before proceeding to commit. Wait for the user's explicit confirmation (e.g., "approve", "go ahead and commit").
-
-### Stage 4: Granular Micro-Commits
-* Once (and only once) the user explicitly approves:
-* Break the work down into **small, atomic micro-commits** organized by logical unit or file.
-* **NEVER run blanket commits**: `git add .` or `git commit -am "..."` are strictly forbidden.
-* Stage files individually:
-  ```bash
-  git add <specific-file-1>
-  git commit -m "feat(scope): concise description"
-
-  git add <specific-file-2>
-  git commit -m "style(scope): concise description"
-  ```
-* Adhere strictly to Conventional Commits format (`feat:`, `fix:`, `refactor:`, `style:`, `test:`, `docs:`, `chore:`).
-
-### Stage 5: Merge into Development & Worktree Cleanup
-* Once all micro-commits have been created on the feature branch:
-* Switch back to the primary repository root folder and checkout `development`:
-  ```bash
-  cd /home/pablo/Projects/Cerna
-  git checkout development
-  git merge <branch-name> --no-ff -m "merge: merge <branch-name> into development"
-  ```
-* Push `development` to remote so Vercel can automatically trigger and deploy the preview:
-  ```bash
-  git push origin development
-  ```
-* Remove the temporary worktree and clean up the local feature branch:
-  ```bash
-  git worktree remove .worktrees/<branch-name>
-  git branch -d <branch-name>
-  ```
-* **Production Release & Pull Request Protocol (`development` → `main`):**
-  1. **Pre-flight checks:** Confirm local `development` matches `origin/development`, inspect `git log main..development --oneline`, and verify `npm run lint`, `npm run build`, `npm test`, and `npm run db:reset` pass cleanly.
-  2. **Pending DB migrations:** Before promoting `development` to `main`, push any unapplied migrations (`npx supabase db push` against linked production) and confirm `database/full_schema.sql` is in sync.
-  3. **Pull Request Summary (`development` → `main`):** Create the PR via `gh pr create --base main --head development` with sections for Summary, Database/Env impact, Verification results (`lint`, `build`, `test`, `db:reset`), and Post-merge tag (`vX.Y.Z`) + Vercel production smoke-test checks. Keep this protocol inside `AGENTS.md` (do not re-create standalone protocol files).
-
----
-
-## 6. Common Developer Workflows
-
-### Running the Development Server
-```bash
-npm run dev
-```
-
-### Running Typechecks & Lint
+Keep edits focused and minimal. Before reporting work ready, run:
 ```bash
 npm run lint
-```
-
-### Building for Production
-```bash
+npm run typecheck
+npm test
 npm run build
 ```
+When touching `supabase/migrations/`, `supabase/seed.sql`, or DB constraints/triggers, also run:
+```bash
+npm run db:reset
+npx supabase test db
+npm run test:db
+```
+Update the canonical schema dump after migration changes:
+```bash
+npx supabase db dump --local -f database/full_schema.sql
+```
 
-### Running Tests
-The project uses **Vitest** for unit, API, and component tests and **Playwright** for end-to-end user journeys:
-* **Unit & Component tests:**
-  ```bash
-  npm test
-  ```
-* **Watch mode:**
-  ```bash
-  npm run test:watch
-  ```
-* **Coverage report (v8):**
-  ```bash
-  npm run test:coverage
-  ```
-* **Database & RLS integration tests (requires local Supabase running via `npm run db:start`):**
-  ```bash
-  npm run test:db
-  ```
-* **PostgreSQL / pgTAP migration & newsletter dispatch tests (inside Supabase CLI stack):**
-  ```bash
-  npx supabase test db
-  ```
-* **End-to-End tests (Playwright):**
-  ```bash
-  npm run test:e2e
-  ```
+### Stage 3: Review Gating & Commits
+- During interactive single-branch development, **never run `git commit` without explicit user approval**; leave changes in the worktree for review and present a concise summary + verification results.
+- Exception for orchestrated skill flows: during an explicit `/implement` or `/implement-spec` run, atomic Conventional Commits are permitted on isolated feature/integration worktree branches; **merging into `development` or `main` and pushing always requires explicit user approval**.
 
-### Running GitHub Actions CI Locally with `act` (Optional but Recommended)
-Running GitHub Actions locally through [`nektos/act`](https://github.com/nektos/act) allows developers to validate the exact GitHub CI pipeline in a local Docker container before pushing code. It is **optional** for developers, but **highly recommended** when touching CI workflows or preparing releases.
+### Stage 4: Granular Micro-Commits
+Stage files individually using Conventional Commits (`feat:`, `fix:`, `refactor:`, `style:`, `test:`, `docs:`, `chore:`). Never use blanket `git add .` or `git commit -am`.
 
-* **Prerequisites:**
-  - Docker daemon running (`systemctl start docker`).
-  - `act` installed via Arch Linux: `sudo pacman -S act` (or via your system's package manager).
-* **Commands:**
-  - **Syntax check / dry-run:**
-    ```bash
-    npm run act:check
-    ```
-  - **Simulate push CI pipeline (runs `.github/workflows/test.yml`):**
-    ```bash
-    npm run act:test
-    ```
-  - **Simulate pull request pipeline:**
-    ```bash
-    npm run act:pr
-    ```
-  - Configuration is persisted in `.actrc` mapping `ubuntu-latest` to optimized runner images (`catthehacker/ubuntu:act-latest`).
+### Stage 5: Merge to `development`, Cleanup & Release
+After explicit user approval:
+```bash
+cd /home/pablo/Projects/Cerna
+git checkout development
+git merge <branch-name> --no-ff -m "merge: merge <branch-name> into development"
+git push origin development
+git worktree remove .worktrees/<branch-name>
+git branch -d <branch-name>
+```
+**Production release (`development` → `main`):** Verify `development` matches `origin/development`, run `lint` / `typecheck` / `test` / `build` / `db:reset`, push pending migrations (`npx supabase db push`) and verify `database/full_schema.sql` is synced, then open the PR via `gh pr create --base main --head development` covering Summary, DB/Env impact, Verification results, and post-merge tag (`vX.Y.Z`) + production smoke checks.
 
-### Adding a New UI String / Translation
-1. Add the Galician key-value in `src/dictionaries/gl.json`.
-2. Add the corresponding Spanish key-value in `src/dictionaries/es.json`.
-3. In Server Components, retrieve via `const dict = await getDictionary(lang);`.
-4. In Client Components, retrieve via `getDictionaryClient(lang)` or pass down from the parent Server Component.
+## Local Supabase & Test Accounts
 
-### Local Database Development & Migration Workflow (Supabase CLI)
+Check `package.json` for all dev/test/act/db scripts (`db:start`, `db:stop`, `db:reset`, `db:status`, `act:test`). Local endpoints: API `http://127.0.0.1:54321`, Studio `http://127.0.0.1:54323`, Inbucket `http://127.0.0.1:54324`, DB port `54322`.
 
-To protect production and staging databases, **all database changes must be developed and tested locally** using the Supabase CLI Docker stack before being promoted to remote environments.
-
-#### 1. Managing the Local Supabase Stack
-* **Start local stack:** `npm run db:start` (starts PostgreSQL, GoTrue Auth, Storage, Studio, and Inbucket).
-* **Stop local stack:** `npm run db:stop`.
-* **Reset local database:** `npm run db:reset` (wipes local DB, applies all `supabase/migrations/` in sequence, and runs `supabase/seed.sql`).
-* **Check local status & keys:** `npm run db:status`.
-
-#### 2. Local Environment Endpoints
-* **API URL:** `http://127.0.0.1:54321`
-* **Local Studio Dashboard:** `http://127.0.0.1:54323`
-* **Local Inbucket (Email Inbox):** `http://127.0.0.1:54324` (captures confirmation and password recovery emails locally).
-* **Local DB Port:** `54322`
-
-#### 3. Local Seed & Test Accounts
-Running `npm run db:reset` populates `supabase/seed.sql` with the public taxonomy, sample publications, storage bucket `imagenes-articulos`, and pre-configured test users (password for all: `Password123!`):
-* **Diego Araújo (Founder):** `diegoaraujo@cernapensamento.org`
-* **Héctor González (Founder):** `hectorgonzalez@cernapensamento.org`
-* **Denís Fernández (Founder):** `denisfernandez@cernapensamento.org`
-* **Anxo Pérez (Founder):** `anxoperez@cernapensamento.org`
-* **Admin:** `admin@cernapensamento.org`
-* **Guest Author:** `lucia.vazquez@cerna.org`
-* **Member:** `martino.rodriguez@cerna.org`
-* **Reader:** `lector@cerna.org`
-
-#### 4. Applying Schema Changes (Local → Remote)
-1. **Create an incremental migration:**
-   * Either create an empty migration file:
-     ```bash
-     npx supabase migration new <descriptive_name>
-     ```
-   * Or apply changes in Local Studio (`http://127.0.0.1:54323`) and auto-generate the SQL diff:
-     ```bash
-     npx supabase db diff -f <descriptive_name>
-     ```
-2. **Verify locally:**
-   * Run `npm run db:reset` to ensure the new migration applies cleanly on an empty database alongside `supabase/seed.sql`.
-3. **Synchronize Codebase DAL:**
-   * Update schema constants in `src/lib/db/schema.ts` (`DB_TABLES`, column names, enums).
-   * Update row types and models in `src/lib/db/types.ts` (or run `npx supabase gen types typescript --local`).
-   * Update DAL queries in `src/lib/db/queries/`.
-   * Run `npm run lint` and `npm run build` to catch type or query regressions.
-4. **Deploy Migrations to Remote / Production:**
-   * Link to the remote project once:
-     ```bash
-     npx supabase link --project-ref <remote-project-ref>
-     ```
-   * Push pending migrations:
-     ```bash
-     npx supabase db push
-     ```
-   * Update the canonical schema dump:
-     ```bash
-     npx supabase db dump --local -f database/full_schema.sql
-     ```
+Seed accounts (password `Password123!`): Founders (`diegoaraujo@cernapensamento.org`, `hectorgonzalez@cernapensamento.org`, `denisfernandez@cernapensamento.org`, `anxoperez@cernapensamento.org`), Admin (`admin@cernapensamento.org`), Guest Author (`lucia.vazquez@cerna.org`), Member (`martino.rodriguez@cerna.org`), Reader (`lector@cerna.org`).
