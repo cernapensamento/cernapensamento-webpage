@@ -127,7 +127,8 @@ export async function sanitizeBase64Images(
   html: string,
   userId: string,
   supabase: SupabaseClient,
-  onUploadedUrl: (url: string) => void
+  onUploadedUrl: (url: string) => void,
+  publicationId?: string
 ): Promise<string> {
   if (!html || !html.includes(';base64,')) return html;
   const base64Regex = /data:image\/([a-zA-Z0-9]+);base64,([A-Za-z0-9+/=]+)/g;
@@ -155,6 +156,7 @@ export async function sanitizeBase64Images(
         file: blob,
         category: STORAGE_CATEGORIES.PUBLICATION_INLINE,
         userId,
+        publicationId,
         originalFilename: `pasted-${i}`,
       });
       cleaned = cleaned.replace(m.fullMatch, publicUrl);
