@@ -4,13 +4,14 @@ import { getPublicationCards } from '@/lib/db/queries/publications';
 import { getPublishedAuthors } from '@/lib/db/queries/users';
 import { COLUMNISTS } from '@/lib/columnists';
 import { SITE_URL } from '@/lib/constants';
-import { i18n } from '@/i18n-config';
+import { i18n, type Locale } from '@/i18n-config';
+import { getAvailablePublicationLocales } from '@/lib/i18n/publicationLanguage';
 
 export const revalidate = 3600;
 
-function getLanguageAlternates(path: string = '') {
+function getLanguageAlternates(path: string = '', locales: readonly Locale[] = i18n.locales) {
   const languages: Record<string, string> = {};
-  for (const loc of i18n.locales) {
+  for (const loc of locales) {
     languages[loc] = `${SITE_URL}/${loc}${path}`;
   }
   return { languages };
@@ -81,13 +82,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (!pub.slug) continue;
       const effectiveDate = pub.published_at || pub.updated_at || pub.created_at;
       const lastMod = effectiveDate ? new Date(effectiveDate) : now;
-      for (const lang of i18n.locales) {
+      const availableLocales = getAvailablePublicationLocales(pub);
+      const locales = availableLocales.length > 0 ? availableLocales : i18n.locales;
+      for (const lang of locales) {
         entries.push({
           url: `${SITE_URL}/${lang}/articulo/${pub.slug}`,
           lastModified: lastMod,
           changeFrequency: 'weekly',
           priority: 0.85,
-          alternates: getLanguageAlternates(`/articulo/${pub.slug}`),
+          alternates: getLanguageAlternates(`/articulo/${pub.slug}`, locales),
         });
       }
     }
