@@ -148,13 +148,21 @@
     "readArticle": "Ler artigo",
     "readShort": "Ler",
     "loading": "Cargando...",
-    "featuredCoverAlt": "Portada do artigo destacado"
+    "featuredCoverAlt": "Portada do artigo destacado",
+    "languageBadge": {
+      "gl": "En galego",
+      "es": "En castelán"
+    }
   },
   "article": {
     "aboutAuthor": "Sobre o autor",
     "contributorOf": "é un contribuínte de",
     "unknownAuthor": "Autor Descoñecido",
     "originalLanguage": "Idioma orixinal:",
+    "onlyAvailableIn": {
+      "gl": "Este texto só está dispoñible en galego.",
+      "es": "Este texto só está dispoñible en castelán."
+    },
     "indexLabel": "Índice",
     "indexAriaLabel": "Índice do artigo",
     "notFoundTitle": "Artigo non atopado",
@@ -430,7 +438,13 @@
     "toApprove": "Para Aprobar",
     "noPendingArticles": "Non hai publicacións pendentes de aprobación.",
     "defaultAuthorName": "Editor",
-    "defaultCoverAlt": "Publicación"
+    "defaultCoverAlt": "Publicación",
+    "untitledDraft": "Borrador sen título",
+    "languageBadge": {
+      "gl": "GL",
+      "es": "ES",
+      "bilingual": "GL · ES"
+    }
   },
   "articleEditor": {
     "backToArticles": "Artigos",
@@ -507,6 +521,21 @@
     "tagExamplePlaceholder": "Ex: Medio Ambiente",
     "bothLangsRequired": "Debes completar ambos idiomas",
     "allLangsRequired": "Debes completar tódolos idiomas",
+    "validationMissingMonolingual": "Completa o título e o contido en {language} antes de publicar ou enviar para aprobación.",
+    "validationMissingBilingual": "En modo bilingüe debes completar o título e o contido en ambos idiomas (falta: {languages}).",
+    "validationEmptyDraft": "Escribe polo menos un título ou contido antes de gardar o borrador.",
+    "languageModeLabel": "Modo de idioma",
+    "languageModeBilingual": "Bilingüe",
+    "languageModeMonolingual": "Monolingüe",
+    "monolingualLangLabel": "Idioma da publicación",
+    "monolingualIn": "Só en",
+    "languageModeHint": "Alternar entre publicación bilingüe (galego e castelán) e monolingüe (un só idioma).",
+    "downgradeConfirmTitle": "¿Eliminar a tradución existente?",
+    "downgradeConfirmDesc": "Esta publicación tiña unha tradución gardada en {language}. Ao gardar en modo monolingüe eliminarase esa versión e as súas imaxes exclusivas.",
+    "downgradeConfirmAction": "Gardar só en {language}",
+    "publishLanguagesSummaryLabel": "Idiomas a publicar:",
+    "publishLanguagesOnly": "Só en {language}",
+    "publishLanguagesBoth": "Galego e Castelán",
     "createTagError": "Erro ao crear etiqueta: ",
     "createTagBtn": "+ CREAR NOVA ETIQUETA",
     "tableControls": {

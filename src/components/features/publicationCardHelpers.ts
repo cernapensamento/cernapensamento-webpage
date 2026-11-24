@@ -4,8 +4,10 @@ import {
   normalizePublicationType,
   type PublicationTypeValue,
 } from '@/lib/db/schema';
+import { i18n, isSupportedLocale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
-import type { Dictionary } from '@/dictionaries/client';
+import { resolvePublicationLocale } from '@/lib/i18n/publicationLanguage';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 
 /**
  * Structural shape accepted by publication cards, grids, and author archive views,
@@ -16,6 +18,8 @@ export interface LocalizablePublication {
   slug?: string | null;
   type?: string;
   tipo?: string;
+  original_language?: string | null;
+  idioma_original?: string | null;
   title?: LocalizedString;
   subtitle?: LocalizedString | null;
   content?: LocalizedString;
@@ -48,11 +52,16 @@ export interface LocalizablePublication {
   tags?: Array<{ id?: string; name?: string; slug?: string }> | TagItem[] | null;
 }
 
+function resolveFallbackLocale(item: LocalizablePublication): string {
+  return item.original_language || item.idioma_original || i18n.defaultLocale;
+}
+
 /** Resolves a publication's localized title across canonical JSONB and legacy fields. */
 export function resolvePublicationTitle(item: LocalizablePublication, lang: string): string {
+  const fallbackLang = resolveFallbackLocale(item);
   return (
-    resolveLocalizedText(item.title, lang) ||
-    resolveLocalizedText({ gl: item.titulo_gl, es: item.titulo_es }, lang)
+    resolveLocalizedText(item.title, lang, fallbackLang) ||
+    resolveLocalizedText({ gl: item.titulo_gl, es: item.titulo_es }, lang, fallbackLang)
   );
 }
 
@@ -61,19 +70,60 @@ export function resolvePublicationSubtitle(
   item: LocalizablePublication,
   lang: string
 ): string | null {
+  const fallbackLang = resolveFallbackLocale(item);
   return (
-    resolveLocalizedText(item.subtitle, lang) ||
-    resolveLocalizedText({ gl: item.subtitulo_gl, es: item.subtitulo_es }, lang) ||
+    resolveLocalizedText(item.subtitle, lang, fallbackLang) ||
+    resolveLocalizedText({ gl: item.subtitulo_gl, es: item.subtitulo_es }, lang, fallbackLang) ||
     null
   );
 }
 
 /** Resolves a publication's localized HTML body across canonical JSONB and legacy fields. */
 export function resolvePublicationContent(item: LocalizablePublication, lang: string): string {
+  const fallbackLang = resolveFallbackLocale(item);
   return (
-    resolveLocalizedText(item.content, lang) ||
-    resolveLocalizedText({ gl: item.contenido_gl, es: item.contenido_es }, lang)
+    resolveLocalizedText(item.content, lang, fallbackLang) ||
+    resolveLocalizedText({ gl: item.contenido_gl, es: item.contenido_es }, lang, fallbackLang)
   );
+}
+
+/**
+ * Returns a localized language badge label ONLY when the publication is monolingual
+ * and the reader's active locale differs from the publication's sole language.
+ */
+export function resolveAlternateLocaleBadge(
+  item: LocalizablePublication,
+  lang: string,
+  dict?: { articles?: Record<string, unknown> },
+  fallbackDict: Dictionary = getDictionaryClient(lang)
+): string | null {
+  if (!isSupportedLocale(lang)) return null;
+
+  const title = item.title ?? (item.titulo_gl || item.titulo_es
+    ? { gl: item.titulo_gl, es: item.titulo_es }
+    : undefined);
+  const content = item.content ?? (item.contenido_gl || item.contenido_es
+    ? { gl: item.contenido_gl, es: item.contenido_es }
+    : undefined);
+
+  const resolved = resolvePublicationLocale(
+    {
+      title,
+      content,
+      original_language: item.original_language ?? item.idioma_original,
+    },
+    lang
+  );
+
+  if (!resolved.isMonolingual || !resolved.isFallback) {
+    return null;
+  }
+
+  const dictBadges = (dict?.articles as { languageBadge?: Record<string, string> } | undefined)
+    ?.languageBadge;
+  const fallbackBadges = fallbackDict.articles.languageBadge as Record<string, string> | undefined;
+
+  return dictBadges?.[resolved.actualLocale] || fallbackBadges?.[resolved.actualLocale] || null;
 }
 
 /** Returns the subtitle or a stripped plain-text excerpt from the body content. */

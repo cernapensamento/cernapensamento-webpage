@@ -262,4 +262,43 @@ describe('EditarArticuloForm', () => {
       expect(mockPush).not.toHaveBeenCalled();
     });
   });
+
+  it('forwards language_mode through buildEditorSaveInput to saveArticleAction', async () => {
+    vi.mocked(articlesActions.saveArticleAction).mockResolvedValue({
+      success: true,
+      id: 'pub-mono-1',
+      slug: 'artigo-mono-123456',
+    });
+
+    const monoPub = {
+      ...mockPublication,
+      id: 'pub-mono-1',
+      title: { es: 'Solo en castellano' },
+      subtitle: null,
+      content: { es: '<p>Contenido en castellano</p>' },
+      original_language: 'es',
+      language_mode: 'monolingual',
+    } as unknown as PublicationDetail;
+
+    render(
+      <EditarArticuloForm
+        publication={monoPub}
+        userRole="founder"
+        lang="gl"
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('publish-btn'));
+
+    await waitFor(() => {
+      expect(articlesActions.saveArticleAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'pub-mono-1',
+          action: EDITOR_ACTIONS.PUBLISH,
+          language_mode: 'monolingual',
+          original_language: 'es',
+        })
+      );
+    });
+  });
 });

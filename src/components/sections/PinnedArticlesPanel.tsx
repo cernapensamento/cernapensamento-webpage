@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import { getDictionaryClient } from '@/dictionaries/client';
 import {
   resolveSectionArticle,
@@ -37,6 +38,7 @@ export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArt
             coverUrl,
             coverAlt,
             authorName,
+            alternateLocaleBadge,
           } = resolveSectionArticle(articulo, lang, dict, fallbackDict);
 
           return (
@@ -56,9 +58,12 @@ export default function PinnedArticlesPanel({ articulos, lang, dict }: PinnedArt
                   </div>
                 )}
               </div>
-              <span className="text-[10px] font-semibold text-gold uppercase tracking-widest mb-2">
-                {typeLabel}
-              </span>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="text-[10px] font-semibold text-gold uppercase tracking-widest">
+                  {typeLabel}
+                </span>
+                <AlternateLocaleBadge label={alternateLocaleBadge} />
+              </div>
               <h3 className="font-serif text-xl md:text-2xl mb-3 group-hover:text-gold transition-colors duration-300 line-clamp-3">
                 {titulo}
               </h3>
