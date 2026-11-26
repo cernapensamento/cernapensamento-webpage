@@ -216,6 +216,28 @@ export default function ArticleEditor({
     ? `cerna_draft_${publicationId}`
     : `cerna_draft_${currentUserId ? `${currentUserId}_new` : 'new'}`;
 
+  const prevDraftKeyRef = useRef(draftKey);
+  const prevPublicationIdRef = useRef(publicationId);
+
+  useEffect(() => {
+    const prevKey = prevDraftKeyRef.current;
+    const prevPubId = prevPublicationIdRef.current;
+    prevDraftKeyRef.current = draftKey;
+    prevPublicationIdRef.current = publicationId;
+
+    if (!prevPubId && publicationId && prevKey !== draftKey && typeof window !== 'undefined') {
+      try {
+        const cachedDraft = localStorage.getItem(prevKey);
+        if (cachedDraft !== null) {
+          localStorage.setItem(draftKey, cachedDraft);
+          localStorage.removeItem(prevKey);
+        }
+      } catch (err) {
+        console.warn('[ArticleEditor] Failed to migrate cached draft key:', err);
+      }
+    }
+  }, [draftKey, publicationId]);
+
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isInitialized = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -736,6 +758,12 @@ export default function ArticleEditor({
     const {
       data: { user: currentUser },
     } = await supabase.auth.getUser();
+
+    if (isUploadingCover.current || isUploadingInline.current) {
+      toast.warning(storageDict.uploadWait);
+      return;
+    }
+
     const userId = currentUser?.id || 'general';
 
     const currentHtml = editor?.getHTML() || '';
@@ -747,6 +775,11 @@ export default function ArticleEditor({
     const hasBase64 = i18n.locales.some((loc) =>
       (rawByLocale[loc] || '').includes(';base64,')
     );
+
+    if (lazyDraftPromiseRef.current) {
+      await lazyDraftPromiseRef.current;
+    }
+
     let activePublicationId = publicationIdRef.current;
     if (hasBase64 && !activePublicationId) {
       const ensured = await ensurePublicationId();
@@ -830,6 +863,9 @@ export default function ArticleEditor({
         saveTimeoutRef.current = null;
       }
       localStorage.removeItem(draftKey);
+      if (activePublicationId) {
+        localStorage.removeItem(`cerna_draft_${activePublicationId}`);
+      }
       setHasUnsavedChanges(false);
       setShowPublishModal(false);
     } catch (saveError) {
