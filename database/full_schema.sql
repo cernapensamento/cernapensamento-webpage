@@ -197,10 +197,13 @@ CREATE TABLE IF NOT EXISTS "public"."publications" (
     "newsletter_sent_at" timestamp with time zone,
     "published_at" timestamp with time zone,
     "show_index" boolean DEFAULT false NOT NULL,
-    CONSTRAINT "publications_content_bilingual_check" CHECK ((("content" ? 'gl'::"text") AND ("content" ? 'es'::"text") AND ("length"(TRIM(BOTH FROM ("content" ->> 'gl'::"text"))) > 0) AND ("length"(TRIM(BOTH FROM ("content" ->> 'es'::"text"))) > 0))),
-    CONSTRAINT "publications_original_language_format_check" CHECK (("original_language" ~ '^[a-z]{2,5}(-[a-zA-Z0-9]{2,5})?$')),
-    CONSTRAINT "publications_subtitle_bilingual_check" CHECK ((("subtitle" IS NULL) OR ("subtitle" = '{}'::"jsonb") OR (("subtitle" ? 'gl'::"text") AND ("subtitle" ? 'es'::"text")))),
-    CONSTRAINT "publications_title_bilingual_check" CHECK ((("title" ? 'gl'::"text") AND ("title" ? 'es'::"text") AND ("length"(TRIM(BOTH FROM ("title" ->> 'gl'::"text"))) > 0) AND ("length"(TRIM(BOTH FROM ("title" ->> 'es'::"text"))) > 0)))
+    CONSTRAINT "publications_language_content_check" CHECK ((("jsonb_typeof"("title") = 'object'::"text") AND ("jsonb_typeof"("content") = 'object'::"text") AND
+CASE
+    WHEN ("status" = 'draft'::"public"."publication_status") THEN (("length"("btrim"(COALESCE(("title" ->> 'gl'::"text"), ''::"text"))) > 0) OR ("length"("btrim"(COALESCE(("title" ->> 'es'::"text"), ''::"text"))) > 0) OR ("length"("btrim"(COALESCE(("content" ->> 'gl'::"text"), ''::"text"))) > 0) OR ("length"("btrim"(COALESCE(("content" ->> 'es'::"text"), ''::"text"))) > 0))
+    ELSE (("original_language" IS NOT NULL) AND ("original_language" = ANY (ARRAY['gl'::"text", 'es'::"text"])) AND ("length"("btrim"(COALESCE(("title" ->> "original_language"), ''::"text"))) > 0) AND ("length"("btrim"(COALESCE(("content" ->> "original_language"), ''::"text"))) > 0) AND (("length"("btrim"(COALESCE(("title" ->> 'gl'::"text"), ''::"text"))) > 0) = ("length"("btrim"(COALESCE(("content" ->> 'gl'::"text"), ''::"text"))) > 0)) AND (("length"("btrim"(COALESCE(("title" ->> 'es'::"text"), ''::"text"))) > 0) = ("length"("btrim"(COALESCE(("content" ->> 'es'::"text"), ''::"text"))) > 0)))
+END)),
+    CONSTRAINT "publications_original_language_format_check" CHECK (("original_language" ~ '^[a-z]{2,5}(-[a-zA-Z0-9]{2,5})?$'::"text")),
+    CONSTRAINT "publications_subtitle_jsonb_object_check" CHECK ((("subtitle" IS NULL) OR ("jsonb_typeof"("subtitle") = 'object'::"text")))
 );
 
 
@@ -228,11 +231,12 @@ BEGIN
   END IF;
 
   BEGIN
-    v_secret := current_setting('app.settings.webhook_secret', true);
+    v_secret := btrim(current_setting('app.settings.webhook_secret', true));
     IF v_secret IS NULL OR v_secret = '' THEN
-      SELECT decrypted_secret INTO v_secret
+      SELECT btrim(decrypted_secret) INTO v_secret
       FROM vault.decrypted_secrets
-      WHERE name = 'app.settings.webhook_secret' OR name = 'webhook_secret'
+      WHERE name IN ('webhook_secret', 'app.settings.webhook_secret')
+      ORDER BY CASE WHEN name = 'webhook_secret' THEN 0 ELSE 1 END, updated_at DESC
       LIMIT 1;
     END IF;
 
@@ -428,10 +432,11 @@ BEGIN
     IF TG_OP = 'INSERT' AND NEW.published_at IS NULL THEN
       NEW.published_at := timezone('utc'::text, now());
     ELSIF TG_OP = 'UPDATE' THEN
-      IF OLD.status IS DISTINCT FROM 'published'::public.publication_status AND NEW.published_at IS NULL THEN
+      IF OLD.status IS DISTINCT FROM 'published'::public.publication_status THEN
+        -- Always stamp real publication time when transitioning from draft/in_review to published
         NEW.published_at := timezone('utc'::text, now());
       ELSIF OLD.status = 'published'::public.publication_status THEN
-        -- Preserve original published_at when edited while published (unless explicitly set)
+        -- Preserve original published_at when edited while already published
         NEW.published_at := COALESCE(OLD.published_at, NEW.published_at, timezone('utc'::text, now()));
       END IF;
     END IF;

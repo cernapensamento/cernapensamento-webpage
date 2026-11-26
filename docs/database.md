@@ -77,6 +77,12 @@ erDiagram
     }
 ```
 
+### Publication Language Constraints (ADR 0001)
+- Publications support both **Bilingual Publications** (`gl` + `es`) and **Monolingual Publications** (`gl`-only or `es`-only), derived from stored JSONB keys with no separate `language_mode` column (see `docs/adr/0001-monolingual-publications.md`).
+- **`publications_language_content_check`:** For `published` and `in_review` rows, requires `original_language` to have both non-empty trimmed `title` and `content`, and requires any other populated supported locale to have both non-empty `title` and `content`. For `draft` rows, allows saving as long as at least one supported locale has non-empty `title` or `content`.
+- **`publications_subtitle_jsonb_object_check`:** Allows `NULL`, `{}`, or any JSONB object subset of locales without forcing both `gl` and `es` keys.
+- Verified via pgTAP in `supabase/tests/publication_language_constraints.test.sql` and RLS integration tests in `src/lib/db/__rls__/publications.rls.test.ts`.
+
 ### Core PostgreSQL Functions & Triggers
 - **`custom_access_token_hook()`:** Injects the authenticated user's `user_role` from `users` into the JWT claims so RLS and edge checks can inspect `current_user_role()` efficiently.
 - **`is_operator()` / `is_writer()`:** Reusable SQL security helpers separating editorial operators (`founder`, `admin`) from general contributors (`guest`, `member`).

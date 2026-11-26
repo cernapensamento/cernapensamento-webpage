@@ -6,6 +6,7 @@
 
 import { resolveClient } from '../resolveClient';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
+import { i18n } from '@/i18n-config';
 import { sanitizeStorageUrl } from '@/lib/storage/paths';
 import {
   DB_TABLES,
@@ -53,6 +54,7 @@ interface RawPublicationCard {
   cover_image_url: string | null;
   type: PublicationType;
   status: PublicationStatus;
+  original_language?: string | null;
   is_pinned: boolean | null;
   created_at: string;
   updated_at: string;
@@ -272,7 +274,10 @@ export async function getPublicationBySlug(
       show_index: activeData.show_index ?? false,
       created_at: activeData.created_at,
       updated_at: activeData.updated_at,
-      published_at: activeData.published_at ?? activeData.created_at,
+      published_at:
+        activeData.status === PUBLICATION_STATUSES.PUBLISHED
+          ? activeData.published_at ?? activeData.created_at
+          : activeData.published_at ?? null,
       author: normalizedAuthor,
       tags: normalizeTags(activeData.publication_tags, options?.lang),
     };
@@ -327,6 +332,7 @@ async function runPublicationCardsQuery(
     PUBLICATION_COLS.COVER_IMAGE_URL,
     PUBLICATION_COLS.TYPE,
     PUBLICATION_COLS.STATUS,
+    PUBLICATION_COLS.ORIGINAL_LANGUAGE,
     PUBLICATION_COLS.IS_PINNED,
     PUBLICATION_COLS.CREATED_AT,
     PUBLICATION_COLS.UPDATED_AT,
@@ -512,10 +518,14 @@ export async function getPublicationCards(
       cover_image_url: cleanImageUrl(row.cover_image_url),
       type: row.type,
       status: row.status,
+      original_language: row.original_language || i18n.defaultLocale,
       is_pinned: row.is_pinned ?? false,
       created_at: row.created_at,
       updated_at: row.updated_at,
-      published_at: row.published_at ?? row.created_at,
+      published_at:
+        row.status === PUBLICATION_STATUSES.PUBLISHED
+          ? row.published_at ?? row.created_at
+          : row.published_at ?? null,
       author: row.author || {
         id: row.author_id,
         full_name: 'Anónimo',
@@ -769,6 +779,7 @@ async function runDashboardPublicationsQuery(
     PUBLICATION_COLS.COVER_IMAGE_URL,
     PUBLICATION_COLS.TYPE,
     PUBLICATION_COLS.STATUS,
+    PUBLICATION_COLS.ORIGINAL_LANGUAGE,
     PUBLICATION_COLS.IS_PINNED,
     PUBLICATION_COLS.CREATED_AT,
     PUBLICATION_COLS.UPDATED_AT,

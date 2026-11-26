@@ -215,6 +215,50 @@ describe('saveArticleAction', () => {
     );
   });
 
+  it('stamps a fresh published_at when publishing an existing draft even if stale published_at is present', async () => {
+    const staleDraftDate = '2026-01-01T10:00:00Z';
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'author-1' } as unknown as User,
+      profile: { id: 'author-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
+      role: USER_ROLES.FOUNDER,
+    });
+
+    vi.mocked(dbModule.getPublicationById).mockResolvedValue({
+      id: 'pub-draft-1',
+      slug: 'borrador-antigo-abc123',
+      status: PUBLICATION_STATUSES.DRAFT,
+      created_at: staleDraftDate,
+      published_at: staleDraftDate,
+      author: { id: 'author-1' },
+    } as unknown as PublicationDetail);
+
+    vi.mocked(dbModule.updatePublication).mockResolvedValue({
+      data: { id: 'pub-draft-1' } as unknown as PublicationRow,
+      error: null,
+    });
+    vi.mocked(dbModule.syncPublicationTagsBySlugs).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+
+    const result = await saveArticleAction({
+      ...baseInput,
+      id: 'pub-draft-1',
+      action: EDITOR_ACTIONS.PUBLISH,
+    });
+
+    expect(result.success).toBe(true);
+    expect(dbModule.updatePublication).toHaveBeenCalledWith(
+      'pub-draft-1',
+      expect.objectContaining({
+        status: PUBLICATION_STATUSES.PUBLISHED,
+        published_at: expect.any(String),
+      })
+    );
+    const [, payload] = vi.mocked(dbModule.updatePublication).mock.calls[0];
+    expect(payload.published_at).not.toBe(staleDraftDate);
+  });
+
   it('clears published_at when an existing publication is returned to draft', async () => {
     vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
       user: { id: 'author-1' } as unknown as User,
@@ -279,7 +323,7 @@ describe('saveArticleAction', () => {
     expect(result.error).toContain('Non tes permiso para editar este artigo');
   });
 
-  it('uses localized default titles from dictionary when titles are blank', async () => {
+  it('omits blank titles on draft saves instead of injecting placeholder titles and derives a safe slug', async () => {
     vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
       user: { id: 'member-1' } as unknown as User,
       profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
@@ -298,18 +342,122 @@ describe('saveArticleAction', () => {
     const result = await saveArticleAction({
       ...baseInput,
       title: { gl: '', es: '' },
+      content: { gl: '<p>Borrador sen título</p>', es: '' },
       action: EDITOR_ACTIONS.DRAFT,
     });
 
     expect(result.success).toBe(true);
+    expect(result.slug).toMatch(/^artigo-[a-z0-9]{6}$/);
     expect(dbModule.createPublication).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: {
-          gl: 'Sen Título',
-          es: 'Sin Título',
-        },
+        title: {},
+        content: { gl: '<p>Borrador sen título</p>' },
       })
     );
+  });
+
+  it('saves a monolingual es-only publication, strips gl keys, syncs original_language, and derives slug from es', async () => {
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'founder-1' } as unknown as User,
+      profile: { id: 'founder-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
+      role: USER_ROLES.FOUNDER,
+    });
+
+    vi.mocked(dbModule.createPublication).mockResolvedValue({
+      data: { id: 'mono-es-1' } as unknown as PublicationRow,
+      error: null,
+    });
+    vi.mocked(dbModule.syncPublicationTagsBySlugs).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+
+    const result = await saveArticleAction({
+      ...baseInput,
+      language_mode: 'monolingual',
+      original_language: 'es',
+      title: { gl: 'Borrador galego descartado', es: 'Ensayo en Español' },
+      subtitle: { gl: 'Sub GL', es: 'Sub ES' },
+      content: { gl: '<p>Descartado</p>', es: '<p>Contenido en español</p>' },
+      action: EDITOR_ACTIONS.PUBLISH,
+      lang: 'es',
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.slug).toMatch(/^ensayo-en-espanol-[a-z0-9]{6}$/);
+    expect(dbModule.createPublication).toHaveBeenCalledWith(
+      expect.objectContaining({
+        original_language: 'es',
+        title: { es: 'Ensayo en Español' },
+        subtitle: { es: 'Sub ES' },
+        content: { es: '<p>Contenido en español</p>' },
+        status: PUBLICATION_STATUSES.PUBLISHED,
+      })
+    );
+  });
+
+  it('rejects monolingual publish when title or meaningful body is missing', async () => {
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'founder-1' } as unknown as User,
+      profile: { id: 'founder-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
+      role: USER_ROLES.FOUNDER,
+    });
+
+    const result = await saveArticleAction({
+      ...baseInput,
+      language_mode: 'monolingual',
+      original_language: 'gl',
+      title: { gl: 'Título en Galego' },
+      content: { gl: '<p><br></p>' },
+      action: EDITOR_ACTIONS.PUBLISH,
+      lang: 'gl',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Galego');
+    expect(dbModule.createPublication).not.toHaveBeenCalled();
+  });
+
+  it('rejects bilingual submit-for-review when one language is incomplete', async () => {
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'member-1' } as unknown as User,
+      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
+      role: USER_ROLES.MEMBER,
+    });
+
+    const result = await saveArticleAction({
+      ...baseInput,
+      language_mode: 'bilingual',
+      original_language: 'gl',
+      title: { gl: 'Título GL', es: '   ' },
+      content: { gl: '<p>Contido GL</p>', es: '<p>Contenido ES</p>' },
+      action: EDITOR_ACTIONS.SUBMIT_APPROVAL,
+      lang: 'es',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Castellano');
+    expect(dbModule.createPublication).not.toHaveBeenCalled();
+  });
+
+  it('rejects completely empty draft with localized error', async () => {
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'member-1' } as unknown as User,
+      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
+      role: USER_ROLES.MEMBER,
+    });
+
+    const result = await saveArticleAction({
+      ...baseInput,
+      title: { gl: '  ', es: '' },
+      content: { gl: '<p></p>', es: '<p>&nbsp;</p>' },
+      action: EDITOR_ACTIONS.DRAFT,
+      lang: 'gl',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('borrador');
+    expect(dbModule.createPublication).not.toHaveBeenCalled();
   });
 
   it('returns localized Spanish error messages when lang is es', async () => {

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { i18n, isSupportedLocale, type Locale } from '@/i18n-config';
+import type { PublicationLanguageMode } from '@/lib/i18n/publicationLanguage';
 import { getDictionaryClient } from '@/dictionaries/client';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
 import TagManager from '@/components/escritorio/TagManager';
@@ -17,6 +18,8 @@ interface ArticleMetadataSectionProps {
   routeLang: Locale;
   activeLang: Locale;
   onSwitchLang: (loc: Locale) => void;
+  languageMode: PublicationLanguageMode;
+  onToggleLanguageMode: () => void;
   isTranslating: boolean;
   onTranslate: () => void;
   tags: string[];
@@ -25,8 +28,6 @@ interface ArticleMetadataSectionProps {
   onChangeType: (type: string) => void;
   originalLanguage: Locale;
   onChangeOriginalLanguage: (lang: Locale) => void;
-  showIndex: boolean;
-  onToggleShowIndex: () => void;
   title: string;
   onChangeTitle: (value: string) => void;
   subtitle: string;
@@ -37,6 +38,8 @@ export default function ArticleMetadataSection({
   routeLang,
   activeLang,
   onSwitchLang,
+  languageMode,
+  onToggleLanguageMode,
   isTranslating,
   onTranslate,
   tags,
@@ -45,8 +48,6 @@ export default function ArticleMetadataSection({
   onChangeType,
   originalLanguage,
   onChangeOriginalLanguage,
-  showIndex,
-  onToggleShowIndex,
   title,
   onChangeTitle,
   subtitle,
@@ -57,6 +58,8 @@ export default function ArticleMetadataSection({
   const docTypes = routeDict.documentTypes as Record<string, string>;
   const activeEditorDict = getDictionaryClient(activeLang).articleEditor;
 
+  const isMonolingual = languageMode === 'monolingual';
+  const visibleTabs = isMonolingual ? [activeLang] : i18n.locales;
   const targetLangs = i18n.locales.filter((loc) => loc !== activeLang);
   const translateTargetLabels = targetLangs
     .map((loc) => i18n.localeLabels[loc] || loc.toUpperCase())
@@ -64,9 +67,9 @@ export default function ArticleMetadataSection({
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between mb-8 pb-4 border-b border-lines">
-        <div className="flex gap-4">
-          {i18n.locales.map((loc) => {
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b border-lines">
+        <div className="flex items-center gap-4">
+          {visibleTabs.map((loc) => {
             const label = i18n.localeLabels[loc] || loc.toUpperCase();
             return (
               <button
@@ -84,12 +87,19 @@ export default function ArticleMetadataSection({
             );
           })}
         </div>
-        {targetLangs.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={onTranslate}
-            disabled={isTranslating}
-            className="flex items-center gap-2 px-3 py-1.5 border border-gold/50 text-gold hover:bg-gold hover:text-parchment text-[10px] font-sans uppercase tracking-widest transition-colors disabled:opacity-50"
+            role="switch"
+            aria-checked={isMonolingual}
+            aria-label={dict.languageModeLabel}
+            title={dict.languageModeHint}
+            onClick={onToggleLanguageMode}
+            className={`flex items-center gap-2 border px-3 py-1.5 text-[10px] font-sans uppercase tracking-widest font-bold transition-colors cursor-pointer ${
+              isMonolingual
+                ? 'border-gold bg-gold/10 text-gold'
+                : 'border-lines bg-transparent text-charcoal/70 hover:border-gold/60 hover:text-charcoal'
+            }`}
           >
             <span
               className="material-symbols-outlined text-[16px]"
@@ -97,11 +107,29 @@ export default function ArticleMetadataSection({
             >
               translate
             </span>
-            {isTranslating
-              ? dict.translating
-              : `${dict.translateTo}${translateTargetLabels}`}
+            <span>
+              {isMonolingual ? dict.languageModeMonolingual : dict.languageModeBilingual}
+            </span>
           </button>
-        )}
+          {!isMonolingual && targetLangs.length > 0 && (
+            <button
+              type="button"
+              onClick={onTranslate}
+              disabled={isTranslating}
+              className="flex items-center gap-2 px-3 py-1.5 border border-gold/50 text-gold hover:bg-gold hover:text-parchment text-[10px] font-sans uppercase tracking-widest transition-colors disabled:opacity-50"
+            >
+              <span
+                className="material-symbols-outlined text-[16px]"
+                style={{ fontFamily: 'Material Symbols Outlined' }}
+              >
+                translate
+              </span>
+              {isTranslating
+                ? dict.translating
+                : `${dict.translateTo}${translateTargetLabels}`}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-6 flex flex-col">
@@ -135,54 +163,61 @@ export default function ArticleMetadataSection({
             })}
           </select>
 
-          <select
-            aria-label={dict.originalLang}
-            className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
-            value={originalLanguage}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (isSupportedLocale(val)) onChangeOriginalLanguage(val);
-            }}
-            style={{ colorScheme: 'light dark' }}
-          >
-            {i18n.locales.map((loc) => {
-              const label = i18n.localeLabels[loc] || loc.toUpperCase();
-              return (
-                <option
-                  key={loc}
-                  value={loc}
-                  style={{
-                    backgroundColor: 'var(--dynamic-surface)',
-                    color: 'var(--dynamic-charcoal)',
-                  }}
-                >
-                  {`${dict.originalIn} ${label}`}
-                </option>
-              );
-            })}
-          </select>
-
-          <button
-            type="button"
-            role="switch"
-            aria-checked={showIndex}
-            aria-label={dict.showIndexLabel}
-            title={dict.showIndexHint}
-            onClick={onToggleShowIndex}
-            className={`flex items-center gap-2 border px-3 py-2 text-xs font-sans uppercase tracking-widest font-bold transition-colors cursor-pointer ${
-              showIndex
-                ? 'border-gold bg-gold/10 text-gold'
-                : 'border-lines bg-transparent text-charcoal/60 hover:border-gold/60 hover:text-charcoal'
-            }`}
-          >
-            <span
-              className="material-symbols-outlined text-[16px]"
-              style={{ fontFamily: 'Material Symbols Outlined' }}
+          {isMonolingual ? (
+            <select
+              aria-label={dict.monolingualLangLabel}
+              className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
+              value={activeLang}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (isSupportedLocale(val)) onSwitchLang(val);
+              }}
+              style={{ colorScheme: 'light dark' }}
             >
-              {showIndex ? 'check_box' : 'check_box_outline_blank'}
-            </span>
-            <span>{dict.showIndexLabel}</span>
-          </button>
+              {i18n.locales.map((loc) => {
+                const label = i18n.localeLabels[loc] || loc.toUpperCase();
+                return (
+                  <option
+                    key={loc}
+                    value={loc}
+                    style={{
+                      backgroundColor: 'var(--dynamic-surface)',
+                      color: 'var(--dynamic-charcoal)',
+                    }}
+                  >
+                    {`${dict.monolingualIn} ${label}`}
+                  </option>
+                );
+              })}
+            </select>
+          ) : (
+            <select
+              aria-label={dict.originalLang}
+              className="bg-transparent text-gold uppercase text-xs tracking-widest font-bold border border-lines p-2 focus:outline-none focus:border-gold cursor-pointer"
+              value={originalLanguage}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (isSupportedLocale(val)) onChangeOriginalLanguage(val);
+              }}
+              style={{ colorScheme: 'light dark' }}
+            >
+              {i18n.locales.map((loc) => {
+                const label = i18n.localeLabels[loc] || loc.toUpperCase();
+                return (
+                  <option
+                    key={loc}
+                    value={loc}
+                    style={{
+                      backgroundColor: 'var(--dynamic-surface)',
+                      color: 'var(--dynamic-charcoal)',
+                    }}
+                  >
+                    {`${dict.originalIn} ${label}`}
+                  </option>
+                );
+              })}
+            </select>
+          )}
         </div>
 
         <textarea

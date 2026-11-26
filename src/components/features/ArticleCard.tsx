@@ -2,7 +2,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getDictionaryClient } from '@/dictionaries/client';
 import FormattedDate from '@/components/ui/FormattedDate';
+import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import {
+  resolveAlternateLocaleBadge,
   resolvePublicationAuthor,
   resolvePublicationContent,
   resolvePublicationCover,
@@ -134,6 +136,7 @@ export default function ArticleCard({
     documentTypes: dict?.documentTypes,
     fallbackDict,
   });
+  const alternateLocaleBadge = resolveAlternateLocaleBadge(articulo, lang, dict, fallbackDict);
 
   const unknownAuthor = articlesDict?.unknownAuthor || fallbackDict.articles.unknownAuthor;
   const { name: authorName, avatar: authorAvatar } = resolvePublicationAuthor(
@@ -176,7 +179,10 @@ export default function ArticleCard({
         <div className="relative z-10">
           {/* Category & Date Header */}
           <div className="flex flex-wrap items-center justify-between gap-2.5 mb-4">
-            <CardTagBadges labels={displayLabels} />
+            <div className="flex flex-wrap items-center gap-1.5">
+              <CardTagBadges labels={displayLabels} />
+              <AlternateLocaleBadge label={alternateLocaleBadge} />
+            </div>
             <FormattedDate
               date={rawDate}
               lang={lang}
@@ -258,9 +264,10 @@ export default function ArticleCard({
             )}
 
             {/* Labels appended below subtitle for the main spotlight article */}
-            {displayLabels.length > 0 && (
-              <div className="mb-8">
+            {(displayLabels.length > 0 || alternateLocaleBadge) && (
+              <div className="mb-8 flex flex-wrap items-center gap-2">
                 <CardTagBadges labels={displayLabels} size="md" hoverBorder />
+                <AlternateLocaleBadge label={alternateLocaleBadge} />
               </div>
             )}
           </div>
@@ -324,9 +331,10 @@ export default function ArticleCard({
             )}
 
             {/* Labels appended below subtitle for the main spotlight article */}
-            {displayLabels.length > 0 && (
-              <div className="mb-6">
+            {(displayLabels.length > 0 || alternateLocaleBadge) && (
+              <div className="mb-6 flex flex-wrap items-center gap-2">
                 <CardTagBadges labels={displayLabels} size="md" hoverBorder />
+                <AlternateLocaleBadge label={alternateLocaleBadge} />
               </div>
             )}
           </div>
@@ -373,6 +381,7 @@ export default function ArticleCard({
           {/* Header metadata */}
           <div className="flex flex-wrap items-center gap-2.5 mb-3">
             <CardTagBadges labels={displayLabels} />
+            <AlternateLocaleBadge label={alternateLocaleBadge} />
             {rawDate && (
               <>
                 <span className="text-charcoal/30 select-none">•</span>
@@ -437,9 +446,12 @@ export default function ArticleCard({
           </Link>
         )}
         <div className="flex flex-col flex-1 min-w-0">
-          <span className="text-[10px] font-bold text-gold uppercase tracking-[0.18em] mb-1">
-            {typeLabel}
-          </span>
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold text-gold uppercase tracking-[0.18em]">
+              {typeLabel}
+            </span>
+            <AlternateLocaleBadge label={alternateLocaleBadge} />
+          </div>
           <Link href={href}>
             <h4 className="font-serif text-base sm:text-lg text-charcoal group-hover:text-gold transition-colors duration-200 line-clamp-2 leading-snug mb-1">
               {titulo}
@@ -484,7 +496,10 @@ export default function ArticleCard({
 
       {/* Meta Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <CardTagBadges labels={displayLabels} />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <CardTagBadges labels={displayLabels} />
+          <AlternateLocaleBadge label={alternateLocaleBadge} />
+        </div>
         <FormattedDate
           date={rawDate}
           lang={lang}

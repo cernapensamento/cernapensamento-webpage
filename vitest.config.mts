@@ -15,7 +15,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      include: ['src/lib/**', 'src/app/api/**', 'src/components/**'],
+      include: ['src/lib/**', 'src/actions/**', 'src/app/api/**', 'src/components/**'],
       exclude: ['**/*.test.*', '**/types.ts', '**/*.d.ts'],
     },
     projects: [
@@ -42,7 +42,7 @@ export default defineConfig({
         test: {
           name: 'components',
           environment: 'jsdom',
-          include: ['src/components/**/*.test.tsx'],
+          include: ['src/components/**/*.test.tsx', 'src/app/**/*.test.tsx'],
           setupFiles: ['./vitest.setup.ts'],
         },
       },

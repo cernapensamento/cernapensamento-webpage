@@ -4,6 +4,7 @@ import type { TableOfContentData } from '@tiptap/extension-table-of-contents';
 import type { ArticleTableOfContentsItem } from '@/components/features/ArticleTableOfContents';
 import type { Dictionary } from '@/dictionaries/client';
 import { i18n, isSupportedLocale, type Locale } from '@/i18n-config';
+import type { PublicationLanguageMode } from '@/lib/i18n/publicationLanguage';
 import { PUBLICATION_TYPES } from '@/lib/db/schema';
 import type { LocalizedString } from '@/lib/db/types';
 import {
@@ -197,13 +198,13 @@ export function collectSupersededStoragePaths({
     .map((url) => extractStoragePathFromUrl(url))
     .filter((p): p is string => Boolean(p));
 
+  const newCoverPath = extractStoragePathFromUrl(currentCoverUrl);
   const inlinePathsToDelete = [
-    ...oldInlinePaths.filter((p) => !newInlinePaths.has(p)),
-    ...uploadedInlinePaths.filter((p) => !newInlinePaths.has(p)),
+    ...oldInlinePaths.filter((p) => p !== newCoverPath && !newInlinePaths.has(p)),
+    ...uploadedInlinePaths.filter((p) => p !== newCoverPath && !newInlinePaths.has(p)),
   ];
 
   const savedCoverPath = extractStoragePathFromUrl(savedCoverUrl);
-  const newCoverPath = extractStoragePathFromUrl(currentCoverUrl);
   const uploadedCoverPaths = uploadedCoverUrls
     .map((url) => extractStoragePathFromUrl(url))
     .filter((p): p is string => Boolean(p));
@@ -224,6 +225,7 @@ export interface DraftPayload {
   tags: string[];
   type: string;
   original_language: Locale;
+  language_mode?: PublicationLanguageMode;
   show_index: boolean;
 }
 
@@ -235,6 +237,7 @@ export interface ParsedDraftPatch {
   tags?: string[];
   type?: string;
   originalLanguage?: Locale;
+  languageMode?: PublicationLanguageMode;
   showIndex?: boolean;
 }
 
@@ -301,6 +304,10 @@ export function parseDraft(rawJson: string): ParsedDraftPatch | null {
           ? rawType
           : undefined,
       originalLanguage: isSupportedLocale(rawOrigLang) ? rawOrigLang : undefined,
+      languageMode:
+        raw.language_mode === 'bilingual' || raw.language_mode === 'monolingual'
+          ? raw.language_mode
+          : undefined,
       showIndex: typeof raw.show_index === 'boolean' ? raw.show_index : undefined,
     };
   } catch (err) {
