@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const isDbTestEnabled = process.env.RUN_DB_TESTS === '1';
 
@@ -37,7 +37,7 @@ describe.skipIf(!isDbTestEnabled)('Storage RLS Integration Tests (Local Supabase
   }
 
   async function uploadWebp(
-    client: ReturnType<typeof createClient>,
+    client: SupabaseClient,
     path: string,
     options: { bucket?: string; upsert?: boolean } = {}
   ) {
@@ -49,7 +49,7 @@ describe.skipIf(!isDbTestEnabled)('Storage RLS Integration Tests (Local Supabase
   }
 
   async function removeAndVerifyDeleted(
-    client: ReturnType<typeof createClient>,
+    client: SupabaseClient,
     path: string,
     bucket = 'media'
   ): Promise<boolean> {
