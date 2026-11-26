@@ -105,6 +105,24 @@ export async function uploadStorageImage({
   };
 }
 
+const STORAGE_LIST_PAGE_SIZE = 1000;
+const STORAGE_REMOVE_BATCH_SIZE = 1000;
+
+async function removeStoragePathsInBatches(
+  supabase: SupabaseClient,
+  bucket: string,
+  paths: string[],
+  errorContext: string
+): Promise<void> {
+  for (let i = 0; i < paths.length; i += STORAGE_REMOVE_BATCH_SIZE) {
+    const chunk = paths.slice(i, i + STORAGE_REMOVE_BATCH_SIZE);
+    const { error } = await supabase.storage.from(bucket).remove(chunk);
+    if (error) {
+      console.error(`${errorContext}:`, error.message);
+    }
+  }
+}
+
 /**
  * Attempts deletion of recognized storage URLs or relative paths, deduplicated
  * per bucket; relative paths use `media`. Empty and unrecognized inputs are skipped.
@@ -129,10 +147,12 @@ export async function removeStorageImages(
   for (const [bucket, pathSet] of bucketMap.entries()) {
     const paths = Array.from(pathSet);
     if (paths.length > 0) {
-      const { error } = await supabase.storage.from(bucket).remove(paths);
-      if (error) {
-        console.error(`Failed to remove storage images from '${bucket}':`, error.message);
-      }
+      await removeStoragePathsInBatches(
+        supabase,
+        bucket,
+        paths,
+        `Failed to remove storage images from '${bucket}'`
+      );
     }
   }
 }
@@ -185,27 +205,40 @@ export async function sweepPublicationStorageFolder(
   const pathsToRemove = new Set<string>();
 
   for (const prefix of prefixesToScan) {
-    const { data, error } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .list(prefix, { limit: 1000 });
+    let offset = 0;
 
-    if (error) {
-      console.error(`Failed to list storage folder '${prefix}':`, error.message);
-      continue;
-    }
+    while (true) {
+      const { data, error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .list(prefix, { limit: STORAGE_LIST_PAGE_SIZE, offset });
 
-    for (const item of data ?? []) {
-      // Subfolder placeholders returned by Supabase Storage have id === null
-      if (!item.name || item.id === null) continue;
-      pathsToRemove.add(`${prefix}/${item.name}`);
+      if (error) {
+        console.error(`Failed to list storage folder '${prefix}':`, error.message);
+        break;
+      }
+
+      const items = data ?? [];
+      for (const item of items) {
+        // Subfolder placeholders returned by Supabase Storage have id === null
+        if (!item.name || item.id === null) continue;
+        pathsToRemove.add(`${prefix}/${item.name}`);
+      }
+
+      if (items.length < STORAGE_LIST_PAGE_SIZE) {
+        break;
+      }
+
+      offset += items.length;
     }
   }
 
   const paths = Array.from(pathsToRemove);
   if (paths.length > 0) {
-    const { error } = await supabase.storage.from(STORAGE_BUCKET).remove(paths);
-    if (error) {
-      console.error(`Failed to sweep storage folder '${rootPrefix}':`, error.message);
-    }
+    await removeStoragePathsInBatches(
+      supabase,
+      STORAGE_BUCKET,
+      paths,
+      `Failed to sweep storage folder '${rootPrefix}'`
+    );
   }
 }

@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { uploadStorageImage, removeStorageImages, cleanupPublicationImages } from './index';
+import {
+  uploadStorageImage,
+  removeStorageImages,
+  cleanupPublicationImages,
+  sweepPublicationStorageFolder,
+} from './index';
 import * as compressModule from './compress';
 
 describe('Storage index module', () => {
@@ -154,6 +159,92 @@ describe('Storage index module', () => {
           'publications/inline/u1/fig-es.webp',
         ])
       );
+    });
+  });
+
+  describe('pagination and batched removal', () => {
+    it('removeStorageImages chunks deletions in batches of at most 1000 and continues across errors', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const paths = Array.from({ length: 2050 }, (_, i) => `publications/pub-1/inline/fig-${i}.webp`);
+
+      mockRemove
+        .mockResolvedValueOnce({ data: null, error: { message: 'Batch 1 transient error' } })
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: [], error: null });
+
+      await removeStorageImages(mockSupabase, paths);
+
+      expect(mockRemove).toHaveBeenCalledTimes(3);
+      expect(mockRemove.mock.calls[0][0]).toHaveLength(1000);
+      expect(mockRemove.mock.calls[1][0]).toHaveLength(1000);
+      expect(mockRemove.mock.calls[2][0]).toHaveLength(50);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('sweepPublicationStorageFolder paginates all list pages before removing in batches <= 1000', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const callOrder: string[] = [];
+
+      const rootPage1 = [
+        { name: 'cover.webp', id: 'id-cover' },
+        { name: 'inline', id: null },
+      ];
+      const inlinePage1 = Array.from({ length: 1000 }, (_, i) => ({
+        name: `fig-${i}.webp`,
+        id: `id-${i}`,
+      }));
+      const inlinePage2 = Array.from({ length: 250 }, (_, i) => ({
+        name: `fig-${1000 + i}.webp`,
+        id: `id-${1000 + i}`,
+      }));
+
+      const mockList = vi.fn().mockImplementation(async (prefix: string, opts: { limit: number; offset: number }) => {
+        callOrder.push(`list:${prefix}:${opts.offset}`);
+        if (prefix === 'publications/pub-big') {
+          return { data: rootPage1, error: null };
+        }
+        if (prefix === 'publications/pub-big/inline' && opts.offset === 0) {
+          return { data: inlinePage1, error: null };
+        }
+        if (prefix === 'publications/pub-big/inline' && opts.offset === 1000) {
+          return { data: inlinePage2, error: null };
+        }
+        return { data: [], error: null };
+      });
+
+      mockRemove = vi.fn().mockImplementation(async (chunk: string[]) => {
+        callOrder.push(`remove:${chunk.length}`);
+        if (callOrder.filter((c) => c.startsWith('remove:')).length === 1) {
+          return { data: null, error: { message: 'Chunk 1 failed' } };
+        }
+        return { data: [], error: null };
+      });
+
+      mockFrom.mockReturnValue({
+        list: mockList,
+        remove: mockRemove,
+      });
+
+      await sweepPublicationStorageFolder(mockSupabase, 'pub-big');
+
+      expect(mockList).toHaveBeenCalledWith('publications/pub-big', { limit: 1000, offset: 0 });
+      expect(mockList).toHaveBeenCalledWith('publications/pub-big/inline', { limit: 1000, offset: 0 });
+      expect(mockList).toHaveBeenCalledWith('publications/pub-big/inline', { limit: 1000, offset: 1000 });
+
+      // Total valid objects: 1 cover + 1250 inline = 1251 => 2 batches (1000 + 251)
+      expect(callOrder).toEqual([
+        'list:publications/pub-big:0',
+        'list:publications/pub-big/inline:0',
+        'list:publications/pub-big/inline:1000',
+        'remove:1000',
+        'remove:251',
+      ]);
+      expect(mockRemove).toHaveBeenCalledTimes(2);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+
+      consoleErrorSpy.mockRestore();
     });
   });
 });
