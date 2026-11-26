@@ -28,7 +28,9 @@ Review-time standards enforced by `/code-review` (Standards axis) alongside dete
 - **Zero magic strings:** Import table names, columns, statuses, types, roles, and actions from `@/lib/db/schema` (`DB_TABLES`, `PUBLICATION_COLS`, `USER_COLS`, `COMMENT_COLS`, `TAG_COLS`, `PUBLICATION_TAG_COLS`, `USER_ROLES`, `PUBLICATION_STATUSES`, `PUBLICATION_TYPES`, `EDITOR_ACTIONS`, `GUEST_PUBLICATION_LIMITS`).
 - **Listing egress guardrail:** Homepage, archive, news, author profile, authors directory, sitemap, and Author Desk listing queries select only card metadata (including `title` and `original_language`) and never select full `content`.
 - **Editorial role boundaries:** Only `founder` and `admin` publish directly (`published`) or approve/reject submissions in review; `member` and `guest` submit to `in_review`; `reader` is read-only.
-- **WebP compression & orphan cleanup:** Route image uploads through `uploadStorageImage()` (bucket `media`, canonical paths under `profiles/` and `publications/`). Use `cleanupPublicationImages()` for full publication deletion. When removing a translation, delete only its inline images that no remaining locale references and preserve the cover.
+- **WebP compression, entity-grouped paths & orphan cleanup (see `docs/adr/0002-unified-webp-media-storage.md`):** Route image uploads through `uploadStorageImage()` (`POST /api/storage/upload`, bucket `media`, entity-grouped paths under `users/{userId}/` and `publications/{publicationId}/`). Use `deleteArticleAction` (`sweepPublicationStorageFolder`) for full publication deletion. When removing a translation, delete only its inline images that no remaining locale references and preserve the cover.
+- **Privileged storage cleanup ownership:** Validate entity ownership of any URL or path read from the database before deleting storage objects with `service_role`.
+- **Paginated reads & bounded storage deletes:** Paginate unbounded Supabase `.select()` and `.storage.list()` scans, and batch `.storage.remove()` calls in chunks of at most 1,000 objects.
 
 <!-- /coderabbit-ai-generated:v1 -->
 
