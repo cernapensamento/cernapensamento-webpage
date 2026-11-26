@@ -122,25 +122,45 @@ export async function POST(req: Request) {
     let width: number;
     let height: number;
 
-    const satisfiesFit = preset.fit !== 'cover' || metadata.width === metadata.height;
+    const shouldSwapDimensions =
+      typeof metadata.orientation === 'number' &&
+      metadata.orientation >= 5 &&
+      metadata.orientation <= 8;
+    const orientedWidth = shouldSwapDimensions ? metadata.height : metadata.width;
+    const orientedHeight = shouldSwapDimensions ? metadata.width : metadata.height;
+
+    const satisfiesFit = preset.fit !== 'cover' || orientedWidth === orientedHeight;
 
     const isAlreadyValidInBoundsWebp =
       metadata.format === 'webp' &&
-      metadata.width <= preset.maxWidth &&
-      metadata.height <= preset.maxHeight &&
+      orientedWidth <= preset.maxWidth &&
+      orientedHeight <= preset.maxHeight &&
       satisfiesFit &&
       inputBuffer.byteLength <= MAX_OUTPUT_BYTES;
 
     if (isAlreadyValidInBoundsWebp) {
       outputBuffer = inputBuffer;
-      width = metadata.width;
-      height = metadata.height;
+      width = orientedWidth;
+      height = orientedHeight;
     } else {
+      const targetSize =
+        preset.fit === 'cover'
+          ? (() => {
+              const targetSide = Math.min(
+                preset.maxWidth,
+                preset.maxHeight,
+                orientedWidth,
+                orientedHeight
+              );
+              return { width: targetSide, height: targetSide };
+            })()
+          : { width: preset.maxWidth, height: preset.maxHeight };
+
       const processed = await sharp(inputBuffer)
         .rotate()
         .resize({
-          width: preset.maxWidth,
-          height: preset.maxHeight,
+          width: targetSize.width,
+          height: targetSize.height,
           fit: preset.fit,
           withoutEnlargement: true,
         })

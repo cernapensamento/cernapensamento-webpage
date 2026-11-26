@@ -256,7 +256,7 @@ describe('POST /api/storage/upload', () => {
     });
   });
 
-  it('does not pass non-square WebP avatars through uncropped', async () => {
+  it('crops small non-square WebP avatars to a square instead of passing through uncropped', async () => {
     const nonSquareWebp = await createWebpBuffer(400, 200);
     const req = makeUploadRequest(
       {
@@ -268,11 +268,46 @@ describe('POST /api/storage/upload', () => {
 
     const res = await POST(req);
     expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.width).toBe(200);
+    expect(json.height).toBe(200);
 
     const [, uploadedBuffer] = mockUpload.mock.calls[0];
     expect(Buffer.compare(uploadedBuffer, nonSquareWebp)).not.toBe(0);
     const meta = await sharp(uploadedBuffer).metadata();
     expect(meta.format).toBe('webp');
+    expect(meta.width).toBe(200);
+    expect(meta.height).toBe(200);
+  });
+
+  it('crops small non-square EXIF-oriented avatars to a square WebP', async () => {
+    // 600x200 raw with orientation 6 => 200x600 oriented => targetSide = min(512, 200, 600) = 200
+    const rotatedJpeg = await sharp({
+      create: { width: 600, height: 200, channels: 3, background: { r: 60, g: 110, b: 170 } },
+    })
+      .withMetadata({ orientation: 6 })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    const req = makeUploadRequest(
+      {
+        file: new Blob([new Uint8Array(rotatedJpeg)], { type: 'image/jpeg' }),
+        category: 'profile_avatar',
+      },
+      'rotated-avatar.jpg'
+    );
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.width).toBe(200);
+    expect(json.height).toBe(200);
+
+    const [, uploadedBuffer] = mockUpload.mock.calls[0];
+    const meta = await sharp(uploadedBuffer).metadata();
+    expect(meta.format).toBe('webp');
+    expect(meta.width).toBe(200);
+    expect(meta.height).toBe(200);
   });
 
   it('converts JPEG/PNG to WebP and resizes oversized images without upscaling', async () => {
