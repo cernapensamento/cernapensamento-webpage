@@ -48,6 +48,7 @@ import {
   removeStorageImages,
   STORAGE_CATEGORIES,
 } from '@/lib/storage';
+import { saveArticleAction } from '@/actions/articles';
 import {
   type LocalizedFieldMap,
   createEmptyLocalizedMap,
@@ -96,6 +97,7 @@ export type OnSaveResult = boolean | { success: boolean } | void;
 interface ArticleEditorProps {
   initialData?: ArticleData;
   onSave: (data: ArticleData, action: EditorAction) => Promise<OnSaveResult>;
+  onDraftCreated?: (draft: { id: string; slug: string }) => void;
   isPublishing: boolean;
   mode: 'create' | 'edit';
   userRole?: string;
@@ -105,6 +107,7 @@ export default function ArticleEditor({
   mode = 'create',
   initialData,
   onSave,
+  onDraftCreated,
   isPublishing,
   userRole = USER_ROLES.READER,
 }: ArticleEditorProps) {
@@ -238,6 +241,14 @@ export default function ArticleEditor({
 
   const [authorProfileRow, setAuthorProfileRow] = useState<UserRow | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [lazyPublicationId, setLazyPublicationId] = useState<string | undefined>(undefined);
+  const publicationId = initialData?.id || lazyPublicationId;
+  const publicationIdRef = useRef<string | undefined>(publicationId);
+  const lazyDraftPromiseRef = useRef<Promise<string | null> | null>(null);
+
+  useEffect(() => {
+    publicationIdRef.current = publicationId;
+  }, [publicationId]);
 
   useEffect(() => {
     const nextCover = initialData?.cover_image_url || initialData?.imagen_url;
@@ -248,9 +259,31 @@ export default function ArticleEditor({
 
   const supabase = useMemo(() => createClient(), []);
 
-  const draftKey = initialData?.id
-    ? `cerna_draft_${initialData.id}`
+  const draftKey = publicationId
+    ? `cerna_draft_${publicationId}`
     : `cerna_draft_${currentUserId ? `${currentUserId}_new` : 'new'}`;
+
+  const prevDraftKeyRef = useRef(draftKey);
+  const prevPublicationIdRef = useRef(publicationId);
+
+  useEffect(() => {
+    const prevKey = prevDraftKeyRef.current;
+    const prevPubId = prevPublicationIdRef.current;
+    prevDraftKeyRef.current = draftKey;
+    prevPublicationIdRef.current = publicationId;
+
+    if (!prevPubId && publicationId && prevKey !== draftKey && typeof window !== 'undefined') {
+      try {
+        const cachedDraft = localStorage.getItem(prevKey);
+        if (cachedDraft !== null) {
+          localStorage.setItem(draftKey, cachedDraft);
+          localStorage.removeItem(prevKey);
+        }
+      } catch (err) {
+        console.warn('[ArticleEditor] Failed to migrate cached draft key:', err);
+      }
+    }
+  }, [draftKey, publicationId]);
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isInitialized = useRef(false);
@@ -450,6 +483,74 @@ export default function ArticleEditor({
     });
   };
 
+  const ensurePublicationId = async (options?: {
+    coverUrl?: string | null;
+  }): Promise<string | null> => {
+    if (publicationIdRef.current) {
+      return publicationIdRef.current;
+    }
+
+    if (lazyDraftPromiseRef.current) {
+      return lazyDraftPromiseRef.current;
+    }
+
+    const createDraftPromise = (async (): Promise<string | null> => {
+      try {
+        const currentHtml = editor?.getHTML() || '';
+        const draftContents: LocalizedFieldMap = {
+          ...contents,
+          [activeLangRef.current]: stripIndex(currentHtml),
+        };
+        const hasSubtitle = Object.values(subtitles).some((v) => Boolean(v?.trim()));
+        const candidateCover =
+          options?.coverUrl !== undefined ? options.coverUrl : coverImageUrl;
+        const safeCoverUrl =
+          candidateCover && !candidateCover.startsWith('blob:') ? candidateCover : null;
+
+        const result = await saveArticleAction({
+          title: { ...titles },
+          subtitle: hasSubtitle ? { ...subtitles } : null,
+          content: draftContents,
+          cover_image_url: safeCoverUrl,
+          tags: tematicas,
+          type: tipo,
+          original_language: idiomaOriginal,
+          show_index: showIndex,
+          action: EDITOR_ACTIONS.DRAFT,
+          lang: routeLang,
+        });
+
+        if (!result.success || !result.id) {
+          toast.error(result.error || dict.saveError);
+          return null;
+        }
+
+        publicationIdRef.current = result.id;
+        setLazyPublicationId(result.id);
+
+        if (result.slug && typeof window !== 'undefined' && window.history?.replaceState) {
+          window.history.replaceState(
+            null,
+            '',
+            `/${routeLang}/escritorio/editar/${result.slug}`
+          );
+        }
+
+        onDraftCreated?.({ id: result.id, slug: result.slug || '' });
+        return result.id;
+      } catch (err: unknown) {
+        console.error('[ArticleEditor] Lazy draft creation failed:', err);
+        toast.error(dict.unexpectedError);
+        return null;
+      } finally {
+        lazyDraftPromiseRef.current = null;
+      }
+    })();
+
+    lazyDraftPromiseRef.current = createDraftPromise;
+    return createDraftPromise;
+  };
+
   const handleCoverFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -467,6 +568,18 @@ export default function ArticleEditor({
       setCoverImageUrl(previousCoverUrl);
       isUploadingCover.current = false;
       URL.revokeObjectURL(localPreview);
+      if (coverInputRef.current) coverInputRef.current.value = '';
+      return;
+    }
+
+    const targetPublicationId = await ensurePublicationId({
+      coverUrl: previousCoverUrl || null,
+    });
+    if (!targetPublicationId) {
+      setCoverImageUrl(previousCoverUrl);
+      isUploadingCover.current = false;
+      URL.revokeObjectURL(localPreview);
+      if (coverInputRef.current) coverInputRef.current.value = '';
       return;
     }
 
@@ -476,6 +589,7 @@ export default function ArticleEditor({
         file,
         category: STORAGE_CATEGORIES.PUBLICATION_COVER,
         userId: user.id,
+        publicationId: targetPublicationId,
       });
 
       uploadedCoverImages.current.push(publicUrl);
@@ -497,6 +611,24 @@ export default function ArticleEditor({
     if (!file || !editor) return;
 
     isUploadingInline.current = true;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error(storageDict.sessionRequired);
+      isUploadingInline.current = false;
+      if (inlineImageRef.current) inlineImageRef.current.value = '';
+      return;
+    }
+
+    const targetPublicationId = await ensurePublicationId();
+    if (!targetPublicationId) {
+      isUploadingInline.current = false;
+      if (inlineImageRef.current) inlineImageRef.current.value = '';
+      return;
+    }
+
     const localUrl = URL.createObjectURL(file);
 
     const caption = await prompt({
@@ -518,23 +650,13 @@ export default function ArticleEditor({
       })
       .run();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error(storageDict.sessionRequired);
-      removeFigureBySrc(editor, localUrl);
-      URL.revokeObjectURL(localUrl);
-      isUploadingInline.current = false;
-      return;
-    }
-
     try {
       const { publicUrl } = await uploadStorageImage({
         supabase,
         file,
         category: STORAGE_CATEGORIES.PUBLICATION_INLINE,
         userId: user.id,
+        publicationId: targetPublicationId,
         originalFilename: file.name,
       });
 
@@ -775,12 +897,35 @@ export default function ArticleEditor({
     const {
       data: { user: currentUser },
     } = await supabase.auth.getUser();
+
+    if (isUploadingCover.current || isUploadingInline.current) {
+      toast.warning(storageDict.uploadWait);
+      return;
+    }
+
     const userId = currentUser?.id || 'general';
 
     const rawByLocale: LocalizedFieldMap = {
       ...contents,
       [activeLang]: currentHtml,
     };
+
+    const hasBase64 = i18n.locales.some((loc) =>
+      (rawByLocale[loc] || '').includes(';base64,')
+    );
+
+    if (lazyDraftPromiseRef.current) {
+      await lazyDraftPromiseRef.current;
+    }
+
+    let activePublicationId = publicationIdRef.current;
+    if (hasBase64 && !activePublicationId) {
+      const ensured = await ensurePublicationId();
+      if (!ensured) {
+        return;
+      }
+      activePublicationId = ensured;
+    }
 
     const sanitizedContents = createEmptyLocalizedMap();
     const localesToPersist: readonly Locale[] =
@@ -792,7 +937,8 @@ export default function ArticleEditor({
         stripped,
         userId,
         supabase,
-        (url) => uploadedInlineImages.current.push(url)
+        (url) => uploadedInlineImages.current.push(url),
+        activePublicationId
       );
     }
 
@@ -822,6 +968,7 @@ export default function ArticleEditor({
     try {
       const saveResult = await onSave(
         {
+          ...(activePublicationId ? { id: activePublicationId } : {}),
           title: payloadTitle,
           subtitle: payloadSubtitle,
           content: payloadContent,
@@ -872,6 +1019,9 @@ export default function ArticleEditor({
         saveTimeoutRef.current = null;
       }
       localStorage.removeItem(draftKey);
+      if (activePublicationId) {
+        localStorage.removeItem(`cerna_draft_${activePublicationId}`);
+      }
       setHasUnsavedChanges(false);
       setShowPublishModal(false);
     } catch (saveError) {

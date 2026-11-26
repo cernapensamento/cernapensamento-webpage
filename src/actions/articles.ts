@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from 'next/cache';
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getAuthenticatedUser } from '@/lib/auth';
+import { createClient as createServerSupabaseClient } from '@/lib/supabase/server';
 import { getDictionary } from '@/dictionaries';
 import { i18n, isSupportedLocale, type Locale } from '@/i18n-config';
 import {
@@ -12,6 +14,8 @@ import {
   updatePublicationStatus,
   getPublicationCards,
   getPublicationById,
+  getPublicationAssetsForCleanup,
+  deletePublication,
   createPublication,
   updatePublication,
   syncPublicationTagsBySlugs,
@@ -38,6 +42,13 @@ import {
   updatePublicationSlugIfNeeded,
 } from '@/lib/utils/slug';
 import { stripIndex } from '@/lib/editor/generateIndex';
+import {
+  cleanupPublicationImages,
+  sweepPublicationStorageFolder,
+  extractBucketAndPathFromUrl,
+  STORAGE_BUCKET,
+  LEGACY_STORAGE_BUCKETS,
+} from '@/lib/storage';
 
 export interface SaveArticleInput {
   id?: string;
@@ -416,6 +427,191 @@ export async function updateArticleState(
     return { success: true };
   } catch (err: unknown) {
     console.error('[Action:updateArticleState] Unexpected error:', formatDbError(err));
+    const message = err instanceof Error ? err.message : edDict.serverError;
+    return { success: false, error: message };
+  }
+}
+
+export interface DeleteArticleResult {
+  success: boolean;
+  error?: string;
+}
+
+function createStorageSweepClient(fallback: SupabaseClient): SupabaseClient {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    return fallback;
+  }
+  return createSupabaseClient(supabaseUrl, serviceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
+const LEGACY_PUBLICATION_BUCKET_SET = new Set<string>([
+  STORAGE_BUCKET,
+  ...LEGACY_STORAGE_BUCKETS,
+]);
+const INLINE_IMG_TAG_REGEX = /<img\b[^>]*\ssrc=(["'])([^"']+)\1[^>]*>/gi;
+
+function isOwnedPublicationAssetUrl(
+  url: string,
+  publicationId: string,
+  authorId: string | null
+): boolean {
+  const safePubId = publicationId.trim();
+  if (!safePubId) return false;
+
+  const extracted = extractBucketAndPathFromUrl(url);
+  if (!extracted) return false;
+
+  const { bucket, path } = extracted;
+  if (path.includes('..')) return false;
+
+  const segments = path.split('/').filter(Boolean);
+  if (segments.length === 0) return false;
+
+  // Canonical entity-grouped paths under publications/{publicationId}/... in primary bucket
+  if (
+    bucket === STORAGE_BUCKET &&
+    segments.length >= 3 &&
+    segments[0] === 'publications' &&
+    segments[1] === safePubId &&
+    safePubId !== 'covers' &&
+    safePubId !== 'inline'
+  ) {
+    return true;
+  }
+
+  // Legacy author-scoped paths require strict author_id match
+  if (!authorId || !LEGACY_PUBLICATION_BUCKET_SET.has(bucket)) {
+    return false;
+  }
+
+  // publications/covers/{authorId}/... or publications/inline/{authorId}/...
+  if (
+    segments.length >= 4 &&
+    segments[0] === 'publications' &&
+    (segments[1] === 'covers' || segments[1] === 'inline') &&
+    segments[2] === authorId
+  ) {
+    return true;
+  }
+
+  // portadas/{authorId}/... or contenido/{authorId}/...
+  if (
+    segments.length >= 3 &&
+    (segments[0] === 'portadas' || segments[0] === 'contenido') &&
+    segments[1] === authorId
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function filterOwnedPublicationInlineHtml(
+  html: string | null | undefined,
+  publicationId: string,
+  authorId: string | null
+): string | null {
+  if (!html || typeof html !== 'string') return null;
+
+  let hasOwnedImg = false;
+  const filtered = html.replace(INLINE_IMG_TAG_REGEX, (fullTag, _quote: string, src: string) => {
+    if (isOwnedPublicationAssetUrl(src, publicationId, authorId)) {
+      hasOwnedImg = true;
+      return fullTag;
+    }
+    return '';
+  });
+
+  return hasOwnedImg ? filtered : null;
+}
+
+/**
+ * Deletes a publication using the caller's authenticated Supabase SSR client first
+ * (preserving PostgreSQL RLS so writers cannot delete published articles or others' drafts),
+ * and only after DB deletion succeeds sweeps the entire `publications/{publicationId}/`
+ * storage folder plus any owned legacy asset references, then revalidates localized paths.
+ */
+export async function deleteArticleAction(
+  publicationId: string,
+  lang: Locale | string = i18n.defaultLocale
+): Promise<DeleteArticleResult> {
+  const locale = resolveLocale(lang);
+  const dict = await getDictionary(locale);
+  const edDict = dict.articleEditor;
+
+  try {
+    const { user, profile } = await getAuthenticatedUser();
+    if (!user || !profile) {
+      return { success: false, error: edDict.unauthorized };
+    }
+
+    const supabase = await createServerSupabaseClient();
+    const pubAssets = await getPublicationAssetsForCleanup(publicationId, supabase);
+
+    const { success, error } = await deletePublication(publicationId, supabase);
+    if (!success || error) {
+      console.warn('[Action:deleteArticle] Failed to delete publication:', formatDbError(error));
+      const errMsg = error ? formatDbError(error) : '';
+      return {
+        success: false,
+        error: errMsg || dict.dashboard.deleteError,
+      };
+    }
+
+    const storageClient = createStorageSweepClient(supabase);
+    try {
+      await sweepPublicationStorageFolder(storageClient, publicationId);
+    } catch (sweepErr: unknown) {
+      console.error('[Action:deleteArticle] Failed to sweep publication folder:', formatDbError(sweepErr));
+    }
+
+    if (pubAssets) {
+      const safeCoverUrl =
+        pubAssets.cover_image_url &&
+        isOwnedPublicationAssetUrl(pubAssets.cover_image_url, publicationId, pubAssets.author_id)
+          ? pubAssets.cover_image_url
+          : null;
+      const safeContentGl = filterOwnedPublicationInlineHtml(
+        pubAssets.content?.gl,
+        publicationId,
+        pubAssets.author_id
+      );
+      const safeContentEs = filterOwnedPublicationInlineHtml(
+        pubAssets.content?.es,
+        publicationId,
+        pubAssets.author_id
+      );
+
+      if (safeCoverUrl || safeContentGl || safeContentEs) {
+        try {
+          await cleanupPublicationImages(storageClient, {
+            coverUrl: safeCoverUrl,
+            contentGl: safeContentGl,
+            contentEs: safeContentEs,
+          });
+        } catch (cleanupErr: unknown) {
+          console.error('[Action:deleteArticle] Failed to cleanup publication images:', formatDbError(cleanupErr));
+        }
+      }
+    }
+
+    for (const loc of i18n.locales) {
+      revalidatePath(`/${loc}`);
+      revalidatePath(`/${loc}/articulos`);
+      revalidatePath(`/${loc}/escritorio`);
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    console.error('[Action:deleteArticle] Unexpected error:', formatDbError(err));
     const message = err instanceof Error ? err.message : edDict.serverError;
     return { success: false, error: message };
   }

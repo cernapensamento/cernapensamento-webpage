@@ -1,14 +1,8 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import {
-  getPublicationAssetsForCleanup,
-  deletePublication,
-  formatDbError,
-} from '@/lib/db';
-import { cleanupPublicationImages } from '@/lib/storage';
+import { deleteArticleAction } from '@/actions/articles';
 import { useConfirm, useToast } from '@/components/ui/FeedbackProvider';
 import { useLocale } from '@/hooks/useLocale';
 import { getDictionaryClient } from '@/dictionaries/client';
@@ -24,7 +18,6 @@ export default function DeleteArticleButton({ id, titulo }: Props) {
   const lang = useLocale();
   const dict = getDictionaryClient(lang);
   const dashDict = dict.dashboard;
-  const supabase = useMemo(() => createClient(), []);
   const confirm = useConfirm();
   const toast = useToast();
 
@@ -43,21 +36,13 @@ export default function DeleteArticleButton({ id, titulo }: Props) {
 
     setIsDeleting(true);
     try {
-      // Retrieve image assets before deleting publication to avoid orphaned files in storage
-      const pubData = await getPublicationAssetsForCleanup(id, supabase);
-      const { success, error } = await deletePublication(id, supabase);
+      const result = await deleteArticleAction(id, lang);
 
-      if (!success) {
-        const errMsg = error ? formatDbError(error) : '';
-        toast.error(errMsg ? `${dashDict.deleteError}: ${errMsg}` : dashDict.deleteError);
+      if (!result.success) {
+        toast.error(
+          result.error ? `${dashDict.deleteError}: ${result.error}` : dashDict.deleteError
+        );
         return;
-      }
-
-      if (pubData) {
-        cleanupPublicationImages(supabase, {
-          coverUrl: pubData.cover_image_url,
-          content: pubData.content,
-        }).catch(console.error);
       }
 
       router.refresh();
