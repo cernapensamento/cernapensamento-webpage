@@ -671,12 +671,12 @@ export async function updatePublicationStatus(
 export async function getPublicationAssetsForCleanup(
   id: string,
   client?: SupabaseClient
-): Promise<{ cover_image_url: string | null; content: LocalizedString | null } | null> {
+): Promise<{ author_id: string | null; cover_image_url: string | null; content: LocalizedString | null } | null> {
   try {
     const supabase = await resolveClient(client);
     const { data, error } = await supabase
       .from(DB_TABLES.PUBLICATIONS)
-      .select(`${PUBLICATION_COLS.COVER_IMAGE_URL}, ${PUBLICATION_COLS.CONTENT}`)
+      .select(`${PUBLICATION_COLS.AUTHOR_ID}, ${PUBLICATION_COLS.COVER_IMAGE_URL}, ${PUBLICATION_COLS.CONTENT}`)
       .eq(PUBLICATION_COLS.ID, id)
       .single();
 
@@ -685,6 +685,7 @@ export async function getPublicationAssetsForCleanup(
     }
 
     return {
+      author_id: (data.author_id as string | null) ?? null,
       cover_image_url: (data.cover_image_url as string | null) ?? null,
       content: (data.content as LocalizedString | null) ?? null,
     };

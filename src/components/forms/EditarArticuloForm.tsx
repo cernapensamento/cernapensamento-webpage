@@ -116,6 +116,7 @@ export default function EditarArticuloForm({
   const fallbackDict = getDictionaryClient(routeLang).articleEditor;
   const dict = propDict ? { ...fallbackDict, ...propDict } : fallbackDict;
   const [isPublishing, setIsPublishing] = useState(false);
+  const [publicationId, setPublicationId] = useState<string | undefined>(pub?.id);
   const router = useRouter();
   const toast = useToast();
   const isCreate = mode === 'create';
@@ -140,9 +141,10 @@ export default function EditarArticuloForm({
   const handleSave = async (data: ArticleData, action: EditorAction): Promise<boolean> => {
     setIsPublishing(true);
     try {
+      const resolvedId = publicationId || data.id;
       const result = await saveArticleAction(
         buildEditorSaveInput(data, {
-          ...(pub?.id ? { id: pub.id } : {}),
+          ...(resolvedId ? { id: resolvedId } : {}),
           action,
           lang: routeLang,
         })
@@ -179,6 +181,7 @@ export default function EditarArticuloForm({
       mode={mode}
       initialData={initialData}
       onSave={handleSave}
+      onDraftCreated={({ id }) => setPublicationId(id)}
       isPublishing={isPublishing}
       userRole={userRole}
     />

@@ -116,10 +116,9 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
 
     try {
       const { publicUrl } = await uploadStorageImage({
-        supabase,
         file,
         category: STORAGE_CATEGORIES.PROFILE_AVATAR,
-        userId: user.id,
+        userId: targetUserId,
       });
 
       setAvatarUrl(publicUrl);

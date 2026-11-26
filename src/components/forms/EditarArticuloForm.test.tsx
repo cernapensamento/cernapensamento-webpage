@@ -34,11 +34,13 @@ vi.mock('@/components/escritorio/ArticleEditor', () => ({
     mode = 'edit',
     initialData,
     onSave,
+    onDraftCreated,
     isPublishing,
   }: {
     mode?: 'create' | 'edit';
     initialData?: ArticleData;
     onSave: (data: ArticleData, action: EditorAction) => Promise<boolean>;
+    onDraftCreated?: (draft: { id: string; slug: string }) => void;
     isPublishing: boolean;
   }) => {
     const payload = initialData ?? {
@@ -50,6 +52,12 @@ vi.mock('@/components/escritorio/ArticleEditor', () => ({
         <span data-testid="editor-mode">{mode}</span>
         <span data-testid="editor-title-gl">{initialData?.title?.gl}</span>
         <span data-testid="is-publishing">{String(isPublishing)}</span>
+        <button
+          data-testid="lazy-draft-btn"
+          onClick={() => onDraftCreated?.({ id: 'lazy-pub-1', slug: 'lazy-slug-1' })}
+        >
+          Trigger Lazy Draft
+        </button>
         <button
           data-testid="save-draft-btn"
           onClick={() => onSave(payload, EDITOR_ACTIONS.DRAFT)}
@@ -260,6 +268,35 @@ describe('EditarArticuloForm', () => {
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('Produciuse un erro inesperado ao gardar.');
       expect(mockPush).not.toHaveBeenCalled();
+    });
+  });
+
+  it('binds lazily created draft id in create mode so subsequent saves update the draft instead of creating a duplicate', async () => {
+    vi.mocked(articlesActions.saveArticleAction).mockResolvedValue({
+      success: true,
+      id: 'lazy-pub-1',
+      slug: 'lazy-slug-1',
+    });
+
+    render(
+      <EditarArticuloForm
+        mode="create"
+        userRole="founder"
+        lang="gl"
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('lazy-draft-btn'));
+    fireEvent.click(screen.getByTestId('save-draft-btn'));
+
+    await waitFor(() => {
+      expect(articlesActions.saveArticleAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'lazy-pub-1',
+          action: EDITOR_ACTIONS.DRAFT,
+          lang: 'gl',
+        })
+      );
     });
   });
 

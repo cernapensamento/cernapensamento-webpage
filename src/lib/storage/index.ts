@@ -1,14 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   STORAGE_BUCKET,
-  STORAGE_CACHE_CONTROL,
   STORAGE_PRESETS,
   ALLOWED_IMAGE_MIME_TYPES,
   type StorageCategory,
 } from './constants';
-import { compressImageClient } from './compress';
+import { prepareImageForUpload } from './compress';
 import {
-  buildStoragePath,
   extractBucketAndPathFromUrl,
   extractInlineStoragePaths,
 } from './paths';
@@ -18,10 +16,15 @@ export * from './compress';
 export * from './paths';
 
 export interface UploadStorageImageOptions {
-  supabase: SupabaseClient;
+  /**
+   * @deprecated Uploads now route through `POST /api/storage/upload` using the server SSR client.
+   * Kept optional for backwards compatibility with existing callers.
+   */
+  supabase?: SupabaseClient;
   file: File | Blob;
   category: StorageCategory;
-  userId: string;
+  userId?: string;
+  publicationId?: string;
   /**
    * @deprecated Superseded asset cleanup is now the caller's responsibility after
    * successful persistence (e.g. using `removeStorageImages`). This prevents deleting
@@ -39,17 +42,16 @@ export interface UploadStorageImageResult {
 }
 
 /**
- * Validates, optimizes (WebP compression & downscaling), and uploads an image
- * to Supabase Storage according to the category's preset.
+ * Validates, conditionally pre-resizes on the client (when > ~3.5 MB or exceeding
+ * category pixel bounds), and uploads an image via `POST /api/storage/upload`.
  * Rejects with `INVALID_FORMAT` for a nonempty unsupported MIME type or
  * `FILE_TOO_LARGE:<rounded MiB limit>` when the input exceeds its size limit.
- * Compression failures, upload errors, and uncaught storage SDK errors propagate.
  */
 export async function uploadStorageImage({
-  supabase,
   file,
   category,
   userId,
+  publicationId,
   originalFilename,
 }: UploadStorageImageOptions): Promise<UploadStorageImageResult> {
   const preset = STORAGE_PRESETS[category];
@@ -64,41 +66,61 @@ export async function uploadStorageImage({
     throw new Error(`FILE_TOO_LARGE:${maxMb}`);
   }
 
-  // 2. Client-side compression & WebP encoding
-  const compressed = await compressImageClient(file, category);
+  // 2. Conditional client-side pre-resize (only when > ~3.5 MB or exceeding max pixel bounds)
+  const payloadFile = await prepareImageForUpload(file, category);
 
-  // 3. Structured path generation
-  const path = buildStoragePath(
-    category,
-    userId,
-    compressed.extension,
-    originalFilename || (file instanceof File ? file.name : undefined)
-  );
-
-  // 4. Storage upload with immutable cache headers
-  const { error } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .upload(path, compressed.blob, {
-      contentType: compressed.blob.type,
-      cacheControl: STORAGE_CACHE_CONTROL,
-      upsert: false,
-    });
-
-  if (error) {
-    throw error;
+  // 3. POST multipart form data to the hybrid WebP upload endpoint
+  const filename = originalFilename || (file instanceof File ? file.name : 'upload');
+  const formData = new FormData();
+  formData.append('file', payloadFile, filename);
+  formData.append('category', category);
+  if (userId) {
+    formData.append('userId', userId);
+  }
+  if (publicationId) {
+    formData.append('publicationId', publicationId);
+  }
+  if (originalFilename) {
+    formData.append('originalFilename', originalFilename);
   }
 
-  // 5. Public URL resolution
-  const { data: urlData } = supabase.storage
-    .from(STORAGE_BUCKET)
-    .getPublicUrl(path);
+  const response = await fetch('/api/storage/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = (await response.json().catch(() => null)) as
+    | (UploadStorageImageResult & { error?: string })
+    | null;
+
+  if (!response.ok || !data?.publicUrl) {
+    throw new Error(data?.error || 'UPLOAD_FAILED');
+  }
 
   return {
-    publicUrl: urlData.publicUrl,
-    path,
-    width: compressed.width,
-    height: compressed.height,
+    publicUrl: data.publicUrl,
+    path: data.path,
+    width: data.width,
+    height: data.height,
   };
+}
+
+const STORAGE_LIST_PAGE_SIZE = 1000;
+const STORAGE_REMOVE_BATCH_SIZE = 1000;
+
+async function removeStoragePathsInBatches(
+  supabase: SupabaseClient,
+  bucket: string,
+  paths: string[],
+  errorContext: string
+): Promise<void> {
+  for (let i = 0; i < paths.length; i += STORAGE_REMOVE_BATCH_SIZE) {
+    const chunk = paths.slice(i, i + STORAGE_REMOVE_BATCH_SIZE);
+    const { error } = await supabase.storage.from(bucket).remove(chunk);
+    if (error) {
+      console.error(`${errorContext}:`, error.message);
+    }
+  }
 }
 
 /**
@@ -125,10 +147,12 @@ export async function removeStorageImages(
   for (const [bucket, pathSet] of bucketMap.entries()) {
     const paths = Array.from(pathSet);
     if (paths.length > 0) {
-      const { error } = await supabase.storage.from(bucket).remove(paths);
-      if (error) {
-        console.error(`Failed to remove storage images from '${bucket}':`, error.message);
-      }
+      await removeStoragePathsInBatches(
+        supabase,
+        bucket,
+        paths,
+        `Failed to remove storage images from '${bucket}'`
+      );
     }
   }
 }
@@ -167,5 +191,61 @@ export async function cleanupPublicationImages(
 
   if (allItems.length > 0) {
     await removeStorageImages(supabase, allItems);
+  }
+}
+
+/**
+ * Lists and removes all objects under `publications/{publicationId}/` in the primary
+ * `media` bucket, including top-level cover files and nested `inline/` files.
+ * Returned storage errors are logged and ignored so post-deletion cleanup never masks
+ * a completed database deletion.
+ */
+export async function sweepPublicationStorageFolder(
+  supabase: SupabaseClient,
+  publicationId: string
+): Promise<void> {
+  const safeId = publicationId.trim();
+  if (!safeId) return;
+
+  const rootPrefix = `publications/${safeId}`;
+  const prefixesToScan = [rootPrefix, `${rootPrefix}/inline`];
+  const pathsToRemove = new Set<string>();
+
+  for (const prefix of prefixesToScan) {
+    let offset = 0;
+
+    while (true) {
+      const { data, error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .list(prefix, { limit: STORAGE_LIST_PAGE_SIZE, offset });
+
+      if (error) {
+        console.error(`Failed to list storage folder '${prefix}':`, error.message);
+        break;
+      }
+
+      const items = data ?? [];
+      for (const item of items) {
+        // Subfolder placeholders returned by Supabase Storage have id === null
+        if (!item.name || item.id === null) continue;
+        pathsToRemove.add(`${prefix}/${item.name}`);
+      }
+
+      if (items.length < STORAGE_LIST_PAGE_SIZE) {
+        break;
+      }
+
+      offset += items.length;
+    }
+  }
+
+  const paths = Array.from(pathsToRemove);
+  if (paths.length > 0) {
+    await removeStoragePathsInBatches(
+      supabase,
+      STORAGE_BUCKET,
+      paths,
+      `Failed to sweep storage folder '${rootPrefix}'`
+    );
   }
 }

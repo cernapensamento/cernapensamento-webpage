@@ -109,7 +109,11 @@ async function handleRateLimiting(request: NextRequest, pathname: string): Promi
   const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? '127.0.0.1';
 
   try {
-    if (pathname.startsWith('/api/') && !pathname.startsWith('/api/webhooks/')) {
+    if (
+      pathname.startsWith('/api/') &&
+      !pathname.startsWith('/api/webhooks/') &&
+      pathname !== '/api/storage/upload'
+    ) {
       const { success, limit, reset, remaining } = await apiLimiter!.limit(ip);
       if (!success) {
         return createRateLimitResponse('Too Many Requests', limit, reset, remaining);
