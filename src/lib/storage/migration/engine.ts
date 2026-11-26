@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { Parser } from 'htmlparser2';
 import {
   LEGACY_STORAGE_BUCKETS,
   STORAGE_BUCKET,
@@ -26,8 +27,6 @@ import {
   type MigrationPublicationRow,
   type MigrationUserRow,
 } from './types';
-
-const IMG_SRC_REGEX = /<img\b[^>]*?\bsrc=(["'])([^"']+)\1/gi;
 
 function shortHash(input: string): string {
   return createHash('sha256').update(input).digest('hex').slice(0, 10);
@@ -109,33 +108,93 @@ function buildDeterministicTargetPath(
 }
 
 function buildOrphanTargetPath(sourceBucket: string, sourcePath: string): string {
+  const hash = shortHash(`${sourceBucket}/${sourcePath}`);
   if (sourcePath.toLowerCase().endsWith('.webp')) {
-    return `_orphans/${sourceBucket}/${sourcePath}`;
+    const stem = sourcePath.slice(0, -5);
+    return `_orphans/${sourceBucket}/${stem}-${hash}.webp`;
   }
-  return `_orphans/${sourceBucket}/${sourcePath}.webp`;
+  return `_orphans/${sourceBucket}/${sourcePath}-${hash}.webp`;
+}
+
+interface ImgSrcSpan {
+  start: number;
+  end: number;
+  value: string;
+  quote: string | null | undefined;
+}
+
+function findImgSrcSpans(html: string): ImgSrcSpan[] {
+  const spans: ImgSrcSpan[] = [];
+  let currentTag = '';
+  let seenSrcOnCurrentImg = false;
+
+  const parser = new Parser({
+    onopentagname(name) {
+      currentTag = name.toLowerCase();
+      seenSrcOnCurrentImg = false;
+    },
+    onattribute(name, value, quote) {
+      if (currentTag === 'img' && name.toLowerCase() === 'src' && !seenSrcOnCurrentImg) {
+        seenSrcOnCurrentImg = true;
+        if (value) {
+          spans.push({
+            start: parser.startIndex,
+            end: parser.endIndex,
+            value,
+            quote,
+          });
+        }
+      }
+    },
+    onopentag() {
+      currentTag = '';
+      seenSrcOnCurrentImg = false;
+    },
+  });
+
+  parser.write(html);
+  parser.end();
+  return spans;
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function extractInlineImageUrls(html: string | null | undefined): string[] {
   if (!html || typeof html !== 'string') return [];
-  const urls: string[] = [];
-  const regex = new RegExp(IMG_SRC_REGEX.source, 'gi');
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(html)) !== null) {
-    if (match[2]) urls.push(match[2]);
-  }
-  return urls;
+  return findImgSrcSpans(html).map((span) => span.value);
 }
 
 function replaceInlineImageUrls(
   html: string,
   replacements: Map<string, string>
 ): string {
-  const regex = new RegExp(IMG_SRC_REGEX.source, 'gi');
-  return html.replace(regex, (fullMatch, quote: string, src: string) => {
-    const nextUrl = replacements.get(src);
-    if (!nextUrl || nextUrl === src) return fullMatch;
-    return fullMatch.replace(`${quote}${src}${quote}`, `${quote}${nextUrl}${quote}`);
-  });
+  const spans = findImgSrcSpans(html);
+  if (spans.length === 0) return html;
+
+  let out = '';
+  let cursor = 0;
+  let changed = false;
+
+  for (const span of spans) {
+    const nextUrl = replacements.get(span.value);
+    if (!nextUrl || nextUrl === span.value) continue;
+    const escaped = escapeHtmlAttribute(nextUrl);
+    const formatted = span.quote === "'" ? `src='${escaped}'` : `src="${escaped}"`;
+    out += html.slice(cursor, span.start) + formatted;
+    cursor = span.end;
+    changed = true;
+  }
+
+  if (!changed) return html;
+  out += html.slice(cursor);
+  return out;
 }
 
 function collectLegacyRefsFromDb(
@@ -315,7 +374,7 @@ export async function runMigrate(options: MigrateOptions): Promise<MigrationMani
       entityMap = new Map();
       urlReplacementByEntity.set(`${ref.entityType}:${ref.entityId}`, entityMap);
     }
-    entityMap.set(ref.rawUrl, newUrl);
+    entityMap.set(`${ref.category}:${ref.rawUrl}`, newUrl);
 
     const dedupeKey = `${ref.entityId}|${ref.category}|${targetPath}|${ref.rawUrl}`;
     if (!mappingByKey.has(dedupeKey)) {
@@ -347,6 +406,7 @@ export async function runMigrate(options: MigrateOptions): Promise<MigrationMani
 
   // 5. Classify unreferenced objects as orphans
   const orphans: MigrationOrphanEntry[] = [];
+  const orphanTargetPaths = new Set<string>();
   for (const bucket of sourceBuckets) {
     const objects = inventory.get(bucket) ?? new Set<string>();
     for (const objectPath of objects) {
@@ -356,6 +416,10 @@ export async function runMigrate(options: MigrateOptions): Promise<MigrationMani
       const key = `${bucket}/${objectPath}`;
       if (!referencedSourceKeys.has(key)) {
         const targetPath = buildOrphanTargetPath(bucket, objectPath);
+        if (orphanTargetPaths.has(targetPath)) {
+          throw new Error(`Orphan target path collision detected: ${targetPath}`);
+        }
+        orphanTargetPaths.add(targetPath);
         orphans.push({
           sourceBucket: bucket,
           sourcePath: objectPath,
@@ -372,7 +436,9 @@ export async function runMigrate(options: MigrateOptions): Promise<MigrationMani
   for (const user of users) {
     if (!user.avatar_url) continue;
     const replacements = urlReplacementByEntity.get(`user:${user.id}`);
-    const nextUrl = replacements?.get(user.avatar_url);
+    const nextUrl = replacements?.get(
+      `${STORAGE_CATEGORIES.PROFILE_AVATAR}:${user.avatar_url}`
+    );
     if (nextUrl && nextUrl !== user.avatar_url) {
       dbUpdates.users.push({ id: user.id, avatar_url: nextUrl });
     }
@@ -383,10 +449,16 @@ export async function runMigrate(options: MigrateOptions): Promise<MigrationMani
     if (!replacements || replacements.size === 0) continue;
 
     let changed = false;
-    const pubUpdate: MigrationDbUpdates['publications'][number] = { id: pub.id };
+    const pubUpdate: MigrationDbUpdates['publications'][number] = {
+      id: pub.id,
+      originalCoverImageUrl: pub.cover_image_url ?? null,
+      originalContent: pub.content ? { ...pub.content } : null,
+    };
 
     if (pub.cover_image_url) {
-      const nextCover = replacements.get(pub.cover_image_url);
+      const nextCover = replacements.get(
+        `${STORAGE_CATEGORIES.PUBLICATION_COVER}:${pub.cover_image_url}`
+      );
       if (nextCover && nextCover !== pub.cover_image_url) {
         pubUpdate.cover_image_url = nextCover;
         changed = true;
@@ -394,19 +466,29 @@ export async function runMigrate(options: MigrateOptions): Promise<MigrationMani
     }
 
     if (pub.content && typeof pub.content === 'object') {
-      let contentChanged = false;
-      const nextContent: Record<string, string | null | undefined> = { ...pub.content };
-      for (const [locale, html] of Object.entries(pub.content)) {
-        if (!html) continue;
-        const rewritten = replaceInlineImageUrls(html, replacements);
-        if (rewritten !== html) {
-          nextContent[locale] = rewritten;
-          contentChanged = true;
+      const inlineReplacements = new Map<string, string>();
+      const inlinePrefix = `${STORAGE_CATEGORIES.PUBLICATION_INLINE}:`;
+      for (const [key, value] of replacements.entries()) {
+        if (key.startsWith(inlinePrefix)) {
+          inlineReplacements.set(key.slice(inlinePrefix.length), value);
         }
       }
-      if (contentChanged) {
-        pubUpdate.content = nextContent;
-        changed = true;
+
+      if (inlineReplacements.size > 0) {
+        let contentChanged = false;
+        const nextContent: Record<string, string | null | undefined> = { ...pub.content };
+        for (const [locale, html] of Object.entries(pub.content)) {
+          if (!html) continue;
+          const rewritten = replaceInlineImageUrls(html, inlineReplacements);
+          if (rewritten !== html) {
+            nextContent[locale] = rewritten;
+            contentChanged = true;
+          }
+        }
+        if (contentChanged) {
+          pubUpdate.content = nextContent;
+          changed = true;
+        }
       }
     }
 
@@ -570,36 +652,63 @@ export async function runCleanup(options: CleanupOptions): Promise<CleanupResult
     );
   }
 
-  const supersededOldUrls = new Set(
-    manifest.mappings
-      .filter((m) => m.oldUrl !== m.newUrl)
-      .map((m) => m.oldUrl)
-  );
-
-  const stillReferencedOldUrls: string[] = [];
-  for (const user of users) {
-    if (user.avatar_url && supersededOldUrls.has(user.avatar_url)) {
-      stillReferencedOldUrls.push(user.avatar_url);
+  const slatedDeletionKeys = new Set<string>();
+  for (const mapping of manifest.mappings) {
+    if (
+      mapping.sourceBucket !== manifest.targetBucket ||
+      mapping.sourcePath !== mapping.targetPath
+    ) {
+      slatedDeletionKeys.add(`${mapping.sourceBucket}/${mapping.sourcePath}`);
+    }
+    if (isInternalStorageUrl(mapping.oldUrl, manifest.currentHost, manifest.legacyHost)) {
+      const oldExtracted = extractBucketAndPathFromUrl(mapping.oldUrl);
+      if (
+        oldExtracted &&
+        (oldExtracted.bucket !== manifest.targetBucket ||
+          oldExtracted.path !== mapping.targetPath)
+      ) {
+        slatedDeletionKeys.add(`${oldExtracted.bucket}/${oldExtracted.path}`);
+      }
     }
   }
-  for (const pub of publications) {
-    if (pub.cover_image_url && supersededOldUrls.has(pub.cover_image_url)) {
-      stillReferencedOldUrls.push(pub.cover_image_url);
+  for (const orphan of manifest.orphans) {
+    if (
+      orphan.sourceBucket !== manifest.targetBucket ||
+      orphan.sourcePath !== orphan.targetPath
+    ) {
+      slatedDeletionKeys.add(`${orphan.sourceBucket}/${orphan.sourcePath}`);
     }
+  }
+
+  const stillReferencedKeys: string[] = [];
+  const checkLiveUrl = (url: string | null | undefined) => {
+    if (!url) return;
+    if (!isInternalStorageUrl(url, manifest.currentHost, manifest.legacyHost)) return;
+    const extracted = extractBucketAndPathFromUrl(url);
+    if (!extracted) return;
+    const normalizedKey = `${extracted.bucket}/${extracted.path}`;
+    if (slatedDeletionKeys.has(normalizedKey)) {
+      stillReferencedKeys.push(normalizedKey);
+    }
+  };
+
+  for (const user of users) {
+    checkLiveUrl(user.avatar_url);
+  }
+  for (const pub of publications) {
+    checkLiveUrl(pub.cover_image_url);
     if (pub.content && typeof pub.content === 'object') {
       for (const html of Object.values(pub.content)) {
         for (const src of extractInlineImageUrls(html)) {
-          if (supersededOldUrls.has(src)) {
-            stillReferencedOldUrls.push(src);
-          }
+          checkLiveUrl(src);
         }
       }
     }
   }
 
-  if (stillReferencedOldUrls.length > 0) {
+  if (stillReferencedKeys.length > 0) {
     throw new CleanupGuardrailError(
-      `Refusing to run cleanup: ${stillReferencedOldUrls.length} superseded path(s) still referenced in PostgreSQL.`
+      `Refusing to run cleanup: ${stillReferencedKeys.length} slated deletion key(s) still referenced in PostgreSQL.`
     );
   }
 

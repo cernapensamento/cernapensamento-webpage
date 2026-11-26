@@ -29,6 +29,7 @@ export async function processImageForMigration(
   const metadata = await image.metadata();
 
   if (metadata.format === 'webp') {
+    await sharp(input, { failOn: 'error' }).stats();
     return {
       buffer: input,
       converted: false,
@@ -40,7 +41,7 @@ export async function processImageForMigration(
   const preset = category === 'orphan' ? ORPHAN_PRESET : STORAGE_PRESETS[category];
   const quality = Math.round(preset.quality * 100);
 
-  const { data, info } = await sharp(input)
+  const { data, info } = await sharp(input, { failOn: 'error' })
     .rotate()
     .resize({
       width: preset.maxWidth,

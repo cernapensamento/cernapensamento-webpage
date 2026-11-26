@@ -17,6 +17,8 @@ export interface MigrationDbUpdates {
     id: string;
     cover_image_url?: string;
     content?: Record<string, string | null | undefined>;
+    originalCoverImageUrl: string | null;
+    originalContent: Record<string, string | null | undefined> | null;
   }>;
 }
 

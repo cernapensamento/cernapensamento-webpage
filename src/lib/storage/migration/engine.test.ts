@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import sharp from 'sharp';
 import { runMigrate, runCleanup } from './engine';
+import { processImageForMigration } from './imageProcessor';
 import {
   CleanupGuardrailError,
   MissingStorageObjectsError,
@@ -109,10 +110,17 @@ function createInMemoryAdapters(initial: {
       }
       for (const p of updates.publications) {
         const target = publications.find((row) => row.id === p.id);
-        if (target) {
-          if (p.cover_image_url !== undefined) target.cover_image_url = p.cover_image_url;
-          if (p.content !== undefined) target.content = p.content;
+        if (!target) {
+          throw new Error(`Publication not found: ${p.id}`);
         }
+        const coverMatches = (target.cover_image_url ?? null) === p.originalCoverImageUrl;
+        const contentMatches =
+          JSON.stringify(target.content ?? null) === JSON.stringify(p.originalContent);
+        if (!coverMatches || !contentMatches) {
+          throw new Error(`Optimistic concurrency conflict for publication ${p.id}`);
+        }
+        if (p.cover_image_url !== undefined) target.cover_image_url = p.cover_image_url;
+        if (p.content !== undefined) target.content = p.content;
       }
     },
   };
@@ -218,8 +226,10 @@ describe('Storage Migration Engine', () => {
     expect(manifest.orphans[0]).toMatchObject({
       sourceBucket: 'imagenes-articulos',
       sourcePath: 'contenido/orphan.jpg',
-      targetPath: '_orphans/imagenes-articulos/contenido/orphan.jpg.webp',
     });
+    expect(manifest.orphans[0].targetPath).toMatch(
+      /^_orphans\/imagenes-articulos\/contenido\/orphan\.jpg-[a-f0-9]{10}\.webp$/
+    );
   });
 
   it('fails fast before writing any storage object or DB row when a referenced object is missing from both buckets', async () => {
@@ -384,17 +394,29 @@ describe('Storage Migration Engine', () => {
     expect(second.verification?.passed).toBe(true);
     expect(second.dbUpdates).toEqual({ userCount: 0, publicationCount: 0 });
     expect(env.getTransactionCount()).toBe(txAfterFirst);
-    // Only the old legacy file (now unreferenced) would be orphaned once; canonical avatar is skipped
+    // Only the old legacy file (now unreferenced) is orphaned once; canonical avatar is skipped
     expect(second.mappings.every((m) => m.skipped === true)).toBe(true);
-    expect(env.getUploadCount()).toBeGreaterThanOrEqual(uploadsAfterFirst);
+    expect(second.orphans).toHaveLength(1);
+    expect(second.orphans[0].targetPath).toMatch(
+      /^_orphans\/media\/profiles\/u1\/avatar\.jpg-[a-f0-9]{10}\.webp$/
+    );
+    expect(env.getUploadCount()).toBe(uploadsAfterFirst + 1);
+    const quarantinedBuf = await env.storage.downloadObject('media', second.orphans[0].targetPath);
+    const quarantinedMeta = await sharp(quarantinedBuf).metadata();
+    expect(quarantinedMeta.format).toBe('webp');
   });
 
-  it('enforces cleanup guardrails and removes superseded media paths + legacy bucket on verified manifest', async () => {
+  it('enforces cleanup guardrails (dry-run, failed verification, query-string variant, orphan still referenced) and cleans up on a real verified manifest', async () => {
     const avatarJpeg = await createTestImage('jpeg', 200, 200);
     const coverPng = await createTestImage('png', 400, 300);
+    const orphanJpeg = await createTestImage('jpeg', 150, 150);
+
     const env = createInMemoryAdapters({
       buckets: {
-        media: { 'profiles/u1/avatar.jpg': avatarJpeg },
+        media: {
+          'profiles/u1/avatar.jpg': avatarJpeg,
+          'profiles/u2/unused.jpg': orphanJpeg,
+        },
         'imagenes-articulos': { 'portadas/cover.png': coverPng },
       },
       users: [
@@ -436,21 +458,192 @@ describe('Storage Migration Engine', () => {
       runCleanup({ manifest: failedVerifyManifest, storage: env.storage, db: env.db })
     ).rejects.toThrow(CleanupGuardrailError);
 
-    // Mark verification passed on the real manifest and run cleanup
-    failedVerifyManifest.verification!.passed = true;
-    const result = await runCleanup({
-      manifest: failedVerifyManifest,
-      storage: env.storage,
-      db: env.db,
+    // Run a real verified migration on a clean environment
+    const cleanEnv = createInMemoryAdapters({
+      buckets: {
+        media: {
+          'profiles/u1/avatar.jpg': avatarJpeg,
+          'profiles/u2/unused.jpg': orphanJpeg,
+        },
+        'imagenes-articulos': { 'portadas/cover.png': coverPng },
+      },
+      users: [
+        {
+          id: 'u1',
+          avatar_url:
+            'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/profiles/u1/avatar.jpg',
+        },
+      ],
+      publications: [
+        {
+          id: 'p1',
+          cover_image_url:
+            'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/imagenes-articulos/portadas/cover.png',
+          content: { gl: '<p>ok</p>' },
+        },
+      ],
     });
 
-    expect(result.removedMediaPaths).toEqual(['profiles/u1/avatar.jpg']);
+    const verifiedManifest = await runMigrate({
+      storage: cleanEnv.storage,
+      db: cleanEnv.db,
+      httpVerifier: cleanEnv.httpVerifier,
+    });
+    expect(verifiedManifest.verification?.passed).toBe(true);
+
+    // Guardrail: refuse cleanup if a query-string variant of a superseded path is still referenced
+    const originalAvatar = cleanEnv.getUsers()[0].avatar_url;
+    cleanEnv.getUsers()[0].avatar_url =
+      'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/profiles/u1/avatar.jpg?v=99';
+    await expect(
+      runCleanup({ manifest: verifiedManifest, storage: cleanEnv.storage, db: cleanEnv.db })
+    ).rejects.toThrow(CleanupGuardrailError);
+
+    // Guardrail: refuse cleanup if an orphan source key was subsequently referenced
+    cleanEnv.getUsers()[0].avatar_url =
+      'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/profiles/u2/unused.jpg';
+    await expect(
+      runCleanup({ manifest: verifiedManifest, storage: cleanEnv.storage, db: cleanEnv.db })
+    ).rejects.toThrow(CleanupGuardrailError);
+
+    // Restore canonical DB state and execute clean cleanup
+    cleanEnv.getUsers()[0].avatar_url = originalAvatar;
+    const result = await runCleanup({
+      manifest: verifiedManifest,
+      storage: cleanEnv.storage,
+      db: cleanEnv.db,
+    });
+
+    expect(result.removedMediaPaths).toEqual(['profiles/u1/avatar.jpg', 'profiles/u2/unused.jpg']);
     expect(result.deletedLegacyBuckets).toEqual(['imagenes-articulos']);
-    expect(await env.storage.bucketExists('imagenes-articulos')).toBe(false);
+    expect(await cleanEnv.storage.bucketExists('imagenes-articulos')).toBe(false);
 
     // Canonical migrated assets remain intact in media
-    const remainingMedia = await env.storage.listObjects('media');
+    const remainingMedia = await cleanEnv.storage.listObjects('media');
     expect(remainingMedia.some((p) => p.startsWith('users/u1/avatar-'))).toBe(true);
     expect(remainingMedia.some((p) => p.startsWith('publications/p1/cover-'))).toBe(true);
+  });
+
+  it('parses and rewrites HTML <img> src safely (ignoring data-src, handling whitespace around = and multiline attributes)', async () => {
+    const inlineJpeg = await createTestImage('jpeg', 400, 300);
+    const dataSrcOnlyJpeg = await createTestImage('jpeg', 200, 200);
+    const legacyUrl =
+      'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/imagenes-articulos/contenido/photo.jpg';
+    const dataSrcUrl =
+      'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/media/profiles/unused/data-only.jpg';
+
+    const env = createInMemoryAdapters({
+      buckets: {
+        media: {
+          'profiles/unused/data-only.jpg': dataSrcOnlyJpeg,
+        },
+        'imagenes-articulos': {
+          'contenido/photo.jpg': inlineJpeg,
+        },
+      },
+      users: [],
+      publications: [
+        {
+          id: 'pub-html',
+          cover_image_url: null,
+          content: {
+            gl: `<figure><img\n  data-src="${dataSrcUrl}"\n  src =\n  "${legacyUrl}"\n  alt="test"\n/><img src='${legacyUrl}' /></figure>`,
+          },
+        },
+      ],
+    });
+
+    const manifest = await runMigrate({
+      storage: env.storage,
+      db: env.db,
+      httpVerifier: env.httpVerifier,
+    });
+
+    expect(manifest.verification?.passed).toBe(true);
+    // Only the actual img src should be mapped; data-src-only image becomes an orphan
+    expect(manifest.mappings).toHaveLength(1);
+    expect(manifest.orphans.some((o) => o.sourcePath === 'profiles/unused/data-only.jpg')).toBe(
+      true
+    );
+
+    const updatedHtml = env.getPublications()[0].content?.gl ?? '';
+    expect(updatedHtml).toContain(`data-src="${dataSrcUrl}"`);
+    expect(updatedHtml).toContain(`src="${manifest.mappings[0].newUrl}"`);
+    expect(updatedHtml).toContain(`src='${manifest.mappings[0].newUrl}'`);
+    expect(updatedHtml).not.toContain(`src =\n  "${legacyUrl}"`);
+  });
+
+  it('assigns distinct orphan quarantine keys when a.jpg and a.jpg.webp both exist', async () => {
+    const jpgBuf = await createTestImage('jpeg', 200, 200);
+    const webpBuf = await createTestImage('webp', 200, 200);
+
+    const env = createInMemoryAdapters({
+      buckets: {
+        media: {
+          'old/a.jpg': jpgBuf,
+          'old/a.jpg.webp': webpBuf,
+        },
+        'imagenes-articulos': {},
+      },
+      users: [],
+      publications: [],
+    });
+
+    const manifest = await runMigrate({
+      storage: env.storage,
+      db: env.db,
+      httpVerifier: env.httpVerifier,
+    });
+
+    expect(manifest.orphans).toHaveLength(2);
+    expect(manifest.orphans[0].targetPath).not.toBe(manifest.orphans[1].targetPath);
+    expect(new Set(manifest.orphans.map((o) => o.targetPath)).size).toBe(2);
+  });
+
+  it('resolves the same legacy URL used for both cover and inline in one publication to separate canonical target paths', async () => {
+    const sharedJpeg = await createTestImage('jpeg', 500, 400);
+    const sharedUrl =
+      'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/imagenes-articulos/shared/pic.jpg';
+
+    const env = createInMemoryAdapters({
+      buckets: {
+        media: {},
+        'imagenes-articulos': {
+          'shared/pic.jpg': sharedJpeg,
+        },
+      },
+      users: [],
+      publications: [
+        {
+          id: 'pub-both',
+          cover_image_url: sharedUrl,
+          content: {
+            gl: `<p>Body</p><img src="${sharedUrl}" />`,
+          },
+        },
+      ],
+    });
+
+    const manifest = await runMigrate({
+      storage: env.storage,
+      db: env.db,
+      httpVerifier: env.httpVerifier,
+    });
+
+    expect(manifest.verification?.passed).toBe(true);
+    const coverMapping = manifest.mappings.find((m) => m.category === 'publication_cover')!;
+    const inlineMapping = manifest.mappings.find((m) => m.category === 'publication_inline')!;
+    expect(coverMapping.targetPath).toMatch(/^publications\/pub-both\/cover-migrated-.*\.webp$/);
+    expect(inlineMapping.targetPath).toMatch(/^publications\/pub-both\/inline\/.*-migrated-.*\.webp$/);
+    expect(coverMapping.newUrl).not.toBe(inlineMapping.newUrl);
+
+    const pub = env.getPublications()[0];
+    expect(pub.cover_image_url).toBe(coverMapping.newUrl);
+    expect(pub.content?.gl).toContain(`src="${inlineMapping.newUrl}"`);
+  });
+
+  it('rejects corrupt WebP payloads during pixel decode check', async () => {
+    const corruptWebp = Buffer.from('RIFF\x20\x00\x00\x00WEBPVP8 \x14\x00\x00\x00corruptdata');
+    await expect(processImageForMigration(corruptWebp, 'publication_cover')).rejects.toThrow();
   });
 });
