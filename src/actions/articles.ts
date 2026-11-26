@@ -42,6 +42,9 @@ import { stripIndex } from '@/lib/editor/generateIndex';
 import {
   cleanupPublicationImages,
   sweepPublicationStorageFolder,
+  extractBucketAndPathFromUrl,
+  STORAGE_BUCKET,
+  LEGACY_STORAGE_BUCKETS,
 } from '@/lib/storage';
 
 export interface SaveArticleInput {
@@ -401,11 +404,92 @@ function createStorageSweepClient(fallback: SupabaseClient): SupabaseClient {
   });
 }
 
+const LEGACY_PUBLICATION_BUCKET_SET = new Set<string>([
+  STORAGE_BUCKET,
+  ...LEGACY_STORAGE_BUCKETS,
+]);
+const INLINE_IMG_TAG_REGEX = /<img\b[^>]*\ssrc=(["'])([^"']+)\1[^>]*>/gi;
+
+function isOwnedPublicationAssetUrl(
+  url: string,
+  publicationId: string,
+  authorId: string | null
+): boolean {
+  const safePubId = publicationId.trim();
+  if (!safePubId) return false;
+
+  const extracted = extractBucketAndPathFromUrl(url);
+  if (!extracted) return false;
+
+  const { bucket, path } = extracted;
+  if (path.includes('..')) return false;
+
+  const segments = path.split('/').filter(Boolean);
+  if (segments.length === 0) return false;
+
+  // Canonical entity-grouped paths under publications/{publicationId}/... in primary bucket
+  if (
+    bucket === STORAGE_BUCKET &&
+    segments.length >= 3 &&
+    segments[0] === 'publications' &&
+    segments[1] === safePubId &&
+    safePubId !== 'covers' &&
+    safePubId !== 'inline'
+  ) {
+    return true;
+  }
+
+  // Legacy author-scoped paths require strict author_id match
+  if (!authorId || !LEGACY_PUBLICATION_BUCKET_SET.has(bucket)) {
+    return false;
+  }
+
+  // publications/covers/{authorId}/... or publications/inline/{authorId}/...
+  if (
+    segments.length >= 4 &&
+    segments[0] === 'publications' &&
+    (segments[1] === 'covers' || segments[1] === 'inline') &&
+    segments[2] === authorId
+  ) {
+    return true;
+  }
+
+  // portadas/{authorId}/... or contenido/{authorId}/...
+  if (
+    segments.length >= 3 &&
+    (segments[0] === 'portadas' || segments[0] === 'contenido') &&
+    segments[1] === authorId
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function filterOwnedPublicationInlineHtml(
+  html: string | null | undefined,
+  publicationId: string,
+  authorId: string | null
+): string | null {
+  if (!html || typeof html !== 'string') return null;
+
+  let hasOwnedImg = false;
+  const filtered = html.replace(INLINE_IMG_TAG_REGEX, (fullTag, _quote: string, src: string) => {
+    if (isOwnedPublicationAssetUrl(src, publicationId, authorId)) {
+      hasOwnedImg = true;
+      return fullTag;
+    }
+    return '';
+  });
+
+  return hasOwnedImg ? filtered : null;
+}
+
 /**
  * Deletes a publication using the caller's authenticated Supabase SSR client first
  * (preserving PostgreSQL RLS so writers cannot delete published articles or others' drafts),
  * and only after DB deletion succeeds sweeps the entire `publications/{publicationId}/`
- * storage folder plus any legacy asset references, then revalidates localized paths.
+ * storage folder plus any owned legacy asset references, then revalidates localized paths.
  */
 export async function deleteArticleAction(
   publicationId: string,
@@ -435,14 +519,40 @@ export async function deleteArticleAction(
     }
 
     const storageClient = createStorageSweepClient(supabase);
-    await sweepPublicationStorageFolder(storageClient, publicationId);
+    try {
+      await sweepPublicationStorageFolder(storageClient, publicationId);
+    } catch (sweepErr: unknown) {
+      console.error('[Action:deleteArticle] Failed to sweep publication folder:', formatDbError(sweepErr));
+    }
 
     if (pubAssets) {
-      await cleanupPublicationImages(storageClient, {
-        coverUrl: pubAssets.cover_image_url,
-        contentGl: pubAssets.content?.gl,
-        contentEs: pubAssets.content?.es,
-      });
+      const safeCoverUrl =
+        pubAssets.cover_image_url &&
+        isOwnedPublicationAssetUrl(pubAssets.cover_image_url, publicationId, pubAssets.author_id)
+          ? pubAssets.cover_image_url
+          : null;
+      const safeContentGl = filterOwnedPublicationInlineHtml(
+        pubAssets.content?.gl,
+        publicationId,
+        pubAssets.author_id
+      );
+      const safeContentEs = filterOwnedPublicationInlineHtml(
+        pubAssets.content?.es,
+        publicationId,
+        pubAssets.author_id
+      );
+
+      if (safeCoverUrl || safeContentGl || safeContentEs) {
+        try {
+          await cleanupPublicationImages(storageClient, {
+            coverUrl: safeCoverUrl,
+            contentGl: safeContentGl,
+            contentEs: safeContentEs,
+          });
+        } catch (cleanupErr: unknown) {
+          console.error('[Action:deleteArticle] Failed to cleanup publication images:', formatDbError(cleanupErr));
+        }
+      }
     }
 
     for (const loc of i18n.locales) {

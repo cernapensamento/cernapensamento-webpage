@@ -475,10 +475,11 @@ describe('deleteArticleAction', () => {
     vi.mocked(dbModule.getPublicationAssetsForCleanup).mockImplementation(async () => {
       callOrder.push('fetchAssets');
       return {
-        cover_image_url: 'https://example.supabase.co/storage/v1/object/public/media/portadas/legacy-cover.webp',
+        author_id: 'member-1',
+        cover_image_url: 'https://example.supabase.co/storage/v1/object/public/media/portadas/member-1/legacy-cover.webp',
         content: {
-          gl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/legacy-gl.webp" /></p>',
-          es: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/legacy-es.webp" /></p>',
+          gl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/member-1/legacy-gl.webp" /></p>',
+          es: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/member-1/legacy-es.webp" /></p>',
         },
       };
     });
@@ -504,9 +505,9 @@ describe('deleteArticleAction', () => {
     expect(callOrder).toEqual(['fetchAssets', 'deleteDb', 'sweepFolder', 'cleanupLegacy']);
     expect(storageModule.sweepPublicationStorageFolder).toHaveBeenCalledWith(expect.anything(), 'pub-123');
     expect(storageModule.cleanupPublicationImages).toHaveBeenCalledWith(expect.anything(), {
-      coverUrl: 'https://example.supabase.co/storage/v1/object/public/media/portadas/legacy-cover.webp',
-      contentGl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/legacy-gl.webp" /></p>',
-      contentEs: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/legacy-es.webp" /></p>',
+      coverUrl: 'https://example.supabase.co/storage/v1/object/public/media/portadas/member-1/legacy-cover.webp',
+      contentGl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/member-1/legacy-gl.webp" /></p>',
+      contentEs: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/member-1/legacy-es.webp" /></p>',
     });
     expect(revalidatePath).toHaveBeenCalledWith('/gl');
     expect(revalidatePath).toHaveBeenCalledWith('/gl/articulos');
@@ -524,6 +525,7 @@ describe('deleteArticleAction', () => {
     });
 
     vi.mocked(dbModule.getPublicationAssetsForCleanup).mockResolvedValue({
+      author_id: 'member-1',
       cover_image_url: 'https://example.supabase.co/storage/v1/object/public/media/publications/pub-published/cover.webp',
       content: { gl: '', es: '' },
     });
@@ -540,5 +542,97 @@ describe('deleteArticleAction', () => {
     expect(storageModule.sweepPublicationStorageFolder).not.toHaveBeenCalled();
     expect(storageModule.cleanupPublicationImages).not.toHaveBeenCalled();
     expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('filters out foreign publication URLs, user avatars, and _orphans before privileged cleanup', async () => {
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'member-1' } as unknown as User,
+      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
+      role: USER_ROLES.MEMBER,
+    });
+
+    vi.mocked(dbModule.getPublicationAssetsForCleanup).mockResolvedValue({
+      author_id: 'member-1',
+      cover_image_url: 'https://example.supabase.co/storage/v1/object/public/media/publications/other-pub/cover.webp',
+      content: {
+        gl: [
+          '<p><img src="https://example.supabase.co/storage/v1/object/public/media/users/member-1/avatar.webp" /></p>',
+          '<p><img src="https://example.supabase.co/storage/v1/object/public/media/_orphans/old.webp" /></p>',
+          '<p><img src="https://example.supabase.co/storage/v1/object/public/media/portadas/other-author/cover.webp" /></p>',
+          '<p><img src="https://example.supabase.co/storage/v1/object/public/media/publications/covers/member-1/owned-legacy.webp" /></p>',
+        ].join(''),
+        es: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/publications/pub-other/inline/fig.webp" /></p>',
+      },
+    });
+
+    vi.mocked(dbModule.deletePublication).mockResolvedValue({ success: true, error: null });
+
+    const result = await deleteArticleAction('pub-123', 'gl');
+
+    expect(result).toEqual({ success: true });
+    expect(storageModule.cleanupPublicationImages).toHaveBeenCalledTimes(1);
+    expect(storageModule.cleanupPublicationImages).toHaveBeenCalledWith(expect.anything(), {
+      coverUrl: null,
+      contentGl:
+        '<p></p><p></p><p></p><p><img src="https://example.supabase.co/storage/v1/object/public/media/publications/covers/member-1/owned-legacy.webp" /></p>',
+      contentEs: null,
+    });
+  });
+
+  it('skips cleanupPublicationImages completely when draft only references non-owned URLs', async () => {
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'member-1' } as unknown as User,
+      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
+      role: USER_ROLES.MEMBER,
+    });
+
+    vi.mocked(dbModule.getPublicationAssetsForCleanup).mockResolvedValue({
+      author_id: 'member-1',
+      cover_image_url: 'https://example.supabase.co/storage/v1/object/public/media/users/victim-1/avatar.webp',
+      content: {
+        gl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/publications/other-pub/inline/fig.webp" /></p>',
+        es: '<p><img src="https://example.supabase.co/storage/v1/object/public/imagenes-articulos/portadas/flat-legacy.webp" /></p>',
+      },
+    });
+
+    vi.mocked(dbModule.deletePublication).mockResolvedValue({ success: true, error: null });
+
+    const result = await deleteArticleAction('pub-123', 'gl');
+
+    expect(result).toEqual({ success: true });
+    expect(storageModule.sweepPublicationStorageFolder).toHaveBeenCalledWith(expect.anything(), 'pub-123');
+    expect(storageModule.cleanupPublicationImages).not.toHaveBeenCalled();
+    expect(revalidatePath).toHaveBeenCalled();
+  });
+
+  it('returns success and revalidates paths even when storage sweep or legacy cleanup throws after DB deletion', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'member-1' } as unknown as User,
+      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
+      role: USER_ROLES.MEMBER,
+    });
+
+    vi.mocked(dbModule.getPublicationAssetsForCleanup).mockResolvedValue({
+      author_id: 'member-1',
+      cover_image_url: 'https://example.supabase.co/storage/v1/object/public/media/publications/pub-123/cover.webp',
+      content: { gl: '', es: '' },
+    });
+
+    vi.mocked(dbModule.deletePublication).mockResolvedValue({ success: true, error: null });
+    vi.mocked(storageModule.sweepPublicationStorageFolder).mockRejectedValue(new Error('Sweep boom'));
+    vi.mocked(storageModule.cleanupPublicationImages).mockRejectedValue(new Error('Cleanup boom'));
+
+    const result = await deleteArticleAction('pub-123', 'gl');
+
+    expect(result).toEqual({ success: true });
+    expect(storageModule.sweepPublicationStorageFolder).toHaveBeenCalled();
+    expect(storageModule.cleanupPublicationImages).toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
+    expect(revalidatePath).toHaveBeenCalledWith('/gl');
+    expect(revalidatePath).toHaveBeenCalledWith('/es');
+
+    consoleErrorSpy.mockRestore();
   });
 });
