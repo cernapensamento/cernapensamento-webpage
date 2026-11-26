@@ -65,9 +65,7 @@ ln -snf ../../node_modules node_modules
 ### Stage 2: Surgical Implementation & Local Verification
 Keep edits focused and minimal. Before reporting work ready, run:
 ```bash
-npm run lint
-npm run typecheck
-npm test
+npm run check
 npm run build
 ```
 When touching `supabase/migrations/`, `supabase/seed.sql`, or DB constraints/triggers, also run:
@@ -105,7 +103,7 @@ git branch -d <branch-name>
 ```
 
 <!-- /coderabbit-ai-generated:v1 -->
-**Production release (`development` → `main`):** Verify `development` matches `origin/development`, run `lint` / `typecheck` / `test` / `build` / `db:reset`, push pending migrations (`npx supabase db push`) and verify `database/full_schema.sql` is synced, then open the PR via `gh pr create --base main --head development` covering Summary, DB/Env impact, Verification results, and post-merge tag (`vX.Y.Z`) + production smoke checks.
+**Production release (`development` → `main`):** Verify `development` matches `origin/development`, run `npm run check` / `build` / `db:reset`, verify `database/full_schema.sql` is synced, then open the PR via `gh pr create --base main --head development` covering Summary, DB/Env impact, Verification results, and post-merge tag (`vX.Y.Z`) + production smoke checks. Pending `supabase/migrations/*.sql` files are applied automatically by Supabase's GitHub integration on merge to `main`.
 
 ## Local Supabase & Test Accounts
 
