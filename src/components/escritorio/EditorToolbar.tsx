@@ -7,9 +7,13 @@ import type { Locale } from '@/i18n-config';
 import { getDictionaryClient } from '@/dictionaries/client';
 import {
   EDITOR_ACTIONS,
+  PERMISSIONS,
   PUBLICATION_STATUSES,
-  canPublishDirectly,
+  ROLE_PERMISSIONS,
+  hasPermission,
   type EditorAction,
+  type PermissionValue,
+  type UserRoleValue,
 } from '@/lib/db/schema';
 
 const FONT_SIZE_OPTIONS = [
@@ -33,7 +37,8 @@ interface EditorToolbarProps {
   editor: Editor | null;
   routeLang: Locale;
   mode: 'create' | 'edit';
-  userRole: string;
+  userRole?: string;
+  permissions?: readonly PermissionValue[];
   publicationStatus?: string;
   isPublishing: boolean;
   showIndex: boolean;
@@ -54,6 +59,7 @@ export default function EditorToolbar({
   routeLang,
   mode,
   userRole,
+  permissions,
   publicationStatus,
   isPublishing,
   showIndex,
@@ -82,7 +88,14 @@ export default function EditorToolbar({
     3: tools.h3,
   };
 
-  const isDirectPublisher = canPublishDirectly(userRole);
+  const effectivePermissions: readonly PermissionValue[] =
+    permissions !== undefined
+      ? permissions
+      : userRole
+        ? (ROLE_PERMISSIONS[userRole as UserRoleValue] ?? [])
+        : [];
+  const canPublish = hasPermission(effectivePermissions, PERMISSIONS.PUBLICATIONS_PUBLISH);
+  const canReview = hasPermission(effectivePermissions, PERMISSIONS.PUBLICATIONS_REVIEW);
   const isPending = publicationStatus === PUBLICATION_STATUSES.IN_REVIEW;
   const isPublished = publicationStatus === PUBLICATION_STATUSES.PUBLISHED;
 
@@ -304,7 +317,7 @@ export default function EditorToolbar({
 
       <div className="flex items-center gap-2 overflow-x-auto w-full xl:w-auto pb-1 xl:pb-0 scrollbar-none">
         <span className="text-[10px] font-sans uppercase tracking-widest text-charcoal/50 italic hidden xl:block shrink-0"></span>
-        {isPending && isDirectPublisher && mode === 'edit' ? (
+        {isPending && canReview && mode === 'edit' ? (
           <>
             <button
               type="button"
@@ -323,7 +336,7 @@ export default function EditorToolbar({
               {dict.approveAndPublish}
             </button>
           </>
-        ) : isPending && !isDirectPublisher && mode === 'edit' ? (
+        ) : isPending && !canReview && mode === 'edit' ? (
           <button
             type="button"
             className="px-3 md:px-4 py-2 shrink-0 border border-charcoal text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-charcoal hover:text-parchment transition-all cursor-pointer disabled:opacity-50"
@@ -360,14 +373,14 @@ export default function EditorToolbar({
               className="px-3 md:px-4 py-2 shrink-0 bg-charcoal text-parchment text-[10px] md:text-xs font-sans uppercase tracking-widest hover:bg-gold transition-all cursor-pointer disabled:opacity-50"
               disabled={isPublishing}
               onClick={() => {
-                if (!isDirectPublisher) {
+                if (!canPublish) {
                   onSubmitAction(EDITOR_ACTIONS.SUBMIT_APPROVAL);
                 } else {
                   onOpenPublishModal();
                 }
               }}
             >
-              {!isDirectPublisher ? dict.sendForApproval : dict.publish}
+              {!canPublish ? dict.sendForApproval : dict.publish}
             </button>
           </>
         )}

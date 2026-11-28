@@ -5,6 +5,7 @@ import ArticleEditor from './ArticleEditor';
 import { parseDraft, serializeDraft } from './articleEditorUtils';
 import * as storage from '@/lib/storage';
 import * as articlesActions from '@/actions/articles';
+import { PERMISSIONS } from '@/lib/db/schema';
 
 vi.mock('@/actions/articles', () => ({
   saveArticleAction: vi.fn(),
@@ -1281,5 +1282,31 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /^publicar$/i }));
     expect(screen.getByText(/idiomas a publicar/i).parentElement).toHaveTextContent(/só en castellano/i);
+  });
+
+  it('forwards explicit permissions to EditorToolbar without falling back to userRole when permissions is []', () => {
+    const { rerender } = render(
+      <ArticleEditor
+        mode="create"
+        permissions={[PERMISSIONS.PUBLICATIONS_PUBLISH]}
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /^publicar$/i })).toBeInTheDocument();
+
+    rerender(
+      <ArticleEditor
+        mode="create"
+        userRole="founder"
+        permissions={[]}
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /^publicar$/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /enviar para aprobación/i })).toBeInTheDocument();
   });
 });
