@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { deleteArticleAction } from '@/actions/articles';
+import { PERMISSIONS, hasPermission, type PermissionValue } from '@/lib/db/schema';
 import { useConfirm, useToast } from '@/components/ui/FeedbackProvider';
 import { useLocale } from '@/hooks/useLocale';
 import { getDictionaryClient } from '@/dictionaries/client';
@@ -10,9 +11,16 @@ import { getDictionaryClient } from '@/dictionaries/client';
 interface Props {
   id: string;
   titulo: string;
+  isPublished?: boolean;
+  permissions?: readonly PermissionValue[];
 }
 
-export default function DeleteArticleButton({ id, titulo }: Props) {
+export default function DeleteArticleButton({
+  id,
+  titulo,
+  isPublished = false,
+  permissions,
+}: Props) {
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
   const lang = useLocale();
@@ -20,6 +28,15 @@ export default function DeleteArticleButton({ id, titulo }: Props) {
   const dashDict = dict.dashboard;
   const confirm = useConfirm();
   const toast = useToast();
+
+  const canDelete =
+    permissions === undefined ||
+    hasPermission(permissions, PERMISSIONS.PUBLICATIONS_DELETE_ANY) ||
+    (!isPublished && hasPermission(permissions, PERMISSIONS.PUBLICATIONS_DELETE_OWN));
+
+  if (!canDelete) {
+    return null;
+  }
 
   const handleDelete = async () => {
     const confirmMsg = dashDict.deleteConfirm.replace('{title}', titulo);

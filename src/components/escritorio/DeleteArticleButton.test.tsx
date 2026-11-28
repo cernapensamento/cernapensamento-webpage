@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import DeleteArticleButton from './DeleteArticleButton';
+import { PERMISSIONS } from '@/lib/db/schema';
 import * as articleActions from '@/actions/articles';
 import * as feedbackProvider from '@/components/ui/FeedbackProvider';
 import type { ToastApi } from '@/components/ui/FeedbackProvider';
@@ -82,5 +83,32 @@ describe('DeleteArticleButton', () => {
       expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('Non autorizado'));
     });
     expect(mockRefresh).not.toHaveBeenCalled();
+  });
+
+  it('renders nothing when permissions are provided without delete permission', () => {
+    const { container, rerender } = render(
+      <DeleteArticleButton id="pub-1" titulo="Artigo de proba" permissions={[]} />
+    );
+    expect(container).toBeEmptyDOMElement();
+
+    rerender(
+      <DeleteArticleButton
+        id="pub-1"
+        titulo="Artigo de proba"
+        isPublished={true}
+        permissions={[PERMISSIONS.PUBLICATIONS_DELETE_OWN]}
+      />
+    );
+    expect(container).toBeEmptyDOMElement();
+
+    rerender(
+      <DeleteArticleButton
+        id="pub-1"
+        titulo="Artigo de proba"
+        isPublished={true}
+        permissions={[PERMISSIONS.PUBLICATIONS_DELETE_ANY]}
+      />
+    );
+    expect(screen.getByRole('button')).toBeInTheDocument();
   });
 });
