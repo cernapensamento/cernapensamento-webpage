@@ -3,7 +3,12 @@
  * Fully-typed TypeScript interfaces matching the Cerna English database schema.
  */
 
-import type { UserRoleValue, PublicationStatusValue, PublicationTypeValue } from './schema';
+import type {
+  UserRoleValue,
+  PermissionValue,
+  PublicationStatusValue,
+  PublicationTypeValue,
+} from './schema';
 
 /**
  * Localized Multilingual Text
@@ -16,6 +21,7 @@ export type LocalizedString = {
 };
 
 export type UserRole = UserRoleValue;
+export type { PermissionValue };
 export type PublicationStatus = PublicationStatusValue;
 export type PublicationType = PublicationTypeValue;
 
@@ -40,12 +46,19 @@ export interface UserRow {
 export type PublicUserRow = Omit<UserRow, 'newsletter_subscribed'>;
 
 export type AuthProfile = {
-  role: UserRole;
+  roles: UserRole[];
+  permissions: PermissionValue[];
+  role?: UserRole;
+  rol?: UserRole;
   avatar_url: string | null;
   full_name?: string | null;
 };
 
-export type ProfileRow = UserRow & { rol: UserRole };
+export type ProfileRow = UserRow & {
+  rol: UserRole;
+  roles?: UserRole[];
+  permissions?: PermissionValue[];
+};
 
 export interface PublicationRow {
   id: string;
