@@ -215,6 +215,8 @@ CREATE OR REPLACE FUNCTION "public"."dispatch_newsletter_webhook"("publication" 
     SET "search_path" TO ''
     AS $$
 DECLARE
+  -- ECMAScript WhiteSpace and LineTerminator code points.
+  v_trim_chars constant text := U&'\0009\000A\000B\000C\000D\0020\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000\FEFF';
   v_secret text;
   v_site_url text;
   v_url text;
@@ -231,9 +233,9 @@ BEGIN
   END IF;
 
   BEGIN
-    v_secret := btrim(current_setting('app.settings.webhook_secret', true));
+    v_secret := btrim(current_setting('app.settings.webhook_secret', true), v_trim_chars);
     IF v_secret IS NULL OR v_secret = '' THEN
-      SELECT btrim(decrypted_secret) INTO v_secret
+      SELECT btrim(decrypted_secret, v_trim_chars) INTO v_secret
       FROM vault.decrypted_secrets
       WHERE name IN ('webhook_secret', 'app.settings.webhook_secret')
       ORDER BY CASE WHEN name = 'webhook_secret' THEN 0 ELSE 1 END, updated_at DESC
@@ -428,7 +430,6 @@ CREATE OR REPLACE FUNCTION "public"."set_publication_published_at"() RETURNS "tr
     AS $$
 BEGIN
   IF NEW.status = 'published'::public.publication_status THEN
-    -- If becoming published for the first time or republishing after draft:
     IF TG_OP = 'INSERT' AND NEW.published_at IS NULL THEN
       NEW.published_at := timezone('utc'::text, now());
     ELSIF TG_OP = 'UPDATE' THEN
@@ -441,7 +442,6 @@ BEGIN
       END IF;
     END IF;
   ELSIF NEW.status IN ('draft'::public.publication_status, 'in_review'::public.publication_status) THEN
-    -- When reverting an article from published to draft or review, clear publication date
     IF TG_OP = 'UPDATE' AND OLD.status = 'published'::public.publication_status THEN
       NEW.published_at := NULL;
     ELSIF TG_OP = 'INSERT' THEN
