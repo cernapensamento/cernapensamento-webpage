@@ -2,7 +2,7 @@
 -- Supabase Local Development Seed Script
 -- Auto-generated for Cerna Pensamento
 -- Contains:
---  1. Storage Setup (imagenes-articulos)
+--  1. Storage Setup (media — WebP-only, 5 MiB)
 --  2. Auth Users & Public Users (4 Main Founders + Admin + Fake Guest/Member/Reader)
 --  3. Canonical Tags and Tag Translations
 --  4. Initial Publications & Publication-Tags Junction
@@ -10,36 +10,19 @@
 
 SET search_path TO public, extensions, auth;
 
--- 1. Storage Setup
+-- 1. Storage Setup (matches 20261128120000_contract_storage_webp_only.sql)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'media',
   'media',
-  true,
-  52428800,
-  ARRAY['image/webp', 'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']
-)
-ON CONFLICT (id) DO UPDATE SET
-  public = true,
-  file_size_limit = 52428800,
-  allowed_mime_types = ARRAY['image/webp', 'image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
-
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'imagenes-articulos',
-  'imagenes-articulos',
   true,
   5242880,
-  ARRAY['image/webp', 'image/jpeg', 'image/png']
+  ARRAY['image/webp']
 )
 ON CONFLICT (id) DO UPDATE SET
   public = true,
   file_size_limit = 5242880,
-  allowed_mime_types = ARRAY['image/webp', 'image/jpeg', 'image/png'];
-
-DO $$ BEGIN
-  CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id IN ('media', 'imagenes-articulos'));
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  allowed_mime_types = ARRAY['image/webp'];
 
 DO $$ BEGIN
   CREATE POLICY "Users can upload own profile" ON storage.objects FOR INSERT TO authenticated
