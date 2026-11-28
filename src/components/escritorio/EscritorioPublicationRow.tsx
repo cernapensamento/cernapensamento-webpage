@@ -4,7 +4,13 @@ import Image from 'next/image';
 import { i18n, type Locale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import { getAvailablePublicationLocales } from '@/lib/i18n/publicationLanguage';
-import { PUBLICATION_STATUSES, type PublicationDashboardItem } from '@/lib/db';
+import {
+  PERMISSIONS,
+  PUBLICATION_STATUSES,
+  hasPermission,
+  type PermissionValue,
+  type PublicationDashboardItem,
+} from '@/lib/db';
 import type { Dictionary } from '@/dictionaries/client';
 import FormattedDate from '@/components/ui/FormattedDate';
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
@@ -15,7 +21,8 @@ interface EscritorioPublicationRowProps {
   lang: Locale;
   dict: Dictionary;
   forApproval: boolean;
-  canReview: boolean;
+  canReview?: boolean;
+  permissions?: readonly PermissionValue[];
 }
 
 function resolveDashboardLanguageBadge(
@@ -46,6 +53,7 @@ export default function EscritorioPublicationRow({
   dict,
   forApproval,
   canReview,
+  permissions,
 }: EscritorioPublicationRowProps) {
   const fallbackLang = pub.original_language || i18n.defaultLocale;
   const resolvedTitle = resolveLocalizedText(pub.title, lang, fallbackLang);
@@ -62,6 +70,19 @@ export default function EscritorioPublicationRow({
   const isPublished = pub.status === PUBLICATION_STATUSES.PUBLISHED;
   const titleHref = forApproval || isPublished ? readerHref : editHref;
   const actionHref = forApproval ? readerHref : editHref;
+  const effectiveCanReview =
+    permissions !== undefined
+      ? hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW)
+      : Boolean(canReview);
+  const canPin =
+    permissions !== undefined
+      ? hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PIN)
+      : effectiveCanReview;
+  const canDelete =
+    permissions !== undefined
+      ? hasPermission(permissions, PERMISSIONS.PUBLICATIONS_DELETE_ANY) ||
+        (!isPublished && hasPermission(permissions, PERMISSIONS.PUBLICATIONS_DELETE_OWN))
+      : !isPublished || effectiveCanReview;
 
   return (
     <article
@@ -151,11 +172,20 @@ export default function EscritorioPublicationRow({
                 {forApproval ? dict.escritorio.review : dict.escritorioPage.edit}
               </span>
             </Link>
-            {isPublished && (
-              <PinArticleButton id={pub.id} isPinned={pub.is_pinned || false} />
+            {isPublished && canPin && (
+              <PinArticleButton
+                id={pub.id}
+                isPinned={pub.is_pinned || false}
+                permissions={permissions}
+              />
             )}
-            {!forApproval && (canReview || !isPublished) && (
-              <DeleteArticleButton id={pub.id} titulo={title} />
+            {!forApproval && canDelete && (
+              <DeleteArticleButton
+                id={pub.id}
+                titulo={title}
+                isPublished={isPublished}
+                permissions={permissions}
+              />
             )}
           </div>
         </div>

@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import {
   PUBLICATION_STATUSES,
   EDITOR_ACTIONS,
-  canPublishDirectly,
+  PERMISSIONS,
+  hasPermission,
 } from '@/lib/db/schema';
 import { updateArticleState } from '@/actions/articles';
 import { useToast } from '@/components/ui/FeedbackProvider';
@@ -32,7 +33,7 @@ export default function ReviewActionBar({ articuloId, status }: Props) {
     return null;
   }
 
-  if (loading || !canPublishDirectly(profile?.role)) {
+  if (loading || !hasPermission(profile?.permissions, PERMISSIONS.PUBLICATIONS_REVIEW)) {
     return null;
   }
 

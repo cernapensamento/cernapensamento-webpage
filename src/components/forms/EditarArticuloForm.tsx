@@ -9,7 +9,7 @@ import ArticleEditor, {
 import type { LocalizedString, PublicationDetail } from '@/lib/db/types';
 import { useToast } from '@/components/ui/FeedbackProvider';
 import { saveArticleAction, type SaveArticleInput } from '@/actions/articles';
-import { isDraftAction } from '@/lib/db/schema';
+import { isDraftAction, type PermissionValue } from '@/lib/db/schema';
 import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 import { i18n, type Locale } from '@/i18n-config';
 import { getPublicationLanguageMode } from '@/lib/i18n/publicationLanguage';
@@ -93,7 +93,8 @@ interface Props {
   publication?: PublicationDetail;
   /** Backwards compatibility alias for publication */
   articulo?: PublicationDetail;
-  userRole: string;
+  userRole?: string;
+  permissions?: readonly PermissionValue[];
   lang?: string;
   dict?: ArticleEditorDict;
 }
@@ -103,6 +104,7 @@ export default function EditarArticuloForm({
   publication,
   articulo,
   userRole,
+  permissions,
   lang: propLang,
   dict: propDict,
 }: Props) {
@@ -184,6 +186,7 @@ export default function EditarArticuloForm({
       onDraftCreated={({ id }) => setPublicationId(id)}
       isPublishing={isPublishing}
       userRole={userRole}
+      permissions={permissions}
     />
   );
 }

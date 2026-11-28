@@ -9,20 +9,48 @@ import PasswordForm from '@/components/forms/PasswordForm';
 import { DEFAULT_AVATAR_URL } from '@/lib/constants';
 import { handleSignOut } from '@/actions/auth';
 import { clearClientDrafts } from '@/lib/editor/draftStorage';
-import { getDictionaryClient } from '@/dictionaries/client';
+import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 import { i18n } from '@/i18n-config';
 import { useLocale } from '@/hooks/useLocale';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
-import { USER_COLS, resolveRoleLabel } from '@/lib/db/schema';
-import type { UserRow } from '@/lib/db/types';
+import { USER_COLS, USER_ROLES, resolveRoleLabel } from '@/lib/db/schema';
+import type { PermissionValue, UserRole, UserRow } from '@/lib/db/types';
 import { updateUserProfile } from '@/lib/db';
 import { uploadStorageImage, removeStorageImages, STORAGE_CATEGORIES } from '@/lib/storage';
 import FormattedDate from '@/components/ui/FormattedDate';
 import { useToast } from '@/components/ui/FeedbackProvider';
 
 export interface ProfileDashboardProps {
-  profile: (UserRow & { rol?: string; nombre?: string; recibir_newsletter?: boolean }) | null;
+  profile:
+    | (Omit<UserRow, 'role'> & {
+        role?: UserRole;
+        roles?: UserRole[];
+        permissions?: PermissionValue[];
+        rol?: string;
+        nombre?: string;
+        recibir_newsletter?: boolean;
+      })
+    | null;
   user: User;
+}
+
+function resolveProfileRoleLabels(
+  roles: readonly string[] | undefined,
+  legacyRole: string | undefined,
+  dashDict: Dictionary['dashboard']
+): string {
+  const effectiveRoles = roles !== undefined ? roles : legacyRole ? [legacyRole] : [];
+  const labels = Array.from(
+    new Set(
+      effectiveRoles
+        .map((role) => resolveRoleLabel(role, dashDict))
+        .filter((label): label is string => Boolean(label))
+    )
+  );
+  if (labels.length > 0) {
+    return labels.join(' · ');
+  }
+  return resolveRoleLabel(USER_ROLES.READER, dashDict);
 }
 
 type StatusMessage = { type: 'success' | 'error'; text: string } | null;
@@ -204,7 +232,7 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
           <div>
             <h3 className="font-serif text-2xl sm:text-3xl text-charcoal mb-1">{nombre || dashDict.personalData}</h3>
             <p className="font-sans text-[10px] sm:text-xs text-gold uppercase tracking-[0.2em] font-bold">
-              {resolveRoleLabel(profile?.role || profile?.rol, dashDict)}
+              {resolveProfileRoleLabels(profile?.roles, profile?.role, dashDict)}
             </p>
           </div>
         </div>

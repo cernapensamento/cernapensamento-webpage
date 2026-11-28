@@ -38,10 +38,10 @@ import {
 } from '@/lib/i18n/publicationLanguage';
 import { getUserById, type LocalizedString, type UserRow } from '@/lib/db';
 import {
-  USER_ROLES,
   PUBLICATION_TYPES,
   EDITOR_ACTIONS,
   type EditorAction,
+  type PermissionValue,
 } from '@/lib/db/schema';
 import {
   uploadStorageImage,
@@ -101,6 +101,7 @@ interface ArticleEditorProps {
   isPublishing: boolean;
   mode: 'create' | 'edit';
   userRole?: string;
+  permissions?: readonly PermissionValue[];
 }
 
 export default function ArticleEditor({
@@ -109,7 +110,8 @@ export default function ArticleEditor({
   onSave,
   onDraftCreated,
   isPublishing,
-  userRole = USER_ROLES.READER,
+  userRole,
+  permissions,
 }: ArticleEditorProps) {
   const routeLang = useLocale();
   const routeDict = getDictionaryClient(routeLang);
@@ -1069,6 +1071,7 @@ export default function ArticleEditor({
             routeLang={routeLang}
             mode={mode}
             userRole={userRole}
+            permissions={permissions}
             publicationStatus={initialData?.status || initialData?.estado}
             isPublishing={isPublishing}
             showIndex={showIndex}

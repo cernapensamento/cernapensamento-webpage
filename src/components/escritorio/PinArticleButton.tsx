@@ -4,9 +4,12 @@ import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
+  PERMISSIONS,
   countPinnedPublications,
   setPublicationPinned,
   formatDbError,
+  hasPermission,
+  type PermissionValue,
 } from '@/lib/db';
 import { useToast } from '@/components/ui/FeedbackProvider';
 import { useLocale } from '@/hooks/useLocale';
@@ -16,11 +19,12 @@ interface Props {
   id: string;
   isPinned?: boolean;
   fijado?: boolean;
+  permissions?: readonly PermissionValue[];
 }
 
 const MAX_PINNED_PUBLICATIONS = 8;
 
-export default function PinArticleButton({ id, isPinned, fijado }: Props) {
+export default function PinArticleButton({ id, isPinned, fijado, permissions }: Props) {
   const currentPinned = isPinned ?? fijado ?? false;
   const [isToggling, setIsToggling] = useState(false);
   const router = useRouter();
@@ -28,6 +32,10 @@ export default function PinArticleButton({ id, isPinned, fijado }: Props) {
   const dashDict = getDictionaryClient(lang).dashboard;
   const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
+
+  if (permissions !== undefined && !hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PIN)) {
+    return null;
+  }
 
   const handleToggle = async () => {
     setIsToggling(true);
