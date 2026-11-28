@@ -3,9 +3,10 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import EditarArticuloForm from '@/components/forms/EditarArticuloForm';
 import {
+  canEditPublication,
   getPublicationBySlug,
-  canAccessWriterDesk,
-  canPublishDirectly,
+  hasPermission,
+  PERMISSIONS,
 } from '@/lib/db';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
@@ -15,7 +16,7 @@ interface Props {
 }
 
 export default async function EditarArticuloPage({ params }: Props) {
-  const [resolvedParams, { user, role }] = await Promise.all([
+  const [resolvedParams, { user, permissions }] = await Promise.all([
     params,
     getAuthenticatedUser(),
   ]);
@@ -26,7 +27,7 @@ export default async function EditarArticuloPage({ params }: Props) {
     redirect(`/${lang}/login`);
   }
 
-  if (!canAccessWriterDesk(role)) {
+  if (!hasPermission(permissions, PERMISSIONS.DESK_ACCESS)) {
     redirect(`/${lang}/escritorio/perfil`);
   }
 
@@ -39,18 +40,14 @@ export default async function EditarArticuloPage({ params }: Props) {
     notFound();
   }
 
-  // Verify that user is author or privileged reviewer (admin/founder)
-  const isAuthor = publication.author.id === user.id;
-  const isPrivileged = canPublishDirectly(role);
-
-  if (!isAuthor && !isPrivileged) {
+  if (!canEditPublication(permissions, publication, user.id)) {
     redirect(`/${lang}/escritorio`);
   }
 
   return (
     <EditarArticuloForm
       publication={publication}
-      userRole={role}
+      permissions={permissions}
       lang={lang}
       dict={dict.articleEditor}
     />

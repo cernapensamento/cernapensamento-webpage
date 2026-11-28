@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const isDbTestEnabled = process.env.RUN_DB_TESTS === '1';
@@ -139,7 +139,11 @@ describe.skipIf(!isDbTestEnabled)('Storage RLS Integration Tests (Local Supabase
       expect(createGuestErr).toBeNull();
       const guestUserId = createdGuest.user!.id;
 
-      await adminClient.from('users').update({ role: 'guest' }).eq('id', guestUserId);
+      await adminClient.from('user_roles').delete().eq('user_id', guestUserId);
+      const { error: guestRoleErr } = await adminClient
+        .from('user_roles')
+        .insert({ user_id: guestUserId, role_id: 'guest' });
+      expect(guestRoleErr).toBeNull();
 
       const writers = [guestEmail, 'martino.rodriguez@cerna.org'];
 
@@ -397,6 +401,207 @@ describe.skipIf(!isDbTestEnabled)('Storage RLS Integration Tests (Local Supabase
       } finally {
         await adminClient.storage.from('media').remove([legacyProfile, legacyCover]);
       }
+    });
+  });
+
+  describe('Permission-based storage.objects RLS (Slice 3)', () => {
+    const createdUserIds: string[] = [];
+    const createdRoleIds: string[] = [];
+    const createdPubIds: string[] = [];
+    const createdStoragePaths: string[] = [];
+
+    afterAll(async () => {
+      const cleanupErrors: string[] = [];
+      if (createdStoragePaths.length > 0) {
+        const { error } = await adminClient.storage.from('media').remove(createdStoragePaths);
+        if (error) cleanupErrors.push(`storage.remove: ${error.message}`);
+      }
+      for (const pubId of createdPubIds) {
+        const { error } = await adminClient.from('publications').delete().eq('id', pubId);
+        if (error) cleanupErrors.push(`publication ${pubId}: ${error.message}`);
+      }
+      for (const userId of createdUserIds) {
+        const { error } = await adminClient.auth.admin.deleteUser(userId);
+        if (error) cleanupErrors.push(`user ${userId}: ${error.message}`);
+      }
+      for (const roleId of createdRoleIds) {
+        const { error } = await adminClient.from('roles').delete().eq('id', roleId);
+        if (error) cleanupErrors.push(`role ${roleId}: ${error.message}`);
+      }
+      if (cleanupErrors.length > 0) {
+        throw new Error(`Storage RLS fixture cleanup failed:\n${cleanupErrors.join('\n')}`);
+      }
+    });
+
+    async function createCustomRole(prefix: string, permissions: string[]) {
+      const roleId = `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`.toLowerCase();
+      const { error: roleErr } = await adminClient
+        .from('roles')
+        .insert({ id: roleId, is_public: false, public_priority: null });
+      if (roleErr) throw new Error(`Failed to create role ${roleId}: ${roleErr.message}`);
+      createdRoleIds.push(roleId);
+
+      if (permissions.length > 0) {
+        const { error: permErr } = await adminClient
+          .from('role_permissions')
+          .insert(permissions.map((permission) => ({ role_id: roleId, permission })));
+        if (permErr) throw new Error(`Failed to seed perms for ${roleId}: ${permErr.message}`);
+      }
+      return roleId;
+    }
+
+    async function createUserWithRoles(prefix: string, roles: string[]) {
+      const email = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@example.test`;
+      const password = 'Password123!';
+      const { data, error } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: `Storage ${prefix}` },
+      });
+      if (error || !data.user) {
+        throw new Error(`Failed to create user ${email}: ${error?.message}`);
+      }
+      createdUserIds.push(data.user.id);
+
+      const { error: clearErr } = await adminClient.from('user_roles').delete().eq('user_id', data.user.id);
+      if (clearErr) throw new Error(`Failed to clear default roles for ${email}: ${clearErr.message}`);
+      if (roles.length > 0) {
+        const { error: assignErr } = await adminClient
+          .from('user_roles')
+          .insert(roles.map((roleId) => ({ user_id: data.user!.id, role_id: roleId })));
+        if (assignErr) throw new Error(`Failed to assign roles: ${assignErr.message}`);
+      }
+
+      const { client } = await createAuthenticatedClient(email);
+      return { userId: data.user.id, client };
+    }
+
+    async function seedPublication(authorId: string, status: 'draft' | 'in_review' | 'published') {
+      const { data, error } = await adminClient
+        .from('publications')
+        .insert({
+          author_id: authorId,
+          slug: `rls-storage-perm-${status}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          original_language: 'gl',
+          title: { gl: `Storage ${status}` },
+          content: { gl: `<p>Storage ${status}</p>` },
+          status,
+          type: 'article',
+        })
+        .select('id')
+        .single();
+      if (error || !data) throw new Error(`Failed to seed publication: ${error?.message}`);
+      createdPubIds.push(data.id);
+      return data.id;
+    }
+
+    it('allows zero-role user to manage own avatar while denying publication and orphan writes', async () => {
+      const { userId: zeroUserId, client: zeroClient } = await createUserWithRoles('zero-st', []);
+      const ownDraftId = await seedPublication(zeroUserId, 'draft');
+
+      const ownAvatar = `users/${zeroUserId}/avatar-${Date.now()}.webp`;
+      const ownPubImg = `publications/${ownDraftId}/cover-${Date.now()}.webp`;
+      const orphanImg = `_orphans/zero-${Date.now()}.webp`;
+      createdStoragePaths.push(ownAvatar, ownPubImg, orphanImg);
+
+      expect((await uploadWebp(zeroClient, ownAvatar)).error).toBeNull();
+      expect((await uploadWebp(zeroClient, ownAvatar, { upsert: true })).error).toBeNull();
+      expect(await removeAndVerifyDeleted(zeroClient, ownAvatar)).toBe(true);
+
+      expect((await uploadWebp(zeroClient, ownPubImg)).error).not.toBeNull();
+      expect((await uploadWebp(zeroClient, orphanImg)).error).not.toBeNull();
+    });
+
+    it('enforces media:upload_publication, publications:review, publications:update_any, and media:delete_any granularly', async () => {
+      const uploadOwnRole = await createCustomRole('test_st_upload', ['media:upload_publication']);
+      const reviewRole = await createCustomRole('test_st_review', ['publications:review']);
+      const updateAnyRole = await createCustomRole('test_st_upd_any', ['publications:update_any']);
+      const deleteAnyRole = await createCustomRole('test_st_del_any', ['media:delete_any']);
+
+      const { userId: uploaderId, client: uploaderClient } = await createUserWithRoles('st-up', [uploadOwnRole]);
+      const { client: reviewerClient } = await createUserWithRoles('st-rev', [reviewRole]);
+      const { client: updateAnyClient } = await createUserWithRoles('st-upd', [updateAnyRole]);
+      const { client: deleteAnyClient } = await createUserWithRoles('st-del', [deleteAnyRole]);
+      const { userId: targetUserId } = await createUserWithRoles('st-target', []);
+      const { userId: targetAuthorId } = await createUserWithRoles('st-author', ['member']);
+
+      const ownDraftId = await seedPublication(uploaderId, 'draft');
+      const ownPublishedId = await seedPublication(uploaderId, 'published');
+      const otherInReviewId = await seedPublication(targetAuthorId, 'in_review');
+      const otherDraftId = await seedPublication(targetAuthorId, 'draft');
+      const otherPublishedId = await seedPublication(targetAuthorId, 'published');
+
+      // media:upload_publication: allowed on own draft, denied on own published
+      const ownDraftPath = `publications/${ownDraftId}/cover-${Date.now()}.webp`;
+      const ownPubPath = `publications/${ownPublishedId}/cover-${Date.now()}.webp`;
+      createdStoragePaths.push(ownDraftPath, ownPubPath);
+
+      expect((await uploadWebp(uploaderClient, ownDraftPath)).error).toBeNull();
+      expect((await uploadWebp(uploaderClient, ownDraftPath, { upsert: true })).error).toBeNull();
+      expect(await removeAndVerifyDeleted(uploaderClient, ownDraftPath)).toBe(true);
+      expect((await uploadWebp(uploaderClient, ownPubPath)).error).not.toBeNull();
+
+      // publications:review: allowed on other's in_review, denied on other's draft/published & _orphans
+      const revInRevPath = `publications/${otherInReviewId}/inline-${Date.now()}.webp`;
+      const revDraftPath = `publications/${otherDraftId}/inline-${Date.now()}.webp`;
+      const revOrphanPath = `_orphans/rev-${Date.now()}.webp`;
+      createdStoragePaths.push(revInRevPath, revDraftPath, revOrphanPath);
+
+      expect((await uploadWebp(reviewerClient, revInRevPath)).error).toBeNull();
+      expect((await uploadWebp(reviewerClient, revInRevPath, { upsert: true })).error).toBeNull();
+      expect(await removeAndVerifyDeleted(reviewerClient, revInRevPath)).toBe(true);
+      expect((await uploadWebp(reviewerClient, revDraftPath)).error).not.toBeNull();
+      expect((await uploadWebp(reviewerClient, revOrphanPath)).error).not.toBeNull();
+
+      // publications:update_any (without media:delete_any): allowed on other's published pub, denied on other's avatar & _orphans
+      const anyPubPath = `publications/${otherPublishedId}/cover-${Date.now()}.webp`;
+      const anyOtherAvatar = `users/${targetUserId}/avatar-${Date.now()}.webp`;
+      const anyOrphanPath = `_orphans/any-${Date.now()}.webp`;
+      createdStoragePaths.push(anyPubPath, anyOtherAvatar, anyOrphanPath);
+
+      expect((await uploadWebp(updateAnyClient, anyPubPath)).error).toBeNull();
+      expect(await removeAndVerifyDeleted(updateAnyClient, anyPubPath)).toBe(true);
+      expect((await uploadWebp(updateAnyClient, anyOtherAvatar)).error).not.toBeNull();
+      expect((await uploadWebp(updateAnyClient, anyOrphanPath)).error).not.toBeNull();
+
+      // media:delete_any: can manage _orphans/*, other user avatars, and delete published publication images
+      const delAnyPubPath = `publications/${otherPublishedId}/seeded-${Date.now()}.webp`;
+      const delAnyAvatarPath = `users/${targetUserId}/op-avatar-${Date.now()}.webp`;
+      const delAnyOrphanPath = `_orphans/op-${Date.now()}.webp`;
+      createdStoragePaths.push(delAnyPubPath, delAnyAvatarPath, delAnyOrphanPath);
+
+      expect((await uploadWebp(adminClient, delAnyPubPath)).error).toBeNull();
+      expect(await removeAndVerifyDeleted(deleteAnyClient, delAnyPubPath)).toBe(true);
+
+      expect((await uploadWebp(deleteAnyClient, delAnyAvatarPath)).error).toBeNull();
+      expect(await removeAndVerifyDeleted(deleteAnyClient, delAnyAvatarPath)).toBe(true);
+
+      expect((await uploadWebp(deleteAnyClient, delAnyOrphanPath)).error).toBeNull();
+      expect(await removeAndVerifyDeleted(deleteAnyClient, delAnyOrphanPath)).toBe(true);
+    });
+
+    it('supports overlapping guest+member and founder+admin multi-role storage access', async () => {
+      const { userId: gmUserId, client: gmClient } = await createUserWithRoles('st-gm', ['guest', 'member']);
+      const { client: faClient } = await createUserWithRoles('st-fa', ['founder', 'admin']);
+
+      const gmDraftId = await seedPublication(gmUserId, 'draft');
+      const gmPublishedId = await seedPublication(gmUserId, 'published');
+
+      const gmDraftPath = `publications/${gmDraftId}/cover-${Date.now()}.webp`;
+      const gmPubPath = `publications/${gmPublishedId}/cover-${Date.now()}.webp`;
+      const faOrphanPath = `_orphans/fa-${Date.now()}.webp`;
+      createdStoragePaths.push(gmDraftPath, gmPubPath, faOrphanPath);
+
+      // guest+member can manage own draft image, cannot modify own published image
+      expect((await uploadWebp(gmClient, gmDraftPath)).error).toBeNull();
+      expect((await uploadWebp(gmClient, gmPubPath)).error).not.toBeNull();
+
+      // founder+admin can manage other's published image and _orphans/*
+      expect((await uploadWebp(faClient, gmPubPath)).error).toBeNull();
+      expect(await removeAndVerifyDeleted(faClient, gmPubPath)).toBe(true);
+      expect((await uploadWebp(faClient, faOrphanPath)).error).toBeNull();
+      expect(await removeAndVerifyDeleted(faClient, faOrphanPath)).toBe(true);
     });
   });
 });

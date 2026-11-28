@@ -21,11 +21,12 @@ import {
   syncPublicationTagsBySlugs,
   formatDbError,
   normalizePublicationType,
-  canPublishDirectly,
-  isReaderRole,
+  canEditPublication,
+  hasPermission,
+  hasAnyPermission,
+  PERMISSIONS,
   PUBLICATION_COLS,
   PUBLICATION_STATUSES,
-  USER_ROLES,
   EDITOR_ACTIONS,
   isPublishAction,
   type PublicationStatus,
@@ -35,7 +36,6 @@ import {
   type PublicationStatusValue,
   type EditorAction,
   type LocalizedString,
-  type UserRole,
 } from '@/lib/db';
 import {
   generatePublicationSlug,
@@ -171,9 +171,9 @@ function buildContentPayload(
   return result;
 }
 
-function resolveTargetStatus(action: EditorAction, canDirectPublish: boolean): PublicationStatusValue {
+function resolveTargetStatus(action: EditorAction): PublicationStatusValue {
   if (isPublishAction(action)) {
-    return canDirectPublish ? PUBLICATION_STATUSES.PUBLISHED : PUBLICATION_STATUSES.DRAFT;
+    return PUBLICATION_STATUSES.PUBLISHED;
   }
   if (action === EDITOR_ACTIONS.SUBMIT_APPROVAL) {
     return PUBLICATION_STATUSES.IN_REVIEW;
@@ -189,7 +189,7 @@ async function syncTagsSafe(publicationId: string, tags: string[]): Promise<void
 }
 
 /**
- * Server Action for creating and editing publications with authoritative role checks,
+ * Server Action for creating and editing publications with atomic permission checks,
  * transactional tag synchronization, and Next.js bilingual cache revalidation.
  */
 export async function saveArticleAction(
@@ -200,22 +200,64 @@ export async function saveArticleAction(
   const edDict = dict.articleEditor;
 
   try {
-    const { user, profile } = await getAuthenticatedUser();
+    const { user, profile, permissions } = await getAuthenticatedUser();
     if (!user || !profile) {
       return { success: false, error: edDict.unauthorized };
     }
 
-    const userRole: UserRole = profile.role || USER_ROLES.READER;
-    if (isReaderRole(userRole)) {
-      return { success: false, error: edDict.insufficientRole };
+    const canCreate = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_CREATE);
+    const canPublish = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PUBLISH);
+    const canReview = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW);
+    const canUpdateAny = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_ANY);
+    const canMutateExisting = hasAnyPermission(permissions, [
+      PERMISSIONS.PUBLICATIONS_UPDATE_OWN,
+      PERMISSIONS.PUBLICATIONS_UPDATE_ANY,
+      PERMISSIONS.PUBLICATIONS_PUBLISH,
+      PERMISSIONS.PUBLICATIONS_REVIEW,
+    ]);
+
+    let existing: Awaited<ReturnType<typeof getPublicationById>> = null;
+    if (input.id) {
+      if (!canMutateExisting) {
+        return { success: false, error: edDict.insufficientRole };
+      }
+
+      existing = await getPublicationById(input.id);
+      if (!existing) {
+        return { success: false, error: edDict.publicationNotFound };
+      }
+
+      if (!canEditPublication(permissions, existing, user.id)) {
+        return { success: false, error: edDict.notAuthorOrPrivileged };
+      }
+
+      const isInReview = existing.status === PUBLICATION_STATUSES.IN_REVIEW;
+      const isAlreadyPublished = existing.status === PUBLICATION_STATUSES.PUBLISHED;
+      if (isPublishAction(input.action)) {
+        const canPublishThis =
+          isAlreadyPublished ||
+          (input.action === EDITOR_ACTIONS.APPROVE
+            ? canPublish || (isInReview && canReview)
+            : canPublish);
+        if (!canPublishThis) {
+          return { success: false, error: edDict.onlyPrivilegedCanPublish };
+        }
+      } else if (
+        input.action === EDITOR_ACTIONS.REJECT &&
+        (!isInReview || (!canReview && !canUpdateAny))
+      ) {
+        return { success: false, error: edDict.onlyPrivilegedCanPublish };
+      }
+    } else {
+      if (!canCreate) {
+        return { success: false, error: edDict.insufficientRole };
+      }
+      if (isPublishAction(input.action) && !canPublish) {
+        return { success: false, error: edDict.onlyPrivilegedCanPublish };
+      }
     }
 
-    const canDirectPublish = canPublishDirectly(userRole);
-    if (isPublishAction(input.action) && !canDirectPublish) {
-      return { success: false, error: edDict.onlyPrivilegedCanPublish };
-    }
-
-    const targetStatus = resolveTargetStatus(input.action, canDirectPublish);
+    const targetStatus = resolveTargetStatus(input.action);
     const languageMode = resolveLanguageMode(input.language_mode);
     const origLang = resolveLocale(input.original_language);
     const activeLocales: readonly Locale[] =
@@ -265,18 +307,8 @@ export async function saveArticleAction(
     let finalSlug: string;
     let oldSlug: string | null = null;
 
-    if (input.id) {
+    if (input.id && existing) {
       // --- UPDATE EXISTING PUBLICATION ---
-      const existing = await getPublicationById(input.id);
-      if (!existing) {
-        return { success: false, error: edDict.publicationNotFound };
-      }
-
-      const isAuthor = existing.author.id === user.id;
-      if (!isAuthor && !canDirectPublish) {
-        return { success: false, error: edDict.notAuthorOrPrivileged };
-      }
-
       const isDraft = existing.status === PUBLICATION_STATUSES.DRAFT;
       finalSlug = updatePublicationSlugIfNeeded(currentTitle, existing.slug, isDraft);
       oldSlug = existing.slug;
@@ -380,7 +412,7 @@ export async function fetchMoreArticlesAction(
 
 /**
  * Updates the publication status (e.g. approve to published, or reject to draft)
- * with role-gated editorial checks and bilingual path revalidation.
+ * with atomic permission checks and bilingual path revalidation.
  */
 export async function updateArticleState(
   publicationId: string,
@@ -392,19 +424,41 @@ export async function updateArticleState(
   const edDict = dict.articleEditor;
 
   try {
-    const { user, role } = await getAuthenticatedUser();
+    const { user, permissions } = await getAuthenticatedUser();
 
-    if (!user || !role) {
+    if (!user) {
       return { success: false, error: edDict.unauthorized };
-    }
-
-    if (!canPublishDirectly(role)) {
-      return { success: false, error: edDict.onlyPrivilegedCanPublish };
     }
 
     const validStatuses = Object.values(PUBLICATION_STATUSES) as string[];
     if (!validStatuses.includes(newState)) {
       return { success: false, error: edDict.statusUpdateError };
+    }
+
+    const canReview = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW);
+    const canPublish = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PUBLISH);
+    const canUpdateAny = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_ANY);
+
+    if (!canReview && !canPublish && !canUpdateAny) {
+      return { success: false, error: edDict.onlyPrivilegedCanPublish };
+    }
+
+    const existing = await getPublicationById(publicationId);
+    if (!existing) {
+      return { success: false, error: edDict.publicationNotFound };
+    }
+
+    const isAuthor = existing.author.id === user.id;
+    const isInReview = existing.status === PUBLICATION_STATUSES.IN_REVIEW;
+    const canTransition =
+      newState === PUBLICATION_STATUSES.PUBLISHED
+        ? (isAuthor && canPublish) ||
+          (canUpdateAny && canPublish) ||
+          (isInReview && canReview)
+        : canUpdateAny || (isInReview && canReview) || (isAuthor && canPublish);
+
+    if (!canTransition) {
+      return { success: false, error: edDict.onlyPrivilegedCanPublish };
     }
 
     const { success, error } = await updatePublicationStatus(
@@ -533,13 +587,35 @@ export async function deleteArticleAction(
   const edDict = dict.articleEditor;
 
   try {
-    const { user, profile } = await getAuthenticatedUser();
+    const { user, profile, permissions } = await getAuthenticatedUser();
     if (!user || !profile) {
       return { success: false, error: edDict.unauthorized };
     }
 
+    const canDeleteAny = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_DELETE_ANY);
+    const canDeleteOwn = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_DELETE_OWN);
+    if (!canDeleteAny && !canDeleteOwn) {
+      return { success: false, error: edDict.insufficientRole };
+    }
+
     const supabase = await createServerSupabaseClient();
     const pubAssets = await getPublicationAssetsForCleanup(publicationId, supabase);
+
+    if (!canDeleteAny) {
+      if (pubAssets?.author_id && pubAssets.author_id !== user.id) {
+        return { success: false, error: edDict.notAuthorOrPrivileged };
+      }
+
+      const existing = await getPublicationById(publicationId, { client: supabase });
+      if (existing) {
+        if (existing.author.id !== user.id) {
+          return { success: false, error: edDict.notAuthorOrPrivileged };
+        }
+        if (existing.status === PUBLICATION_STATUSES.PUBLISHED) {
+          return { success: false, error: edDict.insufficientRole };
+        }
+      }
+    }
 
     const { success, error } = await deletePublication(publicationId, supabase);
     if (!success || error) {

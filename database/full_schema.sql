@@ -83,16 +83,36 @@ CREATE TYPE "public"."publication_type" AS ENUM (
 ALTER TYPE "public"."publication_type" OWNER TO "postgres";
 
 
-CREATE TYPE "public"."user_role" AS ENUM (
-    'reader',
-    'guest',
-    'member',
-    'founder',
-    'admin'
-);
+CREATE OR REPLACE FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.publications p
+    WHERE p.id = p_publication_id
+      AND (
+        public.has_permission('publications:update_any')
+        OR (
+          p.author_id = auth.uid()
+          AND p.status <> 'published'::public.publication_status
+          AND public.has_permission('publications:update_own')
+        )
+        OR (
+          p.author_id = auth.uid()
+          AND p.status = 'published'::public.publication_status
+          AND public.has_permission('publications:publish')
+        )
+        OR (
+          p.status = 'in_review'::public.publication_status
+          AND public.has_permission('publications:review')
+        )
+      )
+  );
+$$;
 
 
-ALTER TYPE "public"."user_role" OWNER TO "postgres";
+ALTER FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."check_publication_quotas"() RETURNS "trigger"
@@ -100,7 +120,7 @@ CREATE OR REPLACE FUNCTION "public"."check_publication_quotas"() RETURNS "trigge
     SET "search_path" TO ''
     AS $$
 DECLARE
-  v_role public.user_role;
+  v_has_unlimited boolean;
   v_total_count int;
   v_year_count int;
 BEGIN
@@ -108,17 +128,28 @@ BEGIN
   NEW.created_at := timezone('utc'::text, now());
   NEW.updated_at := timezone('utc'::text, now());
 
-  SELECT role INTO v_role FROM public.users WHERE id = NEW.author_id;
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles ur
+    JOIN public.role_permissions rp ON rp.role_id = ur.role_id
+    WHERE ur.user_id = NEW.author_id
+      AND rp.permission = 'publications:write_unlimited'
+  ) INTO v_has_unlimited;
 
-  IF v_role = 'guest' THEN
-    SELECT count(*) INTO v_total_count FROM public.publications WHERE author_id = NEW.author_id;
+  IF NOT v_has_unlimited THEN
+    SELECT count(*) INTO v_total_count
+    FROM public.publications
+    WHERE author_id = NEW.author_id;
+
     IF v_total_count >= 4 THEN
       RAISE EXCEPTION 'Límite total alcanzado: Un autor invitado no puede crear más de 4 publicaciones en total.';
     END IF;
 
-    SELECT count(*) INTO v_year_count FROM public.publications
+    SELECT count(*) INTO v_year_count
+    FROM public.publications
     WHERE author_id = NEW.author_id
       AND extract(year from created_at) = extract(year from NEW.created_at);
+
     IF v_year_count >= 2 THEN
       RAISE EXCEPTION 'Límite anual alcanzado: Un autor invitado no puede crear más de 2 publicaciones este año.';
     END IF;
@@ -130,50 +161,6 @@ $$;
 
 
 ALTER FUNCTION "public"."check_publication_quotas"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."current_user_role"() RETURNS "text"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO ''
-    AS $$
-  SELECT COALESCE(
-    (auth.jwt() -> 'app_metadata'::text) ->> 'user_role'::text,
-    (SELECT (users.role)::text FROM public.users WHERE users.id = auth.uid())
-  );
-$$;
-
-
-ALTER FUNCTION "public"."current_user_role"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."custom_access_token_hook"("event" "jsonb") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
-    AS $$
-DECLARE
-  claims jsonb;
-  v_user_role public.user_role;
-BEGIN
-  -- Fetch user role directly from public.users
-  SELECT role INTO v_user_role FROM public.users WHERE id = (event->>'user_id')::uuid;
-
-  claims := event->'claims';
-
-  IF v_user_role IS NOT NULL THEN
-    claims := jsonb_set(claims, '{app_metadata, user_role}', to_jsonb(v_user_role::text));
-    claims := jsonb_set(claims, '{user_role}', to_jsonb(v_user_role::text));
-  ELSE
-    claims := jsonb_set(claims, '{app_metadata, user_role}', '"reader"'::jsonb);
-    claims := jsonb_set(claims, '{user_role}', '"reader"'::jsonb);
-  END IF;
-
-  event := jsonb_set(event, '{claims}', claims);
-  RETURN event;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."custom_access_token_hook"("event" "jsonb") OWNER TO "postgres";
 
 SET default_tablespace = '';
 
@@ -282,6 +269,79 @@ $$;
 ALTER FUNCTION "public"."dispatch_newsletter_webhook"("publication" "public"."publications") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."enforce_publication_mutation_guards"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_caller_role text := COALESCE(NULLIF(current_setting('role', true), 'none'), current_user);
+  v_non_pin_changed boolean;
+BEGIN
+  IF v_caller_role NOT IN ('authenticated', 'anon') THEN
+    RETURN NEW;
+  END IF;
+
+  -- Guard transitions into 'published': bare publications:update_any cannot publish drafts.
+  IF NEW.status = 'published'::public.publication_status
+     AND (TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM 'published'::public.publication_status) THEN
+    IF NOT (
+      public.has_permission('publications:publish')
+      OR (
+        TG_OP = 'UPDATE'
+        AND OLD.status = 'in_review'::public.publication_status
+        AND public.has_permission('publications:review')
+      )
+    ) THEN
+      RAISE EXCEPTION 'Insufficient privilege: publications:publish permission is required to publish a publication.'
+        USING ERRCODE = '42501';
+    END IF;
+  END IF;
+
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.is_pinned IS TRUE AND NOT public.has_permission('publications:pin') THEN
+      RAISE EXCEPTION 'Insufficient privilege: publications:pin permission is required to pin a publication.'
+        USING ERRCODE = '42501';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  -- TG_OP = 'UPDATE'
+  IF NEW.is_pinned IS DISTINCT FROM OLD.is_pinned AND NOT public.has_permission('publications:pin') THEN
+    RAISE EXCEPTION 'Insufficient privilege: publications:pin permission is required to change is_pinned.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  v_non_pin_changed := (
+    NEW.id IS DISTINCT FROM OLD.id
+    OR NEW.slug IS DISTINCT FROM OLD.slug
+    OR NEW.cover_image_url IS DISTINCT FROM OLD.cover_image_url
+    OR NEW.status IS DISTINCT FROM OLD.status
+    OR NEW.created_at IS DISTINCT FROM OLD.created_at
+    OR NEW.updated_at IS DISTINCT FROM OLD.updated_at
+    OR NEW.author_id IS DISTINCT FROM OLD.author_id
+    OR NEW.type IS DISTINCT FROM OLD.type
+    OR NEW.original_language IS DISTINCT FROM OLD.original_language
+    OR NEW.title IS DISTINCT FROM OLD.title
+    OR NEW.subtitle IS DISTINCT FROM OLD.subtitle
+    OR NEW.content IS DISTINCT FROM OLD.content
+    OR NEW.newsletter_sent_at IS DISTINCT FROM OLD.newsletter_sent_at
+    OR NEW.published_at IS DISTINCT FROM OLD.published_at
+    OR NEW.show_index IS DISTINCT FROM OLD.show_index
+  );
+
+  IF v_non_pin_changed AND NOT public.can_edit_publication(OLD.id) THEN
+    RAISE EXCEPTION 'Insufficient privilege: cannot modify non-pin fields on this publication.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."enforce_publication_mutation_guards"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."generate_slug"("text") RETURNS "text"
     LANGUAGE "sql" IMMUTABLE
     AS $_$
@@ -329,7 +389,7 @@ CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     SET "search_path" TO ''
     AS $$
 BEGIN
-  INSERT INTO public.users (id, full_name, avatar_url, role, newsletter_subscribed)
+  INSERT INTO public.users (id, full_name, avatar_url, newsletter_subscribed)
   VALUES (
     NEW.id,
     COALESCE(
@@ -338,9 +398,13 @@ BEGIN
       'UsuarioNuevo'
     ),
     NEW.raw_user_meta_data ->> 'avatar_url',
-    'reader'::public.user_role,
     FALSE
   );
+
+  INSERT INTO public.user_roles (user_id, role_id)
+  VALUES (NEW.id, 'reader')
+  ON CONFLICT (user_id, role_id) DO NOTHING;
+
   RETURN NEW;
 END;
 $$;
@@ -349,26 +413,72 @@ $$;
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."is_operator"() RETURNS boolean
+CREATE OR REPLACE FUNCTION "public"."has_permission"("required_permission" "text") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
-  SELECT public.current_user_role() = ANY (ARRAY['founder'::text, 'admin'::text]);
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles ur
+    JOIN public.role_permissions rp ON rp.role_id = ur.role_id
+    WHERE ur.user_id = auth.uid()
+      AND rp.permission = required_permission
+  );
 $$;
 
 
-ALTER FUNCTION "public"."is_operator"() OWNER TO "postgres";
+ALTER FUNCTION "public"."has_permission"("required_permission" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."is_writer"() RETURNS boolean
+CREATE OR REPLACE FUNCTION "public"."is_public_role"("target_role_id" "text") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
-  SELECT public.current_user_role() = ANY (ARRAY['guest'::text, 'member'::text, 'founder'::text, 'admin'::text]);
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.roles r
+    WHERE r.id = target_role_id
+      AND r.is_public = true
+  );
 $$;
 
 
-ALTER FUNCTION "public"."is_writer"() OWNER TO "postgres";
+ALTER FUNCTION "public"."is_public_role"("target_role_id" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."prevent_removing_last_admin"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_remaining_admins integer;
+BEGIN
+  IF (TG_OP = 'DELETE' AND OLD.role_id = 'admin')
+     OR (TG_OP = 'UPDATE' AND OLD.role_id = 'admin' AND NEW.role_id <> 'admin') THEN
+    PERFORM pg_advisory_xact_lock(hashtext('public.user_roles:last_admin'));
+
+    PERFORM 1
+    FROM public.user_roles
+    WHERE role_id = 'admin'
+      AND user_id <> OLD.user_id
+    FOR UPDATE;
+    GET DIAGNOSTICS v_remaining_admins = ROW_COUNT;
+
+    IF v_remaining_admins = 0 THEN
+      RAISE EXCEPTION 'Cannot remove the last remaining admin role assignment.'
+        USING ERRCODE = 'P0001';
+    END IF;
+  END IF;
+
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."prevent_removing_last_admin"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."reconcile_newsletter_dispatches"() RETURNS "void"
@@ -455,26 +565,6 @@ $$;
 
 
 ALTER FUNCTION "public"."set_publication_published_at"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."sync_user_role_to_auth"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
-    AS $$
-BEGIN
-  UPDATE auth.users
-  SET raw_app_meta_data = jsonb_set(
-    COALESCE(raw_app_meta_data, '{}'::jsonb),
-    '{user_role}',
-    to_jsonb(NEW.role::text)
-  )
-  WHERE id = NEW.id;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."sync_user_role_to_auth"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."trigger_publication_published_newsletter"() RETURNS "trigger"
@@ -600,6 +690,28 @@ CREATE TABLE IF NOT EXISTS "public"."publication_tags" (
 ALTER TABLE "public"."publication_tags" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."role_permissions" (
+    "role_id" "text" NOT NULL,
+    "permission" "text" NOT NULL,
+    CONSTRAINT "role_permissions_format_check" CHECK (("permission" ~ '^[a-z0-9_]+:[a-z0-9_]+$'::"text"))
+);
+
+
+ALTER TABLE "public"."role_permissions" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."roles" (
+    "id" "text" NOT NULL,
+    "is_public" boolean DEFAULT false NOT NULL,
+    "public_priority" integer,
+    CONSTRAINT "roles_id_format_check" CHECK (("id" ~ '^[a-z][a-z0-9_]*$'::"text")),
+    CONSTRAINT "roles_public_priority_check" CHECK (((("is_public" = true) AND ("public_priority" IS NOT NULL) AND ("public_priority" > 0)) OR (("is_public" = false) AND ("public_priority" IS NULL))))
+);
+
+
+ALTER TABLE "public"."roles" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."tag_translations" (
     "tag_id" "uuid" NOT NULL,
     "lang" character varying(2) NOT NULL,
@@ -620,13 +732,22 @@ CREATE TABLE IF NOT EXISTS "public"."tags" (
 ALTER TABLE "public"."tags" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."user_roles" (
+    "user_id" "uuid" NOT NULL,
+    "role_id" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()) NOT NULL
+);
+
+
+ALTER TABLE "public"."user_roles" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."users" (
     "id" "uuid" NOT NULL,
     "full_name" "text" NOT NULL,
     "bio" "jsonb" DEFAULT '{}'::"jsonb",
     "avatar_url" "text",
     "newsletter_subscribed" boolean DEFAULT false,
-    "role" "public"."user_role" DEFAULT 'reader'::"public"."user_role",
     "slug" "text"
 );
 
@@ -664,6 +785,21 @@ ALTER TABLE ONLY "public"."publications"
 
 
 
+ALTER TABLE ONLY "public"."role_permissions"
+    ADD CONSTRAINT "role_permissions_pkey" PRIMARY KEY ("role_id", "permission");
+
+
+
+ALTER TABLE ONLY "public"."roles"
+    ADD CONSTRAINT "roles_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."roles"
+    ADD CONSTRAINT "roles_public_priority_unique" UNIQUE ("public_priority");
+
+
+
 ALTER TABLE ONLY "public"."tag_translations"
     ADD CONSTRAINT "tag_translations_pkey" PRIMARY KEY ("tag_id", "lang");
 
@@ -676,6 +812,11 @@ ALTER TABLE ONLY "public"."tags"
 
 ALTER TABLE ONLY "public"."tags"
     ADD CONSTRAINT "tags_slug_key" UNIQUE ("slug");
+
+
+
+ALTER TABLE ONLY "public"."user_roles"
+    ADD CONSTRAINT "user_roles_pkey" PRIMARY KEY ("user_id", "role_id");
 
 
 
@@ -717,6 +858,10 @@ CREATE INDEX "idx_publications_status_published_at" ON "public"."publications" U
 
 
 
+CREATE INDEX "idx_user_roles_role_id" ON "public"."user_roles" USING "btree" ("role_id");
+
+
+
 CREATE INDEX "newsletter_dispatches_due_idx" ON "public"."newsletter_dispatches" USING "btree" ("next_attempt_at") WHERE ("status" = ANY (ARRAY['pending'::"text", 'dispatched'::"text"]));
 
 
@@ -725,11 +870,15 @@ CREATE OR REPLACE TRIGGER "before_insert_publication_quota" BEFORE INSERT ON "pu
 
 
 
+CREATE OR REPLACE TRIGGER "enforce_publication_mutation_guards" BEFORE INSERT OR UPDATE ON "public"."publications" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_publication_mutation_guards"();
+
+
+
 CREATE OR REPLACE TRIGGER "on_publication_published_newsletter" AFTER INSERT OR UPDATE ON "public"."publications" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_publication_published_newsletter"();
 
 
 
-CREATE OR REPLACE TRIGGER "on_user_role_changed" AFTER INSERT OR UPDATE OF "role" ON "public"."users" FOR EACH ROW EXECUTE FUNCTION "public"."sync_user_role_to_auth"();
+CREATE OR REPLACE TRIGGER "prevent_removing_last_admin_trigger" BEFORE DELETE OR UPDATE OF "role_id" ON "public"."user_roles" FOR EACH ROW EXECUTE FUNCTION "public"."prevent_removing_last_admin"();
 
 
 
@@ -775,13 +924,52 @@ ALTER TABLE ONLY "public"."publications"
 
 
 
+ALTER TABLE ONLY "public"."role_permissions"
+    ADD CONSTRAINT "role_permissions_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."tag_translations"
     ADD CONSTRAINT "tag_translations_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "public"."tags"("id") ON DELETE CASCADE;
 
 
 
+ALTER TABLE ONLY "public"."user_roles"
+    ADD CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "public"."user_roles"
+    ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+CREATE POLICY "Anonymous read public roles" ON "public"."roles" FOR SELECT TO "anon" USING (("is_public" = true));
+
+
+
+CREATE POLICY "Anonymous read public user roles" ON "public"."user_roles" FOR SELECT TO "anon" USING ("public"."is_public_role"("role_id"));
+
+
+
+CREATE POLICY "Authenticated read assigned or manageable role permissions" ON "public"."role_permissions" FOR SELECT TO "authenticated" USING (((EXISTS ( SELECT 1
+   FROM "public"."user_roles" "ur"
+  WHERE (("ur"."user_id" = "auth"."uid"()) AND ("ur"."role_id" = "role_permissions"."role_id")))) OR "public"."has_permission"('users:assign_role'::"text") OR "public"."has_permission"('users:revoke_role'::"text")));
+
+
+
+CREATE POLICY "Authenticated read visible roles" ON "public"."roles" FOR SELECT TO "authenticated" USING ((("is_public" = true) OR (EXISTS ( SELECT 1
+   FROM "public"."user_roles" "ur"
+  WHERE (("ur"."user_id" = "auth"."uid"()) AND ("ur"."role_id" = "roles"."id")))) OR "public"."has_permission"('users:assign_role'::"text") OR "public"."has_permission"('users:revoke_role'::"text")));
+
+
+
+CREATE POLICY "Authenticated read visible user roles" ON "public"."user_roles" FOR SELECT TO "authenticated" USING ((("user_id" = "auth"."uid"()) OR "public"."is_public_role"("role_id") OR "public"."has_permission"('users:assign_role'::"text") OR "public"."has_permission"('users:revoke_role'::"text")));
 
 
 
@@ -791,35 +979,31 @@ CREATE POLICY "Authenticated users can create comments" ON "public"."comments" F
 
 
 
-CREATE POLICY "Authors and Admins can delete publications" ON "public"."publications" FOR DELETE TO "authenticated" USING (("public"."is_operator"() OR (("auth"."uid"() = "author_id") AND ("status" <> 'published'::"public"."publication_status") AND "public"."is_writer"())));
+CREATE POLICY "Authors and Admins can delete publications" ON "public"."publications" FOR DELETE TO "authenticated" USING (("public"."has_permission"('publications:delete_any'::"text") OR (("auth"."uid"() = "author_id") AND ("status" <> 'published'::"public"."publication_status") AND "public"."has_permission"('publications:delete_own'::"text"))));
 
 
 
-CREATE POLICY "Authors and Operators can delete publication tags" ON "public"."publication_tags" FOR DELETE TO "authenticated" USING (("public"."is_operator"() OR ("public"."is_writer"() AND (EXISTS ( SELECT 1
-   FROM "public"."publications" "p"
-  WHERE (("p"."id" = "publication_tags"."publication_id") AND ("p"."author_id" = "auth"."uid"()) AND ("p"."status" <> 'published'::"public"."publication_status")))))));
+CREATE POLICY "Authors and Operators can delete publication tags" ON "public"."publication_tags" FOR DELETE TO "authenticated" USING ("public"."can_edit_publication"("publication_id"));
 
 
 
-CREATE POLICY "Authors and Operators can insert publication tags" ON "public"."publication_tags" FOR INSERT TO "authenticated" WITH CHECK (("public"."is_operator"() OR ("public"."is_writer"() AND (EXISTS ( SELECT 1
-   FROM "public"."publications" "p"
-  WHERE (("p"."id" = "publication_tags"."publication_id") AND ("p"."author_id" = "auth"."uid"()) AND ("p"."status" <> 'published'::"public"."publication_status")))))));
+CREATE POLICY "Authors and Operators can insert publication tags" ON "public"."publication_tags" FOR INSERT TO "authenticated" WITH CHECK ("public"."can_edit_publication"("publication_id"));
 
 
 
-CREATE POLICY "Authors and Operators can update publication tags" ON "public"."publication_tags" FOR UPDATE TO "authenticated" USING (("public"."is_operator"() OR ("public"."is_writer"() AND (EXISTS ( SELECT 1
-   FROM "public"."publications" "p"
-  WHERE (("p"."id" = "publication_tags"."publication_id") AND ("p"."author_id" = "auth"."uid"()) AND ("p"."status" <> 'published'::"public"."publication_status"))))))) WITH CHECK (("public"."is_operator"() OR ("public"."is_writer"() AND (EXISTS ( SELECT 1
-   FROM "public"."publications" "p"
-  WHERE (("p"."id" = "publication_tags"."publication_id") AND ("p"."author_id" = "auth"."uid"()) AND ("p"."status" <> 'published'::"public"."publication_status")))))));
+CREATE POLICY "Authors and Operators can update publication tags" ON "public"."publication_tags" FOR UPDATE TO "authenticated" USING ("public"."can_edit_publication"("publication_id")) WITH CHECK ("public"."can_edit_publication"("publication_id"));
 
 
 
-CREATE POLICY "Authors can insert publications" ON "public"."publications" FOR INSERT TO "authenticated" WITH CHECK ((("auth"."uid"() = "author_id") AND "public"."is_writer"() AND ("public"."is_operator"() OR (("status" <> 'published'::"public"."publication_status") AND ("is_pinned" = false)))));
+CREATE POLICY "Authors can insert publications" ON "public"."publications" FOR INSERT TO "authenticated" WITH CHECK ((("auth"."uid"() = "author_id") AND "public"."has_permission"('publications:create'::"text") AND (("status" <> 'published'::"public"."publication_status") OR "public"."has_permission"('publications:publish'::"text")) AND (("is_pinned" = false) OR "public"."has_permission"('publications:pin'::"text"))));
 
 
 
-CREATE POLICY "Authors can update own publications" ON "public"."publications" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "author_id") AND "public"."is_writer"() AND ("public"."is_operator"() OR ("status" <> 'published'::"public"."publication_status")))) WITH CHECK ((("auth"."uid"() = "author_id") AND "public"."is_writer"() AND ("public"."is_operator"() OR (("status" <> 'published'::"public"."publication_status") AND ("is_pinned" = false)))));
+CREATE POLICY "Authors can update own unpublished publications" ON "public"."publications" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "author_id") AND ("status" <> 'published'::"public"."publication_status") AND "public"."has_permission"('publications:update_own'::"text"))) WITH CHECK ((("auth"."uid"() = "author_id") AND "public"."has_permission"('publications:update_own'::"text") AND (("status" <> 'published'::"public"."publication_status") OR "public"."has_permission"('publications:publish'::"text"))));
+
+
+
+CREATE POLICY "Editors can update any publication" ON "public"."publications" FOR UPDATE TO "authenticated" USING ("public"."has_permission"('publications:update_any'::"text")) WITH CHECK ("public"."has_permission"('publications:update_any'::"text"));
 
 
 
@@ -827,29 +1011,33 @@ CREATE POLICY "Etiquetas visibles para todos" ON "public"."tags" FOR SELECT USIN
 
 
 
-CREATE POLICY "Operators can delete tag translations" ON "public"."tag_translations" FOR DELETE TO "authenticated" USING ("public"."is_operator"());
+CREATE POLICY "Operators can delete tag translations" ON "public"."tag_translations" FOR DELETE TO "authenticated" USING ("public"."has_permission"('tags:delete'::"text"));
 
 
 
-CREATE POLICY "Operators can delete tags" ON "public"."tags" FOR DELETE TO "authenticated" USING ("public"."is_operator"());
+CREATE POLICY "Operators can delete tags" ON "public"."tags" FOR DELETE TO "authenticated" USING ("public"."has_permission"('tags:delete'::"text"));
 
 
 
-CREATE POLICY "Operators can update any publication" ON "public"."publications" FOR UPDATE TO "authenticated" USING ("public"."is_operator"()) WITH CHECK ("public"."is_operator"());
+CREATE POLICY "Operators can update tag translations" ON "public"."tag_translations" FOR UPDATE TO "authenticated" USING ("public"."has_permission"('tags:update'::"text")) WITH CHECK ("public"."has_permission"('tags:update'::"text"));
 
 
 
-CREATE POLICY "Operators can update tag translations" ON "public"."tag_translations" FOR UPDATE TO "authenticated" USING ("public"."is_operator"()) WITH CHECK ("public"."is_operator"());
+CREATE POLICY "Operators can update tags" ON "public"."tags" FOR UPDATE TO "authenticated" USING ("public"."has_permission"('tags:update'::"text")) WITH CHECK ("public"."has_permission"('tags:update'::"text"));
 
 
 
-CREATE POLICY "Operators can update tags" ON "public"."tags" FOR UPDATE TO "authenticated" USING ("public"."is_operator"()) WITH CHECK ("public"."is_operator"());
+CREATE POLICY "Pinners can pin published publications" ON "public"."publications" FOR UPDATE TO "authenticated" USING ((("status" = 'published'::"public"."publication_status") AND "public"."has_permission"('publications:pin'::"text"))) WITH CHECK ((("status" = 'published'::"public"."publication_status") AND "public"."has_permission"('publications:pin'::"text")));
+
+
+
+CREATE POLICY "Public and authorized read publications" ON "public"."publications" FOR SELECT USING ((("status" = 'published'::"public"."publication_status") OR ("auth"."uid"() = "author_id") OR (("status" = 'in_review'::"public"."publication_status") AND "public"."has_permission"('publications:review'::"text")) OR "public"."has_permission"('publications:update_any'::"text") OR "public"."has_permission"('publications:delete_any'::"text")));
 
 
 
 CREATE POLICY "Public read comments" ON "public"."comments" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."publications" "p"
-  WHERE (("p"."id" = "comments"."publication_id") AND (("p"."status" = 'published'::"public"."publication_status") OR ("p"."author_id" = "auth"."uid"()) OR "public"."is_operator"())))));
+  WHERE (("p"."id" = "comments"."publication_id") AND (("p"."status" = 'published'::"public"."publication_status") OR ("p"."author_id" = "auth"."uid"()) OR (("p"."status" = 'in_review'::"public"."publication_status") AND "public"."has_permission"('publications:review'::"text")) OR "public"."has_permission"('publications:update_any'::"text") OR "public"."has_permission"('publications:delete_any'::"text") OR "public"."has_permission"('comments:delete_any'::"text"))))));
 
 
 
@@ -857,25 +1045,23 @@ CREATE POLICY "Public read publication tags" ON "public"."publication_tags" FOR 
 
 
 
-CREATE POLICY "Public read published publications" ON "public"."publications" FOR SELECT USING ((("status" = 'published'::"public"."publication_status") OR ("auth"."uid"() = "author_id")));
-
-
-
 CREATE POLICY "Public read user profiles" ON "public"."users" FOR SELECT USING (true);
 
 
 
-CREATE POLICY "Reviewers can update in_review publications" ON "public"."publications" FOR UPDATE TO "authenticated" USING ((("status" = 'in_review'::"public"."publication_status") AND (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), ( SELECT ("users"."role")::"text" AS "role"
-   FROM "public"."users"
-  WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text"])))) WITH CHECK ((COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), ( SELECT ("users"."role")::"text" AS "role"
-   FROM "public"."users"
-  WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text"])));
+CREATE POLICY "Publishers can update own published publications" ON "public"."publications" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "author_id") AND ("status" = 'published'::"public"."publication_status") AND "public"."has_permission"('publications:publish'::"text"))) WITH CHECK ((("auth"."uid"() = "author_id") AND "public"."has_permission"('publications:publish'::"text")));
 
 
 
-CREATE POLICY "Reviewers can view reviewable publications" ON "public"."publications" FOR SELECT TO "authenticated" USING ((("status" = 'in_review'::"public"."publication_status") AND (COALESCE((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'user_role'::"text"), ( SELECT ("users"."role")::"text" AS "role"
-   FROM "public"."users"
-  WHERE ("users"."id" = "auth"."uid"()))) = ANY (ARRAY['founder'::"text", 'admin'::"text"]))));
+CREATE POLICY "Reviewers can update in_review publications" ON "public"."publications" FOR UPDATE TO "authenticated" USING ((("status" = 'in_review'::"public"."publication_status") AND "public"."has_permission"('publications:review'::"text"))) WITH CHECK ("public"."has_permission"('publications:review'::"text"));
+
+
+
+CREATE POLICY "Role managers can assign user roles" ON "public"."user_roles" FOR INSERT TO "authenticated" WITH CHECK ("public"."has_permission"('users:assign_role'::"text"));
+
+
+
+CREATE POLICY "Role managers can revoke user roles" ON "public"."user_roles" FOR DELETE TO "authenticated" USING ("public"."has_permission"('users:revoke_role'::"text"));
 
 
 
@@ -883,11 +1069,11 @@ CREATE POLICY "Traducciones de etiquetas visibles para todos" ON "public"."tag_t
 
 
 
-CREATE POLICY "Users and Operators can delete comments" ON "public"."comments" FOR DELETE TO "authenticated" USING ((("auth"."uid"() = "author_id") OR "public"."is_operator"()));
+CREATE POLICY "Users and Operators can delete comments" ON "public"."comments" FOR DELETE TO "authenticated" USING ((("auth"."uid"() = "author_id") OR "public"."has_permission"('comments:delete_any'::"text")));
 
 
 
-CREATE POLICY "Users can update own comments" ON "public"."comments" FOR UPDATE USING (("auth"."uid"() = "author_id")) WITH CHECK (("auth"."uid"() = "author_id"));
+CREATE POLICY "Users can update own comments" ON "public"."comments" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "author_id")) WITH CHECK (("auth"."uid"() = "author_id"));
 
 
 
@@ -895,11 +1081,11 @@ CREATE POLICY "Users can update own profile" ON "public"."users" FOR UPDATE USIN
 
 
 
-CREATE POLICY "Writers and Operators can insert tag translations" ON "public"."tag_translations" FOR INSERT TO "authenticated" WITH CHECK ("public"."is_writer"());
+CREATE POLICY "Writers and Operators can insert tag translations" ON "public"."tag_translations" FOR INSERT TO "authenticated" WITH CHECK ("public"."has_permission"('tags:create'::"text"));
 
 
 
-CREATE POLICY "Writers and Operators can insert tags" ON "public"."tags" FOR INSERT TO "authenticated" WITH CHECK ("public"."is_writer"());
+CREATE POLICY "Writers and Operators can insert tags" ON "public"."tags" FOR INSERT TO "authenticated" WITH CHECK ("public"."has_permission"('tags:create'::"text"));
 
 
 
@@ -915,10 +1101,19 @@ ALTER TABLE "public"."publication_tags" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."publications" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."role_permissions" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."roles" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."tag_translations" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."tags" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."user_roles" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
@@ -1117,22 +1312,16 @@ GRANT USAGE ON SCHEMA "public" TO "supabase_auth_admin";
 
 
 
+REVOKE ALL ON FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."check_publication_quotas"() TO "anon";
 GRANT ALL ON FUNCTION "public"."check_publication_quotas"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_publication_quotas"() TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "public"."current_user_role"() FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."current_user_role"() TO "anon";
-GRANT ALL ON FUNCTION "public"."current_user_role"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."current_user_role"() TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") TO "service_role";
-GRANT ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") TO "supabase_auth_admin";
 
 
 
@@ -1202,6 +1391,11 @@ REVOKE ALL ON FUNCTION "public"."dispatch_newsletter_webhook"("publication" "pub
 
 
 
+REVOKE ALL ON FUNCTION "public"."enforce_publication_mutation_guards"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."enforce_publication_mutation_guards"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."generate_slug"("text") TO "anon";
 GRANT ALL ON FUNCTION "public"."generate_slug"("text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."generate_slug"("text") TO "service_role";
@@ -1219,17 +1413,22 @@ GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "supabase_auth_admin";
 
 
 
-REVOKE ALL ON FUNCTION "public"."is_operator"() FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."is_operator"() TO "anon";
-GRANT ALL ON FUNCTION "public"."is_operator"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."is_operator"() TO "service_role";
+REVOKE ALL ON FUNCTION "public"."has_permission"("required_permission" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."has_permission"("required_permission" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_permission"("required_permission" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_permission"("required_permission" "text") TO "service_role";
 
 
 
-REVOKE ALL ON FUNCTION "public"."is_writer"() FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."is_writer"() TO "anon";
-GRANT ALL ON FUNCTION "public"."is_writer"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."is_writer"() TO "service_role";
+REVOKE ALL ON FUNCTION "public"."is_public_role"("target_role_id" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."is_public_role"("target_role_id" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_public_role"("target_role_id" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_public_role"("target_role_id" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."prevent_removing_last_admin"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."prevent_removing_last_admin"() TO "service_role";
 
 
 
@@ -1241,11 +1440,6 @@ GRANT ALL ON FUNCTION "public"."reconcile_newsletter_dispatches"() TO "service_r
 GRANT ALL ON FUNCTION "public"."set_publication_published_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."set_publication_published_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."set_publication_published_at"() TO "service_role";
-
-
-
-REVOKE ALL ON FUNCTION "public"."sync_user_role_to_auth"() FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."sync_user_role_to_auth"() TO "service_role";
 
 
 
@@ -1303,6 +1497,17 @@ GRANT ALL ON TABLE "public"."publication_tags" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."role_permissions" TO "service_role";
+GRANT SELECT ON TABLE "public"."role_permissions" TO "authenticated";
+
+
+
+GRANT ALL ON TABLE "public"."roles" TO "service_role";
+GRANT SELECT ON TABLE "public"."roles" TO "anon";
+GRANT SELECT ON TABLE "public"."roles" TO "authenticated";
+
+
+
 GRANT ALL ON TABLE "public"."tag_translations" TO "anon";
 GRANT ALL ON TABLE "public"."tag_translations" TO "authenticated";
 GRANT ALL ON TABLE "public"."tag_translations" TO "service_role";
@@ -1312,6 +1517,12 @@ GRANT ALL ON TABLE "public"."tag_translations" TO "service_role";
 GRANT ALL ON TABLE "public"."tags" TO "anon";
 GRANT ALL ON TABLE "public"."tags" TO "authenticated";
 GRANT ALL ON TABLE "public"."tags" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_roles" TO "service_role";
+GRANT SELECT ON TABLE "public"."user_roles" TO "anon";
+GRANT SELECT,INSERT,DELETE ON TABLE "public"."user_roles" TO "authenticated";
 
 
 
@@ -1341,10 +1552,6 @@ GRANT SELECT("avatar_url") ON TABLE "public"."users" TO "anon";
 
 
 GRANT UPDATE("newsletter_subscribed") ON TABLE "public"."users" TO "authenticated";
-
-
-
-GRANT SELECT("role") ON TABLE "public"."users" TO "anon";
 
 
 

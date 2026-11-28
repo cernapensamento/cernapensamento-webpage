@@ -1,33 +1,43 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Dictionary } from '@/dictionaries/client';
 import { resolveLocale } from '@/i18n-config';
-import { DB_TABLES, USER_COLS, USER_ROLES, canAccessWriterDesk } from '@/lib/db/schema';
-import type { AuthProfile, UserRole } from '@/lib/db/types';
+import {
+  DB_TABLES,
+  PERMISSIONS,
+  USER_COLS,
+  hasPermission,
+} from '@/lib/db/schema';
+import { getUserRolesAndPermissions } from '@/lib/db/queries/users';
+import type { AuthProfile } from '@/lib/db/types';
 
 export const MIN_PASSWORD_LENGTH = 6;
 
 /**
- * Fetch minimal auth profile directly using a client-side Supabase instance.
- * Safe to import in Client Components (does not touch next/headers).
+ * Fetch minimal auth profile and DB-backed roles/permissions using a client-side Supabase instance.
+ * Safe to import in Client Components (does not touch next/headers) and fails closed on empty roles.
  */
 export async function fetchClientAuthProfile(
   userId: string,
   supabase: SupabaseClient
 ): Promise<AuthProfile | null> {
   try {
-    const { data, error } = await supabase
-      .from(DB_TABLES.USERS)
-      .select(`${USER_COLS.ROLE}, ${USER_COLS.AVATAR_URL}, ${USER_COLS.FULL_NAME}`)
-      .eq(USER_COLS.ID, userId)
-      .single();
+    const [{ data, error }, { roles, permissions }] = await Promise.all([
+      supabase
+        .from(DB_TABLES.USERS)
+        .select(`${USER_COLS.AVATAR_URL}, ${USER_COLS.FULL_NAME}`)
+        .eq(USER_COLS.ID, userId)
+        .single(),
+      getUserRolesAndPermissions(userId, supabase),
+    ]);
 
     if (error || !data) {
       return null;
     }
 
     return {
-      role: (data.role || USER_ROLES.READER) as UserRole,
-      avatar_url: data.avatar_url,
+      roles,
+      permissions,
+      avatar_url: data.avatar_url ?? null,
       full_name: data.full_name || null,
     };
   } catch {
@@ -36,7 +46,8 @@ export async function fetchClientAuthProfile(
 }
 
 /**
- * Resolves the localized desk destination path after client-side sign-in.
+ * Resolves the localized desk destination path after client-side sign-in
+ * using DB-backed permissions (no JWT app_metadata fallback).
  */
 export async function resolveClientDeskRedirectPath(
   user: { id: string; app_metadata?: Record<string, unknown> },
@@ -44,10 +55,10 @@ export async function resolveClientDeskRedirectPath(
   lang: string
 ): Promise<string> {
   const locale = resolveLocale(lang);
-  const jwtRole = user.app_metadata?.user_role as string | undefined;
   const profile = await fetchClientAuthProfile(user.id, supabase);
-  const role = profile?.role || jwtRole || USER_ROLES.READER;
-  return canAccessWriterDesk(role) ? `/${locale}/escritorio` : `/${locale}/escritorio/perfil`;
+  return hasPermission(profile?.permissions, PERMISSIONS.DESK_ACCESS)
+    ? `/${locale}/escritorio`
+    : `/${locale}/escritorio/perfil`;
 }
 
 /**

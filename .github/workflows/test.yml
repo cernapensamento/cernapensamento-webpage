@@ -51,6 +51,13 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock
           RESEND_API_KEY: re_mock_ci_key
 
+      - name: Build production bundle
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock
+          RESEND_API_KEY: re_mock_ci_key
+
       - name: Upload coverage report artifact
         uses: actions/upload-artifact@v4
         if: always()
@@ -58,3 +65,36 @@ jobs:
           name: coverage-report
           path: coverage/
           retention-days: 14
+
+  db-tests:
+    name: Supabase Migrations, pgTAP & RLS Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase stack
+        run: supabase start
+
+      - name: Reset database and seed storage buckets
+        run: npm run db:reset
+
+      - name: Run pgTAP database tests
+        run: npx supabase test db
+
+      - name: Run RLS integration tests
+        run: npm run test:db

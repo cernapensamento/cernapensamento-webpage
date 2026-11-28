@@ -11,7 +11,14 @@ import { useLocale } from '@/hooks/useLocale';
 import { getDictionaryClient } from '@/dictionaries/client';
 import { SITE_NAME } from '@/lib/constants';
 import { COLUMNISTS } from '@/lib/columnists';
-import { PUBLICATION_TYPES, isReaderRole, resolveRoleLabel } from '@/lib/db/schema';
+import {
+  PERMISSIONS,
+  PUBLICATION_TYPES,
+  USER_ROLES,
+  hasPermission,
+  resolvePrimaryPublicRole,
+  resolveRoleLabel,
+} from '@/lib/db/schema';
 import { handleSignOut } from '@/actions/auth';
 import { clearClientDrafts } from '@/lib/editor/draftStorage';
 
@@ -182,7 +189,13 @@ export default function PublicNavBar() {
     },
   ];
 
-  const canWrite = !isReaderRole(userProfile?.role);
+  const canWrite = hasPermission(userProfile?.permissions, PERMISSIONS.DESK_ACCESS);
+  const canCreate = hasPermission(userProfile?.permissions, PERMISSIONS.PUBLICATIONS_CREATE);
+  const roles = userProfile?.roles ?? [];
+  const displayRole =
+    resolvePrimaryPublicRole(roles) ??
+    roles.find((r) => Boolean(r)) ??
+    USER_ROLES.READER;
   const userMenuLinks = [
     {
       href: `/${lang}/escritorio/perfil`,
@@ -200,7 +213,7 @@ export default function PublicNavBar() {
       href: `/${lang}/escritorio/nuevo`,
       label: dict.nav.userMenu.newArticle,
       icon: 'edit_square',
-      visible: canWrite,
+      visible: canCreate,
     },
   ].filter((item) => item.visible);
 
@@ -379,7 +392,7 @@ export default function PublicNavBar() {
                   {/* User identity header */}
                   <div className="px-4 py-3 border-b border-lines/80 bg-parchment/40">
                     <p className="text-[10px] font-sans text-charcoal/50 uppercase tracking-[0.2em] mb-1">
-                      {resolveRoleLabel(userProfile?.role, dict.dashboard)}
+                      {resolveRoleLabel(displayRole, dict.dashboard)}
                     </p>
                     <p className="text-sm font-serif font-bold text-charcoal truncate">
                       {userName}

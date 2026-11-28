@@ -5,6 +5,7 @@ import { AuthProvider } from './AuthProvider';
 import { useAuth } from '@/hooks/useAuth';
 import * as authClient from '@/lib/auth-client';
 import { createClient } from '@/lib/supabase/client';
+import { PERMISSIONS, USER_ROLES, resolvePermissionsForRoles } from '@/lib/db/schema';
 
 vi.mock('@/lib/supabase/client', () => ({
   createClient: vi.fn(),
@@ -20,7 +21,8 @@ function ConsumerA() {
     <div>
       <span data-testid="consumer-a-loading">{String(loading)}</span>
       <span data-testid="consumer-a-user">{user?.id || 'no-user'}</span>
-      <span data-testid="consumer-a-role">{profile?.role || 'no-role'}</span>
+      <span data-testid="consumer-a-roles">{profile?.roles?.join(',') || 'no-roles'}</span>
+      <span data-testid="consumer-a-perms">{profile?.permissions?.join(',') || 'no-perms'}</span>
     </div>
   );
 }
@@ -31,7 +33,7 @@ function ConsumerB() {
     <div>
       <span data-testid="consumer-b-loading">{String(loading)}</span>
       <span data-testid="consumer-b-user">{user?.id || 'no-user'}</span>
-      <span data-testid="consumer-b-role">{profile?.role || 'no-role'}</span>
+      <span data-testid="consumer-b-roles">{profile?.roles?.join(',') || 'no-roles'}</span>
     </div>
   );
 }
@@ -61,8 +63,13 @@ describe('AuthProvider & useAuth Integration', () => {
       },
     } as unknown as ReturnType<typeof createClient>);
 
+    const founderAdminPerms = resolvePermissionsForRoles([
+      USER_ROLES.FOUNDER,
+      USER_ROLES.ADMIN,
+    ]);
     vi.mocked(authClient.fetchClientAuthProfile).mockResolvedValue({
-      role: 'admin',
+      roles: [USER_ROLES.FOUNDER, USER_ROLES.ADMIN],
+      permissions: founderAdminPerms,
       avatar_url: 'https://example.com/avatar.webp',
       full_name: 'Pablo Admin',
     });
@@ -72,10 +79,11 @@ describe('AuthProvider & useAuth Integration', () => {
     render(<ConsumerA />);
     expect(screen.getByTestId('consumer-a-loading').textContent).toBe('false');
     expect(screen.getByTestId('consumer-a-user').textContent).toBe('no-user');
-    expect(screen.getByTestId('consumer-a-role').textContent).toBe('no-role');
+    expect(screen.getByTestId('consumer-a-roles').textContent).toBe('no-roles');
+    expect(screen.getByTestId('consumer-a-perms').textContent).toBe('no-perms');
   });
 
-  it('loads session and profile once, sharing identical state with all consumers', async () => {
+  it('loads session and DB profile once, sharing roles and permissions across all consumers', async () => {
     render(
       <AuthProvider>
         <ConsumerA />
@@ -83,20 +91,60 @@ describe('AuthProvider & useAuth Integration', () => {
       </AuthProvider>
     );
 
-    // Initial loading state while async loadSession runs
     await act(async () => {
-      // allow promises to resolve
       await Promise.resolve();
     });
 
     expect(screen.getByTestId('consumer-a-user').textContent).toBe('usr-123');
     expect(screen.getByTestId('consumer-b-user').textContent).toBe('usr-123');
-    expect(screen.getByTestId('consumer-a-role').textContent).toBe('admin');
-    expect(screen.getByTestId('consumer-b-role').textContent).toBe('admin');
+    expect(screen.getByTestId('consumer-a-roles').textContent).toBe('founder,admin');
+    expect(screen.getByTestId('consumer-b-roles').textContent).toBe('founder,admin');
+    expect(screen.getByTestId('consumer-a-perms').textContent).toContain(
+      PERMISSIONS.USERS_ASSIGN_ROLE
+    );
 
-    // Crucial: single database query for both consumers
     expect(authClient.fetchClientAuthProfile).toHaveBeenCalledTimes(1);
     expect(authClient.fetchClientAuthProfile).toHaveBeenCalledWith('usr-123', expect.anything());
+  });
+
+  it('ignores stale JWT role claim when DB returns empty roles and zero permissions', async () => {
+    vi.mocked(authClient.fetchClientAuthProfile).mockResolvedValue({
+      roles: [],
+      permissions: [],
+      avatar_url: null,
+      full_name: 'Zero Role User',
+    });
+
+    render(
+      <AuthProvider>
+        <ConsumerA />
+      </AuthProvider>
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('consumer-a-roles').textContent).toBe('no-roles');
+    expect(screen.getByTestId('consumer-a-perms').textContent).toBe('no-perms');
+  });
+
+  it('keeps profile null when fetchClientAuthProfile returns null even if JWT has stale claim', async () => {
+    vi.mocked(authClient.fetchClientAuthProfile).mockResolvedValue(null);
+
+    render(
+      <AuthProvider>
+        <ConsumerA />
+      </AuthProvider>
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('consumer-a-user').textContent).toBe('usr-123');
+    expect(screen.getByTestId('consumer-a-roles').textContent).toBe('no-roles');
+    expect(screen.getByTestId('consumer-a-perms').textContent).toBe('no-perms');
   });
 
   it('updates all consumers simultaneously on auth state change (e.g. sign out)', async () => {
@@ -113,7 +161,6 @@ describe('AuthProvider & useAuth Integration', () => {
 
     expect(screen.getByTestId('consumer-a-user').textContent).toBe('usr-123');
 
-    // Simulate logout
     await act(async () => {
       if (authStateCallback) {
         authStateCallback('SIGNED_OUT', null);
@@ -122,7 +169,7 @@ describe('AuthProvider & useAuth Integration', () => {
 
     expect(screen.getByTestId('consumer-a-user').textContent).toBe('no-user');
     expect(screen.getByTestId('consumer-b-user').textContent).toBe('no-user');
-    expect(screen.getByTestId('consumer-a-role').textContent).toBe('no-role');
-    expect(screen.getByTestId('consumer-b-role').textContent).toBe('no-role');
+    expect(screen.getByTestId('consumer-a-roles').textContent).toBe('no-roles');
+    expect(screen.getByTestId('consumer-a-perms').textContent).toBe('no-perms');
   });
 });

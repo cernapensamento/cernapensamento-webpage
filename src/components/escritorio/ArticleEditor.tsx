@@ -38,10 +38,12 @@ import {
 } from '@/lib/i18n/publicationLanguage';
 import { getUserById, type LocalizedString, type UserRow } from '@/lib/db';
 import {
-  USER_ROLES,
   PUBLICATION_TYPES,
   EDITOR_ACTIONS,
+  PERMISSIONS,
+  hasPermission,
   type EditorAction,
+  type PermissionValue,
 } from '@/lib/db/schema';
 import {
   uploadStorageImage,
@@ -100,7 +102,7 @@ interface ArticleEditorProps {
   onDraftCreated?: (draft: { id: string; slug: string }) => void;
   isPublishing: boolean;
   mode: 'create' | 'edit';
-  userRole?: string;
+  permissions?: readonly PermissionValue[];
 }
 
 export default function ArticleEditor({
@@ -109,7 +111,7 @@ export default function ArticleEditor({
   onSave,
   onDraftCreated,
   isPublishing,
-  userRole = USER_ROLES.READER,
+  permissions,
 }: ArticleEditorProps) {
   const routeLang = useLocale();
   const routeDict = getDictionaryClient(routeLang);
@@ -1032,6 +1034,7 @@ export default function ArticleEditor({
   const activeHtml = stripIndex(contents[activeLang] || '');
   const liveTocItems = showIndex ? buildLiveTocItems(tocData, activeHtml) : [];
   const previewArticleDict = getDictionaryClient(activeLang).article;
+  const canTranslate = hasPermission(permissions, PERMISSIONS.AI_TRANSLATE);
 
   return (
     <>
@@ -1068,7 +1071,7 @@ export default function ArticleEditor({
             editor={editor}
             routeLang={routeLang}
             mode={mode}
-            userRole={userRole}
+            permissions={permissions}
             publicationStatus={initialData?.status || initialData?.estado}
             isPublishing={isPublishing}
             showIndex={showIndex}
@@ -1093,6 +1096,7 @@ export default function ArticleEditor({
               onToggleLanguageMode={handleToggleLanguageMode}
               isTranslating={isTranslating}
               onTranslate={handleTranslate}
+              canTranslate={canTranslate}
               tags={tematicas}
               onChangeTags={setTematicas}
               publicationType={tipo}

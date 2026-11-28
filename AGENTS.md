@@ -51,12 +51,13 @@ Full review standards are in `CODING_STANDARDS.md`.
 
 <!-- coderabbit-ai-generated-section:v1:c266c95aa4454d50e42a02e5f54961a20b4c1e12cb8fc13731e9cbce0585b4ee -->
 
-Never work directly on `development` or `main`. From the checkout that hosts `development`, create a dedicated worktree under `.worktrees/` branched from `development`:
+Never work directly on `development` or `main`. Fetch `origin/development` first and create a dedicated worktree under `.worktrees/` from `FETCH_HEAD`:
 ```bash
-repo_root="$(git rev-parse --show-toplevel)"
-git -C "$repo_root" worktree add .worktrees/<branch-name> -b <branch-name> development
-cd "$repo_root/.worktrees/<branch-name>"
-ln -snf ../../.env.local .env.local
+repo_root="$(git rev-parse --show-toplevel)" &&
+git -C "$repo_root" fetch origin development &&
+git -C "$repo_root" worktree add .worktrees/<branch-name> -b <branch-name> FETCH_HEAD &&
+cd "$repo_root/.worktrees/<branch-name>" &&
+ln -snf ../../.env.local .env.local &&
 ln -snf ../../node_modules node_modules
 ```
 
@@ -109,4 +110,5 @@ git branch -d <branch-name>
 
 Check `package.json` for all dev/test/act/db scripts (`db:start`, `db:stop`, `db:reset`, `db:status`, `act:test`). Local endpoints: API `http://127.0.0.1:54321`, Studio `http://127.0.0.1:54323`, Inbucket `http://127.0.0.1:54324`, DB port `54322`.
 
-Seed accounts (password `Password123!`): Founders (`diegoaraujo@cernapensamento.org`, `hectorgonzalez@cernapensamento.org`, `denisfernandez@cernapensamento.org`, `anxoperez@cernapensamento.org`), Admin (`admin@cernapensamento.org`), Guest Author (`lucia.vazquez@cerna.org`), Member (`martino.rodriguez@cerna.org`), Reader (`lector@cerna.org`).
+- **Singleton stack:** All worktrees share one local Supabase instance (`54321`/`54322`). Reserve the stack for one worktree through the full `db:reset`, `supabase test db`, `test:db`, and `supabase db dump --local` sequence; standalone unit and component tests (`npm test`) may run in parallel.
+- **Seed accounts:** Defined in `supabase/seed.sql` (local password `Password123!`, roles assigned via `public.user_roles`).

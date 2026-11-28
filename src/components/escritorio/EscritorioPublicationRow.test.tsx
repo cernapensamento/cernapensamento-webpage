@@ -3,6 +3,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import EscritorioPublicationRow from './EscritorioPublicationRow';
 import { getDictionaryClient } from '@/dictionaries/client';
+import {
+  PERMISSIONS,
+  PUBLICATION_STATUSES,
+  USER_ROLES,
+  resolvePermissionsForRoles,
+} from '@/lib/db/schema';
 import type { PublicationDashboardItem } from '@/lib/db/types';
 
 vi.mock('next/link', () => ({
@@ -70,7 +76,6 @@ describe('EscritorioPublicationRow', () => {
         lang="gl"
         dict={dict}
         forApproval={false}
-        canReview={true}
       />
     );
 
@@ -94,7 +99,6 @@ describe('EscritorioPublicationRow', () => {
         lang="gl"
         dict={dict}
         forApproval={false}
-        canReview={true}
       />
     );
 
@@ -119,7 +123,6 @@ describe('EscritorioPublicationRow', () => {
         lang="es"
         dict={dict}
         forApproval={false}
-        canReview={true}
       />
     );
 
@@ -145,7 +148,6 @@ describe('EscritorioPublicationRow', () => {
         lang="gl"
         dict={glDict}
         forApproval={false}
-        canReview={false}
       />
     );
 
@@ -158,11 +160,225 @@ describe('EscritorioPublicationRow', () => {
         lang="es"
         dict={esDict}
         forApproval={false}
-        canReview={false}
       />
     );
 
     expect(screen.getByRole('heading', { name: 'Borrador sin título' })).toBeInTheDocument();
     expect(screen.getByText('ES')).toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      label: 'reader',
+      permissions: resolvePermissionsForRoles([USER_ROLES.READER]),
+      expectPin: false,
+      expectDelete: false,
+    },
+    {
+      label: 'guest',
+      permissions: resolvePermissionsForRoles([USER_ROLES.GUEST]),
+      expectPin: false,
+      expectDelete: false,
+    },
+    {
+      label: 'member',
+      permissions: resolvePermissionsForRoles([USER_ROLES.MEMBER]),
+      expectPin: false,
+      expectDelete: false,
+    },
+    {
+      label: 'overlapping guest + member',
+      permissions: resolvePermissionsForRoles([USER_ROLES.GUEST, USER_ROLES.MEMBER]),
+      expectPin: false,
+      expectDelete: false,
+    },
+    {
+      label: 'zero-role',
+      permissions: [],
+      expectPin: false,
+      expectDelete: false,
+    },
+    {
+      label: 'founder',
+      permissions: resolvePermissionsForRoles([USER_ROLES.FOUNDER]),
+      expectPin: true,
+      expectDelete: true,
+    },
+    {
+      label: 'admin',
+      permissions: resolvePermissionsForRoles([USER_ROLES.ADMIN]),
+      expectPin: true,
+      expectDelete: true,
+    },
+    {
+      label: 'overlapping founder + admin',
+      permissions: resolvePermissionsForRoles([USER_ROLES.FOUNDER, USER_ROLES.ADMIN]),
+      expectPin: true,
+      expectDelete: true,
+    },
+    {
+      label: 'custom publications:pin only',
+      permissions: [PERMISSIONS.PUBLICATIONS_PIN],
+      expectPin: true,
+      expectDelete: false,
+    },
+    {
+      label: 'custom publications:delete_any only',
+      permissions: [PERMISSIONS.PUBLICATIONS_DELETE_ANY],
+      expectPin: false,
+      expectDelete: true,
+    },
+    {
+      label: 'custom publications:delete_own only on published',
+      permissions: [PERMISSIONS.PUBLICATIONS_DELETE_OWN],
+      expectPin: false,
+      expectDelete: false,
+    },
+    {
+      label: 'custom publications:review only',
+      permissions: [PERMISSIONS.PUBLICATIONS_REVIEW],
+      expectPin: false,
+      expectDelete: false,
+    },
+  ])(
+    'gates Pin and Delete on published article for $label',
+    ({ permissions, expectPin, expectDelete }) => {
+      const dict = getDictionaryClient('gl');
+      render(
+        <EscritorioPublicationRow
+          pub={{ ...basePub, status: PUBLICATION_STATUSES.PUBLISHED }}
+          lang="gl"
+          dict={dict}
+          forApproval={false}
+          permissions={permissions}
+        />
+      );
+
+      if (expectPin) {
+        expect(screen.getByRole('button', { name: 'Pin' })).toBeInTheDocument();
+      } else {
+        expect(screen.queryByRole('button', { name: 'Pin' })).not.toBeInTheDocument();
+      }
+
+      if (expectDelete) {
+        expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+      } else {
+        expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+      }
+    }
+  );
+
+  it.each([
+    {
+      label: 'reader',
+      permissions: resolvePermissionsForRoles([USER_ROLES.READER]),
+      expectDelete: false,
+    },
+    {
+      label: 'zero-role',
+      permissions: [],
+      expectDelete: false,
+    },
+    {
+      label: 'custom publications:pin only',
+      permissions: [PERMISSIONS.PUBLICATIONS_PIN],
+      expectDelete: false,
+    },
+    {
+      label: 'custom publications:review only',
+      permissions: [PERMISSIONS.PUBLICATIONS_REVIEW],
+      expectDelete: false,
+    },
+    {
+      label: 'guest',
+      permissions: resolvePermissionsForRoles([USER_ROLES.GUEST]),
+      expectDelete: true,
+    },
+    {
+      label: 'member',
+      permissions: resolvePermissionsForRoles([USER_ROLES.MEMBER]),
+      expectDelete: true,
+    },
+    {
+      label: 'overlapping guest + member',
+      permissions: resolvePermissionsForRoles([USER_ROLES.GUEST, USER_ROLES.MEMBER]),
+      expectDelete: true,
+    },
+    {
+      label: 'custom publications:delete_own only',
+      permissions: [PERMISSIONS.PUBLICATIONS_DELETE_OWN],
+      expectDelete: true,
+    },
+    {
+      label: 'custom publications:delete_any only',
+      permissions: [PERMISSIONS.PUBLICATIONS_DELETE_ANY],
+      expectDelete: true,
+    },
+    {
+      label: 'founder',
+      permissions: resolvePermissionsForRoles([USER_ROLES.FOUNDER]),
+      expectDelete: true,
+    },
+  ])('gates Delete (and hides Pin) on unpublished draft for $label', ({ permissions, expectDelete }) => {
+    const dict = getDictionaryClient('gl');
+    render(
+      <EscritorioPublicationRow
+        pub={{ ...basePub, status: PUBLICATION_STATUSES.DRAFT }}
+        lang="gl"
+        dict={dict}
+        forApproval={false}
+        permissions={permissions}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Pin' })).not.toBeInTheDocument();
+    if (expectDelete) {
+      expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+    } else {
+      expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    }
+  });
+
+  it('hides Delete and Pin buttons in review queue (forApproval=true)', () => {
+    const dict = getDictionaryClient('gl');
+    render(
+      <EscritorioPublicationRow
+        pub={{ ...basePub, status: PUBLICATION_STATUSES.IN_REVIEW }}
+        lang="gl"
+        dict={dict}
+        forApproval={true}
+        permissions={resolvePermissionsForRoles([USER_ROLES.ADMIN])}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Pin' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+  });
+
+  it('fails closed (hides Pin and Delete) when permissions prop is omitted', () => {
+    const dict = getDictionaryClient('gl');
+    const { rerender } = render(
+      <EscritorioPublicationRow
+        pub={{ ...basePub, status: PUBLICATION_STATUSES.PUBLISHED }}
+        lang="gl"
+        dict={dict}
+        forApproval={false}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Pin' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+
+    rerender(
+      <EscritorioPublicationRow
+        pub={{ ...basePub, status: PUBLICATION_STATUSES.DRAFT }}
+        lang="gl"
+        dict={dict}
+        forApproval={false}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Pin' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
   });
 });

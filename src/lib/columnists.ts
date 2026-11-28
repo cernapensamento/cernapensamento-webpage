@@ -7,7 +7,7 @@ export interface Columnist {
   email: string;
   instagram: string;
   image: string;
-  role?: UserRole;
+  roles: readonly UserRole[];
 }
 
 export const COLUMNISTS: readonly Columnist[] = [
@@ -17,7 +17,7 @@ export const COLUMNISTS: readonly Columnist[] = [
     email: 'diegoaraujo@cernapensamento.org',
     instagram: '@diegoaraujorodriguez_',
     image: '/images/columnistas/diego.webp',
-    role: USER_ROLES.FOUNDER,
+    roles: [USER_ROLES.FOUNDER],
   },
   {
     slug: 'hector-gonzalez',
@@ -25,7 +25,7 @@ export const COLUMNISTS: readonly Columnist[] = [
     email: 'hectorgonzalez@cernapensamento.org',
     instagram: '@hector.gonzalezzz_',
     image: '/images/columnistas/hector.webp',
-    role: USER_ROLES.FOUNDER,
+    roles: [USER_ROLES.FOUNDER],
   },
   {
     slug: 'denis-fernandez',
@@ -33,7 +33,7 @@ export const COLUMNISTS: readonly Columnist[] = [
     email: 'denisfernandez@cernapensamento.org',
     instagram: '@denisfdeez',
     image: '/images/columnistas/denis.webp',
-    role: USER_ROLES.FOUNDER,
+    roles: [USER_ROLES.FOUNDER],
   },
   {
     slug: 'anxo-perez',
@@ -41,7 +41,7 @@ export const COLUMNISTS: readonly Columnist[] = [
     email: 'anxoperez@cernapensamento.org',
     instagram: '@anxoperezprego',
     image: '/images/columnistas/anxo.webp',
-    role: USER_ROLES.FOUNDER,
+    roles: [USER_ROLES.FOUNDER],
   },
 ];
 

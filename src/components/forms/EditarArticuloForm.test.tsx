@@ -4,7 +4,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import EditarArticuloForm from './EditarArticuloForm';
 import * as articlesActions from '@/actions/articles';
 import type { ArticleData, EditorAction } from '@/components/escritorio/ArticleEditor';
-import { EDITOR_ACTIONS } from '@/lib/db/schema';
+import {
+  EDITOR_ACTIONS,
+  PERMISSIONS,
+  USER_ROLES,
+  resolvePermissionsForRoles,
+  type PermissionValue,
+} from '@/lib/db/schema';
 import type { PublicationDetail } from '@/lib/db/types';
 
 const mockPush = vi.fn();
@@ -36,12 +42,14 @@ vi.mock('@/components/escritorio/ArticleEditor', () => ({
     onSave,
     onDraftCreated,
     isPublishing,
+    permissions,
   }: {
     mode?: 'create' | 'edit';
     initialData?: ArticleData;
     onSave: (data: ArticleData, action: EditorAction) => Promise<boolean>;
     onDraftCreated?: (draft: { id: string; slug: string }) => void;
     isPublishing: boolean;
+    permissions?: readonly PermissionValue[];
   }) => {
     const payload = initialData ?? {
       title: { gl: 'Novo Artigo GL', es: 'Nuevo Artículo ES' },
@@ -52,6 +60,9 @@ vi.mock('@/components/escritorio/ArticleEditor', () => ({
         <span data-testid="editor-mode">{mode}</span>
         <span data-testid="editor-title-gl">{initialData?.title?.gl}</span>
         <span data-testid="is-publishing">{String(isPublishing)}</span>
+        <span data-testid="editor-permissions">
+          {permissions === undefined ? 'undefined' : permissions.join(',')}
+        </span>
         <button
           data-testid="lazy-draft-btn"
           onClick={() => onDraftCreated?.({ id: 'lazy-pub-1', slug: 'lazy-slug-1' })}
@@ -108,7 +119,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="gl"
       />
     );
@@ -121,7 +132,7 @@ describe('EditarArticuloForm', () => {
     expect(() => {
       render(
         <EditarArticuloForm
-          userRole="founder"
+          permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
           lang="gl"
         />
       );
@@ -138,7 +149,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="gl"
       />
     );
@@ -168,7 +179,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="reader"
+        permissions={resolvePermissionsForRoles([USER_ROLES.READER])}
         lang="gl"
       />
     );
@@ -192,7 +203,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         mode="create"
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="gl"
       />
     );
@@ -232,7 +243,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="en"
         dict={enDict}
       />
@@ -259,7 +270,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
       />
     );
 
@@ -281,7 +292,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         mode="create"
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="gl"
       />
     );
@@ -320,7 +331,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={monoPub}
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="gl"
       />
     );
@@ -337,5 +348,29 @@ describe('EditarArticuloForm', () => {
         })
       );
     });
+  });
+
+  it('forwards explicit permissions including zero-role [] to ArticleEditor', () => {
+    const { rerender } = render(
+      <EditarArticuloForm
+        publication={mockPublication}
+        permissions={[PERMISSIONS.PUBLICATIONS_PUBLISH, PERMISSIONS.PUBLICATIONS_REVIEW]}
+        lang="gl"
+      />
+    );
+
+    expect(screen.getByTestId('editor-permissions').textContent).toBe(
+      `${PERMISSIONS.PUBLICATIONS_PUBLISH},${PERMISSIONS.PUBLICATIONS_REVIEW}`
+    );
+
+    rerender(
+      <EditarArticuloForm
+        publication={mockPublication}
+        permissions={[]}
+        lang="gl"
+      />
+    );
+
+    expect(screen.getByTestId('editor-permissions').textContent).toBe('');
   });
 });

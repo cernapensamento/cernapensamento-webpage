@@ -1,12 +1,14 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import HomePage, { generateMetadata } from './page';
+import ColumnistsSection from '@/components/sections/ColumnistsSection';
 import OpenPublishingSection from '@/components/sections/OpenPublishingSection';
 import TagsSection from '@/components/sections/TagsSection';
 import { getDictionary } from '@/dictionaries';
 import { getOpenGraphLocale, i18n } from '@/i18n-config';
 import { SITE_FULL_NAME, SITE_URL } from '@/lib/constants';
-import type { TagItem } from '@/lib/db/types';
+import { USER_ROLES } from '@/lib/db/schema';
+import type { ColumnistItem, TagItem } from '@/lib/db/types';
 
 const mockTags: TagItem[] = Array.from({ length: 20 }, (_, idx) => ({
   id: `tag-${idx + 1}`,
@@ -14,7 +16,21 @@ const mockTags: TagItem[] = Array.from({ length: 20 }, (_, idx) => ({
   name: `Tag ${idx + 1}`,
 }));
 
+const mockAnonClient = { __isAnonClient: true };
+const mockColumnists: ColumnistItem[] = [
+  {
+    id: 'founder-1',
+    full_name: 'Diego Araújo',
+    slug: 'diego-araujo',
+    bio: { gl: 'Ensaísta' },
+    avatar_url: null,
+    roles: [USER_ROLES.FOUNDER],
+  },
+];
+
 vi.mock('@/lib/db', () => ({
+  createPublicAnonClient: vi.fn(() => mockAnonClient),
+  getColumnists: vi.fn(async () => mockColumnists),
   getAllTagsWithTranslations: vi.fn(async () => mockTags),
   getPublicationCards: vi.fn(async () => []),
   getPinnedPublications: vi.fn(async () => []),
@@ -116,5 +132,21 @@ describe('Homepage Metadata & Agent Readiness', () => {
     };
     expect(props.lang).toBe('es');
     expect(props.dict).toEqual(dict.openPublishing);
+  });
+
+  it('fetches DB columnists via createPublicAnonClient and passes them to ColumnistsSection', async () => {
+    const dbModule = await import('@/lib/db');
+    const tree = await HomePage({ params: Promise.resolve({ lang: 'gl' }) });
+    const sections = findElementsByType(tree, ColumnistsSection);
+
+    expect(dbModule.createPublicAnonClient).toHaveBeenCalled();
+    expect(dbModule.getColumnists).toHaveBeenCalledWith(mockAnonClient);
+    expect(sections).toHaveLength(1);
+    const props = sections[0].props as {
+      lang: string;
+      columnists?: ColumnistItem[];
+    };
+    expect(props.lang).toBe('gl');
+    expect(props.columnists).toEqual(mockColumnists);
   });
 });

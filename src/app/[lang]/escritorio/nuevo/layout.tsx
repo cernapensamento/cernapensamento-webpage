@@ -3,9 +3,10 @@ import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { resolveLocale } from '@/i18n-config';
 import {
-  canAccessWriterDesk,
+  PERMISSIONS,
   getGuestPublicationQuota,
-  isGuestRole,
+  hasPermission,
+  isGuestQuotaSubject,
 } from '@/lib/db';
 import { DESK_ERRORS } from '@/lib/db/schema';
 
@@ -16,7 +17,7 @@ export default async function NuevoArticuloLayout({
   children: React.ReactNode;
   params: Promise<{ lang: string }>;
 }) {
-  const [resolvedParams, { user, profile, role }] = await Promise.all([
+  const [resolvedParams, { user, permissions }] = await Promise.all([
     params,
     getAuthenticatedUser(),
   ]);
@@ -26,12 +27,15 @@ export default async function NuevoArticuloLayout({
     redirect(`/${lang}/login`);
   }
 
-  const userRole = profile?.role || role;
-  if (!canAccessWriterDesk(userRole)) {
+  if (!hasPermission(permissions, PERMISSIONS.DESK_ACCESS)) {
     redirect(`/${lang}/escritorio/perfil`);
   }
 
-  if (isGuestRole(userRole)) {
+  if (!hasPermission(permissions, PERMISSIONS.PUBLICATIONS_CREATE)) {
+    redirect(`/${lang}/escritorio`);
+  }
+
+  if (isGuestQuotaSubject(permissions)) {
     const quota = await getGuestPublicationQuota(user.id);
     if (!quota.canCreate) {
       redirect(`/${lang}/escritorio?error=${DESK_ERRORS.LIMIT_REACHED}`);

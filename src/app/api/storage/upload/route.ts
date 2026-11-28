@@ -4,10 +4,10 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import {
   DB_TABLES,
+  PERMISSIONS,
   PUBLICATION_COLS,
-  PUBLICATION_STATUSES,
-  canAccessWriterDesk,
-  canPublishDirectly,
+  canEditPublication,
+  hasPermission,
 } from '@/lib/db/schema';
 import {
   STORAGE_BUCKET,
@@ -28,7 +28,7 @@ function isStorageCategory(value: unknown): value is StorageCategory {
 
 export async function POST(req: Request) {
   try {
-    const { user, role } = await getAuthenticatedUser();
+    const { user, permissions } = await getAuthenticatedUser();
     if (!user) {
       return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
     }
@@ -57,7 +57,6 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createClient();
-    const isOperator = canPublishDirectly(role);
     let entityId: string;
 
     if (category === STORAGE_CATEGORIES.PROFILE_AVATAR) {
@@ -65,12 +64,15 @@ export async function POST(req: Request) {
         ? rawUserId.trim()
         : user.id;
 
-      if (requestedUserId !== user.id && !isOperator) {
+      if (
+        requestedUserId !== user.id &&
+        !hasPermission(permissions, PERMISSIONS.MEDIA_DELETE_ANY)
+      ) {
         return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
       }
       entityId = requestedUserId;
     } else {
-      if (!canAccessWriterDesk(role)) {
+      if (!hasPermission(permissions, PERMISSIONS.MEDIA_UPLOAD_PUBLICATION)) {
         return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
       }
 
@@ -89,13 +91,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'PUBLICATION_NOT_FOUND' }, { status: 404 });
       }
 
-      if (!isOperator) {
-        if (pub[PUBLICATION_COLS.AUTHOR_ID] !== user.id) {
-          return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-        }
-        if (pub[PUBLICATION_COLS.STATUS] === PUBLICATION_STATUSES.PUBLISHED) {
-          return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-        }
+      if (
+        !canEditPublication(
+          permissions,
+          {
+            author_id: pub[PUBLICATION_COLS.AUTHOR_ID],
+            status: pub[PUBLICATION_COLS.STATUS],
+          },
+          user.id
+        )
+      ) {
+        return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
       }
 
       entityId = publicationId;

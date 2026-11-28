@@ -4,8 +4,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { SITE_NAME } from '@/lib/constants';
-import { COLUMNISTS as columnists, type Columnist } from '@/lib/columnists';
+import { DEFAULT_AVATAR_URL, SITE_NAME } from '@/lib/constants';
+import { COLUMNISTS, getColumnistBySlug } from '@/lib/columnists';
+import { USER_ROLES } from '@/lib/db/schema';
+import type { ColumnistItem, LocalizedString } from '@/lib/db/types';
+import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import { getDictionaryClient, type Dictionary } from '@/dictionaries/client';
 
 interface ColumnistsSectionProps {
@@ -14,14 +17,54 @@ interface ColumnistsSectionProps {
     columnists: Partial<Dictionary['columnists']>;
     authors: Record<string, string>;
   };
+  columnists?: ColumnistItem[];
 }
 
-export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps) {
+interface DisplayColumnist {
+  slug: string;
+  name: string;
+  email?: string;
+  instagram?: string;
+  image: string;
+  bio?: LocalizedString | null;
+}
+
+export default function ColumnistsSection({
+  lang,
+  dict,
+  columnists: dbColumnists,
+}: ColumnistsSectionProps) {
   const t = { ...getDictionaryClient(lang).columnists, ...dict.columnists };
   const authorsDict: Record<string, string> = {
     ...(getDictionaryClient(lang).authors as Record<string, string>),
     ...(dict.authors ?? {}),
   };
+
+  const columnists: DisplayColumnist[] =
+    dbColumnists && dbColumnists.length > 0
+      ? dbColumnists
+          .filter(
+            (c): c is ColumnistItem & { slug: string } =>
+              Boolean(c.slug) && (!c.roles || c.roles.includes(USER_ROLES.FOUNDER))
+          )
+          .map((c) => {
+            const staticMeta = getColumnistBySlug(c.slug);
+            return {
+              slug: c.slug,
+              name: c.full_name || staticMeta?.name || c.slug,
+              email: staticMeta?.email,
+              instagram: staticMeta?.instagram,
+              image: staticMeta?.image || c.avatar_url || DEFAULT_AVATAR_URL,
+              bio: c.bio,
+            };
+          })
+      : COLUMNISTS.map((c) => ({
+          slug: c.slug,
+          name: c.name,
+          email: c.email,
+          instagram: c.instagram,
+          image: c.image,
+        }));
   const router = useRouter();
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -110,7 +153,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
     }
   };
 
-  const handleCardClick = (columnist: Columnist) => {
+  const handleCardClick = (columnist: DisplayColumnist) => {
     const authorHref = `/${lang}/autor/${columnist.slug}`;
     if (activeSlug === columnist.slug) {
       // Second click on mobile or direct click while hovered on desktop
@@ -125,7 +168,7 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
     touchStartPos.current = { x: touch.clientX, y: touch.clientY };
   };
 
-  const handleTouchEnd = (e: React.TouchEvent, columnist: Columnist) => {
+  const handleTouchEnd = (e: React.TouchEvent, columnist: DisplayColumnist) => {
     if (!touchStartPos.current) return;
     const touch = e.changedTouches[0];
     const deltaX = Math.abs(touch.clientX - touchStartPos.current.x);
@@ -182,9 +225,12 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
           role="region"
           aria-label={t.title}
         >
-          {columnists.map((columnist: Columnist, idx: number) => {
+          {columnists.map((columnist: DisplayColumnist, idx: number) => {
             const isActive = activeSlug === columnist.slug;
-            const authorBio = authorsDict[columnist.slug] || '';
+            const authorBio =
+              (Object.prototype.hasOwnProperty.call(authorsDict, columnist.slug)
+                ? authorsDict[columnist.slug]
+                : undefined) || resolveLocalizedText(columnist.bio, lang);
 
             // Responsive flex calculation:
             // Default: 1 (equal distribution)
@@ -288,31 +334,37 @@ export default function ColumnistsSection({ lang, dict }: ColumnistsSectionProps
                     )}
 
                     {/* Contact Channels (Correo & Instagram) */}
-                    <div className="flex flex-wrap items-center gap-2.5 pt-1 pb-1">
-                      <a
-                        href={`mailto:${columnist.email}`}
-                        onClick={(e) => e.stopPropagation()}
-                        onTouchEnd={(e) => e.stopPropagation()}
-                        className="text-xs font-sans text-charcoal/80 dark:text-neutral-200 hover:text-gold dark:hover:text-gold border border-charcoal/20 dark:border-white/20 hover:border-gold dark:hover:border-gold py-1.5 px-3 flex items-center gap-1.5 transition-all bg-white/70 dark:bg-black/50 backdrop-blur-sm"
-                        aria-label={`${t.sendEmailTo} ${columnist.name}`}
-                      >
-                        <span className="material-symbols-outlined text-[15px] text-gold" data-icon="mail">mail</span>
-                        <span>{t.emailLabel}</span>
-                      </a>
+                    {(columnist.email || columnist.instagram) && (
+                      <div className="flex flex-wrap items-center gap-2.5 pt-1 pb-1">
+                        {columnist.email && (
+                          <a
+                            href={`mailto:${columnist.email}`}
+                            onClick={(e) => e.stopPropagation()}
+                            onTouchEnd={(e) => e.stopPropagation()}
+                            className="text-xs font-sans text-charcoal/80 dark:text-neutral-200 hover:text-gold dark:hover:text-gold border border-charcoal/20 dark:border-white/20 hover:border-gold dark:hover:border-gold py-1.5 px-3 flex items-center gap-1.5 transition-all bg-white/70 dark:bg-black/50 backdrop-blur-sm"
+                            aria-label={`${t.sendEmailTo} ${columnist.name}`}
+                          >
+                            <span className="material-symbols-outlined text-[15px] text-gold" data-icon="mail">mail</span>
+                            <span>{t.emailLabel}</span>
+                          </a>
+                        )}
 
-                      <a
-                        href={`https://instagram.com/${columnist.instagram.replace('@', '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        onTouchEnd={(e) => e.stopPropagation()}
-                        className="text-xs font-sans text-charcoal/80 dark:text-neutral-200 hover:text-gold dark:hover:text-gold border border-charcoal/20 dark:border-white/20 hover:border-gold dark:hover:border-gold py-1.5 px-3 flex items-center gap-1.5 transition-all bg-white/70 dark:bg-black/50 backdrop-blur-sm"
-                        aria-label={`${t.instagramProfileOf} ${columnist.name}`}
-                      >
-                        <span className="material-symbols-outlined text-[15px] text-gold" data-icon="photo_camera">photo_camera</span>
-                        <span>{t.instagramLabel}</span>
-                      </a>
-                    </div>
+                        {columnist.instagram && (
+                          <a
+                            href={`https://instagram.com/${columnist.instagram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            onTouchEnd={(e) => e.stopPropagation()}
+                            className="text-xs font-sans text-charcoal/80 dark:text-neutral-200 hover:text-gold dark:hover:text-gold border border-charcoal/20 dark:border-white/20 hover:border-gold dark:hover:border-gold py-1.5 px-3 flex items-center gap-1.5 transition-all bg-white/70 dark:bg-black/50 backdrop-blur-sm"
+                            aria-label={`${t.instagramProfileOf} ${columnist.name}`}
+                          >
+                            <span className="material-symbols-outlined text-[15px] text-gold" data-icon="photo_camera">photo_camera</span>
+                            <span>{t.instagramLabel}</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                 </div>

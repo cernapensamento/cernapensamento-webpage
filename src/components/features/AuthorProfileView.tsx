@@ -5,11 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import type { Columnist } from '@/lib/columnists';
-import type { LocalizedString, TagItem } from '@/lib/db/types';
+import type { LocalizedString, TagItem, UserRole } from '@/lib/db/types';
 import {
   PUBLICATION_TYPES,
   normalizePublicationType,
-  resolveRoleLabel,
+  resolvePublicAuthorBadge,
 } from '@/lib/db/schema';
 import { getDictionaryClient } from '@/dictionaries/client';
 import FormattedDate from '@/components/ui/FormattedDate';
@@ -66,8 +66,7 @@ interface AuthorProfileViewProps {
     full_name?: string;
     bio?: string | LocalizedString | null;
     avatar_url?: string | null;
-    rol?: string | null;
-    role?: string | null;
+    roles?: readonly (UserRole | string)[] | null;
     slug?: string | null;
   };
   columnist?: Columnist;
@@ -466,13 +465,9 @@ export default function AuthorProfileView({
   const tThumbnailAlt = apDict.thumbnailAlt;
   const resolvedRoleLabel =
     roleLabel ||
-    resolveRoleLabel(autor.role || autor.rol, {
-      admin: apDict.editorialBoard,
+    resolvePublicAuthorBadge(autor.roles, {
       founder: apDict.foundingMember,
-      writer: apDict.foundingMember,
-      member: apDict.cernaContributor,
-      guest: apDict.cernaContributor,
-      reader: apDict.cernaContributor,
+      contributor: apDict.cernaContributor,
     });
 
   const getTypeLabel = (rawType?: string) =>
@@ -568,10 +563,14 @@ export default function AuthorProfileView({
               
               {/* Eyebrow & Stats Strip */}
               <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-widest mb-3">
-                <span className="font-semibold text-gold px-2.5 py-0.5 rounded bg-gold/10">
-                  {resolvedRoleLabel}
-                </span>
-                <span className="text-charcoal/30">•</span>
+                {resolvedRoleLabel && (
+                  <>
+                    <span className="font-semibold text-gold px-2.5 py-0.5 rounded bg-gold/10">
+                      {resolvedRoleLabel}
+                    </span>
+                    <span className="text-charcoal/30">•</span>
+                  </>
+                )}
                 <span className="font-sans text-charcoal/60 font-medium">
                   {worksCountLabel}
                 </span>
