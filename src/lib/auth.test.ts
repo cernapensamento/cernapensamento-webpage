@@ -199,5 +199,83 @@ describe('server auth hydration (getAuthenticatedUser & resolvePostAuthRedirectP
         'gl'
       )
     ).toBe('/gl/escritorio/perfil');
+
+    const readerClient = makeSupabaseClient({
+      user: null,
+      userRoleRows: [
+        {
+          role_id: USER_ROLES.READER,
+          roles: {
+            id: USER_ROLES.READER,
+            role_permissions: [],
+          },
+        },
+      ],
+    });
+    expect(
+      await resolvePostAuthRedirectPath({ id: 'reader-1' }, readerClient, 'gl')
+    ).toBe('/gl/escritorio/perfil');
+
+    const guestMemberClient = makeSupabaseClient({
+      user: null,
+      userRoleRows: [
+        {
+          role_id: USER_ROLES.GUEST,
+          roles: {
+            id: USER_ROLES.GUEST,
+            role_permissions: resolvePermissionsForRoles([USER_ROLES.GUEST]).map((p) => ({
+              permission: p,
+            })),
+          },
+        },
+        {
+          role_id: USER_ROLES.MEMBER,
+          roles: {
+            id: USER_ROLES.MEMBER,
+            role_permissions: resolvePermissionsForRoles([USER_ROLES.MEMBER]).map((p) => ({
+              permission: p,
+            })),
+          },
+        },
+      ],
+    });
+    expect(
+      await resolvePostAuthRedirectPath({ id: 'gm-1' }, guestMemberClient, 'gl')
+    ).toBe('/gl/escritorio');
+
+    const founderAdminClient = makeSupabaseClient({
+      user: null,
+      userRoleRows: [
+        {
+          role_id: USER_ROLES.FOUNDER,
+          roles: {
+            id: USER_ROLES.FOUNDER,
+            role_permissions: resolvePermissionsForRoles([USER_ROLES.FOUNDER]).map((p) => ({
+              permission: p,
+            })),
+          },
+        },
+        {
+          role_id: USER_ROLES.ADMIN,
+          roles: {
+            id: USER_ROLES.ADMIN,
+            role_permissions: resolvePermissionsForRoles([USER_ROLES.ADMIN]).map((p) => ({
+              permission: p,
+            })),
+          },
+        },
+      ],
+    });
+    expect(
+      await resolvePostAuthRedirectPath({ id: 'fa-1' }, founderAdminClient, 'es')
+    ).toBe('/es/escritorio');
+
+    const errorClient = makeSupabaseClient({
+      user: null,
+      userRolesError: { message: 'permission denied' },
+    });
+    expect(
+      await resolvePostAuthRedirectPath({ id: 'err-1' }, errorClient, 'gl')
+    ).toBe('/gl/escritorio/perfil');
   });
 });

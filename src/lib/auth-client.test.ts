@@ -157,5 +157,80 @@ describe('client auth hydration (fetchClientAuthProfile & resolveClientDeskRedir
         'es'
       )
     ).toBe('/es/escritorio/perfil');
+
+    const readerSupabase = makeClientSupabase({
+      userRow: { avatar_url: null, full_name: 'Reader' },
+      userRoleRows: [
+        {
+          role_id: USER_ROLES.READER,
+          roles: { id: USER_ROLES.READER, role_permissions: [] },
+        },
+      ],
+    });
+    expect(
+      await resolveClientDeskRedirectPath({ id: 'reader-1' }, readerSupabase, 'gl')
+    ).toBe('/gl/escritorio/perfil');
+
+    const gmSupabase = makeClientSupabase({
+      userRow: { avatar_url: null, full_name: 'GM' },
+      userRoleRows: [
+        {
+          role_id: USER_ROLES.GUEST,
+          roles: {
+            id: USER_ROLES.GUEST,
+            role_permissions: resolvePermissionsForRoles([USER_ROLES.GUEST]).map((p) => ({
+              permission: p,
+            })),
+          },
+        },
+        {
+          role_id: USER_ROLES.MEMBER,
+          roles: {
+            id: USER_ROLES.MEMBER,
+            role_permissions: resolvePermissionsForRoles([USER_ROLES.MEMBER]).map((p) => ({
+              permission: p,
+            })),
+          },
+        },
+      ],
+    });
+    expect(
+      await resolveClientDeskRedirectPath({ id: 'gm-1' }, gmSupabase, 'gl')
+    ).toBe('/gl/escritorio');
+
+    const faSupabase = makeClientSupabase({
+      userRow: { avatar_url: null, full_name: 'FA' },
+      userRoleRows: [
+        {
+          role_id: USER_ROLES.FOUNDER,
+          roles: {
+            id: USER_ROLES.FOUNDER,
+            role_permissions: resolvePermissionsForRoles([USER_ROLES.FOUNDER]).map((p) => ({
+              permission: p,
+            })),
+          },
+        },
+        {
+          role_id: USER_ROLES.ADMIN,
+          roles: {
+            id: USER_ROLES.ADMIN,
+            role_permissions: resolvePermissionsForRoles([USER_ROLES.ADMIN]).map((p) => ({
+              permission: p,
+            })),
+          },
+        },
+      ],
+    });
+    expect(
+      await resolveClientDeskRedirectPath({ id: 'fa-1' }, faSupabase, 'es')
+    ).toBe('/es/escritorio');
+
+    const failedProfileSupabase = makeClientSupabase({
+      userRow: null,
+      userError: { message: 'unauthorized' },
+    });
+    expect(
+      await resolveClientDeskRedirectPath({ id: 'err-1' }, failedProfileSupabase, 'gl')
+    ).toBe('/gl/escritorio/perfil');
   });
 });

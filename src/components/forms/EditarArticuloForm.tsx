@@ -6,7 +6,7 @@ import ArticleEditor, {
   ArticleData,
   EditorAction,
 } from '@/components/escritorio/ArticleEditor';
-import type { LocalizedString, PublicationDetail } from '@/lib/db/types';
+import type { LocalizedString, PermissionValue, PublicationDetail } from '@/lib/db/types';
 import { useToast } from '@/components/ui/FeedbackProvider';
 import { saveArticleAction, type SaveArticleInput } from '@/actions/articles';
 import { isDraftAction } from '@/lib/db/schema';
@@ -94,6 +94,7 @@ interface Props {
   /** Backwards compatibility alias for publication */
   articulo?: PublicationDetail;
   userRole: string;
+  permissions?: readonly PermissionValue[];
   lang?: string;
   dict?: ArticleEditorDict;
 }

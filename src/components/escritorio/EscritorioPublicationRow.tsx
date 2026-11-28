@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { i18n, type Locale } from '@/i18n-config';
 import { resolveLocalizedText } from '@/lib/i18n/resolveLocalizedText';
 import { getAvailablePublicationLocales } from '@/lib/i18n/publicationLanguage';
-import { PUBLICATION_STATUSES, type PublicationDashboardItem } from '@/lib/db';
+import { PUBLICATION_STATUSES, type PermissionValue, type PublicationDashboardItem } from '@/lib/db';
 import type { Dictionary } from '@/dictionaries/client';
 import FormattedDate from '@/components/ui/FormattedDate';
 import DeleteArticleButton from '@/components/escritorio/DeleteArticleButton';
@@ -16,6 +16,7 @@ interface EscritorioPublicationRowProps {
   dict: Dictionary;
   forApproval: boolean;
   canReview: boolean;
+  permissions?: readonly PermissionValue[];
 }
 
 function resolveDashboardLanguageBadge(
