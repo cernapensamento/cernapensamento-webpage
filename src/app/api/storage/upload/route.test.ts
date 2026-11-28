@@ -4,6 +4,7 @@ import { POST } from './route';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { STORAGE_BUCKET, STORAGE_CACHE_CONTROL } from '@/lib/storage/constants';
+import { USER_ROLES, resolvePermissionsForRoles } from '@/lib/db/schema';
 
 vi.mock('@/lib/auth', () => ({
   getAuthenticatedUser: vi.fn(),
@@ -93,6 +94,8 @@ describe('POST /api/storage/upload', () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'user-1' } as never,
       profile: { id: 'user-1', role: 'member' } as never,
+      roles: [USER_ROLES.MEMBER],
+      permissions: resolvePermissionsForRoles([USER_ROLES.MEMBER]),
       role: 'member',
     });
   });
@@ -101,6 +104,8 @@ describe('POST /api/storage/upload', () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: null,
       profile: null,
+      roles: [],
+      permissions: [],
       role: null,
     });
 
@@ -119,6 +124,8 @@ describe('POST /api/storage/upload', () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'reader-1' } as never,
       profile: { id: 'reader-1', role: 'reader' } as never,
+      roles: [USER_ROLES.READER],
+      permissions: resolvePermissionsForRoles([USER_ROLES.READER]),
       role: 'reader',
     });
 
@@ -187,6 +194,8 @@ describe('POST /api/storage/upload', () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'admin-1' } as never,
       profile: { id: 'admin-1', role: 'admin' } as never,
+      roles: [USER_ROLES.ADMIN],
+      permissions: resolvePermissionsForRoles([USER_ROLES.ADMIN]),
       role: 'admin',
     });
     mockSingle.mockResolvedValue({

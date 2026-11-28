@@ -3,8 +3,7 @@
 import { createContext, useEffect, useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
-import { USER_ROLES } from '@/lib/db/schema';
-import type { UserRole, AuthProfile } from '@/lib/db/types';
+import type { AuthProfile } from '@/lib/db/types';
 import { fetchClientAuthProfile } from '@/lib/auth-client';
 
 export type Profile = AuthProfile | null;
@@ -55,13 +54,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return;
     }
 
-    async function fetchUserProfile(userId: string, jwtRole?: string) {
+    async function fetchUserProfile(userId: string) {
       const data = await fetchClientAuthProfile(userId, supabase);
-      if (isMounted && data) {
-        setProfile({
-          ...data,
-          role: (data.role || jwtRole || USER_ROLES.READER) as UserRole,
-        });
+      if (isMounted) {
+        setProfile(data);
       }
     }
 
@@ -72,8 +68,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (session?.user) {
           setUser(session.user);
-          const jwtRole = session.user.app_metadata?.user_role as string | undefined;
-          fetchUserProfile(session.user.id, jwtRole);
+          fetchUserProfile(session.user.id);
         }
       } catch {
         // Silent fallback: user remains null
@@ -90,10 +85,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (session?.user) {
         setUser(session.user);
-        const jwtRole = session.user.app_metadata?.user_role as string | undefined;
         // Defer fetch to avoid deadlock
         setTimeout(() => {
-          fetchUserProfile(session.user.id, jwtRole);
+          fetchUserProfile(session.user.id);
         }, 0);
       } else {
         setUser(null);
@@ -105,8 +99,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const handleProfileUpdated = () => {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
-          const jwtRole = session.user.app_metadata?.user_role as string | undefined;
-          fetchUserProfile(session.user.id, jwtRole);
+          fetchUserProfile(session.user.id);
         }
       });
     };

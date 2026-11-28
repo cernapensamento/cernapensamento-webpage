@@ -10,6 +10,12 @@ import {
   DB_TABLES,
   USER_COLS,
   USER_ROLES,
+  ROLE_COLS,
+  ROLE_PERMISSION_COLS,
+  USER_ROLE_COLS,
+  VALID_ROLE_SET,
+  VALID_PERMISSION_SET,
+  resolvePermissionsForRoles,
   PUBLICATION_COLS,
   PUBLICATION_STATUSES,
 } from '../schema';
@@ -22,6 +28,7 @@ import type {
   LocalizedString,
   PublicationType,
   UserRole,
+  PermissionValue,
 } from '../types';
 import { getPublicationCards } from './publications';
 import { formatDbError, isMissingColumnError } from '../formatDbError';
@@ -98,6 +105,95 @@ async function getUserBy<T>(
   } catch (err) {
     console.warn(`[DAL:users] Unexpected error fetching user by ${column} "${value}":`, formatDbError(err));
     return null;
+  }
+}
+
+const USER_ROLES_SELECT = `${USER_ROLE_COLS.ROLE_ID}, ${DB_TABLES.ROLES}(${ROLE_COLS.ID}, ${DB_TABLES.ROLE_PERMISSIONS}(${ROLE_PERMISSION_COLS.PERMISSION}))`;
+
+export interface UserRolesAndPermissions {
+  roles: UserRole[];
+  permissions: PermissionValue[];
+}
+
+function appendNestedRolePermissions(
+  roleNode: unknown,
+  permissionsSet: Set<PermissionValue>
+): void {
+  if (!roleNode || typeof roleNode !== 'object') return;
+  const rawRolePerms = (roleNode as Record<string, unknown>)[DB_TABLES.ROLE_PERMISSIONS];
+  if (!Array.isArray(rawRolePerms)) return;
+
+  for (const permRow of rawRolePerms) {
+    if (!permRow || typeof permRow !== 'object') continue;
+    const perm = (permRow as Record<string, unknown>)[ROLE_PERMISSION_COLS.PERMISSION];
+    if (typeof perm === 'string' && VALID_PERMISSION_SET.has(perm)) {
+      permissionsSet.add(perm as PermissionValue);
+    }
+  }
+}
+
+/**
+ * Queries a user's assigned roles and effective atomic permissions from user_roles.
+ * Fails closed to empty roles and zero permissions on missing rows or DB errors.
+ */
+export async function getUserRolesAndPermissions(
+  userId: string,
+  client?: SupabaseClient
+): Promise<UserRolesAndPermissions> {
+  try {
+    const supabase = await resolveClient(client);
+    const { data, error } = await supabase
+      .from(DB_TABLES.USER_ROLES)
+      .select(USER_ROLES_SELECT)
+      .eq(USER_ROLE_COLS.USER_ID, userId);
+
+    if (error || !Array.isArray(data) || data.length === 0) {
+      if (error) {
+        console.warn(
+          `[DAL:users] Failed to fetch roles for user "${userId}":`,
+          formatDbError(error)
+        );
+      }
+      return { roles: [], permissions: [] };
+    }
+
+    const rolesSet = new Set<UserRole>();
+    const permissionsSet = new Set<PermissionValue>();
+
+    for (const rawRow of data) {
+      if (!rawRow || typeof rawRow !== 'object') continue;
+      const row = rawRow as Record<string, unknown>;
+      const rawRoleId = row[USER_ROLE_COLS.ROLE_ID];
+      if (typeof rawRoleId !== 'string' || !VALID_ROLE_SET.has(rawRoleId)) continue;
+
+      const roleId = rawRoleId as UserRole;
+      rolesSet.add(roleId);
+
+      const nestedRoles = row[DB_TABLES.ROLES];
+      if (nestedRoles === undefined) {
+        // Fallback for callers/mocks returning flat user_roles rows without nested relation
+        for (const perm of resolvePermissionsForRoles([roleId])) {
+          permissionsSet.add(perm);
+        }
+      } else if (Array.isArray(nestedRoles)) {
+        for (const node of nestedRoles) {
+          appendNestedRolePermissions(node, permissionsSet);
+        }
+      } else if (nestedRoles !== null) {
+        appendNestedRolePermissions(nestedRoles, permissionsSet);
+      }
+    }
+
+    return {
+      roles: Array.from(rolesSet),
+      permissions: Array.from(permissionsSet),
+    };
+  } catch (err) {
+    console.warn(
+      `[DAL:users] Unexpected error fetching roles for user "${userId}":`,
+      formatDbError(err)
+    );
+    return { roles: [], permissions: [] };
   }
 }
 
