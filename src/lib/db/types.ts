@@ -5,6 +5,7 @@
 
 import type {
   UserRoleValue,
+  PublicRoleValue,
   PermissionValue,
   PublicationStatusValue,
   PublicationTypeValue,
@@ -21,7 +22,7 @@ export type LocalizedString = {
 };
 
 export type UserRole = UserRoleValue;
-export type { PermissionValue };
+export type { PublicRoleValue, PermissionValue };
 export type PublicationStatus = PublicationStatusValue;
 export type PublicationType = PublicationTypeValue;
 
@@ -37,6 +38,8 @@ export interface UserRow {
   avatar_url: string | null;
   newsletter_subscribed: boolean;
   role: UserRole;
+  roles?: UserRole[];
+  publicRole?: PublicRoleValue | null;
 }
 
 /**
@@ -197,7 +200,8 @@ export interface ColumnistItem {
   slug: string | null;
   bio: LocalizedString | null;
   avatar_url: string | null;
-  role: UserRole;
+  roles?: UserRole[];
+  role?: UserRole;
 }
 
 /**
@@ -209,7 +213,9 @@ export interface AuthorProfileDetail {
   slug: string | null;
   bio: LocalizedString | null;
   avatar_url: string | null;
-  role: UserRole;
+  roles?: UserRole[];
+  publicRole?: PublicRoleValue | null;
+  role?: UserRole;
   publications: PublicationCardItem[];
 }
 
@@ -223,7 +229,9 @@ export interface PublishedAuthorItem {
   slug: string | null;
   bio: LocalizedString | null;
   avatar_url: string | null;
-  role: UserRole;
+  roles?: UserRole[];
+  publicRole?: PublicRoleValue | null;
+  role?: UserRole;
   published_count: number;
   latest_publication_at: string | null;
   latest_publication_title: LocalizedString | null;

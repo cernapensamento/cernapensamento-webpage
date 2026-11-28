@@ -9,7 +9,8 @@ import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import { i18n } from '@/i18n-config';
 import { getDictionaryClient } from '@/dictionaries/client';
 import {
-  resolveRoleLabel,
+  USER_ROLES,
+  resolvePrimaryPublicRole,
   normalizePublicationType,
 } from '@/lib/db/schema';
 import type {
@@ -23,7 +24,8 @@ export interface AuthorDirectoryItem {
   slug: string | null;
   avatar_url: string | null;
   bio: string;
-  role: UserRole;
+  roles?: UserRole[];
+  role?: UserRole;
   published_count: number;
   latest_publication_at: string | null;
   latest_publication_title: string | null;
@@ -143,14 +145,13 @@ function AuthorCard({
   );
   const visibleTypes = typeLabels.slice(0, 3);
   const extraTypes = typeLabels.length - visibleTypes.length;
-  const roleLabel = resolveRoleLabel(author.role, {
-    founder: dict.roles.founder,
-    writer: dict.roles.founder,
-    admin: dict.roles.editorialBoard,
-    member: dict.roles.contributor,
-    guest: dict.roles.contributor,
-    reader: dict.roles.contributor,
-  });
+  const primaryPublicRole = resolvePrimaryPublicRole(author.roles);
+  const roleLabel =
+    primaryPublicRole === USER_ROLES.FOUNDER
+      ? dict.roles.founder
+      : primaryPublicRole === USER_ROLES.MEMBER || primaryPublicRole === USER_ROLES.GUEST
+        ? dict.roles.contributor
+        : null;
   const showsImage = Boolean(author.avatar_url) && !imageError;
 
   return (
@@ -185,9 +186,13 @@ function AuthorCard({
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-gold truncate">
-                {roleLabel}
-              </span>
+              {roleLabel ? (
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-gold truncate">
+                  {roleLabel}
+                </span>
+              ) : (
+                <span />
+              )}
               <span className="font-mono text-[10px] uppercase tracking-widest text-charcoal/50 shrink-0">
                 {author.published_count}{' '}
                 {author.published_count === 1
