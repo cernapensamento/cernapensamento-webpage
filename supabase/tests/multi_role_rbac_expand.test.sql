@@ -1,5 +1,5 @@
--- Run with `supabase test db`. Verifies Ticket 01 expand-phase RBAC schema,
--- seed data, backfill, sync trigger, helpers, quotas, RLS, and last-admin guard.
+-- Run with `supabase test db`. Verifies final-schema RBAC tables, seed data,
+-- helpers, quotas, RLS, and last-admin guard.
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
@@ -197,7 +197,7 @@ SELECT is(
     FROM (
       SELECT DISTINCT permission FROM public.role_permissions
     ) p
-    WHERE public.has_permission(p.permission)
+    WHERE public.has_permission(p.permission) IS DISTINCT FROM FALSE
   ),
   0::bigint,
   'user with zero roles evaluates has_permission() to false for all 19 permissions'
@@ -242,11 +242,15 @@ VALUES
   ('30000000-0000-0000-0000-000000000101', '30000000-0000-0000-0000-000000000003', 'quota-guest-1', 'draft', 'gl', '{"gl":"G1"}', '{"gl":"<p>G1</p>"}', '2020-01-01 00:00:00+00', '2020-01-01 00:00:00+00'),
   ('30000000-0000-0000-0000-000000000102', '30000000-0000-0000-0000-000000000003', 'quota-guest-2', 'draft', 'gl', '{"gl":"G2"}', '{"gl":"<p>G2</p>"}', '2020-01-01 00:00:00+00', '2020-01-01 00:00:00+00');
 
-SELECT ok(
-  created_at > '2025-01-01 00:00:00+00'::timestamptz AND updated_at > '2025-01-01 00:00:00+00'::timestamptz,
+SELECT is(
+  (
+    SELECT (created_at = now() AND updated_at = now())
+    FROM public.publications
+    WHERE id = '30000000-0000-0000-0000-000000000101'
+  ),
+  true,
   'check_publication_quotas preserves UTC now() assignment for created_at and updated_at'
-)
-FROM public.publications WHERE id = '30000000-0000-0000-0000-000000000101';
+);
 
 -- 3rd publication in same year fails yearly cap for guest
 SELECT throws_ok(
@@ -310,14 +314,23 @@ SELECT throws_ok(
 );
 
 -- Zero-role user also subject to quota (lacks publications:write_unlimited)
+INSERT INTO auth.users (id, email, raw_user_meta_data)
+VALUES ('30000000-0000-0000-0000-000000000009', 'rbac-quota-zero@example.test', '{"full_name":"Quota Zero"}');
+DELETE FROM public.user_roles WHERE user_id = '30000000-0000-0000-0000-000000000009';
+SELECT is(
+  (SELECT count(*) FROM public.user_roles WHERE user_id = '30000000-0000-0000-0000-000000000009'),
+  0::bigint,
+  'zero-role quota fixture has no user_roles rows'
+);
+
 INSERT INTO public.publications (author_id, slug, status, original_language, title, content)
 VALUES
-  ('30000000-0000-0000-0000-000000000002', 'quota-zero-1', 'draft', 'gl', '{"gl":"Z1"}', '{"gl":"<p>Z1</p>"}'),
-  ('30000000-0000-0000-0000-000000000002', 'quota-zero-2', 'draft', 'gl', '{"gl":"Z2"}', '{"gl":"<p>Z2</p>"}');
+  ('30000000-0000-0000-0000-000000000009', 'quota-zero-1', 'draft', 'gl', '{"gl":"Z1"}', '{"gl":"<p>Z1</p>"}'),
+  ('30000000-0000-0000-0000-000000000009', 'quota-zero-2', 'draft', 'gl', '{"gl":"Z2"}', '{"gl":"<p>Z2</p>"}');
 SELECT throws_ok(
   $$
     INSERT INTO public.publications (author_id, slug, status, original_language, title, content)
-    VALUES ('30000000-0000-0000-0000-000000000002', 'quota-zero-3', 'draft', 'gl', '{"gl":"Z3"}', '{"gl":"<p>Z3</p>"}')
+    VALUES ('30000000-0000-0000-0000-000000000009', 'quota-zero-3', 'draft', 'gl', '{"gl":"Z3"}', '{"gl":"<p>Z3</p>"}')
   $$,
   'P0001',
   NULL,
@@ -384,7 +397,12 @@ SELECT ok(has_table_privilege('authenticated', 'public.roles', 'SELECT'), 'authe
 SELECT ok(NOT has_table_privilege('authenticated', 'public.roles', 'INSERT,UPDATE,DELETE'), 'authenticated cannot mutate roles');
 SELECT ok(has_table_privilege('authenticated', 'public.role_permissions', 'SELECT'), 'authenticated can SELECT role_permissions');
 SELECT ok(NOT has_table_privilege('authenticated', 'public.role_permissions', 'INSERT,UPDATE,DELETE'), 'authenticated cannot mutate role_permissions');
-SELECT ok(has_table_privilege('authenticated', 'public.user_roles', 'SELECT,INSERT,DELETE'), 'authenticated has SELECT, INSERT, DELETE on user_roles');
+SELECT ok(
+  has_table_privilege('authenticated', 'public.user_roles', 'SELECT')
+  AND has_table_privilege('authenticated', 'public.user_roles', 'INSERT')
+  AND has_table_privilege('authenticated', 'public.user_roles', 'DELETE'),
+  'authenticated has SELECT, INSERT, and DELETE on user_roles'
+);
 SELECT ok(NOT has_table_privilege('authenticated', 'public.user_roles', 'UPDATE'), 'authenticated cannot UPDATE user_roles directly');
 
 -- Custom split-permission roles for testing granular users:assign_role vs users:revoke_role RLS

@@ -450,17 +450,23 @@ CREATE OR REPLACE FUNCTION "public"."prevent_removing_last_admin"() RETURNS "tri
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
+DECLARE
+  v_remaining_admins integer;
 BEGIN
-  IF OLD.role_id = 'admin' AND (TG_OP = 'DELETE' OR NEW.role_id IS DISTINCT FROM 'admin') THEN
+  IF (TG_OP = 'DELETE' AND OLD.role_id = 'admin')
+     OR (TG_OP = 'UPDATE' AND OLD.role_id = 'admin' AND NEW.role_id <> 'admin') THEN
     PERFORM pg_advisory_xact_lock(hashtext('public.user_roles:last_admin'));
 
-    IF NOT EXISTS (
-      SELECT 1
-      FROM public.user_roles
-      WHERE role_id = 'admin'
-        AND user_id <> OLD.user_id
-    ) THEN
-      RAISE EXCEPTION 'Cannot remove the last remaining admin role assignment.';
+    PERFORM 1
+    FROM public.user_roles
+    WHERE role_id = 'admin'
+      AND user_id <> OLD.user_id
+    FOR UPDATE;
+    GET DIAGNOSTICS v_remaining_admins = ROW_COUNT;
+
+    IF v_remaining_admins = 0 THEN
+      RAISE EXCEPTION 'Cannot remove the last remaining admin role assignment.'
+        USING ERRCODE = 'P0001';
     END IF;
   END IF;
 
@@ -993,7 +999,7 @@ CREATE POLICY "Authors can insert publications" ON "public"."publications" FOR I
 
 
 
-CREATE POLICY "Authors can update own unpublished publications" ON "public"."publications" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "author_id") AND ("status" <> 'published'::"public"."publication_status") AND "public"."has_permission"('publications:update_own'::"text"))) WITH CHECK ((("auth"."uid"() = "author_id") AND "public"."has_permission"('publications:update_own'::"text") AND (("status" <> 'published'::"public"."publication_status") OR "public"."has_permission"('publications:publish'::"text")) AND (("is_pinned" = false) OR "public"."has_permission"('publications:pin'::"text"))));
+CREATE POLICY "Authors can update own unpublished publications" ON "public"."publications" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "author_id") AND ("status" <> 'published'::"public"."publication_status") AND "public"."has_permission"('publications:update_own'::"text"))) WITH CHECK ((("auth"."uid"() = "author_id") AND "public"."has_permission"('publications:update_own'::"text") AND (("status" <> 'published'::"public"."publication_status") OR "public"."has_permission"('publications:publish'::"text"))));
 
 
 
@@ -1031,7 +1037,7 @@ CREATE POLICY "Public and authorized read publications" ON "public"."publication
 
 CREATE POLICY "Public read comments" ON "public"."comments" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."publications" "p"
-  WHERE (("p"."id" = "comments"."publication_id") AND (("p"."status" = 'published'::"public"."publication_status") OR ("p"."author_id" = "auth"."uid"()) OR (("p"."status" = 'in_review'::"public"."publication_status") AND "public"."has_permission"('publications:review'::"text")) OR "public"."has_permission"('publications:update_any'::"text") OR "public"."has_permission"('publications:delete_any'::"text"))))));
+  WHERE (("p"."id" = "comments"."publication_id") AND (("p"."status" = 'published'::"public"."publication_status") OR ("p"."author_id" = "auth"."uid"()) OR (("p"."status" = 'in_review'::"public"."publication_status") AND "public"."has_permission"('publications:review'::"text")) OR "public"."has_permission"('publications:update_any'::"text") OR "public"."has_permission"('publications:delete_any'::"text") OR "public"."has_permission"('comments:delete_any'::"text"))))));
 
 
 
