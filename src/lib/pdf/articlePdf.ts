@@ -8,7 +8,6 @@ import {
 } from 'pdf-lib';
 import { parseDocument } from 'htmlparser2';
 import type { ChildNode, Element } from 'domhandler';
-import { sanitizeStorageUrl } from '@/lib/storage/paths';
 import { getHeadingsFromHtml, stripIndex } from '@/lib/editor/generateIndex';
 
 /**
@@ -952,13 +951,11 @@ class ArticlePdfBuilder {
   private async loadImage(rawUrl: string): Promise<PDFImage | null> {
     if (!rawUrl) return null;
 
-    const sanitizedUrl = sanitizeStorageUrl(rawUrl) ?? rawUrl;
-
-    const url = sanitizedUrl.startsWith('//')
-      ? `https:${sanitizedUrl}`
-      : sanitizedUrl.startsWith('/')
-        ? `${this.siteUrl}${sanitizedUrl}`
-        : sanitizedUrl;
+    const url = rawUrl.startsWith('//')
+      ? `https:${rawUrl}`
+      : rawUrl.startsWith('/')
+        ? `${this.siteUrl}${rawUrl}`
+        : rawUrl;
 
     if (!isFetchableUrl(url)) return null;
     if (this.imageCache.has(url)) return this.imageCache.get(url) ?? null;

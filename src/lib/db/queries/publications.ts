@@ -7,7 +7,6 @@
 import { resolveClient } from '../resolveClient';
 import type { SupabaseClient, PostgrestError } from '@supabase/supabase-js';
 import { i18n } from '@/i18n-config';
-import { sanitizeStorageUrl } from '@/lib/storage/paths';
 import {
   DB_TABLES,
   PUBLICATION_COLS,
@@ -89,10 +88,9 @@ const PUBLICATION_DETAIL_SELECT = `
 ` as const;
 
 /**
- * Rewrites the former Supabase image hostname to the current one, or returns
- * null for an empty URL. Delegates to sanitizeStorageUrl.
+ * Returns the image URL or null when empty.
  */
-const cleanImageUrl = sanitizeStorageUrl;
+const cleanImageUrl = (url?: string | null): string | null => url || null;
 
 /**
  * Normalizes raw PostgREST publication_tags join into a clean TagItem array.

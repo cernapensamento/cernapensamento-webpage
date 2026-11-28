@@ -1,17 +1,11 @@
 import { createHash } from 'node:crypto';
 import { Parser } from 'htmlparser2';
 import {
-  LEGACY_STORAGE_BUCKETS,
   STORAGE_BUCKET,
   STORAGE_CACHE_CONTROL,
   STORAGE_CATEGORIES,
   type StorageCategory,
 } from '../constants';
-import {
-  CURRENT_STORAGE_HOST,
-  LEGACY_STORAGE_HOST,
-  extractBucketAndPathFromUrl,
-} from '../paths';
 import { processImageForMigration } from './imageProcessor';
 import {
   CleanupGuardrailError,
@@ -27,6 +21,42 @@ import {
   type MigrationPublicationRow,
   type MigrationUserRow,
 } from './types';
+
+const MIGRATION_LEGACY_BUCKETS = ['imagenes-articulos'] as const;
+const MIGRATION_LEGACY_FOLDERS = ['profiles', 'avatares', 'portadas', 'contenido'] as const;
+const MIGRATION_LEGACY_HOST = 'pzupxjsprmuudmvhzpxu.supabase.co';
+const MIGRATION_CURRENT_HOST = 'srbrnpbtfmilohkicpbb.supabase.co';
+
+function extractMigrationBucketAndPath(
+  url: string | null | undefined
+): { bucket: string; path: string } | null {
+  if (!url || typeof url !== 'string') return null;
+
+  const validFolders = [
+    'users/',
+    'publications/',
+    '_orphans/',
+    ...MIGRATION_LEGACY_FOLDERS.map((f) => `${f}/`),
+  ];
+  if (validFolders.some((f) => url.startsWith(f))) {
+    return { bucket: STORAGE_BUCKET, path: url.split('?')[0].split('#')[0] };
+  }
+
+  const allBuckets = [STORAGE_BUCKET, ...MIGRATION_LEGACY_BUCKETS];
+  for (const bucket of allBuckets) {
+    const bucketMarker = `${bucket}/`;
+    const markerIndex = url.indexOf(bucketMarker);
+    if (markerIndex !== -1) {
+      const afterMarker = url.substring(markerIndex + bucketMarker.length);
+      const cleanPath = afterMarker.split('?')[0].split('#')[0];
+      if (cleanPath) {
+        return { bucket, path: cleanPath };
+      }
+    }
+  }
+
+  return null;
+}
 
 function shortHash(input: string): string {
   return createHash('sha256').update(input).digest('hex').slice(0, 10);
@@ -59,10 +89,10 @@ function isInternalStorageUrl(
       host === '127.0.0.1' ||
       host === 'localhost';
     if (!isKnownHost) return false;
-    return extractBucketAndPathFromUrl(url) !== null;
+    return extractMigrationBucketAndPath(url) !== null;
   } catch {
     // Relative storage path
-    return extractBucketAndPathFromUrl(url) !== null;
+    return extractMigrationBucketAndPath(url) !== null;
   }
 }
 
@@ -207,7 +237,7 @@ function collectLegacyRefsFromDb(
     if (!url) return;
     if (
       url.includes(legacyHost) ||
-      LEGACY_STORAGE_BUCKETS.some((b) => url.includes(`/${b}/`) || url.startsWith(`${b}/`))
+      MIGRATION_LEGACY_BUCKETS.some((b) => url.includes(`/${b}/`) || url.startsWith(`${b}/`))
     ) {
       legacyRefs.push(url);
     }
@@ -242,13 +272,13 @@ export async function runMigrate(options: MigrateOptions): Promise<MigrationMani
     storage,
     db,
     httpVerifier,
-    currentHost = CURRENT_STORAGE_HOST,
-    legacyHost = LEGACY_STORAGE_HOST,
+    currentHost = MIGRATION_CURRENT_HOST,
+    legacyHost = MIGRATION_LEGACY_HOST,
     dryRun = false,
     now = new Date(),
   } = options;
 
-  const sourceBuckets = [STORAGE_BUCKET, ...LEGACY_STORAGE_BUCKETS];
+  const sourceBuckets = [STORAGE_BUCKET, ...MIGRATION_LEGACY_BUCKETS];
 
   // 1. Inventory all objects in media and legacy buckets
   const inventory = new Map<string, Set<string>>();
@@ -318,7 +348,7 @@ export async function runMigrate(options: MigrateOptions): Promise<MigrationMani
       continue;
     }
 
-    const extracted = extractBucketAndPathFromUrl(ref.rawUrl);
+    const extracted = extractMigrationBucketAndPath(ref.rawUrl);
     if (!extracted) {
       externalUrlsSet.add(ref.rawUrl);
       continue;
@@ -661,7 +691,7 @@ export async function runCleanup(options: CleanupOptions): Promise<CleanupResult
       slatedDeletionKeys.add(`${mapping.sourceBucket}/${mapping.sourcePath}`);
     }
     if (isInternalStorageUrl(mapping.oldUrl, manifest.currentHost, manifest.legacyHost)) {
-      const oldExtracted = extractBucketAndPathFromUrl(mapping.oldUrl);
+      const oldExtracted = extractMigrationBucketAndPath(mapping.oldUrl);
       if (
         oldExtracted &&
         (oldExtracted.bucket !== manifest.targetBucket ||
@@ -684,7 +714,7 @@ export async function runCleanup(options: CleanupOptions): Promise<CleanupResult
   const checkLiveUrl = (url: string | null | undefined) => {
     if (!url) return;
     if (!isInternalStorageUrl(url, manifest.currentHost, manifest.legacyHost)) return;
-    const extracted = extractBucketAndPathFromUrl(url);
+    const extracted = extractMigrationBucketAndPath(url);
     if (!extracted) return;
     const normalizedKey = `${extracted.bucket}/${extracted.path}`;
     if (slatedDeletionKeys.has(normalizedKey)) {
@@ -740,7 +770,7 @@ export async function runCleanup(options: CleanupOptions): Promise<CleanupResult
   const removedLegacyBucketPaths: string[] = [];
   const deletedLegacyBuckets: string[] = [];
 
-  for (const legacyBucket of LEGACY_STORAGE_BUCKETS) {
+  for (const legacyBucket of MIGRATION_LEGACY_BUCKETS) {
     const exists = await storage.bucketExists(legacyBucket);
     if (!exists) continue;
 

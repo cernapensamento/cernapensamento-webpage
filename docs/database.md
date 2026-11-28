@@ -134,17 +134,16 @@ All application database reads and mutations go through the typed DAL rather tha
 
 ## 4. Storage Bucket & WebP Asset Pipeline (`src/lib/storage/`)
 
-- **Primary Bucket:** `media` (with legacy `imagenes-articulos` and legacy folder prefixes kept compatible during transition until Ticket 07 contracts them).
+- **Primary Bucket:** `media` — public, `5 MiB` max file size, strictly locked to `allowed_mime_types = ['image/webp']` at the bucket level.
 - **Entity-Grouped Canonical Paths (`paths.ts`):**
   - **Avatars:** `users/{userId}/avatar-{timestamp}-{slug}.webp` (max `512x512`, `cover` fit)
   - **Covers:** `publications/{publicationId}/cover-{timestamp}-{slug}.webp` (max `1600x1200`, `inside` fit)
   - **Inline figures:** `publications/{publicationId}/inline/{name}-{timestamp}-{slug}.webp` (max `1400x1400`, `inside` fit)
-  - **Legacy compatibility (until Ticket 07):** `profiles/{userId}/`, `publications/covers/{userId}/`, `publications/inline/{userId}/`, `avatares/`, `portadas/`, and `contenido/` remain recognized for cleanup and migration.
+  - **Orphan quarantine:** `_orphans/*` (strictly Editorial Board operators and `service_role`)
 - **Hybrid Upload Pipeline (`POST /api/storage/upload` + `compress.ts`):**
   - The browser compresses images to WebP via `compressImageToWebP()` when canvas WebP encoding is supported, then uploads to `POST /api/storage/upload`.
   - The Route Handler enforces authentication, role/ownership checks (and publication editability for non-operators), validates magic bytes via `sharp`, passes already-valid in-bounds WebP through (requiring square dimensions for `cover`-fit avatars), and converts/resizes non-WebP, oversized, or uncropped payloads server-side before uploading to `media`.
 - **Lazy Draft Creation:** Creating a new article in `/escritorio/nuevo` lazily persists a draft row on first cover or inline image upload so every publication asset is stored under its real `publications/{publicationId}/` folder.
-- **Orphan Prevention (`deleteArticleAction`):** Deleting a publication sweeps the entire `publications/{publicationId}/` folder in `media` and also removes any remaining legacy cover/inline URLs via `cleanupPublicationImages()`.
+- **Whole-Folder Deletion Sweep (`deleteArticleAction`):** Deleting a publication sweeps the entire `publications/{publicationId}/` folder (cover + `inline/*`) in `media` via `sweepPublicationStorageFolder()` and removes any remaining owned references via `cleanupPublicationImages()`.
 - **Two-Phase Migration CLI (`scripts/migrate-storage.ts`):**
-  - `node scripts/migrate-storage.ts migrate [--dry-run] [--manifest <path>]`: Copies legacy objects into entity-grouped `media` paths, applies database URL rewrites atomically in a single PostgreSQL transaction (requiring `DATABASE_URL`), verifies all migrated URLs over HTTP, and writes a manifest.
-  - `node scripts/migrate-storage.ts cleanup --manifest <path>`: Re-verifies zero remaining legacy DB references before deleting superseded legacy objects and the empty `imagenes-articulos` bucket.
+  - Retained as a historical operator tool for migrating legacy buckets/hosts (`migrate` + `cleanup`) with self-contained legacy constants in `src/lib/storage/migration/`.

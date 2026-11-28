@@ -47,7 +47,6 @@ import {
   sweepPublicationStorageFolder,
   extractBucketAndPathFromUrl,
   STORAGE_BUCKET,
-  LEGACY_STORAGE_BUCKETS,
 } from '@/lib/storage';
 
 export interface SaveArticleInput {
@@ -452,10 +451,6 @@ function createStorageSweepClient(fallback: SupabaseClient): SupabaseClient {
   });
 }
 
-const LEGACY_PUBLICATION_BUCKET_SET = new Set<string>([
-  STORAGE_BUCKET,
-  ...LEGACY_STORAGE_BUCKETS,
-]);
 const INLINE_IMG_TAG_REGEX = /<img\b[^>]*\ssrc=(["'])([^"']+)\1[^>]*>/gi;
 
 function isOwnedPublicationAssetUrl(
@@ -470,14 +465,13 @@ function isOwnedPublicationAssetUrl(
   if (!extracted) return false;
 
   const { bucket, path } = extracted;
-  if (path.includes('..')) return false;
+  if (path.includes('..') || bucket !== STORAGE_BUCKET) return false;
 
   const segments = path.split('/').filter(Boolean);
   if (segments.length === 0) return false;
 
   // Canonical entity-grouped paths under publications/{publicationId}/... in primary bucket
   if (
-    bucket === STORAGE_BUCKET &&
     segments.length >= 3 &&
     segments[0] === 'publications' &&
     segments[1] === safePubId &&
@@ -487,8 +481,8 @@ function isOwnedPublicationAssetUrl(
     return true;
   }
 
-  // Legacy author-scoped paths require strict author_id match
-  if (!authorId || !LEGACY_PUBLICATION_BUCKET_SET.has(bucket)) {
+  // Legacy author-scoped paths under media require strict author_id match
+  if (!authorId) {
     return false;
   }
 
@@ -498,15 +492,6 @@ function isOwnedPublicationAssetUrl(
     segments[0] === 'publications' &&
     (segments[1] === 'covers' || segments[1] === 'inline') &&
     segments[2] === authorId
-  ) {
-    return true;
-  }
-
-  // portadas/{authorId}/... or contenido/{authorId}/...
-  if (
-    segments.length >= 3 &&
-    (segments[0] === 'portadas' || segments[0] === 'contenido') &&
-    segments[1] === authorId
   ) {
     return true;
   }

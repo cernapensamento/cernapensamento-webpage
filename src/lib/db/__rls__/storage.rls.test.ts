@@ -358,21 +358,42 @@ describe.skipIf(!isDbTestEnabled)('Storage RLS Integration Tests (Local Supabase
     });
   });
 
-  describe('legacy path compatibility during expand phase', () => {
-    it('keeps legacy profiles/* and publications/covers/* policies active on media', async () => {
+  describe('WebP-only bucket enforcement and legacy path rejection', () => {
+    it('rejects non-WebP uploads (image/jpeg, image/png) to media at the bucket level', async () => {
+      const { client: memberClient, user: memberUser } = await createAuthenticatedClient('martino.rodriguez@cerna.org');
+      const jpegPath = `users/${memberUser.id}/avatar-jpeg-${Date.now()}.jpg`;
+      const pngPath = `users/${memberUser.id}/avatar-png-${Date.now()}.png`;
+
+      try {
+        const jpegRes = await memberClient.storage
+          .from('media')
+          .upload(jpegPath, Buffer.from([0xff, 0xd8, 0xff, 0xe0]), {
+            contentType: 'image/jpeg',
+          });
+        expect(jpegRes.error, 'image/jpeg must be rejected by media bucket').not.toBeNull();
+
+        const pngRes = await memberClient.storage
+          .from('media')
+          .upload(pngPath, Buffer.from([0x89, 0x50, 0x4e, 0x47]), {
+            contentType: 'image/png',
+          });
+        expect(pngRes.error, 'image/png must be rejected by media bucket').not.toBeNull();
+      } finally {
+        await adminClient.storage.from('media').remove([jpegPath, pngPath]);
+      }
+    });
+
+    it('rejects legacy profiles/* and publications/covers/* uploads on media after contract phase', async () => {
       const { client: memberClient, user: memberUser } = await createAuthenticatedClient('martino.rodriguez@cerna.org');
       const legacyProfile = `profiles/${memberUser.id}/avatar-legacy-${Date.now()}.webp`;
       const legacyCover = `publications/covers/${memberUser.id}/cover-legacy-${Date.now()}.webp`;
 
       try {
         const res1 = await uploadWebp(memberClient, legacyProfile);
-        expect(res1.error).toBeNull();
+        expect(res1.error).not.toBeNull();
 
         const res2 = await uploadWebp(memberClient, legacyCover);
-        expect(res2.error).toBeNull();
-
-        expect(await removeAndVerifyDeleted(memberClient, legacyProfile)).toBe(true);
-        expect(await removeAndVerifyDeleted(memberClient, legacyCover)).toBe(true);
+        expect(res2.error).not.toBeNull();
       } finally {
         await adminClient.storage.from('media').remove([legacyProfile, legacyCover]);
       }
