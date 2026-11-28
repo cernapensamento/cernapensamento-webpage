@@ -624,10 +624,10 @@ describe('deleteArticleAction', () => {
       callOrder.push('fetchAssets');
       return {
         author_id: 'member-1',
-        cover_image_url: 'https://example.supabase.co/storage/v1/object/public/media/portadas/member-1/legacy-cover.webp',
+        cover_image_url: 'https://example.supabase.co/storage/v1/object/public/media/publications/pub-123/cover-1.webp',
         content: {
-          gl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/member-1/legacy-gl.webp" /></p>',
-          es: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/member-1/legacy-es.webp" /></p>',
+          gl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/publications/pub-123/inline/gl.webp" /></p>',
+          es: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/publications/pub-123/inline/es.webp" /></p>',
         },
       };
     });
@@ -653,9 +653,9 @@ describe('deleteArticleAction', () => {
     expect(callOrder).toEqual(['fetchAssets', 'deleteDb', 'sweepFolder', 'cleanupLegacy']);
     expect(storageModule.sweepPublicationStorageFolder).toHaveBeenCalledWith(expect.anything(), 'pub-123');
     expect(storageModule.cleanupPublicationImages).toHaveBeenCalledWith(expect.anything(), {
-      coverUrl: 'https://example.supabase.co/storage/v1/object/public/media/portadas/member-1/legacy-cover.webp',
-      contentGl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/member-1/legacy-gl.webp" /></p>',
-      contentEs: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/contenido/member-1/legacy-es.webp" /></p>',
+      coverUrl: 'https://example.supabase.co/storage/v1/object/public/media/publications/pub-123/cover-1.webp',
+      contentGl: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/publications/pub-123/inline/gl.webp" /></p>',
+      contentEs: '<p><img src="https://example.supabase.co/storage/v1/object/public/media/publications/pub-123/inline/es.webp" /></p>',
     });
     expect(revalidatePath).toHaveBeenCalledWith('/gl');
     expect(revalidatePath).toHaveBeenCalledWith('/gl/articulos');

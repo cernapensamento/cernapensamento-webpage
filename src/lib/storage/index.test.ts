@@ -121,25 +121,25 @@ describe('Storage index module', () => {
   });
 
   describe('removeStorageImages', () => {
-    it('groups URLs and relative paths by bucket and removes them', async () => {
+    it('extracts canonical media URLs and relative paths and removes them in a single batch', async () => {
       await removeStorageImages(mockSupabase, [
-        'https://supabase.co/storage/v1/object/public/media/publications/inline/u1/fig1.webp',
-        'publications/covers/u1/cover1.webp',
-        'https://srbrnpbtfmilohkicpbb.supabase.co/storage/v1/object/public/imagenes-articulos/portadas/legacy.webp',
+        'https://supabase.co/storage/v1/object/public/media/publications/pub-1/inline/fig1.webp',
+        'publications/pub-1/cover-1.webp',
+        'users/u1/avatar-1.webp',
         null,
         undefined,
       ]);
 
+      expect(mockFrom).toHaveBeenCalledTimes(1);
       expect(mockFrom).toHaveBeenCalledWith('media');
-      expect(mockFrom).toHaveBeenCalledWith('imagenes-articulos');
 
       expect(mockRemove).toHaveBeenCalledWith(
         expect.arrayContaining([
-          'publications/inline/u1/fig1.webp',
-          'publications/covers/u1/cover1.webp',
+          'publications/pub-1/inline/fig1.webp',
+          'publications/pub-1/cover-1.webp',
+          'users/u1/avatar-1.webp',
         ])
       );
-      expect(mockRemove).toHaveBeenCalledWith(['portadas/legacy.webp']);
     });
   });
 
