@@ -5,14 +5,37 @@ import {
   updateArticleState,
   deleteArticleAction,
 } from './articles';
-import { USER_ROLES, PUBLICATION_STATUSES, EDITOR_ACTIONS } from '@/lib/db/schema';
+import {
+  USER_ROLES,
+  PUBLICATION_STATUSES,
+  EDITOR_ACTIONS,
+  resolvePermissionsForRoles,
+} from '@/lib/db/schema';
 import * as authModule from '@/lib/auth';
 import * as dbModule from '@/lib/db';
 import * as supabaseServerModule from '@/lib/supabase/server';
 import * as storageModule from '@/lib/storage';
 import { revalidatePath } from 'next/cache';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
-import type { ProfileRow, PublicationRow, PublicationDetail, PublicationCardItem } from '@/lib/db';
+import type { ProfileRow, PublicationRow, PublicationDetail, PublicationCardItem, UserRole } from '@/lib/db';
+
+function makeAuthSession(userId: string, role: UserRole) {
+  return {
+    user: { id: userId } as unknown as User,
+    profile: { id: userId, role } as unknown as ProfileRow,
+    roles: [role],
+    permissions: resolvePermissionsForRoles([role]),
+    role,
+  };
+}
+
+const UNAUTH_SESSION = {
+  user: null,
+  profile: null,
+  roles: [],
+  permissions: [],
+  role: null,
+};
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
@@ -68,11 +91,7 @@ describe('saveArticleAction', () => {
   };
 
   it('fails if user is not authenticated', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: null,
-      profile: null,
-      role: null,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(UNAUTH_SESSION);
 
     const result = await saveArticleAction(baseInput);
     expect(result.success).toBe(false);
@@ -80,11 +99,9 @@ describe('saveArticleAction', () => {
   });
 
   it('fails if user has reader role', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'reader-1' } as unknown as User,
-      profile: { id: 'reader-1', role: USER_ROLES.READER } as unknown as ProfileRow,
-      role: USER_ROLES.READER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('reader-1', USER_ROLES.READER)
+    );
 
     const result = await saveArticleAction(baseInput);
     expect(result.success).toBe(false);
@@ -92,11 +109,9 @@ describe('saveArticleAction', () => {
   });
 
   it('rejects direct publish if user role is not admin or founder', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'member-1' } as unknown as User,
-      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('member-1', USER_ROLES.MEMBER)
+    );
 
     const result = await saveArticleAction({
       ...baseInput,
@@ -108,11 +123,9 @@ describe('saveArticleAction', () => {
   });
 
   it('creates a draft publication successfully for a member', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'member-1' } as unknown as User,
-      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('member-1', USER_ROLES.MEMBER)
+    );
 
     vi.mocked(dbModule.createPublication).mockResolvedValue({
       data: { id: 'new-pub-123' } as unknown as PublicationRow,
@@ -145,11 +158,9 @@ describe('saveArticleAction', () => {
   });
 
   it('allows an admin or founder to directly publish a new article', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'admin-1' } as unknown as User,
-      profile: { id: 'admin-1', role: USER_ROLES.ADMIN } as unknown as ProfileRow,
-      role: USER_ROLES.ADMIN,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('admin-1', USER_ROLES.ADMIN)
+    );
 
     vi.mocked(dbModule.createPublication).mockResolvedValue({
       data: { id: 'admin-pub-1' } as unknown as PublicationRow,
@@ -176,11 +187,9 @@ describe('saveArticleAction', () => {
 
   it('updates an existing publication, preserving original published_at if already published', async () => {
     const originalPublishedAt = '2026-05-01T10:00:00Z';
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'author-1' } as unknown as User,
-      profile: { id: 'author-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
-      role: USER_ROLES.FOUNDER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('author-1', USER_ROLES.FOUNDER)
+    );
 
     vi.mocked(dbModule.getPublicationById).mockResolvedValue({
       id: 'pub-exist-1',
@@ -217,11 +226,9 @@ describe('saveArticleAction', () => {
 
   it('stamps a fresh published_at when publishing an existing draft even if stale published_at is present', async () => {
     const staleDraftDate = '2026-01-01T10:00:00Z';
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'author-1' } as unknown as User,
-      profile: { id: 'author-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
-      role: USER_ROLES.FOUNDER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('author-1', USER_ROLES.FOUNDER)
+    );
 
     vi.mocked(dbModule.getPublicationById).mockResolvedValue({
       id: 'pub-draft-1',
@@ -260,11 +267,9 @@ describe('saveArticleAction', () => {
   });
 
   it('clears published_at when an existing publication is returned to draft', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'author-1' } as unknown as User,
-      profile: { id: 'author-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
-      role: USER_ROLES.FOUNDER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('author-1', USER_ROLES.FOUNDER)
+    );
 
     vi.mocked(dbModule.getPublicationById).mockResolvedValue({
       id: 'pub-exist-2',
@@ -300,11 +305,9 @@ describe('saveArticleAction', () => {
   });
 
   it('rejects editing if user is neither author nor admin/founder', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'stranger-1' } as unknown as User,
-      profile: { id: 'stranger-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('stranger-1', USER_ROLES.MEMBER)
+    );
 
     vi.mocked(dbModule.getPublicationById).mockResolvedValue({
       id: 'pub-stranger-1',
@@ -324,11 +327,9 @@ describe('saveArticleAction', () => {
   });
 
   it('omits blank titles on draft saves instead of injecting placeholder titles and derives a safe slug', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'member-1' } as unknown as User,
-      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('member-1', USER_ROLES.MEMBER)
+    );
 
     vi.mocked(dbModule.createPublication).mockResolvedValue({
       data: { id: 'untitled-pub-1' } as unknown as PublicationRow,
@@ -357,11 +358,9 @@ describe('saveArticleAction', () => {
   });
 
   it('saves a monolingual es-only publication, strips gl keys, syncs original_language, and derives slug from es', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'founder-1' } as unknown as User,
-      profile: { id: 'founder-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
-      role: USER_ROLES.FOUNDER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('founder-1', USER_ROLES.FOUNDER)
+    );
 
     vi.mocked(dbModule.createPublication).mockResolvedValue({
       data: { id: 'mono-es-1' } as unknown as PublicationRow,
@@ -397,11 +396,9 @@ describe('saveArticleAction', () => {
   });
 
   it('rejects monolingual publish when title or meaningful body is missing', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'founder-1' } as unknown as User,
-      profile: { id: 'founder-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
-      role: USER_ROLES.FOUNDER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('founder-1', USER_ROLES.FOUNDER)
+    );
 
     const result = await saveArticleAction({
       ...baseInput,
@@ -419,11 +416,9 @@ describe('saveArticleAction', () => {
   });
 
   it('rejects bilingual submit-for-review when one language is incomplete', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'member-1' } as unknown as User,
-      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('member-1', USER_ROLES.MEMBER)
+    );
 
     const result = await saveArticleAction({
       ...baseInput,
@@ -441,11 +436,9 @@ describe('saveArticleAction', () => {
   });
 
   it('rejects completely empty draft with localized error', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'member-1' } as unknown as User,
-      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('member-1', USER_ROLES.MEMBER)
+    );
 
     const result = await saveArticleAction({
       ...baseInput,
@@ -461,11 +454,7 @@ describe('saveArticleAction', () => {
   });
 
   it('returns localized Spanish error messages when lang is es', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: null,
-      profile: null,
-      role: null,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(UNAUTH_SESSION);
 
     const result = await saveArticleAction({
       ...baseInput,
@@ -477,11 +466,9 @@ describe('saveArticleAction', () => {
   });
 
   it('persists show_index and strips legacy <nav data-type="article-index"> blocks before saving', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'founder-1' } as unknown as User,
-      profile: { id: 'founder-1', role: USER_ROLES.FOUNDER } as unknown as ProfileRow,
-      role: USER_ROLES.FOUNDER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('founder-1', USER_ROLES.FOUNDER)
+    );
 
     vi.mocked(dbModule.createPublication).mockResolvedValue({
       data: { id: 'pub-idx-1' } as unknown as PublicationRow,
@@ -544,11 +531,7 @@ describe('updateArticleState', () => {
   });
 
   it('fails if user is not authenticated', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: null,
-      profile: null,
-      role: null,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(UNAUTH_SESSION);
 
     const result = await updateArticleState('pub-1', PUBLICATION_STATUSES.PUBLISHED);
     expect(result.success).toBe(false);
@@ -556,11 +539,9 @@ describe('updateArticleState', () => {
   });
 
   it('fails if user is not an admin or founder', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'reader-1' } as unknown as User,
-      profile: { id: 'reader-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('reader-1', USER_ROLES.MEMBER)
+    );
 
     const result = await updateArticleState('pub-1', PUBLICATION_STATUSES.PUBLISHED);
     expect(result.success).toBe(false);
@@ -568,11 +549,9 @@ describe('updateArticleState', () => {
   });
 
   it('successfully updates publication status when authorized', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'admin-1' } as unknown as User,
-      profile: { id: 'admin-1', role: USER_ROLES.ADMIN } as unknown as ProfileRow,
-      role: USER_ROLES.ADMIN,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('admin-1', USER_ROLES.ADMIN)
+    );
     vi.mocked(dbModule.updatePublicationStatus).mockResolvedValue({
       success: true,
       error: null,
@@ -595,11 +574,7 @@ describe('deleteArticleAction', () => {
   });
 
   it('rejects unauthenticated callers without touching DB or storage', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: null,
-      profile: null,
-      role: null,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(UNAUTH_SESSION);
 
     const result = await deleteArticleAction('pub-123', 'gl');
 
@@ -614,11 +589,9 @@ describe('deleteArticleAction', () => {
   it('deletes the DB row first via the authenticated SSR client and sweeps storage + legacy assets only after DB deletion succeeds', async () => {
     const callOrder: string[] = [];
 
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'member-1' } as unknown as User,
-      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('member-1', USER_ROLES.MEMBER)
+    );
 
     vi.mocked(dbModule.getPublicationAssetsForCleanup).mockImplementation(async () => {
       callOrder.push('fetchAssets');
@@ -666,11 +639,9 @@ describe('deleteArticleAction', () => {
   });
 
   it('performs zero storage mutations and returns a localized error when DB deletion is blocked by RLS or fails', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'member-1' } as unknown as User,
-      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('member-1', USER_ROLES.MEMBER)
+    );
 
     vi.mocked(dbModule.getPublicationAssetsForCleanup).mockResolvedValue({
       author_id: 'member-1',
@@ -693,11 +664,9 @@ describe('deleteArticleAction', () => {
   });
 
   it('filters out foreign publication URLs, user avatars, and _orphans before privileged cleanup', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'member-1' } as unknown as User,
-      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('member-1', USER_ROLES.MEMBER)
+    );
 
     vi.mocked(dbModule.getPublicationAssetsForCleanup).mockResolvedValue({
       author_id: 'member-1',
@@ -728,11 +697,9 @@ describe('deleteArticleAction', () => {
   });
 
   it('skips cleanupPublicationImages completely when draft only references non-owned URLs', async () => {
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'member-1' } as unknown as User,
-      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('member-1', USER_ROLES.MEMBER)
+    );
 
     vi.mocked(dbModule.getPublicationAssetsForCleanup).mockResolvedValue({
       author_id: 'member-1',
@@ -756,11 +723,9 @@ describe('deleteArticleAction', () => {
   it('returns success and revalidates paths even when storage sweep or legacy cleanup throws after DB deletion', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue({
-      user: { id: 'member-1' } as unknown as User,
-      profile: { id: 'member-1', role: USER_ROLES.MEMBER } as unknown as ProfileRow,
-      role: USER_ROLES.MEMBER,
-    });
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makeAuthSession('member-1', USER_ROLES.MEMBER)
+    );
 
     vi.mocked(dbModule.getPublicationAssetsForCleanup).mockResolvedValue({
       author_id: 'member-1',
