@@ -28,7 +28,6 @@ describe('POST /api/translate', () => {
       profile: null,
       roles: [],
       permissions: [],
-      role: null,
     });
 
     const req = new Request('http://localhost:3000/api/translate', {
@@ -52,7 +51,6 @@ describe('POST /api/translate', () => {
       profile: null,
       roles: [USER_ROLES.READER],
       permissions: resolvePermissionsForRoles([USER_ROLES.READER]),
-      role: USER_ROLES.READER,
     });
 
     const req = new Request('http://localhost:3000/api/translate', {
@@ -76,7 +74,6 @@ describe('POST /api/translate', () => {
       profile: null,
       roles: [USER_ROLES.MEMBER],
       permissions: resolvePermissionsForRoles([USER_ROLES.MEMBER]),
-      role: USER_ROLES.MEMBER,
     });
 
     const req = new Request('http://localhost:3000/api/translate', {
@@ -98,7 +95,6 @@ describe('POST /api/translate', () => {
       profile: null,
       roles: [USER_ROLES.MEMBER],
       permissions: resolvePermissionsForRoles([USER_ROLES.MEMBER]),
-      role: USER_ROLES.MEMBER,
     });
 
     const req = new Request('http://localhost:3000/api/translate', {
@@ -127,7 +123,6 @@ describe('POST /api/translate', () => {
         profile: null,
         roles: [],
         permissions,
-        role: USER_ROLES.MEMBER,
       });
 
       const req = new Request('http://localhost:3000/api/translate', {
@@ -166,7 +161,6 @@ describe('POST /api/translate', () => {
         profile: null,
         roles: c.roles,
         permissions: c.permissions,
-        role: USER_ROLES.READER,
       });
 
       const req = new Request('http://localhost:3000/api/translate', {

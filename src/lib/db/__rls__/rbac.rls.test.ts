@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const isDbTestEnabled = process.env.RUN_DB_TESTS === '1';
 
-describe.skipIf(!isDbTestEnabled)('RBAC Expand Phase RLS Integration Tests (Local Supabase)', () => {
+describe.skipIf(!isDbTestEnabled)('RBAC RLS Integration Tests (Local Supabase)', () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
   const anonKey =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
@@ -35,7 +35,7 @@ describe.skipIf(!isDbTestEnabled)('RBAC Expand Phase RLS Integration Tests (Loca
     return { client, user: data.user };
   }
 
-  async function createEphemeralUser(prefix: string, initialLegacyRole?: 'guest' | 'member') {
+  async function createEphemeralUser(prefix: string, initialRole?: 'guest' | 'member') {
     const email = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
     const password = 'Password123!';
     const { data, error } = await serviceClient.auth.admin.createUser({
@@ -48,13 +48,13 @@ describe.skipIf(!isDbTestEnabled)('RBAC Expand Phase RLS Integration Tests (Loca
       throw new Error(`Failed to create ephemeral user ${email}: ${error?.message}`);
     }
     createdUserIds.push(data.user.id);
-    if (initialLegacyRole) {
+    if (initialRole) {
+      await serviceClient.from('user_roles').delete().eq('user_id', data.user.id);
       const { error: roleError } = await serviceClient
-        .from('users')
-        .update({ role: initialLegacyRole })
-        .eq('id', data.user.id);
+        .from('user_roles')
+        .insert({ user_id: data.user.id, role_id: initialRole });
       if (roleError) {
-        throw new Error(`Failed to set legacy role ${initialLegacyRole}: ${roleError.message}`);
+        throw new Error(`Failed to set role ${initialRole}: ${roleError.message}`);
       }
     }
     const { client } = await createAuthenticatedClient(email, password);

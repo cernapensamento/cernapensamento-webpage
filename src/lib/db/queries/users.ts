@@ -45,7 +45,6 @@ const PUBLIC_USER_SELECT = [
   USER_COLS.SLUG,
   USER_COLS.BIO,
   USER_COLS.AVATAR_URL,
-  USER_COLS.ROLE,
   `${DB_TABLES.USER_ROLES}(${USER_ROLE_COLS.ROLE_ID})`,
 ].join(', ');
 
@@ -279,7 +278,6 @@ export async function getColumnists(
         ${USER_COLS.SLUG},
         ${USER_COLS.BIO},
         ${USER_COLS.AVATAR_URL},
-        ${USER_COLS.ROLE},
         ${DB_TABLES.USER_ROLES}!inner(${USER_ROLE_COLS.ROLE_ID})
       `)
       .eq(`${DB_TABLES.USER_ROLES}.${USER_ROLE_COLS.ROLE_ID}`, USER_ROLES.FOUNDER)
@@ -312,7 +310,6 @@ export async function getColumnists(
           bio: (rawRow[USER_COLS.BIO] as LocalizedString | null) ?? null,
           avatar_url: (rawRow[USER_COLS.AVATAR_URL] as string | null) ?? null,
           roles: publicRoles,
-          role: (rawRow[USER_COLS.ROLE] as UserRole | undefined) ?? USER_ROLES.FOUNDER,
         });
       }
     }
@@ -339,7 +336,6 @@ interface RawAuthorPublicationRow {
     slug: string | null;
     bio: unknown;
     avatar_url: string | null;
-    role: UserRole;
     user_roles?: Array<{ role_id: string }> | null;
   } | null;
 }
@@ -365,7 +361,6 @@ async function fetchPublishedAuthorsPage(
       ${USER_COLS.SLUG},
       ${USER_COLS.BIO},
       ${USER_COLS.AVATAR_URL},
-      ${USER_COLS.ROLE},
       ${DB_TABLES.USER_ROLES} (
         ${USER_ROLE_COLS.ROLE_ID}
       )
@@ -439,7 +434,6 @@ export async function getPublishedAuthors(
             avatar_url: author.avatar_url,
             roles: publicRoles,
             publicRole: resolvePrimaryPublicRole(publicRoles),
-            role: author.role,
             published_count: 1,
             latest_publication_at: row.published_at || row.created_at,
             latest_publication_title: row.title,
@@ -498,7 +492,6 @@ export async function getAuthorProfileBySlug(
     avatar_url: user.avatar_url,
     roles: user.roles ?? [],
     publicRole: resolvePrimaryPublicRole(user.roles),
-    role: user.role,
     publications,
   };
 }

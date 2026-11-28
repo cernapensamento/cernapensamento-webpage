@@ -7,7 +7,6 @@ import {
   hasPermission,
   PERMISSIONS,
   PUBLICATION_STATUSES,
-  USER_ROLES,
 } from '@/lib/db';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
@@ -17,7 +16,7 @@ interface Props {
 }
 
 export default async function EditarArticuloPage({ params }: Props) {
-  const [resolvedParams, { user, role, permissions }] = await Promise.all([
+  const [resolvedParams, { user, permissions }] = await Promise.all([
     params,
     getAuthenticatedUser(),
   ]);
@@ -62,7 +61,6 @@ export default async function EditarArticuloPage({ params }: Props) {
   return (
     <EditarArticuloForm
       publication={publication}
-      userRole={role || USER_ROLES.READER}
       permissions={permissions}
       lang={lang}
       dict={dict.articleEditor}

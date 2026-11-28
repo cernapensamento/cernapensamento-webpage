@@ -8,7 +8,6 @@ export interface Columnist {
   instagram: string;
   image: string;
   roles: readonly UserRole[];
-  role?: UserRole;
 }
 
 export const COLUMNISTS: readonly Columnist[] = [
@@ -19,7 +18,6 @@ export const COLUMNISTS: readonly Columnist[] = [
     instagram: '@diegoaraujorodriguez_',
     image: '/images/columnistas/diego.webp',
     roles: [USER_ROLES.FOUNDER],
-    role: USER_ROLES.FOUNDER,
   },
   {
     slug: 'hector-gonzalez',
@@ -28,7 +26,6 @@ export const COLUMNISTS: readonly Columnist[] = [
     instagram: '@hector.gonzalezzz_',
     image: '/images/columnistas/hector.webp',
     roles: [USER_ROLES.FOUNDER],
-    role: USER_ROLES.FOUNDER,
   },
   {
     slug: 'denis-fernandez',
@@ -37,7 +34,6 @@ export const COLUMNISTS: readonly Columnist[] = [
     instagram: '@denisfdeez',
     image: '/images/columnistas/denis.webp',
     roles: [USER_ROLES.FOUNDER],
-    role: USER_ROLES.FOUNDER,
   },
   {
     slug: 'anxo-perez',
@@ -46,7 +42,6 @@ export const COLUMNISTS: readonly Columnist[] = [
     instagram: '@anxoperezprego',
     image: '/images/columnistas/anxo.webp',
     roles: [USER_ROLES.FOUNDER],
-    role: USER_ROLES.FOUNDER,
   },
 ];
 

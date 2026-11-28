@@ -118,18 +118,18 @@ SELECT is(
   'admin role has all 19 permissions'
 );
 
--- Backfill check: every seeded public.users row has its legacy role in user_roles
+-- Seeded users check: every seeded public.users row has at least one role in user_roles
 SELECT is(
   (
     SELECT count(*)
     FROM public.users u
     WHERE NOT EXISTS (
       SELECT 1 FROM public.user_roles ur
-      WHERE ur.user_id = u.id AND ur.role_id = u.role::text
+      WHERE ur.user_id = u.id
     )
   ),
   0::bigint,
-  'all existing public.users rows are backfilled into public.user_roles'
+  'all seeded public.users rows have an assignment in public.user_roles'
 );
 
 -- RESTRICT FK on role_id blocks deleting an in-use role
@@ -140,26 +140,12 @@ SELECT throws_ok(
   'deleting an assigned role from public.roles is rejected by RESTRICT FK'
 );
 
--- Legacy role sync trigger keeps user_roles synced on INSERT and UPDATE OF role,
--- and CASCADE deletes user_roles when user is deleted
+-- Deleting public.users row cascades to public.user_roles
 INSERT INTO auth.users (id, email, raw_user_meta_data)
-VALUES ('30000000-0000-0000-0000-000000000001', 'rbac-sync-test@example.test', '{"full_name":"RBAC Sync"}');
-INSERT INTO public.users (id, full_name, role)
-VALUES ('30000000-0000-0000-0000-000000000001', 'RBAC Sync', 'guest')
-ON CONFLICT (id) DO UPDATE SET role = EXCLUDED.role;
-
-SELECT results_eq(
-  $$SELECT role_id FROM public.user_roles WHERE user_id = '30000000-0000-0000-0000-000000000001' ORDER BY role_id$$,
-  $$VALUES ('guest'::text)$$,
-  'legacy role sync trigger inserts/updates user_roles on public.users change'
-);
-
-UPDATE public.users SET role = 'member' WHERE id = '30000000-0000-0000-0000-000000000001';
-SELECT results_eq(
-  $$SELECT role_id FROM public.user_roles WHERE user_id = '30000000-0000-0000-0000-000000000001' ORDER BY role_id$$,
-  $$VALUES ('member'::text)$$,
-  'legacy role sync trigger replaces old role with new role on UPDATE OF role'
-);
+VALUES ('30000000-0000-0000-0000-000000000001', 'rbac-cascade-test@example.test', '{"full_name":"RBAC Cascade"}');
+INSERT INTO public.user_roles (user_id, role_id)
+VALUES ('30000000-0000-0000-0000-000000000001', 'guest')
+ON CONFLICT (user_id, role_id) DO NOTHING;
 
 DELETE FROM public.users WHERE id = '30000000-0000-0000-0000-000000000001';
 SELECT is(
@@ -247,7 +233,9 @@ SELECT is(public.has_permission('desk:access'), false, 'anonymous/null auth.uid(
 -- Guest quota enforcement and automatic lift with overlapping member role
 INSERT INTO auth.users (id, email, raw_user_meta_data)
 VALUES ('30000000-0000-0000-0000-000000000003', 'rbac-quota-guest@example.test', '{"full_name":"Quota Guest"}');
-UPDATE public.users SET role = 'guest' WHERE id = '30000000-0000-0000-0000-000000000003';
+DELETE FROM public.user_roles WHERE user_id = '30000000-0000-0000-0000-000000000003';
+INSERT INTO public.user_roles (user_id, role_id)
+VALUES ('30000000-0000-0000-0000-000000000003', 'guest');
 
 INSERT INTO public.publications (id, author_id, slug, status, original_language, title, content, created_at, updated_at)
 VALUES

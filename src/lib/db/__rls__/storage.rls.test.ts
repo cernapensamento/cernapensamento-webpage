@@ -139,7 +139,11 @@ describe.skipIf(!isDbTestEnabled)('Storage RLS Integration Tests (Local Supabase
       expect(createGuestErr).toBeNull();
       const guestUserId = createdGuest.user!.id;
 
-      await adminClient.from('users').update({ role: 'guest' }).eq('id', guestUserId);
+      await adminClient.from('user_roles').delete().eq('user_id', guestUserId);
+      const { error: guestRoleErr } = await adminClient
+        .from('user_roles')
+        .insert({ user_id: guestUserId, role_id: 'guest' });
+      expect(guestRoleErr).toBeNull();
 
       const writers = [guestEmail, 'martino.rodriguez@cerna.org'];
 

@@ -25,7 +25,6 @@ export interface AuthorDirectoryItem {
   avatar_url: string | null;
   bio: string;
   roles?: UserRole[];
-  role?: UserRole;
   published_count: number;
   latest_publication_at: string | null;
   latest_publication_title: string | null;

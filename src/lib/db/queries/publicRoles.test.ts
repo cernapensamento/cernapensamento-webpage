@@ -29,7 +29,6 @@ describe('getColumnists (founder-only via user_roles)', () => {
           slug: 'diego-araujo',
           bio: { gl: 'Ensaísta' },
           avatar_url: null,
-          role: USER_ROLES.ADMIN,
           user_roles: [{ role_id: USER_ROLES.FOUNDER }, { role_id: USER_ROLES.ADMIN }],
         },
         {
@@ -38,7 +37,6 @@ describe('getColumnists (founder-only via user_roles)', () => {
           slug: 'admin',
           bio: null,
           avatar_url: null,
-          role: USER_ROLES.ADMIN,
           user_roles: [{ role_id: USER_ROLES.ADMIN }],
         },
         {
@@ -47,7 +45,6 @@ describe('getColumnists (founder-only via user_roles)', () => {
           slug: null,
           bio: null,
           avatar_url: null,
-          role: USER_ROLES.FOUNDER,
           user_roles: [{ role_id: USER_ROLES.FOUNDER }],
         },
       ],
@@ -61,6 +58,7 @@ describe('getColumnists (founder-only via user_roles)', () => {
 
     expect(from).toHaveBeenCalledWith(DB_TABLES.USERS);
     expect(select.mock.calls[0][0]).toContain(`${DB_TABLES.USER_ROLES}!inner(${USER_ROLE_COLS.ROLE_ID})`);
+    expect(select.mock.calls[0][0]).not.toMatch(/(^|[\s,])role([\s,]|$)/);
     expect(eq).toHaveBeenCalledWith(`${DB_TABLES.USER_ROLES}.${USER_ROLE_COLS.ROLE_ID}`, USER_ROLES.FOUNDER);
     expect(not).toHaveBeenCalledWith(USER_COLS.SLUG, 'is', null);
 
@@ -70,6 +68,7 @@ describe('getColumnists (founder-only via user_roles)', () => {
       slug: 'diego-araujo',
       roles: [USER_ROLES.FOUNDER],
     });
+    expect(columnists[0]).not.toHaveProperty('role');
     expect(columnists[0].roles).not.toContain(USER_ROLES.ADMIN);
   });
 });
@@ -84,7 +83,6 @@ describe('public user & author queries (is_public role filtering and priority)',
         slug: 'ana',
         bio: null,
         avatar_url: null,
-        role: USER_ROLES.ADMIN,
         user_roles: [
           { role_id: USER_ROLES.GUEST },
           { role_id: USER_ROLES.ADMIN },
@@ -111,6 +109,7 @@ describe('public user & author queries (is_public role filtering and priority)',
     const byId = await getUserById('c7b8d6f0-1234-5678-90ab-cdef12345678', client);
 
     expect(selectCalls[0]).toContain(`${DB_TABLES.USER_ROLES}(${USER_ROLE_COLS.ROLE_ID})`);
+    expect(selectCalls[0]).not.toMatch(/(^|[\s,])role([\s,]|$)/);
     expect(selectCalls[0]).not.toContain(USER_COLS.NEWSLETTER_SUBSCRIBED);
     expect(selectCalls[1]).toContain(`${DB_TABLES.USER_ROLES}(${USER_ROLE_COLS.ROLE_ID})`);
     expect(selectCalls[1]).not.toContain(USER_COLS.NEWSLETTER_SUBSCRIBED);
@@ -142,7 +141,6 @@ describe('public user & author queries (is_public role filtering and priority)',
           slug: 'fga',
           bio: null,
           avatar_url: null,
-          role: USER_ROLES.ADMIN,
           user_roles: [
             { role_id: USER_ROLES.GUEST },
             { role_id: USER_ROLES.ADMIN },
@@ -165,7 +163,6 @@ describe('public user & author queries (is_public role filtering and priority)',
           slug: 'mg',
           bio: null,
           avatar_url: null,
-          role: USER_ROLES.GUEST,
           user_roles: [{ role_id: USER_ROLES.GUEST }, { role_id: USER_ROLES.MEMBER }],
         },
       },
@@ -184,7 +181,6 @@ describe('public user & author queries (is_public role filtering and priority)',
           slug: 'admin-only',
           bio: null,
           avatar_url: null,
-          role: USER_ROLES.ADMIN,
           user_roles: [{ role_id: USER_ROLES.ADMIN }, { role_id: USER_ROLES.READER }],
         },
       },
@@ -204,12 +200,14 @@ describe('public user & author queries (is_public role filtering and priority)',
     const authors = await getPublishedAuthors(client);
 
     expect(selectCalls[0]).toContain(`${DB_TABLES.USER_ROLES}`);
+    expect(selectCalls[0]).not.toMatch(/(^|[\s,])role([\s,]|$)/);
     expect(selectCalls[0]).not.toContain(PUBLICATION_COLS.CONTENT);
     expect(selectCalls[0]).not.toContain(USER_COLS.NEWSLETTER_SUBSCRIBED);
 
     const byId = new Map(authors.map((a) => [a.id, a]));
     expect(byId.get('a-founder-guest')?.roles).toEqual([USER_ROLES.FOUNDER, USER_ROLES.GUEST]);
     expect(byId.get('a-founder-guest')?.publicRole).toBe(USER_ROLES.FOUNDER);
+    expect(byId.get('a-founder-guest')).not.toHaveProperty('role');
 
     expect(byId.get('a-member-guest')?.roles).toEqual([USER_ROLES.MEMBER, USER_ROLES.GUEST]);
     expect(byId.get('a-member-guest')?.publicRole).toBe(USER_ROLES.MEMBER);
@@ -232,7 +230,6 @@ describe('public user & author queries (is_public role filtering and priority)',
                 slug: 'admin-only-author',
                 bio: null,
                 avatar_url: null,
-                role: USER_ROLES.ADMIN,
                 user_roles: [{ role_id: USER_ROLES.ADMIN }],
               },
               error: null,

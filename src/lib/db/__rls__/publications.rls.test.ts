@@ -272,7 +272,7 @@ describe.skipIf(!isDbTestEnabled)('Publications RLS Integration Tests (Local Sup
 
     const { data, error } = await anonClient
       .from('users')
-      .select('id, full_name, slug, bio, avatar_url, role')
+      .select('id, full_name, slug, bio, avatar_url')
       .limit(1);
 
     expect(error).toBeNull();

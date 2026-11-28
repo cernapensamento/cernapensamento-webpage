@@ -93,7 +93,6 @@ interface Props {
   publication?: PublicationDetail;
   /** Backwards compatibility alias for publication */
   articulo?: PublicationDetail;
-  userRole?: string;
   permissions?: readonly PermissionValue[];
   lang?: string;
   dict?: ArticleEditorDict;
@@ -103,7 +102,6 @@ export default function EditarArticuloForm({
   mode = 'edit',
   publication,
   articulo,
-  userRole,
   permissions,
   lang: propLang,
   dict: propDict,
@@ -185,7 +183,6 @@ export default function EditarArticuloForm({
       onSave={handleSave}
       onDraftCreated={({ id }) => setPublicationId(id)}
       isPublishing={isPublishing}
-      userRole={userRole}
       permissions={permissions}
     />
   );

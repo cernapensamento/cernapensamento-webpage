@@ -3,7 +3,6 @@ import type { EmailOtpType, SupabaseClient } from '@supabase/supabase-js';
 import {
   PERMISSIONS,
   hasPermission,
-  resolveLegacyPrimaryRole,
 } from '@/lib/db/schema';
 import type { PermissionValue, ProfileRow, UserRole } from '@/lib/db/types';
 import { getUserById, getUserRolesAndPermissions } from '@/lib/db/queries/users';
@@ -38,7 +37,6 @@ export async function getAuthenticatedUser() {
         profile: null,
         roles: [] as UserRole[],
         permissions: [] as PermissionValue[],
-        role: null,
       };
     }
 
@@ -47,19 +45,15 @@ export async function getAuthenticatedUser() {
       getUserRolesAndPermissions(user.id, supabase),
     ]);
 
-    const role: UserRole = resolveLegacyPrimaryRole(roles);
-
-    const compatProfile: ProfileRow | null = userProfile
+    const profile: ProfileRow | null = userProfile
       ? {
           ...userProfile,
           roles,
           permissions,
-          role,
-          rol: role,
         }
       : null;
 
-    return { user, profile: compatProfile, roles, permissions, role };
+    return { user, profile, roles, permissions };
   } catch (err) {
     console.warn('[Auth] Unexpected error resolving authenticated user:', formatDbError(err));
     return {
@@ -67,7 +61,6 @@ export async function getAuthenticatedUser() {
       profile: null,
       roles: [] as UserRole[],
       permissions: [] as PermissionValue[],
-      role: null,
     };
   }
 }

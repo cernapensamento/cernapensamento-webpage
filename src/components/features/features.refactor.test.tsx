@@ -549,7 +549,7 @@ describe('CommentsSection & ProfileDashboard DAL integration', () => {
           bio: { gl: 'Poeta galega' },
           avatar_url: null,
           newsletter_subscribed: true,
-          role: USER_ROLES.FOUNDER,
+          roles: [USER_ROLES.FOUNDER],
         }}
         user={
           {

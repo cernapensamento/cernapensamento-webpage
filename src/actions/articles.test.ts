@@ -25,10 +25,9 @@ import type { ProfileRow, PublicationRow, PublicationDetail, PublicationCardItem
 function makeAuthSession(userId: string, role: UserRole) {
   return {
     user: { id: userId } as unknown as User,
-    profile: { id: userId, role } as unknown as ProfileRow,
+    profile: { id: userId, roles: [role] } as unknown as ProfileRow,
     roles: [role],
     permissions: resolvePermissionsForRoles([role]),
-    role,
   };
 }
 
@@ -42,7 +41,6 @@ function makePermissionSession(
     profile: { id: userId, roles, permissions } as unknown as ProfileRow,
     roles,
     permissions: [...permissions],
-    role: roles[0] ?? USER_ROLES.READER,
   };
 }
 
@@ -51,7 +49,6 @@ const UNAUTH_SESSION = {
   profile: null,
   roles: [],
   permissions: [],
-  role: null,
 };
 
 vi.mock('next/cache', () => ({

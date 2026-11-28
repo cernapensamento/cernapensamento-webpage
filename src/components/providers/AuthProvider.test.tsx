@@ -21,7 +21,6 @@ function ConsumerA() {
     <div>
       <span data-testid="consumer-a-loading">{String(loading)}</span>
       <span data-testid="consumer-a-user">{user?.id || 'no-user'}</span>
-      <span data-testid="consumer-a-role">{profile?.role || 'no-role'}</span>
       <span data-testid="consumer-a-roles">{profile?.roles?.join(',') || 'no-roles'}</span>
       <span data-testid="consumer-a-perms">{profile?.permissions?.join(',') || 'no-perms'}</span>
     </div>
@@ -34,7 +33,6 @@ function ConsumerB() {
     <div>
       <span data-testid="consumer-b-loading">{String(loading)}</span>
       <span data-testid="consumer-b-user">{user?.id || 'no-user'}</span>
-      <span data-testid="consumer-b-role">{profile?.role || 'no-role'}</span>
       <span data-testid="consumer-b-roles">{profile?.roles?.join(',') || 'no-roles'}</span>
     </div>
   );
@@ -72,8 +70,6 @@ describe('AuthProvider & useAuth Integration', () => {
     vi.mocked(authClient.fetchClientAuthProfile).mockResolvedValue({
       roles: [USER_ROLES.FOUNDER, USER_ROLES.ADMIN],
       permissions: founderAdminPerms,
-      role: USER_ROLES.ADMIN,
-      rol: USER_ROLES.ADMIN,
       avatar_url: 'https://example.com/avatar.webp',
       full_name: 'Pablo Admin',
     });
@@ -83,7 +79,6 @@ describe('AuthProvider & useAuth Integration', () => {
     render(<ConsumerA />);
     expect(screen.getByTestId('consumer-a-loading').textContent).toBe('false');
     expect(screen.getByTestId('consumer-a-user').textContent).toBe('no-user');
-    expect(screen.getByTestId('consumer-a-role').textContent).toBe('no-role');
     expect(screen.getByTestId('consumer-a-roles').textContent).toBe('no-roles');
     expect(screen.getByTestId('consumer-a-perms').textContent).toBe('no-perms');
   });
@@ -102,8 +97,6 @@ describe('AuthProvider & useAuth Integration', () => {
 
     expect(screen.getByTestId('consumer-a-user').textContent).toBe('usr-123');
     expect(screen.getByTestId('consumer-b-user').textContent).toBe('usr-123');
-    expect(screen.getByTestId('consumer-a-role').textContent).toBe('admin');
-    expect(screen.getByTestId('consumer-b-role').textContent).toBe('admin');
     expect(screen.getByTestId('consumer-a-roles').textContent).toBe('founder,admin');
     expect(screen.getByTestId('consumer-b-roles').textContent).toBe('founder,admin');
     expect(screen.getByTestId('consumer-a-perms').textContent).toContain(
@@ -114,12 +107,10 @@ describe('AuthProvider & useAuth Integration', () => {
     expect(authClient.fetchClientAuthProfile).toHaveBeenCalledWith('usr-123', expect.anything());
   });
 
-  it('ignores JWT app_metadata.user_role when DB returns empty roles and zero permissions', async () => {
+  it('ignores stale JWT role claim when DB returns empty roles and zero permissions', async () => {
     vi.mocked(authClient.fetchClientAuthProfile).mockResolvedValue({
       roles: [],
       permissions: [],
-      role: USER_ROLES.READER,
-      rol: USER_ROLES.READER,
       avatar_url: null,
       full_name: 'Zero Role User',
     });
@@ -134,12 +125,11 @@ describe('AuthProvider & useAuth Integration', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByTestId('consumer-a-role').textContent).toBe('reader');
     expect(screen.getByTestId('consumer-a-roles').textContent).toBe('no-roles');
     expect(screen.getByTestId('consumer-a-perms').textContent).toBe('no-perms');
   });
 
-  it('keeps profile null when fetchClientAuthProfile returns null even if JWT has app_metadata.user_role', async () => {
+  it('keeps profile null when fetchClientAuthProfile returns null even if JWT has stale claim', async () => {
     vi.mocked(authClient.fetchClientAuthProfile).mockResolvedValue(null);
 
     render(
@@ -153,7 +143,6 @@ describe('AuthProvider & useAuth Integration', () => {
     });
 
     expect(screen.getByTestId('consumer-a-user').textContent).toBe('usr-123');
-    expect(screen.getByTestId('consumer-a-role').textContent).toBe('no-role');
     expect(screen.getByTestId('consumer-a-roles').textContent).toBe('no-roles');
     expect(screen.getByTestId('consumer-a-perms').textContent).toBe('no-perms');
   });
@@ -180,8 +169,6 @@ describe('AuthProvider & useAuth Integration', () => {
 
     expect(screen.getByTestId('consumer-a-user').textContent).toBe('no-user');
     expect(screen.getByTestId('consumer-b-user').textContent).toBe('no-user');
-    expect(screen.getByTestId('consumer-a-role').textContent).toBe('no-role');
-    expect(screen.getByTestId('consumer-b-role').textContent).toBe('no-role');
     expect(screen.getByTestId('consumer-a-roles').textContent).toBe('no-roles');
     expect(screen.getByTestId('consumer-a-perms').textContent).toBe('no-perms');
   });

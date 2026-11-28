@@ -15,7 +15,7 @@ All public and private pages live under `src/app/[lang]/`.
 - Wraps the subtree in a clean provider hierarchy:
   1. `ThemeProvider` (`src/components/ThemeProvider.tsx`) — class-based `light` / `dark` theme management.
   2. `FeedbackProvider` (`src/components/ui/FeedbackProvider.tsx`) — app-wide confirm/prompt dialogs and toasts.
-  3. `AuthProvider` (`src/components/providers/AuthProvider.tsx`) — client-side Supabase auth state & role hydration.
+  3. `AuthProvider` (`src/components/providers/AuthProvider.tsx`) — client-side Supabase auth state, DB-backed `roles`, and atomic `permissions` hydration (`fetchClientAuthProfile`).
   4. `HeaderVisibilityWrapper` → `PublicNavBar` (`src/components/layout/`).
   5. `<main>` — page content.
   6. `SiteFooter` (`src/components/layout/SiteFooter.tsx`, which wraps itself in `FooterVisibilityWrapper`).
@@ -24,7 +24,7 @@ All public and private pages live under `src/app/[lang]/`.
 
 ### Authenticated Workspace Layout (`src/app/[lang]/escritorio/layout.tsx`)
 - Enforces server-side session checks (`getAuthenticatedUser()`) before rendering the dashboard shell (`EscritorioShell`).
-- Unauthenticated requests redirect to `/${lang}/login`; authenticated users with role `reader` are restricted away from writer desk routes (`nuevo`, `editar`) toward `/escritorio/perfil` (in coordination with edge gating in `src/proxy.ts`).
+- Unauthenticated requests redirect to `/${lang}/login`; authenticated users lacking `desk:access` (such as `reader` or zero-role accounts) are redirected away from writer desk routes (`/escritorio`, `/escritorio/nuevo`, `/escritorio/editar`) toward `/escritorio/perfil` (in coordination with edge gating in `src/proxy.ts`).
 
 ---
 
@@ -32,25 +32,25 @@ All public and private pages live under `src/app/[lang]/`.
 
 | Route (`/[lang]/...`) | Purpose | Rendering / Auth Strategy |
 | :--- | :--- | :--- |
-| `/` (`page.tsx`) | Editorial homepage: hero, intro, pinned articles, recent mosaic, association & news, columnists, tags, contact/FAQ + JSON-LD | Public SSR / ISR (`revalidate = 60`), metadata-only DB projection |
+| `/` (`page.tsx`) | Editorial homepage: hero, intro, pinned articles, recent mosaic, association & news, columnists, tags, contact/FAQ + JSON-LD | Public SSR / ISR (`revalidate = 60`), metadata-only DB projection; Columnists filtered by `founder` role |
 | `/articulos` | Searchable archive with tag and publication-type filters + load more pagination | Public SSR (`dynamic`) / client filter bar + `fetchMoreArticlesAction` |
-| `/articulo/[slug]` | Full publication reader, KaTeX math, interactive TOC (`show_index`), PDF export link, comments, client review bar | Public ISR (`revalidate = 60`), zero server `cookies()`/`getAuthenticatedUser()` calls |
+| `/articulo/[slug]` | Full publication reader, KaTeX math, interactive TOC (`show_index`), PDF export link, comments, client review bar (`publications:review`) | Public ISR (`revalidate = 60`), zero server `cookies()`/`getAuthenticatedUser()` calls |
 | `/noticias` | Editorial news mosaic listing (`NewsMosaicGrid`) | Public listing |
-| `/autores` | Directory of contributors and editorial founders (`AuthorsDirectory`) | Public listing |
-| `/autor/[slug]` | Individual author profile, bilingual bio, avatar, and published works (`AuthorProfileView`) | Public SSR |
+| `/autores` | Directory of contributors and editorial founders (`AuthorsDirectory`) | Public listing; badges resolved from `is_public` roles (`founder` > `member` > `guest`) |
+| `/autor/[slug]` | Individual author profile, bilingual bio, avatar, and published works (`AuthorProfileView`) | Public SSR; public badge resolved via `resolvePrimaryPublicRole()`, hiding internal roles (`admin`, `reader`) |
 | `/asociacion` | Institutional overview and manifesto | Public page (`asociacion/layout.tsx`) |
 | `/asociacion/estatutos` | Association statutes (`EstatutosCard` + markdown in `src/content/estatutos/`) | Public static/SSR |
 | `/asociacion/coleccion-*` | Dedicated collection charters (`coleccion-articulos`, `coleccion-ensayos`, `coleccion-narrativa`, `coleccion-poesia`) | Public collection pages via `EditorialCollectionPage` |
 | `/contacto` *(alias `/contact`)* | Contact & article submission inquiry form (`ContactForm`) with PDF upload | Public page; posts to `/api/contact` |
 | `/privacidad` *(alias `/privacy`)* | Bilingual privacy notice (`src/content/privacidad/`) | Public static/SSR |
 | `/about` | Redirect/alias routed at edge (`src/proxy.ts` → `/asociacion`) or fallback page | Public redirect/page |
-| `/login` | Sign-in / registration (Email + Password and Google OAuth 2.0) | Public auth entry; authenticated users redirect to `/escritorio` |
+| `/login` | Sign-in / registration (Email + Password and Google OAuth 2.0) | Public auth entry; post-auth redirect uses `desk:access` (`resolvePostAuthRedirectPath` / `resolveClientDeskRedirectPath`) |
 | `/recuperar-password` | Request password reset email | Public auth recovery (chrome hidden) |
 | `/actualizar-password` | Set new password after recovery token confirmation (`PasswordForm`) | Authenticated recovery (chrome hidden) |
-| `/escritorio` | Role-aware dashboard (drafts, in-review queue, published archive, pin/delete) | Protected Server + Client workspace |
-| `/escritorio/nuevo` | Create new publication (`ArticleEditor` + metadata/bilingual sidebar) | Protected (`guest`, `member`, `founder`, `admin`) |
-| `/escritorio/editar/[slug]` | Edit existing publication (`EditarArticuloForm` + `ArticleEditor`) | Protected (author or `founder`/`admin`) |
-| `/escritorio/perfil` | User profile editor (bilingual bio, avatar WebP upload, newsletter subscription) | Protected (all authenticated roles) |
+| `/escritorio` | Permission-gated Author Desk (drafts, `in_review` queue, published archive, `publications:pin` & `publications:delete_own`/`delete_any` controls) | Protected Server + Client workspace (`desk:access`; Guest quota shown via `isGuestQuotaSubject`) |
+| `/escritorio/nuevo` | Create new publication (`ArticleEditor` + metadata/bilingual sidebar + `ai:translate`) | Protected (`desk:access` + `publications:create`; Guest quota guard) |
+| `/escritorio/editar/[slug]` | Edit existing publication (`EditarArticuloForm` + `ArticleEditor`) | Protected (`desk:access` + `publications:update_any`, `publications:review` on `in_review`, `publications:publish` on own `published`, or `publications:update_own` on own unpublished) |
+| `/escritorio/perfil` | User profile editor (bilingual bio, avatar WebP upload, newsletter subscription, assigned role badges) | Protected (all authenticated users, including `reader` and zero-role) |
 | `/bad-request`, `/unauthorized`, `/forbidden`, `/not-found`, `error.tsx` | Localized literary error screens rendered via `LiteraryError.tsx` | Error / HTTP status boundaries |
 
 ---

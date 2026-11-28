@@ -72,7 +72,7 @@ describe('server auth hydration (getAuthenticatedUser & resolvePostAuthRedirectP
     vi.clearAllMocks();
   });
 
-  it('returns null user/profile/role and empty roles/permissions when unauthenticated', async () => {
+  it('returns null user/profile and empty roles/permissions when unauthenticated', async () => {
     vi.mocked(createClient).mockResolvedValue(
       makeSupabaseClient({ user: null, userError: { message: 'Auth session missing!' } })
     );
@@ -83,7 +83,6 @@ describe('server auth hydration (getAuthenticatedUser & resolvePostAuthRedirectP
       profile: null,
       roles: [],
       permissions: [],
-      role: null,
     });
   });
 
@@ -103,7 +102,6 @@ describe('server auth hydration (getAuthenticatedUser & resolvePostAuthRedirectP
           bio: null,
           avatar_url: null,
           newsletter_subscribed: false,
-          role: USER_ROLES.READER,
         },
         userRoleRows: [
           {
@@ -134,11 +132,13 @@ describe('server auth hydration (getAuthenticatedUser & resolvePostAuthRedirectP
     expect(res.permissions).toHaveLength(19);
     expect(res.permissions).toContain(PERMISSIONS.USERS_ASSIGN_ROLE);
     expect(res.permissions).toContain(PERMISSIONS.PUBLICATIONS_PUBLISH);
-    expect(res.role).toBe(USER_ROLES.ADMIN);
+    expect(res).not.toHaveProperty('role');
+    expect(res.profile).not.toHaveProperty('role');
+    expect(res.profile).not.toHaveProperty('rol');
     expect(res.profile?.full_name).toBe('Ana');
   });
 
-  it('fails closed to zero permissions and reader legacy role when user_roles is empty, ignoring JWT app_metadata.user_role', async () => {
+  it('fails closed to zero permissions and empty roles when user_roles is empty, ignoring JWT claims', async () => {
     const fakeUser = {
       id: 'usr-zero-roles',
       app_metadata: { user_role: USER_ROLES.ADMIN },
@@ -154,7 +154,6 @@ describe('server auth hydration (getAuthenticatedUser & resolvePostAuthRedirectP
           bio: null,
           avatar_url: null,
           newsletter_subscribed: false,
-          role: USER_ROLES.ADMIN,
         },
         userRoleRows: [],
       })
@@ -164,7 +163,7 @@ describe('server auth hydration (getAuthenticatedUser & resolvePostAuthRedirectP
     expect(res.user).toBe(fakeUser);
     expect(res.roles).toEqual([]);
     expect(res.permissions).toEqual([]);
-    expect(res.role).toBe(USER_ROLES.READER);
+    expect(res).not.toHaveProperty('role');
   });
 
   it('routes post-auth redirect using DB desk:access permission and ignores JWT role claim', async () => {
