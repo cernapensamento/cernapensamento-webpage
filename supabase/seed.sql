@@ -24,70 +24,6 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = 5242880,
   allowed_mime_types = ARRAY['image/webp'];
 
-DO $$ BEGIN
-  CREATE POLICY "Users can upload own profile" ON storage.objects FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id IN ('media', 'imagenes-articulos')
-    AND (
-      ((storage.foldername(name))[1] = 'profiles' AND (storage.foldername(name))[2] = (auth.uid())::text)
-      OR
-      ((storage.foldername(name))[1] = 'avatares' AND (storage.foldername(name))[2] = (auth.uid())::text)
-    )
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "Writers can upload publication images" ON storage.objects FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id IN ('media', 'imagenes-articulos')
-    AND (
-      ((storage.foldername(name))[1] = 'publications' AND (storage.foldername(name))[2] IN ('covers', 'inline') AND (storage.foldername(name))[3] = (auth.uid())::text)
-      OR
-      ((storage.foldername(name))[1] IN ('portadas', 'contenido') AND (storage.foldername(name))[2] = (auth.uid())::text)
-    )
-    AND EXISTS (
-      SELECT 1 FROM public.users u
-      WHERE u.id = auth.uid() AND u.role IN ('guest', 'member', 'founder', 'admin')
-    )
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "Users or admins can delete images" ON storage.objects FOR DELETE TO authenticated
-  USING (
-    bucket_id IN ('media', 'imagenes-articulos')
-    AND (
-      ((storage.foldername(name))[1] = 'profiles' AND (storage.foldername(name))[2] = (auth.uid())::text)
-      OR
-      ((storage.foldername(name))[1] = 'avatares' AND (storage.foldername(name))[2] = (auth.uid())::text)
-      OR
-      ((storage.foldername(name))[1] = 'publications' AND (storage.foldername(name))[3] = (auth.uid())::text)
-      OR
-      ((storage.foldername(name))[1] IN ('portadas', 'contenido') AND (storage.foldername(name))[2] = (auth.uid())::text)
-      OR
-      EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('founder', 'admin'))
-    )
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "Users or admins can update images" ON storage.objects FOR UPDATE TO authenticated
-  USING (
-    bucket_id IN ('media', 'imagenes-articulos')
-    AND (
-      ((storage.foldername(name))[1] = 'profiles' AND (storage.foldername(name))[2] = (auth.uid())::text)
-      OR
-      ((storage.foldername(name))[1] = 'avatares' AND (storage.foldername(name))[2] = (auth.uid())::text)
-      OR
-      ((storage.foldername(name))[1] = 'publications' AND (storage.foldername(name))[3] = (auth.uid())::text)
-      OR
-      ((storage.foldername(name))[1] IN ('portadas', 'contenido') AND (storage.foldername(name))[2] = (auth.uid())::text)
-      OR
-      EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('founder', 'admin'))
-    )
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
 -- 2. Auth Users & Public Users
 -- Local password for all test users: Password123!
 
@@ -105,7 +41,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'founder'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Diego Araújo'),
   now(),
   now()
@@ -113,19 +49,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
   'Diego Araújo',
   'diego-araujo',
-  'founder'::public.user_role,
   '/images/columnistas/diego.webp',
   '{"gl":"Estudante de Economía na USC, Premio Extraordinario de Bacharelato 2025 e gañador do Parlamento Xove 2026 xunto a Héctor González Prego. As súas columnas abordan a filosofía política, a economía austríaca e a liberdade.","es":"Estudiante de Economía en la USC, Premio Extraordinario de Bachillerato 2025 y ganador del Parlamento Xove 2026 junto a Héctor González Prego. Sus columnas abordan la filosofía política, la economía austríaca y la libertad."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -143,7 +77,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'founder'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Héctor González'),
   now(),
   now()
@@ -151,19 +85,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'd2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2',
   'Héctor González',
   'hector-gonzalez',
-  'founder'::public.user_role,
   '/images/columnistas/hector.webp',
   '{"gl":"Estudante de Física na USC e de Matemáticas na UNED, gañador do Parlamento Xove 2026. Os seus artigos procuran comprender o mundo a través de modelos científicos e matemáticos accesibles.","es":"Estudiante de Física en la USC y de Matemáticas en la UNED, ganador del Parlamento Xove 2026. Sus artículos buscan comprender el mundo a través de modelos científicos y matemáticos accesibles."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -181,7 +113,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'founder'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Denís Fernández'),
   now(),
   now()
@@ -189,19 +121,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'd3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3',
   'Denís Fernández',
   'denis-fernandez',
-  'founder'::public.user_role,
   '/images/columnistas/denis.webp',
   '{"gl":"Estuda o dobre grao en Dereito e ADE na Universidade Carlos III de Madrid. Os seus artigos analizan a realidade socioeconómica e xurídica dos retos que afronta a mocidade.","es":"Estudia el doble grado en Derecho y ADE en la Universidad Carlos III de Madrid. Sus artículos analizan la realidad socioeconómica y jurídica de los retos que afronta la juventud."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -219,7 +149,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'founder'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Anxo Pérez'),
   now(),
   now()
@@ -227,19 +157,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4',
   'Anxo Pérez',
   'anxo-perez',
-  'founder'::public.user_role,
   '/images/columnistas/anxo.webp',
   '{"gl":"Estudante de Lingua e Literatura Españolas na Universidade de Navarra. A súa escrita céntrase no problema da identidade, a tradición e o diálogo co pensamento europeo e galego.","es":"Estudiante de Lengua y Literatura Españolas en la Universidad de Navarra. Su escritura se centra en el problema de la identidad, la tradición y el diálogo con el pensamiento europeo y gallego."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -257,7 +185,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'admin'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Administrador Cerna'),
   now(),
   now()
@@ -265,19 +193,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   '89439c6c-d0f0-42ff-9734-f346dc023f68',
   'Administrador Cerna',
   'admin',
-  'admin'::public.user_role,
   NULL,
   '{"gl":"Conta de administración técnica e editorial de Cerna Pensamento.","es":"Cuenta de administración técnica y editorial de Cerna Pensamento."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -295,7 +221,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'guest'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Lucía Vázquez (Autora Convidada)'),
   now(),
   now()
@@ -303,19 +229,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'e1e1e1e1-e1e1-e1e1-e1e1-e1e1e1e1e1e1',
   'Lucía Vázquez (Autora Convidada)',
   'lucia-vazquez',
-  'guest'::public.user_role,
   NULL,
   '{"gl":"Investigadora en Filosofía Contemporánea e colaboradora convidada en Cerna.","es":"Investigadora en Filosofía Contemporánea y colaboradora invitada en Cerna."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -333,7 +257,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'member'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Martiño Rodríguez (Membro)'),
   now(),
   now()
@@ -341,19 +265,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'e2e2e2e2-e2e2-e2e2-e2e2-e2e2e2e2e2e2',
   'Martiño Rodríguez (Membro)',
   'martino-rodriguez',
-  'member'::public.user_role,
   NULL,
   '{"gl":"Membro da Asociación Cerna Pensamento con interese na historia das ideas e economía política.","es":"Miembro de la Asociación Cerna Pensamento con interés en la historia de las ideas y economía política."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -371,7 +293,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Lector de Proba'),
   now(),
   now()
@@ -379,21 +301,44 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'e3e3e3e3-e3e3-e3e3-e3e3-e3e3e3e3e3e3',
   'Lector de Proba',
   'lector-proba',
-  'reader'::public.user_role,
   NULL,
   '{"gl":"Perfil lector rexistrado para probas locais de comentarios e lectura.","es":"Perfil lector registrado para pruebas locales de comentarios y lectura."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
+
+-- Assign canonical RBAC roles in public.user_roles (removing auto-assigned 'reader' for non-reader accounts)
+INSERT INTO public.user_roles (user_id, role_id)
+VALUES
+  ('d1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1', 'founder'),
+  ('d2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2', 'founder'),
+  ('d3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3', 'founder'),
+  ('d4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4', 'founder'),
+  ('89439c6c-d0f0-42ff-9734-f346dc023f68', 'admin'),
+  ('e1e1e1e1-e1e1-e1e1-e1e1-e1e1e1e1e1e1', 'guest'),
+  ('e2e2e2e2-e2e2-e2e2-e2e2-e2e2e2e2e2e2', 'member'),
+  ('e3e3e3e3-e3e3-e3e3-e3e3-e3e3e3e3e3e3', 'reader')
+ON CONFLICT (user_id, role_id) DO NOTHING;
+
+DELETE FROM public.user_roles
+WHERE role_id = 'reader'
+  AND user_id IN (
+    'd1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1',
+    'd2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2',
+    'd3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3',
+    'd4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4',
+    '89439c6c-d0f0-42ff-9734-f346dc023f68',
+    'e1e1e1e1-e1e1-e1e1-e1e1-e1e1e1e1e1e1',
+    'e2e2e2e2-e2e2-e2e2-e2e2-e2e2e2e2e2e2'
+  );
 
 -- 3. Canonical Tags and Tag Translations
 INSERT INTO public.tags (id, slug, created_at) VALUES ('07b716c4-87e4-430f-a29b-30a069352bcc', 'creacin', '2026-08-03T21:56:29.211475+00:00') ON CONFLICT (id) DO NOTHING;
@@ -729,7 +674,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'member'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Iria Miguéns'),
   now(),
   now()
@@ -737,19 +682,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1',
   'Iria Miguéns',
   'iria-miguens',
-  'member'::public.user_role,
   NULL,
   '{"gl": "Doutora en Filosofía Moral pola USC. Investiga sobre ética cívica, deliberación democrática e pensamento republicano clásico.", "es": "Doctora en Filosofía Moral por la USC. Investiga sobre ética cívica, deliberación democrática y pensamiento republicano clásico."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -767,7 +710,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'member'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Brais Castro'),
   now(),
   now()
@@ -775,19 +718,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'a2a2a2a2-a2a2-a2a2-a2a2-a2a2a2a2a2a2',
   'Brais Castro',
   'brais-castro',
-  'member'::public.user_role,
   NULL,
   '{"gl": "Graduado en Ciencias Políticas e da Administración. Especialista en teoría dos xogos aplicada á economía política e modelos de orde espontáneo.", "es": "Graduado en Ciencias Políticas y de la Administración. Especialista en teoría de juegos aplicada a la economía política y modelos de orden espontáneo."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -805,7 +746,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'member'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Carla Souto'),
   now(),
   now()
@@ -813,19 +754,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'a3a3a3a3-a3a3-a3a3-a3a3-a3a3a3a3a3a3',
   'Carla Souto',
   'carla-souto',
-  'member'::public.user_role,
   NULL,
   '{"gl": "Ensaísta e crítica literaria. Estuda a recepción do pensamento europeo de entreguerras na literatura galega contemporánea.", "es": "Ensayista y crítica literaria. Estudia la recepción del pensamiento europeo de entreguerras en la literatura gallega contemporánea."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -843,7 +782,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'member'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Xurxo Seoane'),
   now(),
   now()
@@ -851,19 +790,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'a4a4a4a4-a4a4-a4a4-a4a4-a4a4a4a4a4a4',
   'Xurxo Seoane',
   'xurxo-seoane',
-  'member'::public.user_role,
   NULL,
   '{"gl": "Historiador e investigador social centrado na historia económica de Galicia e na evolución institucional dos séculos XIX e XX.", "es": "Historiador e investigador social centrado en la historia económica de Galicia y en la evolución institucional de los siglos XIX y XX."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -881,7 +818,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Antón Rivas'),
   now(),
   now()
@@ -889,19 +826,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'b1b1b1b1-0001-0000-0000-000000000001',
   'Antón Rivas',
   'anton-rivas',
-  'reader'::public.user_role,
   NULL,
   '{"gl": "Lector asiduo de ensaios de filosofía e economía política.", "es": "Lector asiduo de ensayos de filosofía y economía política."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -919,7 +854,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Sabela Lourenzo'),
   now(),
   now()
@@ -927,19 +862,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'b1b1b1b1-0002-0000-0000-000000000002',
   'Sabela Lourenzo',
   'sabela-lourenzo',
-  'reader'::public.user_role,
   NULL,
   '{"gl": "Estudante de Filoloxía con interese na creación literaria e no debate cultural.", "es": "Estudiante de Filología con interés en la creación literaria y el debate cultural."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -957,7 +890,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Roi Méndez'),
   now(),
   now()
@@ -965,19 +898,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'b1b1b1b1-0003-0000-0000-000000000003',
   'Roi Méndez',
   'roi-mendez',
-  'reader'::public.user_role,
   NULL,
   '{"gl": "Interesado na teoría económica, na liberdade individual e na historia de Galicia.", "es": "Interesado en la teoría económica, la libertad individual y la historia de Galicia."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -995,7 +926,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Uxía Taboada'),
   now(),
   now()
@@ -1003,19 +934,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'b1b1b1b1-0004-0000-0000-000000000004',
   'Uxía Taboada',
   'uxia-taboada',
-  'reader'::public.user_role,
   NULL,
   '{"gl": "Lectora entusiasta de poesía, ensaio humanístico e pensamento contemporáneo.", "es": "Lectora entusiasta de poesía, ensayo humanístico y pensamiento contemporáneo."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -1033,7 +962,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Xabier Freire'),
   now(),
   now()
@@ -1041,19 +970,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'b1b1b1b1-0005-0000-0000-000000000005',
   'Xabier Freire',
   'xabier-freire',
-  'reader'::public.user_role,
   NULL,
   '{"gl": "Enxeñeiro de software afeccionado á epistemoloxía e á filosofía da ciencia.", "es": "Ingeniero de software aficionado a la epistemología y a la filosofía de la ciencia."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -1071,7 +998,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Noa Domínguez'),
   now(),
   now()
@@ -1079,19 +1006,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'b1b1b1b1-0006-0000-0000-000000000006',
   'Noa Domínguez',
   'noa-dominguez',
-  'reader'::public.user_role,
   NULL,
   '{"gl": "Investigadora xurídica interesada nas liberdades civís e no dereito constitucional.", "es": "Investigadora jurídica interesada en las libertades civiles y el derecho constitucional."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -1109,7 +1034,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Breogán Civeira'),
   now(),
   now()
@@ -1117,19 +1042,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'b1b1b1b1-0007-0000-0000-000000000007',
   'Breogán Civeira',
   'breogan-civeira',
-  'reader'::public.user_role,
   NULL,
   '{"gl": "Mestre de historia e seguidor dos debates sobre tradición e modernidade en Cerna.", "es": "Maestro de historia y seguidor de los debates sobre tradición y modernidad en Cerna."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -1147,7 +1070,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Alba Carballo'),
   now(),
   now()
@@ -1155,19 +1078,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'b1b1b1b1-0008-0000-0000-000000000008',
   'Alba Carballo',
   'alba-carballo',
-  'reader'::public.user_role,
   NULL,
   '{"gl": "Socióloga e lectora interesada nas dinámicas comunitarias e no espazo público.", "es": "Socióloga y lectora interesada en las dinámicas comunitarias y el espacio público."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -1185,7 +1106,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Mateo Salgado'),
   now(),
   now()
@@ -1193,19 +1114,17 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'b1b1b1b1-0009-0000-0000-000000000009',
   'Mateo Salgado',
   'mateo-salgado',
-  'reader'::public.user_role,
   NULL,
   '{"gl": "Estudante de Matemáticas e afeccionado á lóxica formal e á filosofía analítica.", "es": "Estudiante de Matemáticas y aficionado a la lógica formal y a la filosofía analítica."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
 
@@ -1223,7 +1142,7 @@ INSERT INTO auth.users (
   '',
   '',
   '',
-  jsonb_build_object('provider', 'email', 'providers', array['email'], 'user_role', 'reader'),
+  jsonb_build_object('provider', 'email', 'providers', array['email']),
   jsonb_build_object('full_name', 'Catuxa Prado'),
   now(),
   now()
@@ -1231,21 +1150,47 @@ INSERT INTO auth.users (
   email = EXCLUDED.email,
   raw_app_meta_data = EXCLUDED.raw_app_meta_data;
 
-INSERT INTO public.users (id, full_name, slug, role, avatar_url, bio, newsletter_subscribed)
+INSERT INTO public.users (id, full_name, slug, avatar_url, bio, newsletter_subscribed)
 VALUES (
   'b1b1b1b1-0010-0000-0000-000000000010',
   'Catuxa Prado',
   'catuxa-prado',
-  'reader'::public.user_role,
   NULL,
   '{"gl": "Arquitecta e divulgadora do patrimonio urbano e a historia da arte galega.", "es": "Arquitecta y divulgadora del patrimonio urbano y la historia del arte gallego."}'::jsonb,
   true
 ) ON CONFLICT (id) DO UPDATE SET
   full_name = EXCLUDED.full_name,
   slug = EXCLUDED.slug,
-  role = EXCLUDED.role,
   avatar_url = EXCLUDED.avatar_url,
   bio = EXCLUDED.bio;
+
+-- Assign canonical RBAC roles for additional mock authors and readers
+INSERT INTO public.user_roles (user_id, role_id)
+VALUES
+  ('a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', 'member'),
+  ('a2a2a2a2-a2a2-a2a2-a2a2-a2a2a2a2a2a2', 'member'),
+  ('a3a3a3a3-a3a3-a3a3-a3a3-a3a3a3a3a3a3', 'member'),
+  ('a4a4a4a4-a4a4-a4a4-a4a4-a4a4a4a4a4a4', 'member'),
+  ('b1b1b1b1-0001-0000-0000-000000000001', 'reader'),
+  ('b1b1b1b1-0002-0000-0000-000000000002', 'reader'),
+  ('b1b1b1b1-0003-0000-0000-000000000003', 'reader'),
+  ('b1b1b1b1-0004-0000-0000-000000000004', 'reader'),
+  ('b1b1b1b1-0005-0000-0000-000000000005', 'reader'),
+  ('b1b1b1b1-0006-0000-0000-000000000006', 'reader'),
+  ('b1b1b1b1-0007-0000-0000-000000000007', 'reader'),
+  ('b1b1b1b1-0008-0000-0000-000000000008', 'reader'),
+  ('b1b1b1b1-0009-0000-0000-000000000009', 'reader'),
+  ('b1b1b1b1-0010-0000-0000-000000000010', 'reader')
+ON CONFLICT (user_id, role_id) DO NOTHING;
+
+DELETE FROM public.user_roles
+WHERE role_id = 'reader'
+  AND user_id IN (
+    'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1',
+    'a2a2a2a2-a2a2-a2a2-a2a2-a2a2a2a2a2a2',
+    'a3a3a3a3-a3a3-a3a3-a3a3-a3a3a3a3a3a3',
+    'a4a4a4a4-a4a4-a4a4-a4a4-a4a4a4a4a4a4'
+  );
 
 -- ============================================================================
 -- 7. Additional Mock Topic Tags and Tag Translations (20 New Topics)
