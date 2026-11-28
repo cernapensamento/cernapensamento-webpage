@@ -1112,5 +1112,40 @@ describe.skipIf(!isDbTestEnabled)('Publications RLS Integration Tests (Local Sup
         .eq('id', hiddenCmt!.id);
       expect(revSeen?.map((c) => c.id)).toEqual([hiddenCmt!.id]);
     });
+
+    it('allows publications:update_any without publications:publish to edit already-published content, but blocks draft -> published transition', async () => {
+      const updateAnyOnlyRole = await createCustomRole('test_upd_any_no_pub', [
+        'publications:update_any',
+      ]);
+      const { client: anyClient } = await createUserWithRoles('any-no-pub', [updateAnyOnlyRole]);
+      const { user: memberUser } = await createAuthenticatedClient('martino.rodriguez@cerna.org');
+
+      const memberDraft = await seedPublication(memberUser.id, 'draft');
+      const memberPublished = await seedPublication(memberUser.id, 'published');
+
+      // CAN edit title/content of an already-published publication
+      const { data: editedPub, error: editPubErr } = await anyClient
+        .from('publications')
+        .update({
+          title: { gl: 'Título editado por update_any' },
+          content: { gl: '<p>Contido editado</p>' },
+        })
+        .eq('id', memberPublished.id)
+        .select('id, title, status')
+        .single();
+
+      expect(editPubErr).toBeNull();
+      expect(editedPub?.status).toBe('published');
+      expect((editedPub?.title as { gl?: string })?.gl).toBe('Título editado por update_any');
+
+      // CANNOT transition a draft to published without publications:publish
+      const { error: publishDraftErr } = await anyClient
+        .from('publications')
+        .update({ status: 'published' })
+        .eq('id', memberDraft.id);
+
+      expect(publishDraftErr).not.toBeNull();
+      expect(publishDraftErr?.code).toBe('42501');
+    });
   });
 });
