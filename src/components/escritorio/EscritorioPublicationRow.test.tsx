@@ -76,7 +76,6 @@ describe('EscritorioPublicationRow', () => {
         lang="gl"
         dict={dict}
         forApproval={false}
-        canReview={true}
       />
     );
 
@@ -100,7 +99,6 @@ describe('EscritorioPublicationRow', () => {
         lang="gl"
         dict={dict}
         forApproval={false}
-        canReview={true}
       />
     );
 
@@ -125,7 +123,6 @@ describe('EscritorioPublicationRow', () => {
         lang="es"
         dict={dict}
         forApproval={false}
-        canReview={true}
       />
     );
 
@@ -151,7 +148,6 @@ describe('EscritorioPublicationRow', () => {
         lang="gl"
         dict={glDict}
         forApproval={false}
-        canReview={false}
       />
     );
 
@@ -164,7 +160,6 @@ describe('EscritorioPublicationRow', () => {
         lang="es"
         dict={esDict}
         forApproval={false}
-        canReview={false}
       />
     );
 
@@ -255,7 +250,6 @@ describe('EscritorioPublicationRow', () => {
           lang="gl"
           dict={dict}
           forApproval={false}
-          canReview={true}
           permissions={permissions}
         />
       );
@@ -333,7 +327,6 @@ describe('EscritorioPublicationRow', () => {
         lang="gl"
         dict={dict}
         forApproval={false}
-        canReview={true}
         permissions={permissions}
       />
     );
@@ -362,7 +355,7 @@ describe('EscritorioPublicationRow', () => {
     expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
   });
 
-  it('falls back to legacy canReview behavior when permissions prop is omitted', () => {
+  it('fails closed (hides Pin and Delete) when permissions prop is omitted', () => {
     const dict = getDictionaryClient('gl');
     const { rerender } = render(
       <EscritorioPublicationRow
@@ -370,7 +363,6 @@ describe('EscritorioPublicationRow', () => {
         lang="gl"
         dict={dict}
         forApproval={false}
-        canReview={false}
       />
     );
 
@@ -379,15 +371,14 @@ describe('EscritorioPublicationRow', () => {
 
     rerender(
       <EscritorioPublicationRow
-        pub={{ ...basePub, status: PUBLICATION_STATUSES.PUBLISHED }}
+        pub={{ ...basePub, status: PUBLICATION_STATUSES.DRAFT }}
         lang="gl"
         dict={dict}
         forApproval={false}
-        canReview={true}
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Pin' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Pin' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
   });
 });

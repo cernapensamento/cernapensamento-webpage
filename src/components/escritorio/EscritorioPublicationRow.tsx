@@ -21,7 +21,6 @@ interface EscritorioPublicationRowProps {
   lang: Locale;
   dict: Dictionary;
   forApproval: boolean;
-  canReview?: boolean;
   permissions?: readonly PermissionValue[];
 }
 
@@ -52,7 +51,6 @@ export default function EscritorioPublicationRow({
   lang,
   dict,
   forApproval,
-  canReview,
   permissions,
 }: EscritorioPublicationRowProps) {
   const fallbackLang = pub.original_language || i18n.defaultLocale;
@@ -70,19 +68,11 @@ export default function EscritorioPublicationRow({
   const isPublished = pub.status === PUBLICATION_STATUSES.PUBLISHED;
   const titleHref = forApproval || isPublished ? readerHref : editHref;
   const actionHref = forApproval ? readerHref : editHref;
-  const effectiveCanReview =
-    permissions !== undefined
-      ? hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW)
-      : Boolean(canReview);
-  const canPin =
-    permissions !== undefined
-      ? hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PIN)
-      : effectiveCanReview;
+  const effectivePermissions = permissions ?? [];
+  const canPin = hasPermission(effectivePermissions, PERMISSIONS.PUBLICATIONS_PIN);
   const canDelete =
-    permissions !== undefined
-      ? hasPermission(permissions, PERMISSIONS.PUBLICATIONS_DELETE_ANY) ||
-        (!isPublished && hasPermission(permissions, PERMISSIONS.PUBLICATIONS_DELETE_OWN))
-      : !isPublished || effectiveCanReview;
+    hasPermission(effectivePermissions, PERMISSIONS.PUBLICATIONS_DELETE_ANY) ||
+    (!isPublished && hasPermission(effectivePermissions, PERMISSIONS.PUBLICATIONS_DELETE_OWN));
 
   return (
     <article

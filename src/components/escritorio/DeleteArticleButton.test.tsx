@@ -45,7 +45,13 @@ describe('DeleteArticleButton', () => {
   it('does not call deleteArticleAction when user cancels confirmation', async () => {
     mockConfirm.mockResolvedValue(false);
 
-    render(<DeleteArticleButton id="pub-1" titulo="Artigo de proba" />);
+    render(
+      <DeleteArticleButton
+        id="pub-1"
+        titulo="Artigo de proba"
+        permissions={[PERMISSIONS.PUBLICATIONS_DELETE_OWN]}
+      />
+    );
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
@@ -59,7 +65,13 @@ describe('DeleteArticleButton', () => {
     mockConfirm.mockResolvedValue(true);
     vi.mocked(articleActions.deleteArticleAction).mockResolvedValue({ success: true });
 
-    render(<DeleteArticleButton id="pub-1" titulo="Artigo de proba" />);
+    render(
+      <DeleteArticleButton
+        id="pub-1"
+        titulo="Artigo de proba"
+        permissions={[PERMISSIONS.PUBLICATIONS_DELETE_OWN]}
+      />
+    );
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
@@ -76,7 +88,13 @@ describe('DeleteArticleButton', () => {
       error: 'Non autorizado',
     });
 
-    render(<DeleteArticleButton id="pub-1" titulo="Artigo de proba" />);
+    render(
+      <DeleteArticleButton
+        id="pub-1"
+        titulo="Artigo de proba"
+        permissions={[PERMISSIONS.PUBLICATIONS_DELETE_OWN]}
+      />
+    );
     fireEvent.click(screen.getByRole('button'));
 
     await waitFor(() => {
@@ -85,8 +103,13 @@ describe('DeleteArticleButton', () => {
     expect(mockRefresh).not.toHaveBeenCalled();
   });
 
-  it('renders nothing when permissions are provided without delete permission', () => {
+  it('renders nothing when permissions are omitted or lack delete permission', () => {
     const { container, rerender } = render(
+      <DeleteArticleButton id="pub-1" titulo="Artigo de proba" />
+    );
+    expect(container).toBeEmptyDOMElement();
+
+    rerender(
       <DeleteArticleButton id="pub-1" titulo="Artigo de proba" permissions={[]} />
     );
     expect(container).toBeEmptyDOMElement();

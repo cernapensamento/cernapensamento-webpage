@@ -83,6 +83,38 @@ CREATE TYPE "public"."publication_type" AS ENUM (
 ALTER TYPE "public"."publication_type" OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.publications p
+    WHERE p.id = p_publication_id
+      AND (
+        public.has_permission('publications:update_any')
+        OR (
+          p.author_id = auth.uid()
+          AND p.status <> 'published'::public.publication_status
+          AND public.has_permission('publications:update_own')
+        )
+        OR (
+          p.author_id = auth.uid()
+          AND p.status = 'published'::public.publication_status
+          AND public.has_permission('publications:publish')
+        )
+        OR (
+          p.status = 'in_review'::public.publication_status
+          AND public.has_permission('publications:review')
+        )
+      )
+  );
+$$;
+
+
+ALTER FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."check_publication_quotas"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
@@ -237,17 +269,32 @@ $$;
 ALTER FUNCTION "public"."dispatch_newsletter_webhook"("publication" "public"."publications") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."enforce_publication_pin_permission"() RETURNS "trigger"
+CREATE OR REPLACE FUNCTION "public"."enforce_publication_mutation_guards"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 DECLARE
   v_caller_role text := COALESCE(NULLIF(current_setting('role', true), 'none'), current_user);
   v_non_pin_changed boolean;
-  v_can_edit_non_pin boolean;
 BEGIN
   IF v_caller_role NOT IN ('authenticated', 'anon') THEN
     RETURN NEW;
+  END IF;
+
+  -- Guard transitions into 'published': bare publications:update_any cannot publish drafts.
+  IF NEW.status = 'published'::public.publication_status
+     AND (TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM 'published'::public.publication_status) THEN
+    IF NOT (
+      public.has_permission('publications:publish')
+      OR (
+        TG_OP = 'UPDATE'
+        AND OLD.status = 'in_review'::public.publication_status
+        AND public.has_permission('publications:review')
+      )
+    ) THEN
+      RAISE EXCEPTION 'Insufficient privilege: publications:publish permission is required to publish a publication.'
+        USING ERRCODE = '42501';
+    END IF;
   END IF;
 
   IF TG_OP = 'INSERT' THEN
@@ -282,33 +329,9 @@ BEGIN
     OR NEW.show_index IS DISTINCT FROM OLD.show_index
   );
 
-  IF v_non_pin_changed THEN
-    v_can_edit_non_pin := (
-      public.has_permission('publications:update_any')
-      OR (
-        OLD.author_id = auth.uid()
-        AND OLD.status <> 'published'::public.publication_status
-        AND public.has_permission('publications:update_own')
-        AND (
-          NEW.status <> 'published'::public.publication_status
-          OR public.has_permission('publications:publish')
-        )
-      )
-      OR (
-        OLD.author_id = auth.uid()
-        AND OLD.status = 'published'::public.publication_status
-        AND public.has_permission('publications:publish')
-      )
-      OR (
-        OLD.status = 'in_review'::public.publication_status
-        AND public.has_permission('publications:review')
-      )
-    );
-
-    IF NOT v_can_edit_non_pin THEN
-      RAISE EXCEPTION 'Insufficient privilege: cannot modify non-pin fields on this publication.'
-        USING ERRCODE = '42501';
-    END IF;
+  IF v_non_pin_changed AND NOT public.can_edit_publication(OLD.id) THEN
+    RAISE EXCEPTION 'Insufficient privilege: cannot modify non-pin fields on this publication.'
+      USING ERRCODE = '42501';
   END IF;
 
   RETURN NEW;
@@ -316,7 +339,7 @@ END;
 $$;
 
 
-ALTER FUNCTION "public"."enforce_publication_pin_permission"() OWNER TO "postgres";
+ALTER FUNCTION "public"."enforce_publication_mutation_guards"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."generate_slug"("text") RETURNS "text"
@@ -841,7 +864,7 @@ CREATE OR REPLACE TRIGGER "before_insert_publication_quota" BEFORE INSERT ON "pu
 
 
 
-CREATE OR REPLACE TRIGGER "enforce_publication_pin_permission" BEFORE INSERT OR UPDATE ON "public"."publications" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_publication_pin_permission"();
+CREATE OR REPLACE TRIGGER "enforce_publication_mutation_guards" BEFORE INSERT OR UPDATE ON "public"."publications" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_publication_mutation_guards"();
 
 
 
@@ -954,23 +977,15 @@ CREATE POLICY "Authors and Admins can delete publications" ON "public"."publicat
 
 
 
-CREATE POLICY "Authors and Operators can delete publication tags" ON "public"."publication_tags" FOR DELETE TO "authenticated" USING (("public"."has_permission"('publications:update_any'::"text") OR (EXISTS ( SELECT 1
-   FROM "public"."publications" "p"
-  WHERE (("p"."id" = "publication_tags"."publication_id") AND ((("p"."author_id" = "auth"."uid"()) AND ("p"."status" <> 'published'::"public"."publication_status") AND "public"."has_permission"('publications:update_own'::"text")) OR (("p"."author_id" = "auth"."uid"()) AND ("p"."status" = 'published'::"public"."publication_status") AND "public"."has_permission"('publications:publish'::"text")) OR (("p"."status" = 'in_review'::"public"."publication_status") AND "public"."has_permission"('publications:review'::"text"))))))));
+CREATE POLICY "Authors and Operators can delete publication tags" ON "public"."publication_tags" FOR DELETE TO "authenticated" USING ("public"."can_edit_publication"("publication_id"));
 
 
 
-CREATE POLICY "Authors and Operators can insert publication tags" ON "public"."publication_tags" FOR INSERT TO "authenticated" WITH CHECK (("public"."has_permission"('publications:update_any'::"text") OR (EXISTS ( SELECT 1
-   FROM "public"."publications" "p"
-  WHERE (("p"."id" = "publication_tags"."publication_id") AND ((("p"."author_id" = "auth"."uid"()) AND ("p"."status" <> 'published'::"public"."publication_status") AND "public"."has_permission"('publications:update_own'::"text")) OR (("p"."author_id" = "auth"."uid"()) AND ("p"."status" = 'published'::"public"."publication_status") AND "public"."has_permission"('publications:publish'::"text")) OR (("p"."status" = 'in_review'::"public"."publication_status") AND "public"."has_permission"('publications:review'::"text"))))))));
+CREATE POLICY "Authors and Operators can insert publication tags" ON "public"."publication_tags" FOR INSERT TO "authenticated" WITH CHECK ("public"."can_edit_publication"("publication_id"));
 
 
 
-CREATE POLICY "Authors and Operators can update publication tags" ON "public"."publication_tags" FOR UPDATE TO "authenticated" USING (("public"."has_permission"('publications:update_any'::"text") OR (EXISTS ( SELECT 1
-   FROM "public"."publications" "p"
-  WHERE (("p"."id" = "publication_tags"."publication_id") AND ((("p"."author_id" = "auth"."uid"()) AND ("p"."status" <> 'published'::"public"."publication_status") AND "public"."has_permission"('publications:update_own'::"text")) OR (("p"."author_id" = "auth"."uid"()) AND ("p"."status" = 'published'::"public"."publication_status") AND "public"."has_permission"('publications:publish'::"text")) OR (("p"."status" = 'in_review'::"public"."publication_status") AND "public"."has_permission"('publications:review'::"text")))))))) WITH CHECK (("public"."has_permission"('publications:update_any'::"text") OR (EXISTS ( SELECT 1
-   FROM "public"."publications" "p"
-  WHERE (("p"."id" = "publication_tags"."publication_id") AND ((("p"."author_id" = "auth"."uid"()) AND ("p"."status" <> 'published'::"public"."publication_status") AND "public"."has_permission"('publications:update_own'::"text")) OR (("p"."author_id" = "auth"."uid"()) AND ("p"."status" = 'published'::"public"."publication_status") AND "public"."has_permission"('publications:publish'::"text")) OR (("p"."status" = 'in_review'::"public"."publication_status") AND "public"."has_permission"('publications:review'::"text"))))))));
+CREATE POLICY "Authors and Operators can update publication tags" ON "public"."publication_tags" FOR UPDATE TO "authenticated" USING ("public"."can_edit_publication"("publication_id")) WITH CHECK ("public"."can_edit_publication"("publication_id"));
 
 
 
@@ -1291,6 +1306,13 @@ GRANT USAGE ON SCHEMA "public" TO "supabase_auth_admin";
 
 
 
+REVOKE ALL ON FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."can_edit_publication"("p_publication_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."check_publication_quotas"() TO "anon";
 GRANT ALL ON FUNCTION "public"."check_publication_quotas"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_publication_quotas"() TO "service_role";
@@ -1363,8 +1385,8 @@ REVOKE ALL ON FUNCTION "public"."dispatch_newsletter_webhook"("publication" "pub
 
 
 
-REVOKE ALL ON FUNCTION "public"."enforce_publication_pin_permission"() FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."enforce_publication_pin_permission"() TO "service_role";
+REVOKE ALL ON FUNCTION "public"."enforce_publication_mutation_guards"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."enforce_publication_mutation_guards"() TO "service_role";
 
 
 

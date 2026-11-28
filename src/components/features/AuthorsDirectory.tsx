@@ -9,8 +9,7 @@ import { AlternateLocaleBadge } from '@/components/ui/AlternateLocaleBadge';
 import { i18n } from '@/i18n-config';
 import { getDictionaryClient } from '@/dictionaries/client';
 import {
-  USER_ROLES,
-  resolvePrimaryPublicRole,
+  resolvePublicAuthorBadge,
   normalizePublicationType,
 } from '@/lib/db/schema';
 import type {
@@ -144,13 +143,10 @@ function AuthorCard({
   );
   const visibleTypes = typeLabels.slice(0, 3);
   const extraTypes = typeLabels.length - visibleTypes.length;
-  const primaryPublicRole = resolvePrimaryPublicRole(author.roles);
-  const roleLabel =
-    primaryPublicRole === USER_ROLES.FOUNDER
-      ? dict.roles.founder
-      : primaryPublicRole === USER_ROLES.MEMBER || primaryPublicRole === USER_ROLES.GUEST
-        ? dict.roles.contributor
-        : null;
+  const roleLabel = resolvePublicAuthorBadge(author.roles, {
+    founder: dict.roles.founder,
+    contributor: dict.roles.contributor,
+  });
   const showsImage = Boolean(author.avatar_url) && !imageError;
 
   return (

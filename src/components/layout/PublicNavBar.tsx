@@ -190,9 +190,11 @@ export default function PublicNavBar() {
   ];
 
   const canWrite = hasPermission(userProfile?.permissions, PERMISSIONS.DESK_ACCESS);
+  const roles = userProfile?.roles ?? [];
   const displayRole =
-    resolvePrimaryPublicRole(userProfile?.roles) ??
-    (userProfile?.roles?.includes(USER_ROLES.ADMIN) ? USER_ROLES.ADMIN : USER_ROLES.READER);
+    resolvePrimaryPublicRole(roles) ??
+    roles.find((r) => Boolean(r)) ??
+    USER_ROLES.READER;
   const userMenuLinks = [
     {
       href: `/${lang}/escritorio/perfil`,

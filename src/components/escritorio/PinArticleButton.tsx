@@ -33,7 +33,8 @@ export default function PinArticleButton({ id, isPinned, fijado, permissions }: 
   const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
 
-  if (permissions !== undefined && !hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PIN)) {
+  const effectivePermissions = permissions ?? [];
+  if (!hasPermission(effectivePermissions, PERMISSIONS.PUBLICATIONS_PIN)) {
     return null;
   }
 

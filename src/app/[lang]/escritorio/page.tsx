@@ -186,7 +186,6 @@ export default async function EscritorioPage({ params: routeParams, searchParams
                     lang={lang}
                     dict={dict}
                     forApproval={forApproval}
-                    canReview={canReview}
                     permissions={permissions}
                   />
                 )) : (

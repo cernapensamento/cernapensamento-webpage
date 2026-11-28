@@ -199,6 +199,12 @@ describe('PublicNavBar atomic permission gating & role badge resolution', () => 
       permissions: [PERMISSIONS.DESK_ACCESS],
       expectedBadge: 'LECTOR',
     },
+    {
+      label: 'arbitrary non-public role (e.g. social_media_manager)',
+      roles: ['social_media_manager' as AuthProfile['roles'][number]],
+      permissions: [PERMISSIONS.DESK_ACCESS],
+      expectedBadge: 'LECTOR',
+    },
   ])('shows Writer Desk and new-article links for $label user', async ({ roles, permissions, expectedBadge }) => {
     const user = userEvent.setup();
     mockAuthState.profile = {

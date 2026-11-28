@@ -930,6 +930,37 @@ describe('updateArticleState', () => {
     const res = await updateArticleState('pub-any-1', PUBLICATION_STATUSES.DRAFT);
     expect(res.success).toBe(true);
   });
+
+  it('rejects bare publications:update_any (without publications:publish) when transitioning draft to published, while allowing draft transition', async () => {
+    vi.mocked(authModule.getAuthenticatedUser).mockResolvedValue(
+      makePermissionSession('editor-any-1', [PERMISSIONS.PUBLICATIONS_UPDATE_ANY])
+    );
+    vi.mocked(dbModule.getPublicationById).mockResolvedValue({
+      id: 'pub-draft-2',
+      status: PUBLICATION_STATUSES.DRAFT,
+      author: { id: 'other-author' },
+    } as unknown as PublicationDetail);
+    vi.mocked(dbModule.updatePublicationStatus).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+
+    const publishRes = await updateArticleState('pub-draft-2', PUBLICATION_STATUSES.PUBLISHED);
+    expect(publishRes.success).toBe(false);
+    expect(publishRes.error).toContain('só os fundadores e administradores poden publicar');
+    expect(dbModule.updatePublicationStatus).not.toHaveBeenCalled();
+
+    // Non-published transition (e.g., in_review -> draft) remains allowed for publications:update_any
+    vi.mocked(dbModule.getPublicationById).mockResolvedValue({
+      id: 'pub-rev-2',
+      status: PUBLICATION_STATUSES.IN_REVIEW,
+      author: { id: 'other-author' },
+    } as unknown as PublicationDetail);
+
+    const rejectRes = await updateArticleState('pub-rev-2', PUBLICATION_STATUSES.DRAFT);
+    expect(rejectRes.success).toBe(true);
+    expect(dbModule.updatePublicationStatus).toHaveBeenCalledWith('pub-rev-2', PUBLICATION_STATUSES.DRAFT);
+  });
 });
 
 describe('deleteArticleAction', () => {

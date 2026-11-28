@@ -3,10 +3,10 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import EditarArticuloForm from '@/components/forms/EditarArticuloForm';
 import {
+  canEditPublication,
   getPublicationBySlug,
   hasPermission,
   PERMISSIONS,
-  PUBLICATION_STATUSES,
 } from '@/lib/db';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
@@ -40,21 +40,7 @@ export default async function EditarArticuloPage({ params }: Props) {
     notFound();
   }
 
-  const isAuthor = publication.author.id === user.id;
-  const isPublished = publication.status === PUBLICATION_STATUSES.PUBLISHED;
-  const isInReview = publication.status === PUBLICATION_STATUSES.IN_REVIEW;
-  const canUpdateAny = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_ANY);
-  const canUpdateOwn = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_OWN);
-  const canPublish = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PUBLISH);
-  const canReview = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW);
-
-  const canEdit = isAuthor
-    ? isPublished
-      ? canPublish || canUpdateAny
-      : canUpdateOwn || canUpdateAny || (isInReview && canReview)
-    : canUpdateAny || (isInReview && canReview);
-
-  if (!canEdit) {
+  if (!canEditPublication(permissions, publication, user.id)) {
     redirect(`/${lang}/escritorio`);
   }
 

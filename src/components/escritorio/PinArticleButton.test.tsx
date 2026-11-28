@@ -32,8 +32,11 @@ describe('PinArticleButton', () => {
     } as unknown as ToastApi);
   });
 
-  it('renders nothing when permissions are provided without publications:pin', () => {
-    const { container, rerender } = render(<PinArticleButton id="pub-1" permissions={[]} />);
+  it('renders nothing when permissions are omitted or lack publications:pin', () => {
+    const { container, rerender } = render(<PinArticleButton id="pub-1" />);
+    expect(container).toBeEmptyDOMElement();
+
+    rerender(<PinArticleButton id="pub-1" permissions={[]} />);
     expect(container).toBeEmptyDOMElement();
 
     rerender(
@@ -45,13 +48,8 @@ describe('PinArticleButton', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders pin button when publications:pin permission is granted or permissions prop is omitted', () => {
-    const { rerender } = render(
-      <PinArticleButton id="pub-1" permissions={[PERMISSIONS.PUBLICATIONS_PIN]} />
-    );
-    expect(screen.getByRole('button')).toBeInTheDocument();
-
-    rerender(<PinArticleButton id="pub-1" />);
+  it('renders pin button when publications:pin permission is granted', () => {
+    render(<PinArticleButton id="pub-1" permissions={[PERMISSIONS.PUBLICATIONS_PIN]} />);
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 });
