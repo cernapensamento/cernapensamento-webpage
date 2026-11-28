@@ -190,6 +190,7 @@ export default function PublicNavBar() {
   ];
 
   const canWrite = hasPermission(userProfile?.permissions, PERMISSIONS.DESK_ACCESS);
+  const canCreate = hasPermission(userProfile?.permissions, PERMISSIONS.PUBLICATIONS_CREATE);
   const roles = userProfile?.roles ?? [];
   const displayRole =
     resolvePrimaryPublicRole(roles) ??
@@ -212,7 +213,7 @@ export default function PublicNavBar() {
       href: `/${lang}/escritorio/nuevo`,
       label: dict.nav.userMenu.newArticle,
       icon: 'edit_square',
-      visible: canWrite,
+      visible: canCreate,
     },
   ].filter((item) => item.visible);
 

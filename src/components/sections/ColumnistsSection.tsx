@@ -228,7 +228,9 @@ export default function ColumnistsSection({
           {columnists.map((columnist: DisplayColumnist, idx: number) => {
             const isActive = activeSlug === columnist.slug;
             const authorBio =
-              authorsDict[columnist.slug] || resolveLocalizedText(columnist.bio, lang);
+              (Object.prototype.hasOwnProperty.call(authorsDict, columnist.slug)
+                ? authorsDict[columnist.slug]
+                : undefined) || resolveLocalizedText(columnist.bio, lang);
 
             // Responsive flex calculation:
             // Default: 1 (equal distribution)

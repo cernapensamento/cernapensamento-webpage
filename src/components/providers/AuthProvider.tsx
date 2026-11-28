@@ -47,6 +47,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     let isMounted = true;
+    let sessionVersion = 0;
     let supabase: ReturnType<typeof createClient>;
     try {
       supabase = createClient();
@@ -54,9 +55,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return;
     }
 
-    async function fetchUserProfile(userId: string) {
+    async function fetchUserProfile(userId: string, expectedVersion: number) {
       const data = await fetchClientAuthProfile(userId, supabase);
-      if (isMounted) {
+      if (isMounted && sessionVersion === expectedVersion) {
         setProfile(data);
       }
     }
@@ -67,8 +68,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (!isMounted) return;
 
         if (session?.user) {
+          const currentVersion = ++sessionVersion;
           setUser(session.user);
-          fetchUserProfile(session.user.id);
+          fetchUserProfile(session.user.id, currentVersion);
         }
       } catch {
         // Silent fallback: user remains null
@@ -83,11 +85,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (!isMounted) return;
       if (event === 'INITIAL_SESSION') return;
 
+      const currentVersion = ++sessionVersion;
       if (session?.user) {
         setUser(session.user);
         // Defer fetch to avoid deadlock
         setTimeout(() => {
-          fetchUserProfile(session.user.id);
+          if (isMounted && sessionVersion === currentVersion) {
+            fetchUserProfile(session.user.id, currentVersion);
+          }
         }, 0);
       } else {
         setUser(null);
@@ -97,9 +102,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
 
     const handleProfileUpdated = () => {
+      const expectedVersion = sessionVersion;
       supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          fetchUserProfile(session.user.id);
+        if (isMounted && session?.user && sessionVersion === expectedVersion) {
+          fetchUserProfile(session.user.id, expectedVersion);
         }
       });
     };

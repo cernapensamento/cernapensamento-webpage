@@ -458,17 +458,25 @@ describe.skipIf(!isDbTestEnabled)('Publications RLS Integration Tests (Local Sup
     const createdTagIds: string[] = [];
 
     afterAll(async () => {
+      const cleanupErrors: string[] = [];
       for (const pubId of createdPubIds) {
-        await serviceClient.from('publications').delete().eq('id', pubId);
+        const { error } = await serviceClient.from('publications').delete().eq('id', pubId);
+        if (error) cleanupErrors.push(`publication ${pubId}: ${error.message}`);
       }
       for (const tagId of createdTagIds) {
-        await serviceClient.from('tags').delete().eq('id', tagId);
+        const { error } = await serviceClient.from('tags').delete().eq('id', tagId);
+        if (error) cleanupErrors.push(`tag ${tagId}: ${error.message}`);
       }
       for (const userId of createdUserIds) {
-        await serviceClient.auth.admin.deleteUser(userId);
+        const { error } = await serviceClient.auth.admin.deleteUser(userId);
+        if (error) cleanupErrors.push(`user ${userId}: ${error.message}`);
       }
       for (const roleId of createdRoleIds) {
-        await serviceClient.from('roles').delete().eq('id', roleId);
+        const { error } = await serviceClient.from('roles').delete().eq('id', roleId);
+        if (error) cleanupErrors.push(`role ${roleId}: ${error.message}`);
+      }
+      if (cleanupErrors.length > 0) {
+        throw new Error(`Publications RLS fixture cleanup failed:\n${cleanupErrors.join('\n')}`);
       }
     });
 
@@ -504,7 +512,13 @@ describe.skipIf(!isDbTestEnabled)('Publications RLS Integration Tests (Local Sup
       createdUserIds.push(data.user.id);
 
       // Remove default 'reader' role assigned by handle_new_user so exact role list applies
-      await serviceClient.from('user_roles').delete().eq('user_id', data.user.id);
+      const { error: clearErr } = await serviceClient
+        .from('user_roles')
+        .delete()
+        .eq('user_id', data.user.id);
+      if (clearErr) {
+        throw new Error(`Failed to clear default roles for ${email}: ${clearErr.message}`);
+      }
 
       if (roles.length > 0) {
         const { error: assignErr } = await serviceClient

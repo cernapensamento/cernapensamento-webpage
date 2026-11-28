@@ -57,6 +57,7 @@ export default defineConfig({
           name: 'db',
           environment: 'node',
           include: ['src/lib/db/__rls__/**/*.test.ts'],
+          fileParallelism: false,
         },
       },
     ],

@@ -114,12 +114,14 @@ describe.skipIf(!isDbTestEnabled)('RBAC RLS Integration Tests (Local Supabase)',
     expect(readerInsertError?.code).toBe('42501');
 
     // Admin revokes reader -> zero-role user fails closed
-    const { error: revokeReaderError } = await adminClient
+    const { data: revokedReaderRows, error: revokeReaderError } = await adminClient
       .from('user_roles')
       .delete()
       .eq('user_id', userId)
-      .eq('role_id', 'reader');
+      .eq('role_id', 'reader')
+      .select('role_id');
     expect(revokeReaderError).toBeNull();
+    expect(revokedReaderRows).toHaveLength(1);
 
     const { data: hasDeskZero } = await userClient.rpc('has_permission', {
       required_permission: 'desk:access',

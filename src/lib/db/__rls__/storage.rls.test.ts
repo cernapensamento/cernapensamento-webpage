@@ -411,17 +411,25 @@ describe.skipIf(!isDbTestEnabled)('Storage RLS Integration Tests (Local Supabase
     const createdStoragePaths: string[] = [];
 
     afterAll(async () => {
+      const cleanupErrors: string[] = [];
       if (createdStoragePaths.length > 0) {
-        await adminClient.storage.from('media').remove(createdStoragePaths);
+        const { error } = await adminClient.storage.from('media').remove(createdStoragePaths);
+        if (error) cleanupErrors.push(`storage.remove: ${error.message}`);
       }
       for (const pubId of createdPubIds) {
-        await adminClient.from('publications').delete().eq('id', pubId);
+        const { error } = await adminClient.from('publications').delete().eq('id', pubId);
+        if (error) cleanupErrors.push(`publication ${pubId}: ${error.message}`);
       }
       for (const userId of createdUserIds) {
-        await adminClient.auth.admin.deleteUser(userId);
+        const { error } = await adminClient.auth.admin.deleteUser(userId);
+        if (error) cleanupErrors.push(`user ${userId}: ${error.message}`);
       }
       for (const roleId of createdRoleIds) {
-        await adminClient.from('roles').delete().eq('id', roleId);
+        const { error } = await adminClient.from('roles').delete().eq('id', roleId);
+        if (error) cleanupErrors.push(`role ${roleId}: ${error.message}`);
+      }
+      if (cleanupErrors.length > 0) {
+        throw new Error(`Storage RLS fixture cleanup failed:\n${cleanupErrors.join('\n')}`);
       }
     });
 
@@ -456,7 +464,8 @@ describe.skipIf(!isDbTestEnabled)('Storage RLS Integration Tests (Local Supabase
       }
       createdUserIds.push(data.user.id);
 
-      await adminClient.from('user_roles').delete().eq('user_id', data.user.id);
+      const { error: clearErr } = await adminClient.from('user_roles').delete().eq('user_id', data.user.id);
+      if (clearErr) throw new Error(`Failed to clear default roles for ${email}: ${clearErr.message}`);
       if (roles.length > 0) {
         const { error: assignErr } = await adminClient
           .from('user_roles')

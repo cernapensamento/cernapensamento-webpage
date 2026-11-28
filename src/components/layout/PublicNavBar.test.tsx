@@ -194,15 +194,15 @@ describe('PublicNavBar atomic permission gating & role badge resolution', () => 
       expectedBadge: 'FUNDADOR',
     },
     {
-      label: 'custom desk:access only',
+      label: 'custom desk:access + publications:create',
       roles: [],
-      permissions: [PERMISSIONS.DESK_ACCESS],
+      permissions: [PERMISSIONS.DESK_ACCESS, PERMISSIONS.PUBLICATIONS_CREATE],
       expectedBadge: 'LECTOR',
     },
     {
       label: 'arbitrary non-public role (e.g. social_media_manager)',
       roles: ['social_media_manager' as AuthProfile['roles'][number]],
-      permissions: [PERMISSIONS.DESK_ACCESS],
+      permissions: [PERMISSIONS.DESK_ACCESS, PERMISSIONS.PUBLICATIONS_CREATE],
       expectedBadge: 'LECTOR',
     },
   ])('shows Writer Desk and new-article links for $label user', async ({ roles, permissions, expectedBadge }) => {
@@ -221,5 +221,21 @@ describe('PublicNavBar atomic permission gating & role badge resolution', () => 
     expect(screen.getByRole('menuitem', { name: new RegExp(glDict.nav.userMenu.profile, 'i') })).toHaveAttribute('href', '/gl/escritorio/perfil');
     expect(screen.getByRole('menuitem', { name: new RegExp(glDict.nav.userMenu.myArticles, 'i') })).toHaveAttribute('href', '/gl/escritorio');
     expect(screen.getByRole('menuitem', { name: new RegExp(glDict.nav.userMenu.newArticle, 'i') })).toHaveAttribute('href', '/gl/escritorio/nuevo');
+  });
+
+  it('shows Writer Desk link but hides New Article link when user has desk:access without publications:create', async () => {
+    const user = userEvent.setup();
+    mockAuthState.profile = {
+      roles: [],
+      permissions: [PERMISSIONS.DESK_ACCESS],
+      avatar_url: null,
+      full_name: 'Revisor',
+    };
+
+    renderNav();
+    await user.click(screen.getByRole('button', { name: 'Menú de usuario' }));
+
+    expect(screen.getByRole('menuitem', { name: new RegExp(glDict.nav.userMenu.myArticles, 'i') })).toHaveAttribute('href', '/gl/escritorio');
+    expect(screen.queryByRole('menuitem', { name: new RegExp(glDict.nav.userMenu.newArticle, 'i') })).not.toBeInTheDocument();
   });
 });
