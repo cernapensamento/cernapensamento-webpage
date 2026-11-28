@@ -273,11 +273,24 @@ describe('AuthorsDirectory & AuthorProfileView', () => {
       slug: 'beatriz-gomez',
       avatar_url: null,
       bio: 'Ensaísta',
-      role: USER_ROLES.FOUNDER,
+      roles: [USER_ROLES.FOUNDER, USER_ROLES.GUEST],
       published_count: 3,
       latest_publication_at: '2026-02-10T10:00:00Z',
       latest_publication_title: 'Sobre a liberdade',
       latest_publication_slug: 'sobre-a-liberdade',
+      publication_types: [PUBLICATION_TYPES.ESSAY],
+    },
+    {
+      id: 'u-1b',
+      full_name: 'Carmela Fundadora',
+      slug: 'carmela-fundadora',
+      avatar_url: null,
+      bio: 'Fundadora e admin',
+      roles: [USER_ROLES.FOUNDER, USER_ROLES.ADMIN],
+      published_count: 4,
+      latest_publication_at: '2026-02-15T10:00:00Z',
+      latest_publication_title: 'Ensaio',
+      latest_publication_slug: 'ensaio',
       publication_types: [PUBLICATION_TYPES.ESSAY],
     },
     {
@@ -286,16 +299,42 @@ describe('AuthorsDirectory & AuthorProfileView', () => {
       slug: 'alvaro-cunqueiro',
       avatar_url: null,
       bio: 'Autor de crónicas',
-      role: USER_ROLES.MEMBER,
+      roles: [USER_ROLES.MEMBER, USER_ROLES.GUEST],
       published_count: 1,
       latest_publication_at: '2026-01-05T10:00:00Z',
       latest_publication_title: 'Crónica',
       latest_publication_slug: 'cronica',
       publication_types: [PUBLICATION_TYPES.COLUMN],
     },
+    {
+      id: 'u-3',
+      full_name: 'Xesús Admin',
+      slug: 'xesus-admin',
+      avatar_url: null,
+      bio: 'Xestor editorial',
+      roles: [USER_ROLES.ADMIN],
+      published_count: 2,
+      latest_publication_at: '2026-01-20T10:00:00Z',
+      latest_publication_title: 'Nota',
+      latest_publication_slug: 'nota',
+      publication_types: [PUBLICATION_TYPES.ARTICLE],
+    },
+    {
+      id: 'u-4',
+      full_name: 'Rosa Lectora',
+      slug: 'rosa-lectora',
+      avatar_url: null,
+      bio: 'Lectora',
+      roles: [USER_ROLES.READER],
+      published_count: 1,
+      latest_publication_at: '2026-01-01T10:00:00Z',
+      latest_publication_title: 'Carta',
+      latest_publication_slug: 'carta',
+      publication_types: [PUBLICATION_TYPES.ARTICLE],
+    },
   ];
 
-  it('resolves role labels via resolveRoleLabel and sorts cleanly across locales', () => {
+  it('resolves public role badges by priority (founder > member > guest), hides admin/reader, and sorts cleanly', () => {
     const glDict = getDictionaryClient('gl');
     render(
       <AuthorsDirectory
@@ -306,61 +345,124 @@ describe('AuthorsDirectory & AuthorProfileView', () => {
       />
     );
 
-    expect(screen.getByText(glDict.autoresPage.roles.founder)).toBeInTheDocument();
-    expect(screen.getByText(glDict.autoresPage.roles.contributor)).toBeInTheDocument();
+    expect(screen.getAllByText(glDict.autoresPage.roles.founder)).toHaveLength(2);
+    expect(screen.getAllByText(glDict.autoresPage.roles.contributor)).toHaveLength(1);
+    expect(screen.queryByText(glDict.autoresPage.roles.editorialBoard)).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(glDict.autoresPage.sortLabel), {
       target: { value: 'name' },
     });
-    const links = screen.getAllByRole('link', { name: /Beatriz Gómez|Álvaro Cunqueiro/ });
+    const links = screen.getAllByRole('link', {
+      name: /Beatriz Gómez|Carmela Fundadora|Álvaro Cunqueiro|Xesús Admin|Rosa Lectora/,
+    });
     expect(links[0]).toHaveAttribute('href', '/pt/autor/alvaro-cunqueiro');
   });
 
-  it('normalizes publication types and resolves missing roleLabel in AuthorProfileView', () => {
+  it('normalizes publication types and resolves public badges by priority in AuthorProfileView without leaking admin', () => {
     const esDict = getDictionaryClient('es');
-    render(
+    const baseProps = {
+      avatarSrc: '/default-avatar.png',
+      bio: 'Bio ES',
+      worksCountLabel: '2 publicaciones',
+      availableTopics: [{ slug: 'filosofia', name: 'Filosofía', count: 2 }],
+      publications: [
+        {
+          id: 'p-1',
+          slug: 'obra-1',
+          type: 'artigo',
+          title: { es: 'Obra Un', gl: 'Obra Un GL' },
+          subtitle: { es: 'Sub Un', gl: 'Sub Un GL' },
+          created_at: '2026-03-01T10:00:00Z',
+          tags: [{ id: 't-1', name: 'Filosofía', slug: 'filosofia' }],
+        },
+        {
+          id: 'p-2',
+          slug: 'obra-2',
+          type: PUBLICATION_TYPES.ARTICLE,
+          title: { es: 'Obra Dous', gl: 'Obra Dous GL' },
+          created_at: '2026-02-01T10:00:00Z',
+          tags: [{ id: 't-1', name: 'Filosofía', slug: 'filosofia' }],
+        },
+      ],
+      lang: 'es',
+      dict: esDict,
+    };
+
+    const { rerender } = render(
       <AuthorProfileView
         autor={{
           id: 'u-1',
           full_name: 'Beatriz Gómez',
-          role: USER_ROLES.ADMIN,
+          roles: [USER_ROLES.ADMIN],
           slug: 'beatriz-gomez',
         }}
-        avatarSrc="/default-avatar.png"
-        bio="Bio ES"
-        worksCountLabel="2 publicaciones"
-        availableTopics={[{ slug: 'filosofia', name: 'Filosofía', count: 2 }]}
-        publications={[
-          {
-            id: 'p-1',
-            slug: 'obra-1',
-            type: 'artigo',
-            title: { es: 'Obra Un', gl: 'Obra Un GL' },
-            subtitle: { es: 'Sub Un', gl: 'Sub Un GL' },
-            created_at: '2026-03-01T10:00:00Z',
-            tags: [{ id: 't-1', name: 'Filosofía', slug: 'filosofia' }],
-          },
-          {
-            id: 'p-2',
-            slug: 'obra-2',
-            type: PUBLICATION_TYPES.ARTICLE,
-            title: { es: 'Obra Dous', gl: 'Obra Dous GL' },
-            created_at: '2026-02-01T10:00:00Z',
-            tags: [{ id: 't-1', name: 'Filosofía', slug: 'filosofia' }],
-          },
-        ]}
-        lang="es"
-        dict={esDict}
+        {...baseProps}
       />
     );
 
-    expect(screen.getByText(esDict.authorPage.editorialBoard)).toBeInTheDocument();
+    expect(screen.queryByText(esDict.authorPage.editorialBoard)).not.toBeInTheDocument();
+    expect(screen.queryByText(esDict.authorPage.foundingMember)).not.toBeInTheDocument();
+    expect(screen.queryByText(esDict.authorPage.cernaContributor)).not.toBeInTheDocument();
     expect(screen.getByText('Obra Un')).toBeInTheDocument();
     expect(screen.getByText('Obra Dous')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Obra Un' })[0]).toHaveAttribute(
       'href',
       '/es/articulo/obra-1'
     );
+
+    rerender(
+      <AuthorProfileView
+        autor={{
+          id: 'u-2',
+          full_name: 'Beatriz Gómez',
+          roles: [USER_ROLES.FOUNDER, USER_ROLES.ADMIN],
+          slug: 'beatriz-gomez',
+        }}
+        {...baseProps}
+      />
+    );
+    expect(screen.getByText(esDict.authorPage.foundingMember)).toBeInTheDocument();
+    expect(screen.queryByText(esDict.authorPage.editorialBoard)).not.toBeInTheDocument();
+
+    rerender(
+      <AuthorProfileView
+        autor={{
+          id: 'u-2b',
+          full_name: 'Beatriz Gómez',
+          roles: [USER_ROLES.FOUNDER, USER_ROLES.GUEST],
+          slug: 'beatriz-gomez',
+        }}
+        {...baseProps}
+      />
+    );
+    expect(screen.getByText(esDict.authorPage.foundingMember)).toBeInTheDocument();
+
+    rerender(
+      <AuthorProfileView
+        autor={{
+          id: 'u-3',
+          full_name: 'Beatriz Gómez',
+          roles: [USER_ROLES.MEMBER, USER_ROLES.GUEST],
+          slug: 'beatriz-gomez',
+        }}
+        {...baseProps}
+      />
+    );
+    expect(screen.getByText(esDict.authorPage.cernaContributor)).toBeInTheDocument();
+
+    rerender(
+      <AuthorProfileView
+        autor={{
+          id: 'u-4',
+          full_name: 'Beatriz Gómez',
+          roles: [USER_ROLES.READER],
+          slug: 'beatriz-gomez',
+        }}
+        {...baseProps}
+      />
+    );
+    expect(screen.queryByText(esDict.authorPage.cernaContributor)).not.toBeInTheDocument();
+    expect(screen.queryByText(esDict.authorPage.foundingMember)).not.toBeInTheDocument();
   });
 });
 
@@ -447,7 +549,7 @@ describe('CommentsSection & ProfileDashboard DAL integration', () => {
           bio: { gl: 'Poeta galega' },
           avatar_url: null,
           newsletter_subscribed: true,
-          role: USER_ROLES.FOUNDER,
+          roles: [USER_ROLES.FOUNDER],
         }}
         user={
           {

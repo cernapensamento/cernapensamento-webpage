@@ -241,7 +241,7 @@ describe('Schema Skew & Column Privilege Resilience', () => {
           slug: 'diego-araujo',
           bio: null,
           avatar_url: null,
-          role: 'founder',
+          user_roles: [{ role_id: 'founder' }],
         },
       },
     ]);
@@ -288,7 +288,7 @@ describe('Schema Skew & Column Privilege Resilience', () => {
           return {
             eq: vi.fn().mockReturnThis(),
             single: vi.fn().mockResolvedValue({
-              data: { id: 'u1', full_name: 'Diego', slug: 'diego', bio: null, avatar_url: null, role: 'founder' },
+              data: { id: 'u1', full_name: 'Diego', slug: 'diego', bio: null, avatar_url: null, user_roles: [{ role_id: 'founder' }] },
               error: null,
             }),
           };

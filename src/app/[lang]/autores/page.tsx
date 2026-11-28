@@ -71,7 +71,7 @@ export default async function AutoresPage({ params }: Props) {
       slug: author.slug,
       avatar_url: columnist?.image || author.avatar_url,
       bio,
-      role: author.role,
+      roles: author.roles,
       published_count: author.published_count,
       latest_publication_at: author.latest_publication_at,
       latest_publication_title: latestPublicationTitle,

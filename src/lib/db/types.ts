@@ -3,7 +3,13 @@
  * Fully-typed TypeScript interfaces matching the Cerna English database schema.
  */
 
-import type { UserRoleValue, PublicationStatusValue, PublicationTypeValue } from './schema';
+import type {
+  UserRoleValue,
+  PublicRoleValue,
+  PermissionValue,
+  PublicationStatusValue,
+  PublicationTypeValue,
+} from './schema';
 
 /**
  * Localized Multilingual Text
@@ -16,6 +22,7 @@ export type LocalizedString = {
 };
 
 export type UserRole = UserRoleValue;
+export type { PublicRoleValue, PermissionValue };
 export type PublicationStatus = PublicationStatusValue;
 export type PublicationType = PublicationTypeValue;
 
@@ -30,7 +37,8 @@ export interface UserRow {
   bio: LocalizedString | null;
   avatar_url: string | null;
   newsletter_subscribed: boolean;
-  role: UserRole;
+  roles?: UserRole[];
+  publicRole?: PublicRoleValue | null;
 }
 
 /**
@@ -40,12 +48,16 @@ export interface UserRow {
 export type PublicUserRow = Omit<UserRow, 'newsletter_subscribed'>;
 
 export type AuthProfile = {
-  role: UserRole;
+  roles: UserRole[];
+  permissions: PermissionValue[];
   avatar_url: string | null;
   full_name?: string | null;
 };
 
-export type ProfileRow = UserRow & { rol: UserRole };
+export type ProfileRow = UserRow & {
+  roles?: UserRole[];
+  permissions?: PermissionValue[];
+};
 
 export interface PublicationRow {
   id: string;
@@ -184,7 +196,7 @@ export interface ColumnistItem {
   slug: string | null;
   bio: LocalizedString | null;
   avatar_url: string | null;
-  role: UserRole;
+  roles?: UserRole[];
 }
 
 /**
@@ -196,7 +208,8 @@ export interface AuthorProfileDetail {
   slug: string | null;
   bio: LocalizedString | null;
   avatar_url: string | null;
-  role: UserRole;
+  roles?: UserRole[];
+  publicRole?: PublicRoleValue | null;
   publications: PublicationCardItem[];
 }
 
@@ -210,7 +223,8 @@ export interface PublishedAuthorItem {
   slug: string | null;
   bio: LocalizedString | null;
   avatar_url: string | null;
-  role: UserRole;
+  roles?: UserRole[];
+  publicRole?: PublicRoleValue | null;
   published_count: number;
   latest_publication_at: string | null;
   latest_publication_title: LocalizedString | null;

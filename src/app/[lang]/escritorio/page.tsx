@@ -6,11 +6,12 @@ import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
 import {
   getDashboardPublications,
+  getGuestPublicationQuota,
   computeGuestPublicationQuota,
   PUBLICATION_STATUSES,
-  canAccessWriterDesk,
-  isGuestRole,
-  canPublishDirectly,
+  PERMISSIONS,
+  hasPermission,
+  isGuestQuotaSubject,
   type PublicationStatusValue,
 } from '@/lib/db';
 import { DESK_ERRORS, DESK_FILTERS } from '@/lib/db/schema';
@@ -36,7 +37,7 @@ const VALID_TAB_FILTERS: ReadonlySet<string> = new Set([
 ]);
 
 export default async function EscritorioPage({ params: routeParams, searchParams }: PageProps) {
-  const [params, routeParamsResolved, { user, profile, role }] = await Promise.all([
+  const [params, routeParamsResolved, { user, profile, permissions }] = await Promise.all([
     searchParams,
     routeParams,
     getAuthenticatedUser(),
@@ -53,13 +54,13 @@ export default async function EscritorioPage({ params: routeParams, searchParams
     redirect(`/${lang}/login`);
   }
 
-  const userRole = profile?.role || role;
-  if (!canAccessWriterDesk(userRole)) {
+  if (!hasPermission(permissions, PERMISSIONS.DESK_ACCESS)) {
     redirect(`/${lang}/escritorio/perfil`);
   }
 
-  const isGuest = isGuestRole(userRole);
-  const canReview = canPublishDirectly(userRole);
+  const isGuest = isGuestQuotaSubject(permissions);
+  const canReview = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW);
+  const canCreatePerm = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_CREATE);
   const forApproval = filtro === DESK_FILTERS.FOR_APPROVAL && canReview;
 
   const allPublications = await getDashboardPublications({
@@ -74,8 +75,12 @@ export default async function EscritorioPage({ params: routeParams, searchParams
 
   const displayedPublications = verTodo ? filteredPublications : filteredPublications.slice(0, 3);
 
-  const guestQuota = isGuest ? computeGuestPublicationQuota(allPublications) : null;
-  const canCreate = !guestQuota || guestQuota.canCreate;
+  const guestQuota = isGuest
+    ? forApproval
+      ? await getGuestPublicationQuota(user.id)
+      : computeGuestPublicationQuota(allPublications)
+    : null;
+  const canCreate = canCreatePerm && (!guestQuota || guestQuota.canCreate);
 
   const authorDisplayName = profile?.full_name || dict.escritorioPage.defaultAuthorName;
 
@@ -120,19 +125,21 @@ export default async function EscritorioPage({ params: routeParams, searchParams
                   </div>
                 )}
               </div>
-              {canCreate ? (
-                <Link
-                  href={`/${lang}/escritorio/nuevo`}
-                  className="flex items-center gap-3 bg-charcoal text-parchment px-8 py-5 font-sans text-sm uppercase tracking-widest hover:bg-gold transition-all duration-300 hover:shadow-lg hover:-translate-y-1 shrink-0 group"
-                >
-                  <span className="material-symbols-outlined transition-transform duration-500 group-hover:rotate-90" data-icon="add">add</span>
-                  {dict.escritorioPage.createPost}
-                </Link>
-              ) : (
-                <div className="flex items-center gap-3 bg-lines text-charcoal/40 px-8 py-5 font-sans text-sm uppercase tracking-widest cursor-not-allowed shrink-0">
-                  <span className="material-symbols-outlined" data-icon="lock">lock</span>
-                  {dict.escritorioPage.limitReached}
-                </div>
+              {canCreatePerm && (
+                canCreate ? (
+                  <Link
+                    href={`/${lang}/escritorio/nuevo`}
+                    className="flex items-center gap-3 bg-charcoal text-parchment px-8 py-5 font-sans text-sm uppercase tracking-widest hover:bg-gold transition-all duration-300 hover:shadow-lg hover:-translate-y-1 shrink-0 group"
+                  >
+                    <span className="material-symbols-outlined transition-transform duration-500 group-hover:rotate-90" data-icon="add">add</span>
+                    {dict.escritorioPage.createPost}
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 bg-lines text-charcoal/40 px-8 py-5 font-sans text-sm uppercase tracking-widest cursor-not-allowed shrink-0">
+                    <span className="material-symbols-outlined" data-icon="lock">lock</span>
+                    {dict.escritorioPage.limitReached}
+                  </div>
+                )
               )}
             </div>
           </div>
@@ -179,7 +186,7 @@ export default async function EscritorioPage({ params: routeParams, searchParams
                     lang={lang}
                     dict={dict}
                     forApproval={forApproval}
-                    canReview={canReview}
+                    permissions={permissions}
                   />
                 )) : (
                   <p className="font-sans text-charcoal/60">

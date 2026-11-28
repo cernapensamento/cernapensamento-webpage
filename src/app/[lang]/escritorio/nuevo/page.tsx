@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { getDictionary } from '@/dictionaries';
 import { resolveLocale } from '@/i18n-config';
-import { canAccessWriterDesk } from '@/lib/db';
+import { PERMISSIONS, hasPermission } from '@/lib/db';
 import EditarArticuloForm from '@/components/forms/EditarArticuloForm';
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default async function NuevoArticuloPage({ params }: Props) {
-  const [resolvedParams, { user, role }] = await Promise.all([
+  const [resolvedParams, { user, permissions }] = await Promise.all([
     params,
     getAuthenticatedUser(),
   ]);
@@ -21,8 +21,12 @@ export default async function NuevoArticuloPage({ params }: Props) {
     redirect(`/${lang}/login`);
   }
 
-  if (!canAccessWriterDesk(role)) {
+  if (!hasPermission(permissions, PERMISSIONS.DESK_ACCESS)) {
     redirect(`/${lang}/escritorio/perfil`);
+  }
+
+  if (!hasPermission(permissions, PERMISSIONS.PUBLICATIONS_CREATE)) {
+    redirect(`/${lang}/escritorio`);
   }
 
   const dict = await getDictionary(lang);
@@ -30,7 +34,7 @@ export default async function NuevoArticuloPage({ params }: Props) {
   return (
     <EditarArticuloForm
       mode="create"
-      userRole={role}
+      permissions={permissions}
       lang={lang}
       dict={dict.articleEditor}
     />

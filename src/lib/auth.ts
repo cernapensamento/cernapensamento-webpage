@@ -1,8 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import type { EmailOtpType, SupabaseClient } from '@supabase/supabase-js';
-import { USER_ROLES, canAccessWriterDesk } from '@/lib/db/schema';
-import type { UserRole } from '@/lib/db/types';
-import { getUserById } from '@/lib/db/queries/users';
+import {
+  PERMISSIONS,
+  hasPermission,
+} from '@/lib/db/schema';
+import type { PermissionValue, ProfileRow, UserRole } from '@/lib/db/types';
+import { getUserById, getUserRolesAndPermissions } from '@/lib/db/queries/users';
 import { formatDbError } from '@/lib/db/formatDbError';
 import { isSupportedLocale, resolveLocale, type Locale } from '@/i18n-config';
 
@@ -16,10 +19,9 @@ const VALID_EMAIL_OTP_TYPES: ReadonlySet<EmailOtpType> = new Set([
 ]);
 
 /**
- * Resolves the authenticated user, profile (including the legacy `rol` alias),
- * and role, preferring the DB profile role over the JWT role and then `reader`.
- * A profile query error can leave the user authenticated with a null profile;
- * a missing session, auth error, or thrown exception returns all three as null.
+ * Resolves the authenticated user, profile, assigned DB roles, and effective atomic
+ * permissions directly from the database (no JWT `app_metadata` fallback).
+ * Fails closed to empty roles and zero permissions when a user has no rows in `user_roles`.
  */
 export async function getAuthenticatedUser() {
   try {
@@ -30,26 +32,36 @@ export async function getAuthenticatedUser() {
       if (userError && userError.message !== 'Auth session missing!') {
         console.warn('[Auth] getUser error:', formatDbError(userError));
       }
-      return { user: null, profile: null, role: null };
+      return {
+        user: null,
+        profile: null,
+        roles: [] as UserRole[],
+        permissions: [] as PermissionValue[],
+      };
     }
 
-    // 1. Check if role is embedded directly in JWT app_metadata (from custom_access_token_hook)
-    const jwtRole = user.app_metadata?.user_role as UserRole | undefined;
+    const [userProfile, { roles, permissions }] = await Promise.all([
+      getUserById(user.id, supabase),
+      getUserRolesAndPermissions(user.id, supabase),
+    ]);
 
-    // 2. Fetch user profile via DAL
-    const userProfile = await getUserById(user.id, supabase);
-    const role: UserRole = userProfile?.role || jwtRole || USER_ROLES.READER;
+    const profile: ProfileRow | null = userProfile
+      ? {
+          ...userProfile,
+          roles,
+          permissions,
+        }
+      : null;
 
-    // Support backwards-compatibility property .rol on profile if accessed
-    const compatProfile = userProfile ? {
-      ...userProfile,
-      rol: userProfile.role,
-    } : null;
-
-    return { user, profile: compatProfile, role };
+    return { user, profile, roles, permissions };
   } catch (err) {
     console.warn('[Auth] Unexpected error resolving authenticated user:', formatDbError(err));
-    return { user: null, profile: null, role: null };
+    return {
+      user: null,
+      profile: null,
+      roles: [] as UserRole[],
+      permissions: [] as PermissionValue[],
+    };
   }
 }
 
@@ -117,10 +129,10 @@ export async function resolvePostAuthRedirectPath(
   lang?: string
 ): Promise<string> {
   const locale = resolveLocale(lang);
-  const jwtRole = user.app_metadata?.user_role as string | undefined;
-  const profile = await getUserById(user.id, supabase);
-  const role = profile?.role || jwtRole || USER_ROLES.READER;
-  return canAccessWriterDesk(role) ? `/${locale}/escritorio` : `/${locale}/escritorio/perfil`;
+  const { permissions } = await getUserRolesAndPermissions(user.id, supabase);
+  return hasPermission(permissions, PERMISSIONS.DESK_ACCESS)
+    ? `/${locale}/escritorio`
+    : `/${locale}/escritorio/perfil`;
 }
 
 /**

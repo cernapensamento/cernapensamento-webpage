@@ -11,6 +11,9 @@ export const DB_TABLES = {
   TAGS: 'tags',
   TAG_TRANSLATIONS: 'tag_translations',
   PUBLICATION_TAGS: 'publication_tags',
+  ROLES: 'roles',
+  ROLE_PERMISSIONS: 'role_permissions',
+  USER_ROLES: 'user_roles',
 } as const;
 
 export type DbTableName = (typeof DB_TABLES)[keyof typeof DB_TABLES];
@@ -59,7 +62,6 @@ export const USER_COLS = {
   BIO: 'bio',
   AVATAR_URL: 'avatar_url',
   NEWSLETTER_SUBSCRIBED: 'newsletter_subscribed',
-  ROLE: 'role',
 } as const;
 
 export const COMMENT_COLS = {
@@ -87,6 +89,23 @@ export const PUBLICATION_TAG_COLS = {
   TAG_ID: 'tag_id',
 } as const;
 
+export const ROLE_COLS = {
+  ID: 'id',
+  IS_PUBLIC: 'is_public',
+  PUBLIC_PRIORITY: 'public_priority',
+} as const;
+
+export const ROLE_PERMISSION_COLS = {
+  ROLE_ID: 'role_id',
+  PERMISSION: 'permission',
+} as const;
+
+export const USER_ROLE_COLS = {
+  USER_ID: 'user_id',
+  ROLE_ID: 'role_id',
+  CREATED_AT: 'created_at',
+} as const;
+
 export const USER_ROLES = {
   READER: 'reader',
   GUEST: 'guest',
@@ -98,60 +117,204 @@ export const USER_ROLES = {
 export type UserRoleValue = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
 /**
- * Privileged roles with direct publishing and editorial approval authority.
- * Includes legacy database and token aliases for backward compatibility.
+ * Canonical 19 atomic resource:action permissions seeded in public.role_permissions.
  */
-export const PRIVILEGED_ROLES: ReadonlySet<string> = new Set([
-  USER_ROLES.ADMIN,
+export const PERMISSIONS = {
+  DESK_ACCESS: 'desk:access',
+  AI_TRANSLATE: 'ai:translate',
+  PUBLICATIONS_CREATE: 'publications:create',
+  PUBLICATIONS_UPDATE_OWN: 'publications:update_own',
+  PUBLICATIONS_DELETE_OWN: 'publications:delete_own',
+  PUBLICATIONS_WRITE_UNLIMITED: 'publications:write_unlimited',
+  PUBLICATIONS_REVIEW: 'publications:review',
+  PUBLICATIONS_PUBLISH: 'publications:publish',
+  PUBLICATIONS_PIN: 'publications:pin',
+  PUBLICATIONS_UPDATE_ANY: 'publications:update_any',
+  PUBLICATIONS_DELETE_ANY: 'publications:delete_any',
+  MEDIA_UPLOAD_PUBLICATION: 'media:upload_publication',
+  MEDIA_DELETE_ANY: 'media:delete_any',
+  TAGS_CREATE: 'tags:create',
+  TAGS_UPDATE: 'tags:update',
+  TAGS_DELETE: 'tags:delete',
+  COMMENTS_DELETE_ANY: 'comments:delete_any',
+  USERS_ASSIGN_ROLE: 'users:assign_role',
+  USERS_REVOKE_ROLE: 'users:revoke_role',
+} as const;
+
+export type PermissionValue = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+const GUEST_PERMISSION_LIST: readonly PermissionValue[] = [
+  PERMISSIONS.DESK_ACCESS,
+  PERMISSIONS.AI_TRANSLATE,
+  PERMISSIONS.PUBLICATIONS_CREATE,
+  PERMISSIONS.PUBLICATIONS_UPDATE_OWN,
+  PERMISSIONS.PUBLICATIONS_DELETE_OWN,
+  PERMISSIONS.MEDIA_UPLOAD_PUBLICATION,
+  PERMISSIONS.TAGS_CREATE,
+];
+
+const MEMBER_PERMISSION_LIST: readonly PermissionValue[] = [
+  ...GUEST_PERMISSION_LIST,
+  PERMISSIONS.PUBLICATIONS_WRITE_UNLIMITED,
+];
+
+const FOUNDER_PERMISSION_LIST: readonly PermissionValue[] = [
+  ...MEMBER_PERMISSION_LIST,
+  PERMISSIONS.PUBLICATIONS_REVIEW,
+  PERMISSIONS.PUBLICATIONS_PUBLISH,
+  PERMISSIONS.PUBLICATIONS_PIN,
+  PERMISSIONS.PUBLICATIONS_UPDATE_ANY,
+  PERMISSIONS.PUBLICATIONS_DELETE_ANY,
+  PERMISSIONS.MEDIA_DELETE_ANY,
+  PERMISSIONS.TAGS_UPDATE,
+  PERMISSIONS.TAGS_DELETE,
+  PERMISSIONS.COMMENTS_DELETE_ANY,
+];
+
+const ADMIN_PERMISSION_LIST: readonly PermissionValue[] = [
+  ...FOUNDER_PERMISSION_LIST,
+  PERMISSIONS.USERS_ASSIGN_ROLE,
+  PERMISSIONS.USERS_REVOKE_ROLE,
+];
+
+export const ROLE_PERMISSIONS: Readonly<Record<UserRoleValue, readonly PermissionValue[]>> = {
+  [USER_ROLES.READER]: [],
+  [USER_ROLES.GUEST]: GUEST_PERMISSION_LIST,
+  [USER_ROLES.MEMBER]: MEMBER_PERMISSION_LIST,
+  [USER_ROLES.FOUNDER]: FOUNDER_PERMISSION_LIST,
+  [USER_ROLES.ADMIN]: ADMIN_PERMISSION_LIST,
+};
+
+/**
+ * Deterministic display priority for public editorial roles (highest to lowest).
+ */
+export const PUBLIC_ROLE_PRIORITY = [
   USER_ROLES.FOUNDER,
-  'admin',
-  'founder',
-  'fundador',
-  'escritor',
-]);
-
-export function canPublishDirectly(role?: string | null): boolean {
-  if (!role) return false;
-  return PRIVILEGED_ROLES.has(role.toLowerCase().trim());
-}
-
-/**
- * Reader roles with no authoring or publishing permissions.
- * Includes legacy database aliases.
- */
-export const READER_ROLES: ReadonlySet<string> = new Set([
-  USER_ROLES.READER,
-  'reader',
-  'lector',
-  'usuario',
-]);
-
-export function isReaderRole(role?: string | null): boolean {
-  if (!role) return false;
-  return READER_ROLES.has(role.toLowerCase().trim());
-}
-
-/**
- * Guest roles with limited publication quotas and mandatory editorial review.
- */
-export const GUEST_ROLES: ReadonlySet<string> = new Set([
+  USER_ROLES.MEMBER,
   USER_ROLES.GUEST,
-  'guest',
-  'invitado',
-  'convidado',
-]);
+] as const;
 
-export function isGuestRole(role?: string | null): boolean {
-  if (!role) return false;
-  return GUEST_ROLES.has(role.toLowerCase().trim());
+export type PublicRoleValue = (typeof PUBLIC_ROLE_PRIORITY)[number];
+
+export interface RoleMetadata {
+  readonly isPublic: boolean;
+  readonly publicPriority: number | null;
+}
+
+export const ROLE_METADATA: Readonly<Record<UserRoleValue, RoleMetadata>> = {
+  [USER_ROLES.FOUNDER]: { isPublic: true, publicPriority: 1 },
+  [USER_ROLES.MEMBER]: { isPublic: true, publicPriority: 2 },
+  [USER_ROLES.GUEST]: { isPublic: true, publicPriority: 3 },
+  [USER_ROLES.ADMIN]: { isPublic: false, publicPriority: null },
+  [USER_ROLES.READER]: { isPublic: false, publicPriority: null },
+};
+
+export const VALID_ROLE_SET: ReadonlySet<string> = new Set(Object.values(USER_ROLES));
+export const VALID_PERMISSION_SET: ReadonlySet<string> = new Set(Object.values(PERMISSIONS));
+
+/**
+ * Resolves and deduplicates the union of atomic permissions across assigned roles.
+ * Unknown or empty roles fail closed to [].
+ */
+export function resolvePermissionsForRoles(
+  roles?: readonly (UserRoleValue | string)[] | null
+): PermissionValue[] {
+  if (!roles || roles.length === 0) return [];
+  const resolved = new Set<PermissionValue>();
+  for (const role of roles) {
+    if (typeof role === 'string' && VALID_ROLE_SET.has(role)) {
+      for (const perm of ROLE_PERMISSIONS[role as UserRoleValue]) {
+        resolved.add(perm);
+      }
+    }
+  }
+  return Array.from(resolved);
 }
 
 /**
- * Checks whether a user role has access to the writer desk (everything except reader roles).
+ * Checks whether a permission list grants a single required permission.
  */
-export function canAccessWriterDesk(role?: string | null): boolean {
-  if (!role) return false;
-  return !isReaderRole(role);
+export function hasPermission(
+  permissions?: readonly (PermissionValue | string)[] | null,
+  permission?: PermissionValue | string | null
+): boolean {
+  if (!permissions || !permission) return false;
+  return permissions.includes(permission);
+}
+
+/**
+ * Checks whether a permission list grants at least one of the required permissions.
+ * Empty required lists fail closed (return false).
+ */
+export function hasAnyPermission(
+  permissions?: readonly (PermissionValue | string)[] | null,
+  required?: readonly (PermissionValue | string)[] | null
+): boolean {
+  if (!permissions || !required || required.length === 0) return false;
+  return required.some((perm) => permissions.includes(perm));
+}
+
+/**
+ * Checks whether a permission list grants every one of the required permissions.
+ * Empty required lists fail closed (return false).
+ */
+export function hasAllPermissions(
+  permissions?: readonly (PermissionValue | string)[] | null,
+  required?: readonly (PermissionValue | string)[] | null
+): boolean {
+  if (!permissions || !required || required.length === 0) return false;
+  return required.every((perm) => permissions.includes(perm));
+}
+
+/**
+ * Guest Author publication quotas (2/year, 4 total) apply when a user can create
+ * publications without holding unlimited publication rights.
+ */
+export function isGuestQuotaSubject(
+  permissions?: readonly (PermissionValue | string)[] | null
+): boolean {
+  return (
+    hasPermission(permissions, PERMISSIONS.PUBLICATIONS_CREATE) &&
+    !hasPermission(permissions, PERMISSIONS.PUBLICATIONS_WRITE_UNLIMITED)
+  );
+}
+
+/**
+ * Resolves the highest-priority public editorial role (founder > member > guest),
+ * ignoring internal roles such as admin and reader.
+ */
+export function resolvePrimaryPublicRole(
+  roles?: readonly (UserRoleValue | string)[] | null
+): PublicRoleValue | null {
+  if (!roles || roles.length === 0) return null;
+  for (const candidate of PUBLIC_ROLE_PRIORITY) {
+    if (roles.includes(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolves a localized public editorial badge label from public roles,
+ * returning null when the user only holds internal roles (e.g., admin, reader)
+ * or no roles at all.
+ */
+export function resolvePublicAuthorBadge(
+  roles?: readonly (UserRoleValue | string)[] | null,
+  labels?: {
+    founder?: string | null;
+    contributor?: string | null;
+  }
+): string | null {
+  const primaryPublicRole = resolvePrimaryPublicRole(roles);
+  if (primaryPublicRole === USER_ROLES.FOUNDER) {
+    return labels?.founder || null;
+  }
+  if (primaryPublicRole === USER_ROLES.MEMBER || primaryPublicRole === USER_ROLES.GUEST) {
+    return labels?.contributor || null;
+  }
+  return null;
 }
 
 /**
@@ -163,14 +326,13 @@ export const GUEST_PUBLICATION_LIMITS = {
 } as const;
 
 /**
- * Resolves a localized display label for a user role (including legacy role aliases).
+ * Resolves a localized display label for a canonical user role.
  */
 export function resolveRoleLabel(
   role?: string | null,
   rolesDict?: {
     admin?: string;
     founder?: string;
-    writer?: string;
     member?: string;
     guest?: string;
     reader?: string;
@@ -181,18 +343,12 @@ export function resolveRoleLabel(
     case USER_ROLES.ADMIN:
       return rolesDict?.admin || '';
     case USER_ROLES.FOUNDER:
-    case 'fundador':
-    case 'escritor':
-      return rolesDict?.founder || rolesDict?.writer || '';
+      return rolesDict?.founder || '';
     case USER_ROLES.MEMBER:
       return rolesDict?.member || '';
     case USER_ROLES.GUEST:
-    case 'invitado':
-    case 'convidado':
       return rolesDict?.guest || '';
     case USER_ROLES.READER:
-    case 'lector':
-    case 'usuario':
     default:
       return rolesDict?.reader || '';
   }
@@ -204,6 +360,39 @@ export const PUBLICATION_STATUSES = {
 } as const;
 
 export type PublicationStatusValue = (typeof PUBLICATION_STATUSES)[keyof typeof PUBLICATION_STATUSES];
+
+export interface EditablePublicationTarget {
+  status: PublicationStatusValue | string;
+  author_id?: string | null;
+  author?: { id: string } | null;
+}
+
+/**
+ * Evaluates whether a caller holding `permissions` can edit a publication
+ * given its author and current status. Fails closed when permissions are empty.
+ */
+export function canEditPublication(
+  permissions: readonly (PermissionValue | string)[] | null | undefined,
+  publication: EditablePublicationTarget,
+  userId?: string | null
+): boolean {
+  const authorId = publication.author?.id ?? publication.author_id ?? null;
+  const isAuthor = Boolean(userId && authorId === userId);
+  const isPublished = publication.status === PUBLICATION_STATUSES.PUBLISHED;
+  const isInReview = publication.status === PUBLICATION_STATUSES.IN_REVIEW;
+  const canUpdateAny = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_ANY);
+  const canUpdateOwn = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_OWN);
+  const canPublish = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PUBLISH);
+  const canReview = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW);
+
+  if (isAuthor) {
+    return isPublished
+      ? canPublish || canUpdateAny
+      : canUpdateOwn || canUpdateAny || (isInReview && canReview);
+  }
+
+  return canUpdateAny || (isInReview && canReview);
+}
 
 export const EDITOR_ACTIONS = {
   DRAFT: 'draft',

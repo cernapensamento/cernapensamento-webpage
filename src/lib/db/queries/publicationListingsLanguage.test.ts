@@ -108,7 +108,7 @@ describe('Listing queries original_language metadata & egress guardrail', () => 
           slug: 'autor-prueba',
           bio: null,
           avatar_url: null,
-          role: 'member',
+          user_roles: [{ role_id: 'member' }],
         },
       },
     ]);

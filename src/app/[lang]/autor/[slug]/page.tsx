@@ -7,7 +7,7 @@ import { resolveAuthorBio } from '@/lib/i18n/resolveLocalizedText';
 import type { Metadata } from 'next';
 import AuthorProfileView from '@/components/features/AuthorProfileView';
 import { getUserBySlugOrId, getAuthorProfileBySlugOrId } from '@/lib/db';
-import { USER_ROLES } from '@/lib/db/schema';
+import { resolvePublicAuthorBadge } from '@/lib/db/schema';
 
 export const revalidate = 60;
 
@@ -66,16 +66,13 @@ export default async function AutorPage({ params }: PageProps) {
   const avatarSrc = columnist?.image || profile.avatar_url || DEFAULT_AVATAR_URL;
   const bio = resolveAuthorBio(profile, dict.authors, locale);
 
-  // Determine editorial role badge:
-  // - USER_ROLES.ADMIN -> editorialBoard
-  // - USER_ROLES.FOUNDER (or founder columnist) -> foundingMember
-  // - others -> cernaContributor
+  // Determine public editorial role badge by fixed priority (founder > member > guest).
+  // Internal roles (such as admin or reader) never render on public author profiles.
   const roleLabel =
-    profile.role === USER_ROLES.ADMIN
-      ? dict.authorPage.editorialBoard
-      : profile.role === USER_ROLES.FOUNDER || columnist
-        ? dict.authorPage.foundingMember
-        : dict.authorPage.cernaContributor;
+    resolvePublicAuthorBadge(profile.roles, {
+      founder: dict.authorPage.foundingMember,
+      contributor: dict.authorPage.cernaContributor,
+    }) ?? undefined;
 
   // Extract distinct topics and frequency count across the author's publications
   const topicCounts: Record<string, { slug: string; name: string; count: number }> = {};
@@ -109,8 +106,7 @@ export default async function AutorPage({ params }: PageProps) {
         full_name: profile.full_name,
         bio,
         avatar_url: profile.avatar_url,
-        rol: profile.role,
-        role: profile.role,
+        roles: profile.roles,
         slug: profile.slug,
       }}
       columnist={columnist}
