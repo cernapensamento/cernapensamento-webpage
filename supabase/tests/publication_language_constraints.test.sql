@@ -11,6 +11,9 @@ VALUES ('20000000-0000-0000-0000-000000000001', 'monolingual-test@example.test',
 INSERT INTO public.users (id, full_name)
 VALUES ('20000000-0000-0000-0000-000000000001', 'Monolingual Test')
 ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.user_roles (user_id, role_id)
+VALUES ('20000000-0000-0000-0000-000000000001', 'founder')
+ON CONFLICT (user_id, role_id) DO NOTHING;
 
 -- 1. Galician-only published publication succeeds
 SELECT lives_ok($$

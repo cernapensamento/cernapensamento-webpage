@@ -13,6 +13,9 @@ VALUES ('10000000-0000-0000-0000-000000000001', 'newsletter-test@example.test',
 INSERT INTO public.users (id, full_name)
 VALUES ('10000000-0000-0000-0000-000000000001', 'Newsletter Test')
 ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.user_roles (user_id, role_id)
+VALUES ('10000000-0000-0000-0000-000000000001', 'founder')
+ON CONFLICT (user_id, role_id) DO NOTHING;
 
 CREATE FUNCTION pg_temp.new_publication(label text) RETURNS uuid LANGUAGE plpgsql AS $$
 DECLARE
