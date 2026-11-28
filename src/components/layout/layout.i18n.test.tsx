@@ -7,11 +7,14 @@ import SideMenu from './SideMenu';
 import SiteFooter from './SiteFooter';
 import { ThemeProvider } from '@/components/ThemeProvider';
 
+import { USER_ROLES, resolvePermissionsForRoles } from '@/lib/db/schema';
+import type { AuthProfile } from '@/lib/db/types';
+
 let mockPathname = '/gl/articulos';
 let mockHeaderLocale: string | null = 'gl';
 let mockAuthState: {
   user: { email?: string; user_metadata?: Record<string, unknown> } | null;
-  profile: { full_name?: string | null; avatar_url?: string | null; role?: string | null } | null;
+  profile: AuthProfile | null;
   loading: boolean;
 } = {
   user: null,
@@ -120,7 +123,8 @@ describe('Layout components i18n and columnist canonicalization', () => {
       profile: {
         full_name: null,
         avatar_url: 'https://example.com/avatar.webp',
-        role: 'founder',
+        roles: [USER_ROLES.FOUNDER],
+        permissions: resolvePermissionsForRoles([USER_ROLES.FOUNDER]),
       },
       loading: false,
     };
