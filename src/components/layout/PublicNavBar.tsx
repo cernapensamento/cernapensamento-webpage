@@ -14,8 +14,8 @@ import { COLUMNISTS } from '@/lib/columnists';
 import {
   PERMISSIONS,
   PUBLICATION_TYPES,
+  USER_ROLES,
   hasPermission,
-  resolveLegacyPrimaryRole,
   resolvePrimaryPublicRole,
   resolveRoleLabel,
 } from '@/lib/db/schema';
@@ -192,7 +192,7 @@ export default function PublicNavBar() {
   const canWrite = hasPermission(userProfile?.permissions, PERMISSIONS.DESK_ACCESS);
   const displayRole =
     resolvePrimaryPublicRole(userProfile?.roles) ??
-    resolveLegacyPrimaryRole(userProfile?.roles);
+    (userProfile?.roles?.includes(USER_ROLES.ADMIN) ? USER_ROLES.ADMIN : USER_ROLES.READER);
   const userMenuLinks = [
     {
       href: `/${lang}/escritorio/perfil`,

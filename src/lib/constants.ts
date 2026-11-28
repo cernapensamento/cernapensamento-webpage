@@ -39,16 +39,6 @@ export const ARTICLE_STATES = {
 } as const;
 export type ArticleState = PublicationStatus;
 
-export const USER_ROLES = {
-  READER: 'reader',
-  GUEST: 'guest',
-  MEMBER: 'member',
-  FOUNDER: 'founder',
-  ADMIN: 'admin',
-} as const;
-
-export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
-
 export const ERROR_CODES = {
   BAD_REQUEST: '400',
   UNAUTHORIZED: '401',

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getPublishedAuthors } from './users';
 
-const author = { id: 'author-1', full_name: 'First Author', slug: 'first', role: 'member', bio: null, avatar_url: null };
+const author = { id: 'author-1', full_name: 'First Author', slug: 'first', bio: null, avatar_url: null, user_roles: [{ role_id: 'member' }] };
 const publication = {
   id: 'pub-1', slug: 'latest', title: { gl: 'Latest' }, type: 'article',
   created_at: '2026-10-01T00:00:00Z', author_id: author.id, author,

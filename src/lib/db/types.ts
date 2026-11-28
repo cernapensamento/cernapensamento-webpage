@@ -37,7 +37,6 @@ export interface UserRow {
   bio: LocalizedString | null;
   avatar_url: string | null;
   newsletter_subscribed: boolean;
-  role: UserRole;
   roles?: UserRole[];
   publicRole?: PublicRoleValue | null;
 }
@@ -51,14 +50,11 @@ export type PublicUserRow = Omit<UserRow, 'newsletter_subscribed'>;
 export type AuthProfile = {
   roles: UserRole[];
   permissions: PermissionValue[];
-  role?: UserRole;
-  rol?: UserRole;
   avatar_url: string | null;
   full_name?: string | null;
 };
 
 export type ProfileRow = UserRow & {
-  rol: UserRole;
   roles?: UserRole[];
   permissions?: PermissionValue[];
 };
@@ -201,7 +197,6 @@ export interface ColumnistItem {
   bio: LocalizedString | null;
   avatar_url: string | null;
   roles?: UserRole[];
-  role?: UserRole;
 }
 
 /**
@@ -215,7 +210,6 @@ export interface AuthorProfileDetail {
   avatar_url: string | null;
   roles?: UserRole[];
   publicRole?: PublicRoleValue | null;
-  role?: UserRole;
   publications: PublicationCardItem[];
 }
 
@@ -231,7 +225,6 @@ export interface PublishedAuthorItem {
   avatar_url: string | null;
   roles?: UserRole[];
   publicRole?: PublicRoleValue | null;
-  role?: UserRole;
   published_count: number;
   latest_publication_at: string | null;
   latest_publication_title: LocalizedString | null;

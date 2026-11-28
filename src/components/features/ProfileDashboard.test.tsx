@@ -125,15 +125,11 @@ describe('ProfileDashboard multi-role identity rendering', () => {
     expect(screen.getByText(expectedEs)).toBeInTheDocument();
   });
 
-  it('fails closed to reader label when roles is [] even if stale legacy role fields are present', () => {
+  it('fails closed to reader label when roles is []', () => {
     const glDict = getDictionaryClient('gl');
     render(
       <ProfileDashboard
-        profile={{
-          ...buildProfile([]),
-          role: USER_ROLES.FOUNDER,
-          rol: USER_ROLES.ADMIN,
-        }}
+        profile={buildProfile([])}
         user={mockUser}
       />
     );

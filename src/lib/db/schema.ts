@@ -62,7 +62,6 @@ export const USER_COLS = {
   BIO: 'bio',
   AVATAR_URL: 'avatar_url',
   NEWSLETTER_SUBSCRIBED: 'newsletter_subscribed',
-  ROLE: 'role',
 } as const;
 
 export const COMMENT_COLS = {
@@ -296,88 +295,6 @@ export function resolvePrimaryPublicRole(
   return null;
 }
 
-const LEGACY_ROLE_PRIORITY: readonly UserRoleValue[] = [
-  USER_ROLES.ADMIN,
-  USER_ROLES.FOUNDER,
-  USER_ROLES.MEMBER,
-  USER_ROLES.GUEST,
-  USER_ROLES.READER,
-];
-
-/**
- * Temporary transition helper deriving a single legacy role from multi-role DB assignments.
- * Fails closed to `reader` when no roles are assigned.
- * @deprecated Remove once all callers migrate to atomic permissions (Ticket 07).
- */
-export function resolveLegacyPrimaryRole(
-  roles?: readonly (UserRoleValue | string)[] | null
-): UserRoleValue {
-  if (!roles || roles.length === 0) return USER_ROLES.READER;
-  for (const candidate of LEGACY_ROLE_PRIORITY) {
-    if (roles.includes(candidate)) {
-      return candidate;
-    }
-  }
-  return USER_ROLES.READER;
-}
-
-/**
- * Privileged roles with direct publishing and editorial approval authority.
- * Includes legacy database and token aliases for backward compatibility.
- */
-export const PRIVILEGED_ROLES: ReadonlySet<string> = new Set([
-  USER_ROLES.ADMIN,
-  USER_ROLES.FOUNDER,
-  'admin',
-  'founder',
-  'fundador',
-  'escritor',
-]);
-
-export function canPublishDirectly(role?: string | null): boolean {
-  if (!role) return false;
-  return PRIVILEGED_ROLES.has(role.toLowerCase().trim());
-}
-
-/**
- * Reader roles with no authoring or publishing permissions.
- * Includes legacy database aliases.
- */
-export const READER_ROLES: ReadonlySet<string> = new Set([
-  USER_ROLES.READER,
-  'reader',
-  'lector',
-  'usuario',
-]);
-
-export function isReaderRole(role?: string | null): boolean {
-  if (!role) return false;
-  return READER_ROLES.has(role.toLowerCase().trim());
-}
-
-/**
- * Guest roles with limited publication quotas and mandatory editorial review.
- */
-export const GUEST_ROLES: ReadonlySet<string> = new Set([
-  USER_ROLES.GUEST,
-  'guest',
-  'invitado',
-  'convidado',
-]);
-
-export function isGuestRole(role?: string | null): boolean {
-  if (!role) return false;
-  return GUEST_ROLES.has(role.toLowerCase().trim());
-}
-
-/**
- * Checks whether a user role has access to the writer desk (everything except reader roles).
- */
-export function canAccessWriterDesk(role?: string | null): boolean {
-  if (!role) return false;
-  return !isReaderRole(role);
-}
-
 /**
  * Publication limits for guest authors.
  */
@@ -387,14 +304,13 @@ export const GUEST_PUBLICATION_LIMITS = {
 } as const;
 
 /**
- * Resolves a localized display label for a user role (including legacy role aliases).
+ * Resolves a localized display label for a canonical user role.
  */
 export function resolveRoleLabel(
   role?: string | null,
   rolesDict?: {
     admin?: string;
     founder?: string;
-    writer?: string;
     member?: string;
     guest?: string;
     reader?: string;
@@ -405,18 +321,12 @@ export function resolveRoleLabel(
     case USER_ROLES.ADMIN:
       return rolesDict?.admin || '';
     case USER_ROLES.FOUNDER:
-    case 'fundador':
-    case 'escritor':
-      return rolesDict?.founder || rolesDict?.writer || '';
+      return rolesDict?.founder || '';
     case USER_ROLES.MEMBER:
       return rolesDict?.member || '';
     case USER_ROLES.GUEST:
-    case 'invitado':
-    case 'convidado':
       return rolesDict?.guest || '';
     case USER_ROLES.READER:
-    case 'lector':
-    case 'usuario':
     default:
       return rolesDict?.reader || '';
   }

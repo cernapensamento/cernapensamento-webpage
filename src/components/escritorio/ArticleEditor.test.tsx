@@ -5,7 +5,11 @@ import ArticleEditor from './ArticleEditor';
 import { parseDraft, serializeDraft } from './articleEditorUtils';
 import * as storage from '@/lib/storage';
 import * as articlesActions from '@/actions/articles';
-import { PERMISSIONS } from '@/lib/db/schema';
+import {
+  PERMISSIONS,
+  USER_ROLES,
+  resolvePermissionsForRoles,
+} from '@/lib/db/schema';
 
 vi.mock('@/actions/articles', () => ({
   saveArticleAction: vi.fn(),
@@ -425,7 +429,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     const { container } = render(
       <ArticleEditor
         mode="edit"
-        userRole="admin"
+        permissions={resolvePermissionsForRoles([USER_ROLES.ADMIN])}
         initialData={{
           id: 'pub-existing-42',
           title: { gl: 'Artigo doutra autora', es: 'Artículo de otra autora' },
@@ -558,7 +562,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     const { container } = render(
       <ArticleEditor
         mode="create"
-        userRole="guest"
+        permissions={resolvePermissionsForRoles([USER_ROLES.GUEST])}
         onSave={onSave}
         isPublishing={false}
       />
@@ -1182,7 +1186,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     const { unmount } = render(
       <ArticleEditor
         mode="edit"
-        userRole="member"
+        permissions={resolvePermissionsForRoles([USER_ROLES.MEMBER])}
         initialData={{
           id: 'art-val-bi',
           title: { gl: 'Título Galego', es: '' },
@@ -1207,7 +1211,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     render(
       <ArticleEditor
         mode="edit"
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         initialData={{
           id: 'art-val-mono',
           title: { es: 'Solo título' },
@@ -1231,7 +1235,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     const { unmount: unmountBi } = render(
       <ArticleEditor
         mode="edit"
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         initialData={{
           id: 'art-pub-bi',
           title: { gl: 'Título GL', es: 'Título ES' },
@@ -1250,7 +1254,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     const { unmount: unmountGl } = render(
       <ArticleEditor
         mode="edit"
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         initialData={{
           id: 'art-pub-gl',
           title: { gl: 'Título GL' },
@@ -1269,7 +1273,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     render(
       <ArticleEditor
         mode="edit"
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         initialData={{
           id: 'art-pub-es',
           title: { es: 'Título ES' },
@@ -1284,7 +1288,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     expect(screen.getByText(/idiomas a publicar/i).parentElement).toHaveTextContent(/só en castellano/i);
   });
 
-  it('forwards explicit permissions to EditorToolbar without falling back to userRole when permissions is []', () => {
+  it('forwards explicit permissions to EditorToolbar and fails closed when permissions is []', () => {
     const { rerender } = render(
       <ArticleEditor
         mode="create"
@@ -1299,7 +1303,6 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     rerender(
       <ArticleEditor
         mode="create"
-        userRole="founder"
         permissions={[]}
         onSave={vi.fn().mockResolvedValue(true)}
         isPublishing={false}

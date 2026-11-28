@@ -68,7 +68,6 @@ interface AuthorProfileViewProps {
     bio?: string | LocalizedString | null;
     avatar_url?: string | null;
     roles?: readonly (UserRole | string)[] | null;
-    role?: string | null;
     slug?: string | null;
   };
   columnist?: Columnist;

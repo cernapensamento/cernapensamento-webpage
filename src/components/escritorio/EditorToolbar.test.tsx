@@ -34,12 +34,10 @@ function renderToolbar({
   mode = 'edit',
   publicationStatus = PUBLICATION_STATUSES.DRAFT,
   permissions,
-  userRole,
 }: {
   mode?: 'create' | 'edit';
   publicationStatus?: string;
   permissions?: readonly PermissionValue[];
-  userRole?: string;
 }) {
   const onSubmitAction = vi.fn();
   const onOpenPublishModal = vi.fn();
@@ -49,7 +47,6 @@ function renderToolbar({
       editor={null}
       routeLang="gl"
       mode={mode}
-      userRole={userRole}
       permissions={permissions}
       publicationStatus={publicationStatus}
       isPublishing={false}
@@ -189,27 +186,56 @@ describe('EditorToolbar atomic permission gating', () => {
     expect(onSubmitAction).toHaveBeenCalledWith(EDITOR_ACTIONS.APPROVE);
   });
 
-  it('does NOT fall back to userRole when permissions is explicitly [] (zero-role fail-closed)', () => {
-    renderToolbar({
-      mode: 'edit',
-      publicationStatus: PUBLICATION_STATUSES.IN_REVIEW,
-      permissions: [],
-      userRole: USER_ROLES.FOUNDER,
-    });
+  it('fails closed when permissions is [] or omitted', () => {
+    const { rerender } = render(
+      <EditorToolbar
+        editor={null}
+        routeLang="gl"
+        mode="edit"
+        permissions={[]}
+        publicationStatus={PUBLICATION_STATUSES.IN_REVIEW}
+        isPublishing={false}
+        showIndex={false}
+        onInsertImage={vi.fn()}
+        onInsertYoutube={vi.fn()}
+        onInsertMath={vi.fn()}
+        onInsertTable={vi.fn()}
+        onToggleShowIndex={vi.fn()}
+        onClearAll={vi.fn()}
+        onChangeCover={vi.fn()}
+        onOpenPreview={vi.fn()}
+        onSubmitAction={vi.fn()}
+        onOpenPublishModal={vi.fn()}
+      />
+    );
 
     expect(screen.queryByRole('button', { name: glDict.approveAndPublish })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: glDict.reject })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: new RegExp(glDict.revokeApproval, 'i') })).toBeInTheDocument();
-  });
 
-  it('derives fallback permissions from userRole when permissions prop is omitted during transition', () => {
-    renderToolbar({
-      mode: 'edit',
-      publicationStatus: PUBLICATION_STATUSES.IN_REVIEW,
-      userRole: USER_ROLES.FOUNDER,
-    });
+    rerender(
+      <EditorToolbar
+        editor={null}
+        routeLang="gl"
+        mode="edit"
+        publicationStatus={PUBLICATION_STATUSES.IN_REVIEW}
+        isPublishing={false}
+        showIndex={false}
+        onInsertImage={vi.fn()}
+        onInsertYoutube={vi.fn()}
+        onInsertMath={vi.fn()}
+        onInsertTable={vi.fn()}
+        onToggleShowIndex={vi.fn()}
+        onClearAll={vi.fn()}
+        onChangeCover={vi.fn()}
+        onOpenPreview={vi.fn()}
+        onSubmitAction={vi.fn()}
+        onOpenPublishModal={vi.fn()}
+      />
+    );
 
-    expect(screen.getByRole('button', { name: glDict.approveAndPublish })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: glDict.reject })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: glDict.approveAndPublish })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: glDict.reject })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: new RegExp(glDict.revokeApproval, 'i') })).toBeInTheDocument();
   });
 });

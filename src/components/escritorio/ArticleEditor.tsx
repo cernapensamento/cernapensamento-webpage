@@ -100,7 +100,6 @@ interface ArticleEditorProps {
   onDraftCreated?: (draft: { id: string; slug: string }) => void;
   isPublishing: boolean;
   mode: 'create' | 'edit';
-  userRole?: string;
   permissions?: readonly PermissionValue[];
 }
 
@@ -110,7 +109,6 @@ export default function ArticleEditor({
   onSave,
   onDraftCreated,
   isPublishing,
-  userRole,
   permissions,
 }: ArticleEditorProps) {
   const routeLang = useLocale();
@@ -1070,7 +1068,6 @@ export default function ArticleEditor({
             editor={editor}
             routeLang={routeLang}
             mode={mode}
-            userRole={userRole}
             permissions={permissions}
             publicationStatus={initialData?.status || initialData?.estado}
             isPublishing={isPublishing}

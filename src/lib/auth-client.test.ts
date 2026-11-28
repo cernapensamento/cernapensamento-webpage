@@ -86,14 +86,12 @@ describe('client auth hydration (fetchClientAuthProfile & resolveClientDeskRedir
     expect(profile).toEqual({
       roles: [USER_ROLES.GUEST, USER_ROLES.MEMBER],
       permissions: resolvePermissionsForRoles([USER_ROLES.GUEST, USER_ROLES.MEMBER]),
-      role: USER_ROLES.MEMBER,
-      rol: USER_ROLES.MEMBER,
       avatar_url: 'https://example.com/a.webp',
       full_name: 'Lucia',
     });
   });
 
-  it('fails closed to empty roles/permissions and reader legacy role when user_roles has zero rows', async () => {
+  it('fails closed to empty roles/permissions when user_roles has zero rows', async () => {
     const supabase = makeClientSupabase({
       userRow: {
         avatar_url: null,
@@ -106,8 +104,6 @@ describe('client auth hydration (fetchClientAuthProfile & resolveClientDeskRedir
     expect(profile).toEqual({
       roles: [],
       permissions: [],
-      role: USER_ROLES.READER,
-      rol: USER_ROLES.READER,
       avatar_url: null,
       full_name: 'No Roles',
     });

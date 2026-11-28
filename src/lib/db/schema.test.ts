@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import * as schema from './index';
 import {
   DB_TABLES,
+  USER_COLS,
   ROLE_COLS,
   ROLE_PERMISSION_COLS,
   USER_ROLE_COLS,
@@ -15,6 +17,7 @@ import {
   hasAllPermissions,
   isGuestQuotaSubject,
   resolvePrimaryPublicRole,
+  resolveRoleLabel,
 } from './index';
 
 describe('RBAC schema constants and permission helpers', () => {
@@ -168,5 +171,35 @@ describe('RBAC schema constants and permission helpers', () => {
     expect(resolvePrimaryPublicRole([USER_ROLES.ADMIN, USER_ROLES.READER])).toBeNull();
     expect(resolvePrimaryPublicRole([])).toBeNull();
     expect(resolvePrimaryPublicRole(null)).toBeNull();
+  });
+
+  it('removes legacy single-role column constants, helpers, and Spanish aliases after contract phase', () => {
+    expect(USER_COLS).not.toHaveProperty('ROLE');
+    expect(schema).not.toHaveProperty('PRIVILEGED_ROLES');
+    expect(schema).not.toHaveProperty('READER_ROLES');
+    expect(schema).not.toHaveProperty('GUEST_ROLES');
+    expect(schema).not.toHaveProperty('canPublishDirectly');
+    expect(schema).not.toHaveProperty('isReaderRole');
+    expect(schema).not.toHaveProperty('isGuestRole');
+    expect(schema).not.toHaveProperty('canAccessWriterDesk');
+    expect(schema).not.toHaveProperty('resolveLegacyPrimaryRole');
+
+    const rolesDict = {
+      admin: 'Admin',
+      founder: 'Fundador',
+      member: 'Membro',
+      guest: 'Convidado',
+      reader: 'Lector',
+    };
+    expect(resolveRoleLabel(USER_ROLES.ADMIN, rolesDict)).toBe('Admin');
+    expect(resolveRoleLabel(USER_ROLES.FOUNDER, rolesDict)).toBe('Fundador');
+    expect(resolveRoleLabel(USER_ROLES.MEMBER, rolesDict)).toBe('Membro');
+    expect(resolveRoleLabel(USER_ROLES.GUEST, rolesDict)).toBe('Convidado');
+    expect(resolveRoleLabel(USER_ROLES.READER, rolesDict)).toBe('Lector');
+    // Legacy Spanish aliases no longer resolve to non-reader roles
+    expect(resolveRoleLabel('fundador', rolesDict)).toBe('Lector');
+    expect(resolveRoleLabel('escritor', rolesDict)).toBe('Lector');
+    expect(resolveRoleLabel('invitado', rolesDict)).toBe('Lector');
+    expect(resolveRoleLabel('convidado', rolesDict)).toBe('Lector');
   });
 });

@@ -64,21 +64,18 @@ vi.mock('@/components/forms/EditarArticuloForm', () => ({
 function makeAuth(
   userId: string,
   permissions: readonly PermissionValue[],
-  roles: UserRole[] = [],
-  legacyRole: UserRole = USER_ROLES.READER
+  roles: UserRole[] = []
 ) {
   return {
     user: { id: userId } as unknown as User,
     profile: {
       id: userId,
       full_name: 'Test User',
-      role: legacyRole,
       roles,
       permissions: [...permissions],
     } as unknown as ProfileRow,
     roles,
     permissions: [...permissions],
-    role: legacyRole,
   };
 }
 
@@ -87,7 +84,6 @@ const UNAUTH = {
   profile: null,
   roles: [],
   permissions: [],
-  role: null,
 };
 
 function makeDashPub(id: string, status: 'draft' | 'in_review' | 'published' = 'draft'): PublicationDashboardItem {
@@ -131,9 +127,9 @@ describe('Writer Desk route guards (atomic permissions)', () => {
         })
       ).rejects.toThrow('NEXT_REDIRECT:/gl/login');
 
-      // Zero-role (even with legacy role: 'admin') must be blocked because permissions lack desk:access
+      // Zero-role must be blocked because permissions lack desk:access
       mockGetAuthenticatedUser.mockResolvedValueOnce(
-        makeAuth('zero-1', [], [], USER_ROLES.ADMIN)
+        makeAuth('zero-1', [], [])
       );
       await expect(
         EscritorioPage({
@@ -148,8 +144,7 @@ describe('Writer Desk route guards (atomic permissions)', () => {
         makeAuth(
           'guest-1',
           resolvePermissionsForRoles([USER_ROLES.GUEST]),
-          [USER_ROLES.GUEST],
-          USER_ROLES.GUEST
+          [USER_ROLES.GUEST]
         )
       );
       mockGetDashboardPublications.mockResolvedValueOnce([
@@ -171,7 +166,7 @@ describe('Writer Desk route guards (atomic permissions)', () => {
       // Overlapping guest + member lifts quota
       const gmPerms = resolvePermissionsForRoles([USER_ROLES.GUEST, USER_ROLES.MEMBER]);
       mockGetAuthenticatedUser.mockResolvedValueOnce(
-        makeAuth('gm-1', gmPerms, [USER_ROLES.GUEST, USER_ROLES.MEMBER], USER_ROLES.GUEST)
+        makeAuth('gm-1', gmPerms, [USER_ROLES.GUEST, USER_ROLES.MEMBER])
       );
       mockGetDashboardPublications.mockResolvedValueOnce([
         makeDashPub('1'),
@@ -192,7 +187,7 @@ describe('Writer Desk route guards (atomic permissions)', () => {
     it('passes permissions to EscritorioPublicationRow and shows review tab for founder + admin', async () => {
       const faPerms = resolvePermissionsForRoles([USER_ROLES.FOUNDER, USER_ROLES.ADMIN]);
       mockGetAuthenticatedUser.mockResolvedValueOnce(
-        makeAuth('fa-1', faPerms, [USER_ROLES.FOUNDER, USER_ROLES.ADMIN], USER_ROLES.ADMIN)
+        makeAuth('fa-1', faPerms, [USER_ROLES.FOUNDER, USER_ROLES.ADMIN])
       );
       mockGetDashboardPublications.mockResolvedValueOnce([makeDashPub('p1', 'in_review')]);
 
@@ -214,7 +209,7 @@ describe('Writer Desk route guards (atomic permissions)', () => {
   describe('NuevoArticuloLayout & NuevoArticuloPage', () => {
     it('redirects desk:access-only user lacking publications:create to /escritorio', async () => {
       mockGetAuthenticatedUser.mockResolvedValue(
-        makeAuth('desk-only', [PERMISSIONS.DESK_ACCESS], [], USER_ROLES.MEMBER)
+        makeAuth('desk-only', [PERMISSIONS.DESK_ACCESS], [])
       );
 
       await expect(
@@ -250,7 +245,7 @@ describe('Writer Desk route guards (atomic permissions)', () => {
 
       const gmPerms = resolvePermissionsForRoles([USER_ROLES.GUEST, USER_ROLES.MEMBER]);
       mockGetAuthenticatedUser.mockResolvedValueOnce(
-        makeAuth('gm-1', gmPerms, [USER_ROLES.GUEST, USER_ROLES.MEMBER], USER_ROLES.GUEST)
+        makeAuth('gm-1', gmPerms, [USER_ROLES.GUEST, USER_ROLES.MEMBER])
       );
 
       const layoutEl = await NuevoArticuloLayout({
@@ -265,7 +260,7 @@ describe('Writer Desk route guards (atomic permissions)', () => {
     it('passes permissions to EditarArticuloForm in NuevoArticuloPage', async () => {
       const perms = resolvePermissionsForRoles([USER_ROLES.MEMBER]);
       mockGetAuthenticatedUser.mockResolvedValueOnce(
-        makeAuth('member-1', perms, [USER_ROLES.MEMBER], USER_ROLES.MEMBER)
+        makeAuth('member-1', perms, [USER_ROLES.MEMBER])
       );
 
       const pageEl = await NuevoArticuloPage({ params: Promise.resolve({ lang: 'gl' }) });
@@ -276,6 +271,7 @@ describe('Writer Desk route guards (atomic permissions)', () => {
           permissions: perms,
         })
       );
+      expect(mockFormSpy.mock.calls[0][0]).not.toHaveProperty('userRole');
     });
   });
 
@@ -299,7 +295,7 @@ describe('Writer Desk route guards (atomic permissions)', () => {
     it('allows publications:review on foreign in_review, blocks foreign draft, and passes permissions', async () => {
       const revPerms = [PERMISSIONS.DESK_ACCESS, PERMISSIONS.PUBLICATIONS_REVIEW];
       mockGetAuthenticatedUser.mockResolvedValueOnce(
-        makeAuth('reviewer-1', revPerms, [], USER_ROLES.READER)
+        makeAuth('reviewer-1', revPerms, [])
       );
       mockGetPublicationBySlug.mockResolvedValueOnce({
         id: 'pub-rev',
@@ -317,9 +313,10 @@ describe('Writer Desk route guards (atomic permissions)', () => {
           permissions: revPerms,
         })
       );
+      expect(mockFormSpy.mock.calls[0][0]).not.toHaveProperty('userRole');
 
       mockGetAuthenticatedUser.mockResolvedValueOnce(
-        makeAuth('reviewer-1', revPerms, [], USER_ROLES.READER)
+        makeAuth('reviewer-1', revPerms, [])
       );
       mockGetPublicationBySlug.mockResolvedValueOnce({
         id: 'pub-draft',
@@ -336,7 +333,7 @@ describe('Writer Desk route guards (atomic permissions)', () => {
     it('allows publications:update_any on foreign draft', async () => {
       const anyPerms = [PERMISSIONS.DESK_ACCESS, PERMISSIONS.PUBLICATIONS_UPDATE_ANY];
       mockGetAuthenticatedUser.mockResolvedValueOnce(
-        makeAuth('maint-1', anyPerms, [], USER_ROLES.READER)
+        makeAuth('maint-1', anyPerms, [])
       );
       mockGetPublicationBySlug.mockResolvedValueOnce({
         id: 'pub-draft',

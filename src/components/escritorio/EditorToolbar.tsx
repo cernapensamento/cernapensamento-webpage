@@ -9,11 +9,9 @@ import {
   EDITOR_ACTIONS,
   PERMISSIONS,
   PUBLICATION_STATUSES,
-  ROLE_PERMISSIONS,
   hasPermission,
   type EditorAction,
   type PermissionValue,
-  type UserRoleValue,
 } from '@/lib/db/schema';
 
 const FONT_SIZE_OPTIONS = [
@@ -37,7 +35,6 @@ interface EditorToolbarProps {
   editor: Editor | null;
   routeLang: Locale;
   mode: 'create' | 'edit';
-  userRole?: string;
   permissions?: readonly PermissionValue[];
   publicationStatus?: string;
   isPublishing: boolean;
@@ -58,7 +55,6 @@ export default function EditorToolbar({
   editor,
   routeLang,
   mode,
-  userRole,
   permissions,
   publicationStatus,
   isPublishing,
@@ -88,12 +84,7 @@ export default function EditorToolbar({
     3: tools.h3,
   };
 
-  const effectivePermissions: readonly PermissionValue[] =
-    permissions !== undefined
-      ? permissions
-      : userRole
-        ? (ROLE_PERMISSIONS[userRole as UserRoleValue] ?? [])
-        : [];
+  const effectivePermissions: readonly PermissionValue[] = permissions ?? [];
   const canPublish = hasPermission(effectivePermissions, PERMISSIONS.PUBLICATIONS_PUBLISH);
   const canReview = hasPermission(effectivePermissions, PERMISSIONS.PUBLICATIONS_REVIEW);
   const isPending = publicationStatus === PUBLICATION_STATUSES.IN_REVIEW;

@@ -4,7 +4,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import EditarArticuloForm from './EditarArticuloForm';
 import * as articlesActions from '@/actions/articles';
 import type { ArticleData, EditorAction } from '@/components/escritorio/ArticleEditor';
-import { EDITOR_ACTIONS, PERMISSIONS, type PermissionValue } from '@/lib/db/schema';
+import {
+  EDITOR_ACTIONS,
+  PERMISSIONS,
+  USER_ROLES,
+  resolvePermissionsForRoles,
+  type PermissionValue,
+} from '@/lib/db/schema';
 import type { PublicationDetail } from '@/lib/db/types';
 
 const mockPush = vi.fn();
@@ -113,7 +119,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="gl"
       />
     );
@@ -126,7 +132,7 @@ describe('EditarArticuloForm', () => {
     expect(() => {
       render(
         <EditarArticuloForm
-          userRole="founder"
+          permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
           lang="gl"
         />
       );
@@ -143,7 +149,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="gl"
       />
     );
@@ -173,7 +179,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="reader"
+        permissions={resolvePermissionsForRoles([USER_ROLES.READER])}
         lang="gl"
       />
     );
@@ -197,7 +203,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         mode="create"
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="gl"
       />
     );
@@ -237,7 +243,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="en"
         dict={enDict}
       />
@@ -264,7 +270,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
       />
     );
 
@@ -286,7 +292,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         mode="create"
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="gl"
       />
     );
@@ -325,7 +331,7 @@ describe('EditarArticuloForm', () => {
     render(
       <EditarArticuloForm
         publication={monoPub}
-        userRole="founder"
+        permissions={resolvePermissionsForRoles([USER_ROLES.FOUNDER])}
         lang="gl"
       />
     );
@@ -344,7 +350,7 @@ describe('EditarArticuloForm', () => {
     });
   });
 
-  it('accepts permissions prop without userRole and forwards zero-role [] without fallback', () => {
+  it('forwards explicit permissions including zero-role [] to ArticleEditor', () => {
     const { rerender } = render(
       <EditarArticuloForm
         publication={mockPublication}
@@ -360,7 +366,6 @@ describe('EditarArticuloForm', () => {
     rerender(
       <EditarArticuloForm
         publication={mockPublication}
-        userRole="founder"
         permissions={[]}
         lang="gl"
       />

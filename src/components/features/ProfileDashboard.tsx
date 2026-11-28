@@ -22,11 +22,9 @@ import { useToast } from '@/components/ui/FeedbackProvider';
 
 export interface ProfileDashboardProps {
   profile:
-    | (Omit<UserRow, 'role'> & {
-        role?: UserRole;
+    | (UserRow & {
         roles?: UserRole[];
         permissions?: PermissionValue[];
-        rol?: string;
         nombre?: string;
         recibir_newsletter?: boolean;
       })
@@ -36,13 +34,11 @@ export interface ProfileDashboardProps {
 
 function resolveProfileRoleLabels(
   roles: readonly string[] | undefined,
-  legacyRole: string | undefined,
   dashDict: Dictionary['dashboard']
 ): string {
-  const effectiveRoles = roles !== undefined ? roles : legacyRole ? [legacyRole] : [];
   const labels = Array.from(
     new Set(
-      effectiveRoles
+      (roles ?? [])
         .map((role) => resolveRoleLabel(role, dashDict))
         .filter((label): label is string => Boolean(label))
     )
@@ -232,7 +228,7 @@ export default function ProfileDashboard({ profile, user }: ProfileDashboardProp
           <div>
             <h3 className="font-serif text-2xl sm:text-3xl text-charcoal mb-1">{nombre || dashDict.personalData}</h3>
             <p className="font-sans text-[10px] sm:text-xs text-gold uppercase tracking-[0.2em] font-bold">
-              {resolveProfileRoleLabels(profile?.roles, profile?.role, dashDict)}
+              {resolveProfileRoleLabels(profile?.roles, dashDict)}
             </p>
           </div>
         </div>

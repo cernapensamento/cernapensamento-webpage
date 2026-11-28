@@ -6,7 +6,6 @@ import {
   PERMISSIONS,
   USER_COLS,
   hasPermission,
-  resolveLegacyPrimaryRole,
 } from '@/lib/db/schema';
 import { getUserRolesAndPermissions } from '@/lib/db/queries/users';
 import type { AuthProfile } from '@/lib/db/types';
@@ -35,13 +34,9 @@ export async function fetchClientAuthProfile(
       return null;
     }
 
-    const role = resolveLegacyPrimaryRole(roles);
-
     return {
       roles,
       permissions,
-      role,
-      rol: role,
       avatar_url: data.avatar_url ?? null,
       full_name: data.full_name || null,
     };

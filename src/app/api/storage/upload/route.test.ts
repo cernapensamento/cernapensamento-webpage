@@ -93,10 +93,9 @@ describe('POST /api/storage/upload', () => {
     vi.mocked(createClient).mockResolvedValue(mockSupabase as never);
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'user-1' } as never,
-      profile: { id: 'user-1', role: 'member' } as never,
+      profile: { id: 'user-1' } as never,
       roles: [USER_ROLES.MEMBER],
       permissions: resolvePermissionsForRoles([USER_ROLES.MEMBER]),
-      role: 'member',
     });
   });
 
@@ -106,7 +105,6 @@ describe('POST /api/storage/upload', () => {
       profile: null,
       roles: [],
       permissions: [],
-      role: null,
     });
 
     const buf = await createPngBuffer(100, 100);
@@ -123,10 +121,9 @@ describe('POST /api/storage/upload', () => {
   it('rejects reader role uploading publication assets with 403', async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'reader-1' } as never,
-      profile: { id: 'reader-1', role: 'reader' } as never,
+      profile: { id: 'reader-1' } as never,
       roles: [USER_ROLES.READER],
       permissions: resolvePermissionsForRoles([USER_ROLES.READER]),
-      role: 'reader',
     });
 
     const buf = await createPngBuffer(200, 200);
@@ -193,10 +190,9 @@ describe('POST /api/storage/upload', () => {
   it('allows operator (founder/admin) to upload to another author published publication', async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'admin-1' } as never,
-      profile: { id: 'admin-1', role: 'admin' } as never,
+      profile: { id: 'admin-1' } as never,
       roles: [USER_ROLES.ADMIN],
       permissions: resolvePermissionsForRoles([USER_ROLES.ADMIN]),
-      role: 'admin',
     });
     mockSingle.mockResolvedValue({
       data: { id: 'pub-99', author_id: 'other-author', status: 'published' },
@@ -368,13 +364,12 @@ describe('POST /api/storage/upload', () => {
     expect(meta.height).toBe(90);
   });
 
-  it('allows zero-role user to upload own avatar, but blocks foreign avatar and publication assets (ignoring legacy role)', async () => {
+  it('allows zero-role user to upload own avatar, but blocks foreign avatar and publication assets', async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'zero-1' } as never,
-      profile: { id: 'zero-1', role: 'admin' } as never,
+      profile: { id: 'zero-1' } as never,
       roles: [],
       permissions: [],
-      role: 'admin',
     });
 
     const webpBuf = await createWebpBuffer(200, 200);
@@ -419,10 +414,9 @@ describe('POST /api/storage/upload', () => {
 
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'media-mod-1' } as never,
-      profile: { id: 'media-mod-1', role: 'reader' } as never,
+      profile: { id: 'media-mod-1' } as never,
       roles: [],
       permissions: [PERMISSIONS.MEDIA_DELETE_ANY],
-      role: 'reader',
     });
 
     const modAvatarRes = await POST(
@@ -439,10 +433,9 @@ describe('POST /api/storage/upload', () => {
 
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'user-1' } as never,
-      profile: { id: 'user-1', role: 'member' } as never,
+      profile: { id: 'user-1' } as never,
       roles: [],
       permissions: [PERMISSIONS.DESK_ACCESS],
-      role: 'member',
     });
 
     const missingUploadPermRes = await POST(
@@ -464,10 +457,9 @@ describe('POST /api/storage/upload', () => {
     // Reviewer with media:upload_publication + publications:review (no update_any)
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'reviewer-1' } as never,
-      profile: { id: 'reviewer-1', role: 'member' } as never,
+      profile: { id: 'reviewer-1' } as never,
       roles: [],
       permissions: [PERMISSIONS.MEDIA_UPLOAD_PUBLICATION, PERMISSIONS.PUBLICATIONS_REVIEW],
-      role: 'member',
     });
 
     mockSingle.mockResolvedValueOnce({
@@ -505,10 +497,9 @@ describe('POST /api/storage/upload', () => {
     // Direct publisher with media:upload_publication + publications:publish (no update_any)
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'publisher-1' } as never,
-      profile: { id: 'publisher-1', role: 'member' } as never,
+      profile: { id: 'publisher-1' } as never,
       roles: [],
       permissions: [PERMISSIONS.MEDIA_UPLOAD_PUBLICATION, PERMISSIONS.PUBLICATIONS_PUBLISH],
-      role: 'member',
     });
 
     mockSingle.mockResolvedValueOnce({
@@ -549,10 +540,9 @@ describe('POST /api/storage/upload', () => {
 
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'gm-1' } as never,
-      profile: { id: 'gm-1', role: 'member' } as never,
+      profile: { id: 'gm-1' } as never,
       roles: [USER_ROLES.GUEST, USER_ROLES.MEMBER],
       permissions: resolvePermissionsForRoles([USER_ROLES.GUEST, USER_ROLES.MEMBER]),
-      role: 'member',
     });
 
     mockSingle.mockResolvedValueOnce({
@@ -589,10 +579,9 @@ describe('POST /api/storage/upload', () => {
 
     vi.mocked(getAuthenticatedUser).mockResolvedValue({
       user: { id: 'fa-1' } as never,
-      profile: { id: 'fa-1', role: 'admin' } as never,
+      profile: { id: 'fa-1' } as never,
       roles: [USER_ROLES.FOUNDER, USER_ROLES.ADMIN],
       permissions: resolvePermissionsForRoles([USER_ROLES.FOUNDER, USER_ROLES.ADMIN]),
-      role: 'admin',
     });
 
     mockSingle.mockResolvedValueOnce({
