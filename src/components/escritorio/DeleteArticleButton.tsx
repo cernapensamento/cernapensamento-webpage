@@ -29,10 +29,10 @@ export default function DeleteArticleButton({
   const confirm = useConfirm();
   const toast = useToast();
 
+  const effectivePermissions = permissions ?? [];
   const canDelete =
-    permissions === undefined ||
-    hasPermission(permissions, PERMISSIONS.PUBLICATIONS_DELETE_ANY) ||
-    (!isPublished && hasPermission(permissions, PERMISSIONS.PUBLICATIONS_DELETE_OWN));
+    hasPermission(effectivePermissions, PERMISSIONS.PUBLICATIONS_DELETE_ANY) ||
+    (!isPublished && hasPermission(effectivePermissions, PERMISSIONS.PUBLICATIONS_DELETE_OWN));
 
   if (!canDelete) {
     return null;

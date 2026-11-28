@@ -116,6 +116,80 @@ describe('Section components modular i18n compliance', () => {
     expect(screen.getByRole('link', { name: /view all authors/i })).toHaveAttribute('href', '/en/autores');
   });
 
+  it('ColumnistsSection renders DB founder columnists with curated metadata while omitting non-founders', () => {
+    const enColumnistsDict = {
+      columnists: {
+        tag: 'Our Team',
+        title: 'Columnists of',
+        publishedArticles: 'Published articles',
+        emailLabel: 'Email',
+        instagramLabel: 'Instagram',
+        portraitOf: 'Portrait of',
+        sendEmailTo: 'Send email to',
+        instagramProfileOf: 'Instagram profile of',
+        viewAllAuthors: 'View all authors',
+      },
+      authors: {
+        'diego-araujo': 'Curated Diego Bio',
+      },
+    };
+
+    render(
+      <ColumnistsSection
+        lang="en"
+        dict={enColumnistsDict}
+        columnists={[
+          {
+            id: 'f-1',
+            full_name: 'Diego Araújo',
+            slug: 'diego-araujo',
+            bio: null,
+            avatar_url: null,
+            roles: ['founder'],
+          },
+          {
+            id: 'f-2',
+            full_name: 'Nova Fundadora',
+            slug: 'nova-fundadora',
+            bio: { en: 'New founder bio', gl: 'Bio nova' },
+            avatar_url: 'https://example.com/nova.webp',
+            roles: ['founder'],
+          },
+          {
+            id: 'a-1',
+            full_name: 'Admin Only',
+            slug: 'admin-only',
+            bio: null,
+            avatar_url: null,
+            roles: ['admin'],
+          },
+          {
+            id: 'm-1',
+            full_name: 'Member Only',
+            slug: 'member-only',
+            bio: null,
+            avatar_url: null,
+            roles: ['member'],
+          },
+        ]}
+      />
+    );
+
+    const diegoPortrait = screen.getByAltText('Portrait of Diego Araújo');
+    expect(diegoPortrait).toHaveAttribute('src', '/images/columnistas/diego.webp');
+    expect(screen.getByLabelText('Send email to Diego Araújo')).toBeInTheDocument();
+    expect(screen.getByLabelText('Instagram profile of Diego Araújo')).toBeInTheDocument();
+
+    const novaPortrait = screen.getByAltText('Portrait of Nova Fundadora');
+    expect(novaPortrait).toHaveAttribute('src', 'https://example.com/nova.webp');
+    expect(screen.getByText('New founder bio')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Send email to Nova Fundadora')).not.toBeInTheDocument();
+
+    expect(screen.queryByText('Admin Only')).not.toBeInTheDocument();
+    expect(screen.queryByText('Member Only')).not.toBeInTheDocument();
+    expect(screen.queryByText('Héctor González')).not.toBeInTheDocument();
+  });
+
   it('ContactSection avoids hardcoded Galician fallbacks when given a partial 3rd-locale dict', () => {
     const enContactDict = {
       tag: 'Contact & Collaboration',

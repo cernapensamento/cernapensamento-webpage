@@ -863,6 +863,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     render(
       <ArticleEditor
         mode="create"
+        permissions={[PERMISSIONS.AI_TRANSLATE]}
         onSave={vi.fn().mockResolvedValue(true)}
         isPublishing={false}
       />
@@ -1007,6 +1008,7 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
     render(
       <ArticleEditor
         mode="edit"
+        permissions={[PERMISSIONS.AI_TRANSLATE]}
         initialData={{
           id: 'art-upgrade-1',
           title: { gl: 'Título Galego Orixinal' },
@@ -1311,5 +1313,39 @@ describe('ArticleEditor Save Flow and Storage Garbage Collection', () => {
 
     expect(screen.queryByRole('button', { name: /^publicar$/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /enviar para aprobación/i })).toBeInTheDocument();
+  });
+
+  it('gates AI translate button on ai:translate permission and fails closed when omitted or empty', () => {
+    const { rerender } = render(
+      <ArticleEditor
+        mode="create"
+        permissions={[PERMISSIONS.AI_TRANSLATE]}
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /traducir a/i })).toBeInTheDocument();
+
+    rerender(
+      <ArticleEditor
+        mode="create"
+        permissions={[]}
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /traducir a/i })).not.toBeInTheDocument();
+
+    rerender(
+      <ArticleEditor
+        mode="create"
+        onSave={vi.fn().mockResolvedValue(true)}
+        isPublishing={false}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /traducir a/i })).not.toBeInTheDocument();
   });
 });

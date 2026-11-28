@@ -11,6 +11,7 @@ import {
   ROLE_PERMISSIONS,
   PUBLIC_ROLE_PRIORITY,
   ROLE_METADATA,
+  PUBLICATION_STATUSES,
   resolvePermissionsForRoles,
   hasPermission,
   hasAnyPermission,
@@ -18,6 +19,8 @@ import {
   isGuestQuotaSubject,
   resolvePrimaryPublicRole,
   resolveRoleLabel,
+  resolvePublicAuthorBadge,
+  canEditPublication,
 } from './index';
 
 describe('RBAC schema constants and permission helpers', () => {
@@ -201,5 +204,65 @@ describe('RBAC schema constants and permission helpers', () => {
     expect(resolveRoleLabel('escritor', rolesDict)).toBe('Lector');
     expect(resolveRoleLabel('invitado', rolesDict)).toBe('Lector');
     expect(resolveRoleLabel('convidado', rolesDict)).toBe('Lector');
+  });
+
+  it('resolves public author badge via priority without leaking internal roles', () => {
+    const labels = {
+      founder: 'Membro Fundador',
+      contributor: 'Colaborador de Cerna',
+    };
+
+    expect(resolvePublicAuthorBadge([USER_ROLES.FOUNDER, USER_ROLES.ADMIN], labels)).toBe(
+      'Membro Fundador'
+    );
+    expect(resolvePublicAuthorBadge([USER_ROLES.GUEST, USER_ROLES.MEMBER], labels)).toBe(
+      'Colaborador de Cerna'
+    );
+    expect(resolvePublicAuthorBadge([USER_ROLES.GUEST], labels)).toBe('Colaborador de Cerna');
+    expect(resolvePublicAuthorBadge([USER_ROLES.ADMIN], labels)).toBeNull();
+    expect(resolvePublicAuthorBadge([USER_ROLES.READER], labels)).toBeNull();
+    expect(resolvePublicAuthorBadge([], labels)).toBeNull();
+    expect(resolvePublicAuthorBadge(null, labels)).toBeNull();
+  });
+
+  it('evaluates canEditPublication consistently for author.id and author_id shapes', () => {
+    const memberPerms = resolvePermissionsForRoles([USER_ROLES.MEMBER]);
+    const reviewPerms = [PERMISSIONS.PUBLICATIONS_REVIEW];
+    const publishPerms = [PERMISSIONS.PUBLICATIONS_PUBLISH];
+    const updateAnyPerms = [PERMISSIONS.PUBLICATIONS_UPDATE_ANY];
+
+    // Own draft vs own published for member
+    expect(
+      canEditPublication(memberPerms, { author: { id: 'u-1' }, status: PUBLICATION_STATUSES.DRAFT }, 'u-1')
+    ).toBe(true);
+    expect(
+      canEditPublication(memberPerms, { author_id: 'u-1', status: PUBLICATION_STATUSES.PUBLISHED }, 'u-1')
+    ).toBe(false);
+
+    // Own published for publications:publish
+    expect(
+      canEditPublication(publishPerms, { author_id: 'u-1', status: PUBLICATION_STATUSES.PUBLISHED }, 'u-1')
+    ).toBe(true);
+
+    // Foreign in_review vs foreign draft for publications:review
+    expect(
+      canEditPublication(reviewPerms, { author: { id: 'u-2' }, status: PUBLICATION_STATUSES.IN_REVIEW }, 'u-1')
+    ).toBe(true);
+    expect(
+      canEditPublication(reviewPerms, { author_id: 'u-2', status: PUBLICATION_STATUSES.DRAFT }, 'u-1')
+    ).toBe(false);
+
+    // Foreign published for publications:update_any
+    expect(
+      canEditPublication(updateAnyPerms, { author: { id: 'u-2' }, status: PUBLICATION_STATUSES.PUBLISHED }, 'u-1')
+    ).toBe(true);
+
+    // Zero-role user fails closed even on own draft
+    expect(
+      canEditPublication([], { author_id: 'u-1', status: PUBLICATION_STATUSES.DRAFT }, 'u-1')
+    ).toBe(false);
+    expect(
+      canEditPublication(null, { author: { id: 'u-1' }, status: PUBLICATION_STATUSES.DRAFT }, 'u-1')
+    ).toBe(false);
   });
 });

@@ -296,6 +296,28 @@ export function resolvePrimaryPublicRole(
 }
 
 /**
+ * Resolves a localized public editorial badge label from public roles,
+ * returning null when the user only holds internal roles (e.g., admin, reader)
+ * or no roles at all.
+ */
+export function resolvePublicAuthorBadge(
+  roles?: readonly (UserRoleValue | string)[] | null,
+  labels?: {
+    founder?: string | null;
+    contributor?: string | null;
+  }
+): string | null {
+  const primaryPublicRole = resolvePrimaryPublicRole(roles);
+  if (primaryPublicRole === USER_ROLES.FOUNDER) {
+    return labels?.founder || null;
+  }
+  if (primaryPublicRole === USER_ROLES.MEMBER || primaryPublicRole === USER_ROLES.GUEST) {
+    return labels?.contributor || null;
+  }
+  return null;
+}
+
+/**
  * Publication limits for guest authors.
  */
 export const GUEST_PUBLICATION_LIMITS = {
@@ -338,6 +360,39 @@ export const PUBLICATION_STATUSES = {
 } as const;
 
 export type PublicationStatusValue = (typeof PUBLICATION_STATUSES)[keyof typeof PUBLICATION_STATUSES];
+
+export interface EditablePublicationTarget {
+  status: PublicationStatusValue | string;
+  author_id?: string | null;
+  author?: { id: string } | null;
+}
+
+/**
+ * Evaluates whether a caller holding `permissions` can edit a publication
+ * given its author and current status. Fails closed when permissions are empty.
+ */
+export function canEditPublication(
+  permissions: readonly (PermissionValue | string)[] | null | undefined,
+  publication: EditablePublicationTarget,
+  userId?: string | null
+): boolean {
+  const authorId = publication.author?.id ?? publication.author_id ?? null;
+  const isAuthor = Boolean(userId && authorId === userId);
+  const isPublished = publication.status === PUBLICATION_STATUSES.PUBLISHED;
+  const isInReview = publication.status === PUBLICATION_STATUSES.IN_REVIEW;
+  const canUpdateAny = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_ANY);
+  const canUpdateOwn = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_OWN);
+  const canPublish = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PUBLISH);
+  const canReview = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW);
+
+  if (isAuthor) {
+    return isPublished
+      ? canPublish || canUpdateAny
+      : canUpdateOwn || canUpdateAny || (isInReview && canReview);
+  }
+
+  return canUpdateAny || (isInReview && canReview);
+}
 
 export const EDITOR_ACTIONS = {
   DRAFT: 'draft',

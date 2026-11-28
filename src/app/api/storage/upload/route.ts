@@ -6,7 +6,7 @@ import {
   DB_TABLES,
   PERMISSIONS,
   PUBLICATION_COLS,
-  PUBLICATION_STATUSES,
+  canEditPublication,
   hasPermission,
 } from '@/lib/db/schema';
 import {
@@ -91,23 +91,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'PUBLICATION_NOT_FOUND' }, { status: 404 });
       }
 
-      const isAuthor = pub[PUBLICATION_COLS.AUTHOR_ID] === user.id;
-      const pubStatus = pub[PUBLICATION_COLS.STATUS];
-      const canUpdateAny = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_ANY);
-      const canReview = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW);
-      const canPublish = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PUBLISH);
-
-      if (!isAuthor) {
-        const canEditForeign =
-          canUpdateAny ||
-          (pubStatus === PUBLICATION_STATUSES.IN_REVIEW && canReview);
-        if (!canEditForeign) {
-          return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-        }
-      } else if (pubStatus === PUBLICATION_STATUSES.PUBLISHED) {
-        if (!canPublish && !canUpdateAny) {
-          return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-        }
+      if (
+        !canEditPublication(
+          permissions,
+          {
+            author_id: pub[PUBLICATION_COLS.AUTHOR_ID],
+            status: pub[PUBLICATION_COLS.STATUS],
+          },
+          user.id
+        )
+      ) {
+        return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
       }
 
       entityId = publicationId;

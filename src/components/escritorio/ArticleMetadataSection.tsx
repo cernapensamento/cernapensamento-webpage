@@ -22,6 +22,7 @@ interface ArticleMetadataSectionProps {
   onToggleLanguageMode: () => void;
   isTranslating: boolean;
   onTranslate: () => void;
+  canTranslate?: boolean;
   tags: string[];
   onChangeTags: (tags: string[]) => void;
   publicationType: string;
@@ -42,6 +43,7 @@ export default function ArticleMetadataSection({
   onToggleLanguageMode,
   isTranslating,
   onTranslate,
+  canTranslate = false,
   tags,
   onChangeTags,
   publicationType,
@@ -111,7 +113,7 @@ export default function ArticleMetadataSection({
               {isMonolingual ? dict.languageModeMonolingual : dict.languageModeBilingual}
             </span>
           </button>
-          {!isMonolingual && targetLangs.length > 0 && (
+          {canTranslate && !isMonolingual && targetLangs.length > 0 && (
             <button
               type="button"
               onClick={onTranslate}

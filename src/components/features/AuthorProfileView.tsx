@@ -8,9 +8,8 @@ import type { Columnist } from '@/lib/columnists';
 import type { LocalizedString, TagItem, UserRole } from '@/lib/db/types';
 import {
   PUBLICATION_TYPES,
-  USER_ROLES,
   normalizePublicationType,
-  resolvePrimaryPublicRole,
+  resolvePublicAuthorBadge,
 } from '@/lib/db/schema';
 import { getDictionaryClient } from '@/dictionaries/client';
 import FormattedDate from '@/components/ui/FormattedDate';
@@ -464,14 +463,12 @@ export default function AuthorProfileView({
   const tTypeFilterAria = apDict.typeFilterAria;
   const tFeaturedCoverAlt = apDict.featuredCoverAlt;
   const tThumbnailAlt = apDict.thumbnailAlt;
-  const primaryPublicRole = resolvePrimaryPublicRole(autor.roles);
   const resolvedRoleLabel =
     roleLabel ||
-    (primaryPublicRole === USER_ROLES.FOUNDER
-      ? apDict.foundingMember
-      : primaryPublicRole === USER_ROLES.MEMBER || primaryPublicRole === USER_ROLES.GUEST
-        ? apDict.cernaContributor
-        : null);
+    resolvePublicAuthorBadge(autor.roles, {
+      founder: apDict.foundingMember,
+      contributor: apDict.cernaContributor,
+    });
 
   const getTypeLabel = (rawType?: string) =>
     resolvePublicationTypeLabel(

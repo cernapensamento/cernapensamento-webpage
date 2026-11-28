@@ -40,6 +40,8 @@ import { getUserById, type LocalizedString, type UserRow } from '@/lib/db';
 import {
   PUBLICATION_TYPES,
   EDITOR_ACTIONS,
+  PERMISSIONS,
+  hasPermission,
   type EditorAction,
   type PermissionValue,
 } from '@/lib/db/schema';
@@ -1032,6 +1034,7 @@ export default function ArticleEditor({
   const activeHtml = stripIndex(contents[activeLang] || '');
   const liveTocItems = showIndex ? buildLiveTocItems(tocData, activeHtml) : [];
   const previewArticleDict = getDictionaryClient(activeLang).article;
+  const canTranslate = hasPermission(permissions, PERMISSIONS.AI_TRANSLATE);
 
   return (
     <>
@@ -1093,6 +1096,7 @@ export default function ArticleEditor({
               onToggleLanguageMode={handleToggleLanguageMode}
               isTranslating={isTranslating}
               onTranslate={handleTranslate}
+              canTranslate={canTranslate}
               tags={tematicas}
               onChangeTags={setTematicas}
               publicationType={tipo}

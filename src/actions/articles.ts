@@ -21,6 +21,7 @@ import {
   syncPublicationTagsBySlugs,
   formatDbError,
   normalizePublicationType,
+  canEditPublication,
   hasPermission,
   hasAnyPermission,
   PERMISSIONS,
@@ -28,7 +29,6 @@ import {
   PUBLICATION_STATUSES,
   EDITOR_ACTIONS,
   isPublishAction,
-  type PermissionValue,
   type PublicationStatus,
   type PublicationType,
   type PublicationTypeValue,
@@ -179,28 +179,6 @@ function resolveTargetStatus(action: EditorAction): PublicationStatusValue {
     return PUBLICATION_STATUSES.IN_REVIEW;
   }
   return PUBLICATION_STATUSES.DRAFT;
-}
-
-function canEditPublication(
-  permissions: readonly PermissionValue[],
-  existing: { author: { id: string }; status: PublicationStatusValue },
-  userId: string
-): boolean {
-  const isAuthor = existing.author.id === userId;
-  const isPublished = existing.status === PUBLICATION_STATUSES.PUBLISHED;
-  const isInReview = existing.status === PUBLICATION_STATUSES.IN_REVIEW;
-  const canUpdateAny = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_ANY);
-  const canUpdateOwn = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_OWN);
-  const canPublish = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PUBLISH);
-  const canReview = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW);
-
-  if (isAuthor) {
-    return isPublished
-      ? canPublish || canUpdateAny
-      : canUpdateOwn || canUpdateAny || (isInReview && canReview);
-  }
-
-  return canUpdateAny || (isInReview && canReview);
 }
 
 async function syncTagsSafe(publicationId: string, tags: string[]): Promise<void> {
@@ -473,9 +451,11 @@ export async function updateArticleState(
     const isAuthor = existing.author.id === user.id;
     const isInReview = existing.status === PUBLICATION_STATUSES.IN_REVIEW;
     const canTransition =
-      canUpdateAny ||
-      (isInReview && canReview) ||
-      (isAuthor && canPublish);
+      newState === PUBLICATION_STATUSES.PUBLISHED
+        ? (isAuthor && canPublish) ||
+          (canUpdateAny && canPublish) ||
+          (isInReview && canReview)
+        : canUpdateAny || (isInReview && canReview) || (isAuthor && canPublish);
 
     if (!canTransition) {
       return { success: false, error: edDict.onlyPrivilegedCanPublish };

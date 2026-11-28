@@ -13,7 +13,11 @@ import RevealOnScroll from '@/components/ui/RevealOnScroll';
 import { getDictionary } from '@/dictionaries';
 import { getOpenGraphLocale, i18n, resolveLocale } from '@/i18n-config';
 import { SITE_FULL_NAME, SITE_URL } from '@/lib/constants';
-import { getAllTagsWithTranslations } from '@/lib/db';
+import {
+  createPublicAnonClient,
+  getAllTagsWithTranslations,
+  getColumnists,
+} from '@/lib/db';
 
 export const revalidate = 60;
 
@@ -69,9 +73,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function HomePage({ params }: PageProps) {
   const { lang } = await params;
   const locale = resolveLocale(lang);
-  const [dict, tags] = await Promise.all([
+  const publicClient = createPublicAnonClient();
+  const [dict, tags, columnists] = await Promise.all([
     getDictionary(locale),
-    getAllTagsWithTranslations({ lang: locale }),
+    getAllTagsWithTranslations({ lang: locale, client: publicClient }),
+    getColumnists(publicClient),
   ]);
 
   // Schema.org JSON-LD Structured Data (Organization + NewsMediaOrganization + Periodical + WebSite)
@@ -169,6 +175,7 @@ export default async function HomePage({ params }: PageProps) {
         <ColumnistsSection
           lang={locale}
           dict={{ columnists: dict.columnists, authors: dict.authors }}
+          columnists={columnists}
         />
       </RevealOnScroll>
 

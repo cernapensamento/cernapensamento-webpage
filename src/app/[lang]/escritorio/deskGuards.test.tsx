@@ -199,10 +199,10 @@ describe('Writer Desk route guards (atomic permissions)', () => {
       expect(screen.getByRole('link', { name: /Para aprobar/i })).toBeInTheDocument();
       expect(mockRowSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          canReview: true,
           permissions: faPerms,
         })
       );
+      expect(mockRowSpy.mock.calls[0][0]).not.toHaveProperty('canReview');
     });
   });
 
