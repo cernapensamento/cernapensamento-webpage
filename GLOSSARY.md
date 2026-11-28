@@ -23,3 +23,11 @@ _Avoid_: Dual-language article, Full translation
 **Monolingual Publication**:
 A publication authored and published in a single language (either Galician or Spanish), still discoverable across both site locales in its original language.
 _Avoid_: Single-locale post, Untranslated draft
+
+**Role**:
+A named responsibility assigned to a user that groups a set of Permissions; a user may hold multiple Roles simultaneously.
+_Avoid_: Tier, User type
+
+**Permission**:
+An atomic capability that authorizes a specific action in the system.
+_Avoid_: Privilege, Capability, Claim
