@@ -2,8 +2,6 @@ import {
   type StorageCategory,
   STORAGE_BUCKET,
   STORAGE_FOLDERS,
-  LEGACY_STORAGE_FOLDERS,
-  LEGACY_STORAGE_BUCKETS,
 } from './constants';
 
 /**
@@ -58,10 +56,11 @@ export function buildStoragePath(
 }
 
 /**
- * Extracts a recognized bucket marker and its following path, stripping query
- * and fragment suffixes. Also accepts canonical or legacy folder-relative paths,
- * assigning them to `media`. Returns null for empty or unrecognized input.
- * Matching is based on string markers; URL origin and ownership are not validated.
+ * Extracts the canonical `media` bucket and its following path, stripping query
+ * and fragment suffixes. Also accepts canonical folder-relative paths (`users/`,
+ * `publications/`, `_orphans/`), assigning them to `media`. Returns null for empty
+ * or unrecognized input. Matching is based on string markers; URL origin and
+ * ownership are not validated.
  */
 export function extractBucketAndPathFromUrl(
   url: string | null | undefined
@@ -69,26 +68,18 @@ export function extractBucketAndPathFromUrl(
   if (!url || typeof url !== 'string') return null;
 
   // Check relative storage paths first so paths like `_orphans/media/...` are not misparsed by bucket markers
-  const validFolders = [
-    'users/',
-    'publications/',
-    '_orphans/',
-    ...LEGACY_STORAGE_FOLDERS.map((f) => `${f}/`),
-  ];
+  const validFolders = ['users/', 'publications/', '_orphans/'];
   if (validFolders.some((f) => url.startsWith(f))) {
     return { bucket: STORAGE_BUCKET, path: url.split('?')[0].split('#')[0] };
   }
 
-  const allBuckets = [STORAGE_BUCKET, ...LEGACY_STORAGE_BUCKETS];
-  for (const bucket of allBuckets) {
-    const bucketMarker = `${bucket}/`;
-    const markerIndex = url.indexOf(bucketMarker);
-    if (markerIndex !== -1) {
-      const afterMarker = url.substring(markerIndex + bucketMarker.length);
-      const cleanPath = afterMarker.split('?')[0].split('#')[0];
-      if (cleanPath) {
-        return { bucket, path: cleanPath };
-      }
+  const bucketMarker = `${STORAGE_BUCKET}/`;
+  const markerIndex = url.indexOf(bucketMarker);
+  if (markerIndex !== -1) {
+    const afterMarker = url.substring(markerIndex + bucketMarker.length);
+    const cleanPath = afterMarker.split('?')[0].split('#')[0];
+    if (cleanPath) {
+      return { bucket: STORAGE_BUCKET, path: cleanPath };
     }
   }
 
@@ -107,7 +98,7 @@ export function extractStoragePathFromUrl(url: string | null | undefined): strin
 
 /**
  * Extracts unique recognized storage paths from quoted img src attributes in HTML,
- * including legacy URLs and supported relative paths. Bucket identities are discarded;
+ * including supported relative paths. Bucket identities are discarded;
  * empty input or no recognized images returns an empty array.
  */
 export function extractInlineStoragePaths(html: string | null | undefined): string[] {
@@ -127,31 +118,4 @@ export function extractInlineStoragePaths(html: string | null | undefined): stri
   }
 
   return Array.from(paths);
-}
-
-export const LEGACY_STORAGE_HOST = 'pzupxjsprmuudmvhzpxu.supabase.co';
-export const CURRENT_STORAGE_HOST = 'srbrnpbtfmilohkicpbb.supabase.co';
-
-/**
- * Rewrites legacy Supabase storage hostnames to the current hostname while
- * preserving protocol, path, port, and query parameters.
- * Only modifies the hostname when it matches the legacy host.
- * Returns null for null/undefined/empty input.
- */
-export function sanitizeStorageUrl(url?: string | null): string | null {
-  if (!url) return null;
-  try {
-    const parsed = new URL(url);
-    if (parsed.hostname === LEGACY_STORAGE_HOST) {
-      parsed.hostname = CURRENT_STORAGE_HOST;
-      return parsed.toString();
-    }
-    return url;
-  } catch {
-    // Relative or protocol-relative fallback
-    if (url.includes(LEGACY_STORAGE_HOST)) {
-      return url.replace(LEGACY_STORAGE_HOST, CURRENT_STORAGE_HOST);
-    }
-    return url;
-  }
 }

@@ -5,11 +5,6 @@
 
 export const STORAGE_BUCKET = 'media' as const;
 
-/**
- * Legacy bucket names supported for backwards-compatibility URL resolution and cleanup.
- */
-export const LEGACY_STORAGE_BUCKETS = ['imagenes-articulos'] as const;
-
 export const STORAGE_CATEGORIES = {
   PROFILE_AVATAR: 'profile_avatar',
   PUBLICATION_COVER: 'publication_cover',
@@ -23,11 +18,6 @@ export const STORAGE_FOLDERS: Record<StorageCategory, string> = {
   [STORAGE_CATEGORIES.PUBLICATION_COVER]: 'publications',
   [STORAGE_CATEGORIES.PUBLICATION_INLINE]: 'publications',
 };
-
-/**
- * Legacy folder prefixes supported for backwards-compatibility URL resolution and cleanup.
- */
-export const LEGACY_STORAGE_FOLDERS = ['profiles', 'avatares', 'portadas', 'contenido'] as const;
 
 export const ALLOWED_IMAGE_MIME_TYPES = [
   'image/jpeg',
