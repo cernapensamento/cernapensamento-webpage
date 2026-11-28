@@ -11,11 +11,14 @@ import {
   USER_COLS,
   USER_ROLES,
   ROLE_COLS,
+  ROLE_METADATA,
+  PUBLIC_ROLE_PRIORITY,
   ROLE_PERMISSION_COLS,
   USER_ROLE_COLS,
   VALID_ROLE_SET,
   VALID_PERMISSION_SET,
   resolvePermissionsForRoles,
+  resolvePrimaryPublicRole,
   PUBLICATION_COLS,
   PUBLICATION_STATUSES,
 } from '../schema';
@@ -28,6 +31,7 @@ import type {
   LocalizedString,
   PublicationType,
   UserRole,
+  PublicRoleValue,
   PermissionValue,
 } from '../types';
 import { getPublicationCards } from './publications';
@@ -42,6 +46,7 @@ const PUBLIC_USER_SELECT = [
   USER_COLS.BIO,
   USER_COLS.AVATAR_URL,
   USER_COLS.ROLE,
+  `${DB_TABLES.USER_ROLES}(${USER_ROLE_COLS.ROLE_ID})`,
 ].join(', ');
 
 const PRIVATE_USER_SELECT = `${PUBLIC_USER_SELECT}, ${USER_COLS.NEWSLETTER_SUBSCRIBED}`;
@@ -77,6 +82,28 @@ function parseBio(rawBio: unknown): LocalizedString | null {
 }
 
 /**
+ * Filters raw `user_roles` join rows to public editorial roles (`isPublic === true`)
+ * ordered by `PUBLIC_ROLE_PRIORITY`, ensuring internal roles like `admin` or `reader`
+ * never leak onto public DTOs even for authenticated sessions.
+ */
+function extractPublicRoles(rawUserRoles: unknown): PublicRoleValue[] {
+  if (!Array.isArray(rawUserRoles)) return [];
+  const roleSet = new Set<PublicRoleValue>();
+  for (const entry of rawUserRoles) {
+    if (!entry || typeof entry !== 'object') continue;
+    const roleId = (entry as Record<string, unknown>)[USER_ROLE_COLS.ROLE_ID];
+    if (
+      typeof roleId === 'string' &&
+      VALID_ROLE_SET.has(roleId) &&
+      ROLE_METADATA[roleId as UserRole]?.isPublic
+    ) {
+      roleSet.add(roleId as PublicRoleValue);
+    }
+  }
+  return PUBLIC_ROLE_PRIORITY.filter((role) => roleSet.has(role));
+}
+
+/**
  * Shared lookup helper to fetch a user by any column with explicit column projection.
  */
 async function getUserBy<T>(
@@ -101,7 +128,13 @@ async function getUserBy<T>(
       return null;
     }
 
-    return data as T;
+    const { [DB_TABLES.USER_ROLES]: rawUserRoles, ...rest } = data as unknown as Record<string, unknown>;
+    const roles = extractPublicRoles(rawUserRoles);
+    return {
+      ...rest,
+      roles,
+      publicRole: resolvePrimaryPublicRole(roles),
+    } as unknown as T;
   } catch (err) {
     console.warn(`[DAL:users] Unexpected error fetching user by ${column} "${value}":`, formatDbError(err));
     return null;
@@ -229,7 +262,8 @@ export async function getUserBySlugOrId(
 }
 
 /**
- * Fetch founders and admins with non-null slugs, ordered by full name.
+ * Fetch founders with non-null slugs via user_roles, ordered by full name.
+ * Excludes admin-only users and strips non-public roles.
  */
 export async function getColumnists(
   client?: SupabaseClient
@@ -245,9 +279,10 @@ export async function getColumnists(
         ${USER_COLS.SLUG},
         ${USER_COLS.BIO},
         ${USER_COLS.AVATAR_URL},
-        ${USER_COLS.ROLE}
+        ${USER_COLS.ROLE},
+        ${DB_TABLES.USER_ROLES}!inner(${USER_ROLE_COLS.ROLE_ID})
       `)
-      .in(USER_COLS.ROLE, [USER_ROLES.FOUNDER, USER_ROLES.ADMIN])
+      .eq(`${DB_TABLES.USER_ROLES}.${USER_ROLE_COLS.ROLE_ID}`, USER_ROLES.FOUNDER)
       .not(USER_COLS.SLUG, 'is', null)
       .order(USER_COLS.FULL_NAME, { ascending: true });
 
@@ -256,7 +291,33 @@ export async function getColumnists(
       return [];
     }
 
-    return data as ColumnistItem[];
+    const columnistsById = new Map<string, ColumnistItem>();
+    for (const rawRow of data as unknown as Array<Record<string, unknown>>) {
+      const id = rawRow[USER_COLS.ID];
+      const slug = rawRow[USER_COLS.SLUG];
+      if (typeof id !== 'string' || typeof slug !== 'string' || slug.trim().length === 0) {
+        continue;
+      }
+
+      const publicRoles = extractPublicRoles(rawRow[DB_TABLES.USER_ROLES]);
+      if (!publicRoles.includes(USER_ROLES.FOUNDER)) {
+        continue;
+      }
+
+      if (!columnistsById.has(id)) {
+        columnistsById.set(id, {
+          id,
+          full_name: String(rawRow[USER_COLS.FULL_NAME] ?? ''),
+          slug,
+          bio: (rawRow[USER_COLS.BIO] as LocalizedString | null) ?? null,
+          avatar_url: (rawRow[USER_COLS.AVATAR_URL] as string | null) ?? null,
+          roles: publicRoles,
+          role: (rawRow[USER_COLS.ROLE] as UserRole | undefined) ?? USER_ROLES.FOUNDER,
+        });
+      }
+    }
+
+    return Array.from(columnistsById.values());
   } catch (err) {
     console.warn('[DAL:users] Unexpected error fetching columnists:', formatDbError(err));
     return [];
@@ -279,6 +340,7 @@ interface RawAuthorPublicationRow {
     bio: unknown;
     avatar_url: string | null;
     role: UserRole;
+    user_roles?: Array<{ role_id: string }> | null;
   } | null;
 }
 
@@ -303,7 +365,10 @@ async function fetchPublishedAuthorsPage(
       ${USER_COLS.SLUG},
       ${USER_COLS.BIO},
       ${USER_COLS.AVATAR_URL},
-      ${USER_COLS.ROLE}
+      ${USER_COLS.ROLE},
+      ${DB_TABLES.USER_ROLES} (
+        ${USER_ROLE_COLS.ROLE_ID}
+      )
     )`,
   ].join(', ');
 
@@ -365,12 +430,15 @@ export async function getPublishedAuthors(
 
         const existing = authorsById.get(author.id);
         if (!existing) {
+          const publicRoles = extractPublicRoles(author.user_roles);
           authorsById.set(author.id, {
             id: author.id,
             full_name: author.full_name,
             slug: author.slug,
             bio: parseBio(author.bio),
             avatar_url: author.avatar_url,
+            roles: publicRoles,
+            publicRole: resolvePrimaryPublicRole(publicRoles),
             role: author.role,
             published_count: 1,
             latest_publication_at: row.published_at || row.created_at,
@@ -428,6 +496,8 @@ export async function getAuthorProfileBySlug(
     slug: user.slug,
     bio: user.bio,
     avatar_url: user.avatar_url,
+    roles: user.roles ?? [],
+    publicRole: resolvePrimaryPublicRole(user.roles),
     role: user.role,
     publications,
   };
