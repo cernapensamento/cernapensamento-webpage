@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { canAccessWriterDesk } from '@/lib/db/schema';
+import { PERMISSIONS, hasPermission } from '@/lib/db/schema';
 import { i18n, isSupportedLocale, getTranslationLanguageName } from '@/i18n-config';
 import { getDictionaryClient } from '@/dictionaries/client';
 
@@ -22,11 +22,11 @@ export async function POST(req: Request) {
   let messages = authMessages;
 
   try {
-    const { user, role } = await getAuthenticatedUser();
+    const { user, permissions } = await getAuthenticatedUser();
     if (!user) {
       return NextResponse.json({ error: authMessages.unauthorized }, { status: 401 });
     }
-    if (!canAccessWriterDesk(role)) {
+    if (!hasPermission(permissions, PERMISSIONS.AI_TRANSLATE)) {
       return NextResponse.json({ error: authMessages.forbidden }, { status: 403 });
     }
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import * as auth from '@/lib/auth';
-import { USER_ROLES, resolvePermissionsForRoles } from '@/lib/db/schema';
+import { USER_ROLES, PERMISSIONS, resolvePermissionsForRoles } from '@/lib/db/schema';
 import type { User } from '@supabase/supabase-js';
 
 vi.mock('@google/genai', () => {
@@ -118,5 +118,68 @@ describe('POST /api/translate', () => {
     expect(json.title).toBe('Título traducido');
     expect(json.subtitle).toBe('Subtítulo traducido');
     expect(json.htmlContent).toBe('<p>Contido traducido</p>');
+  });
+
+  it('rejects zero-role user and desk:access-only user without ai:translate with 403', async () => {
+    for (const permissions of [[], [PERMISSIONS.DESK_ACCESS]]) {
+      vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
+        user: { id: 'no-ai-1' } as unknown as User,
+        profile: null,
+        roles: [],
+        permissions,
+        role: USER_ROLES.MEMBER,
+      });
+
+      const req = new Request('http://localhost:3000/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Original Title',
+          targetLanguage: 'gl',
+        }),
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(403);
+    }
+  });
+
+  it('allows guest + member, founder + admin, and ai:translate-only permissions to translate', async () => {
+    const cases = [
+      {
+        roles: [USER_ROLES.GUEST, USER_ROLES.MEMBER],
+        permissions: resolvePermissionsForRoles([USER_ROLES.GUEST, USER_ROLES.MEMBER]),
+      },
+      {
+        roles: [USER_ROLES.FOUNDER, USER_ROLES.ADMIN],
+        permissions: resolvePermissionsForRoles([USER_ROLES.FOUNDER, USER_ROLES.ADMIN]),
+      },
+      {
+        roles: [],
+        permissions: [PERMISSIONS.AI_TRANSLATE],
+      },
+    ];
+
+    for (const c of cases) {
+      vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
+        user: { id: 'translator-1' } as unknown as User,
+        profile: null,
+        roles: c.roles,
+        permissions: c.permissions,
+        role: USER_ROLES.READER,
+      });
+
+      const req = new Request('http://localhost:3000/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Original Title',
+          targetLanguage: 'gl',
+        }),
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+    }
   });
 });

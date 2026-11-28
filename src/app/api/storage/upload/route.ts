@@ -4,10 +4,10 @@ import { getAuthenticatedUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import {
   DB_TABLES,
+  PERMISSIONS,
   PUBLICATION_COLS,
   PUBLICATION_STATUSES,
-  canAccessWriterDesk,
-  canPublishDirectly,
+  hasPermission,
 } from '@/lib/db/schema';
 import {
   STORAGE_BUCKET,
@@ -28,7 +28,7 @@ function isStorageCategory(value: unknown): value is StorageCategory {
 
 export async function POST(req: Request) {
   try {
-    const { user, role } = await getAuthenticatedUser();
+    const { user, permissions } = await getAuthenticatedUser();
     if (!user) {
       return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
     }
@@ -57,7 +57,6 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createClient();
-    const isOperator = canPublishDirectly(role);
     let entityId: string;
 
     if (category === STORAGE_CATEGORIES.PROFILE_AVATAR) {
@@ -65,12 +64,15 @@ export async function POST(req: Request) {
         ? rawUserId.trim()
         : user.id;
 
-      if (requestedUserId !== user.id && !isOperator) {
+      if (
+        requestedUserId !== user.id &&
+        !hasPermission(permissions, PERMISSIONS.MEDIA_DELETE_ANY)
+      ) {
         return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
       }
       entityId = requestedUserId;
     } else {
-      if (!canAccessWriterDesk(role)) {
+      if (!hasPermission(permissions, PERMISSIONS.MEDIA_UPLOAD_PUBLICATION)) {
         return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
       }
 
@@ -89,11 +91,21 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'PUBLICATION_NOT_FOUND' }, { status: 404 });
       }
 
-      if (!isOperator) {
-        if (pub[PUBLICATION_COLS.AUTHOR_ID] !== user.id) {
+      const isAuthor = pub[PUBLICATION_COLS.AUTHOR_ID] === user.id;
+      const pubStatus = pub[PUBLICATION_COLS.STATUS];
+      const canUpdateAny = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_UPDATE_ANY);
+      const canReview = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_REVIEW);
+      const canPublish = hasPermission(permissions, PERMISSIONS.PUBLICATIONS_PUBLISH);
+
+      if (!isAuthor) {
+        const canEditForeign =
+          canUpdateAny ||
+          (pubStatus === PUBLICATION_STATUSES.IN_REVIEW && canReview);
+        if (!canEditForeign) {
           return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
         }
-        if (pub[PUBLICATION_COLS.STATUS] === PUBLICATION_STATUSES.PUBLISHED) {
+      } else if (pubStatus === PUBLICATION_STATUSES.PUBLISHED) {
+        if (!canPublish && !canUpdateAny) {
           return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
         }
       }
