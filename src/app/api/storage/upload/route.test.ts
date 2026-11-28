@@ -4,7 +4,7 @@ import { POST } from './route';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { STORAGE_BUCKET, STORAGE_CACHE_CONTROL } from '@/lib/storage/constants';
-import { USER_ROLES, resolvePermissionsForRoles } from '@/lib/db/schema';
+import { USER_ROLES, PERMISSIONS, resolvePermissionsForRoles } from '@/lib/db/schema';
 
 vi.mock('@/lib/auth', () => ({
   getAuthenticatedUser: vi.fn(),
@@ -366,5 +366,249 @@ describe('POST /api/storage/upload', () => {
     expect(meta.format).toBe('webp');
     expect(meta.width).toBe(120);
     expect(meta.height).toBe(90);
+  });
+
+  it('allows zero-role user to upload own avatar, but blocks foreign avatar and publication assets (ignoring legacy role)', async () => {
+    vi.mocked(getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'zero-1' } as never,
+      profile: { id: 'zero-1', role: 'admin' } as never,
+      roles: [],
+      permissions: [],
+      role: 'admin',
+    });
+
+    const webpBuf = await createWebpBuffer(200, 200);
+    const ownAvatarRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'profile_avatar',
+        },
+        'avatar.webp'
+      )
+    );
+    expect(ownAvatarRes.status).toBe(200);
+
+    const foreignAvatarRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'profile_avatar',
+          userId: 'victim-1',
+        },
+        'avatar.webp'
+      )
+    );
+    expect(foreignAvatarRes.status).toBe(403);
+
+    const pubRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'publication_cover',
+          publicationId: 'pub-1',
+        },
+        'cover.webp'
+      )
+    );
+    expect(pubRes.status).toBe(403);
+  });
+
+  it('allows media:delete_any to upload to another user avatar folder and blocks desk:access without media:upload_publication', async () => {
+    const webpBuf = await createWebpBuffer(200, 200);
+
+    vi.mocked(getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'media-mod-1' } as never,
+      profile: { id: 'media-mod-1', role: 'reader' } as never,
+      roles: [],
+      permissions: [PERMISSIONS.MEDIA_DELETE_ANY],
+      role: 'reader',
+    });
+
+    const modAvatarRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'profile_avatar',
+          userId: 'target-user-1',
+        },
+        'avatar.webp'
+      )
+    );
+    expect(modAvatarRes.status).toBe(200);
+
+    vi.mocked(getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'user-1' } as never,
+      profile: { id: 'user-1', role: 'member' } as never,
+      roles: [],
+      permissions: [PERMISSIONS.DESK_ACCESS],
+      role: 'member',
+    });
+
+    const missingUploadPermRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'publication_cover',
+          publicationId: 'pub-1',
+        },
+        'cover.webp'
+      )
+    );
+    expect(missingUploadPermRes.status).toBe(403);
+  });
+
+  it('allows publications:review on foreign in_review only, and publications:publish on own published only', async () => {
+    const webpBuf = await createWebpBuffer(200, 200);
+
+    // Reviewer with media:upload_publication + publications:review (no update_any)
+    vi.mocked(getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'reviewer-1' } as never,
+      profile: { id: 'reviewer-1', role: 'member' } as never,
+      roles: [],
+      permissions: [PERMISSIONS.MEDIA_UPLOAD_PUBLICATION, PERMISSIONS.PUBLICATIONS_REVIEW],
+      role: 'member',
+    });
+
+    mockSingle.mockResolvedValueOnce({
+      data: { id: 'pub-rev', author_id: 'other-author', status: 'in_review' },
+      error: null,
+    });
+    const foreignReviewRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'publication_cover',
+          publicationId: 'pub-rev',
+        },
+        'cover.webp'
+      )
+    );
+    expect(foreignReviewRes.status).toBe(200);
+
+    mockSingle.mockResolvedValueOnce({
+      data: { id: 'pub-draft', author_id: 'other-author', status: 'draft' },
+      error: null,
+    });
+    const foreignDraftRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'publication_cover',
+          publicationId: 'pub-draft',
+        },
+        'cover.webp'
+      )
+    );
+    expect(foreignDraftRes.status).toBe(403);
+
+    // Direct publisher with media:upload_publication + publications:publish (no update_any)
+    vi.mocked(getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'publisher-1' } as never,
+      profile: { id: 'publisher-1', role: 'member' } as never,
+      roles: [],
+      permissions: [PERMISSIONS.MEDIA_UPLOAD_PUBLICATION, PERMISSIONS.PUBLICATIONS_PUBLISH],
+      role: 'member',
+    });
+
+    mockSingle.mockResolvedValueOnce({
+      data: { id: 'pub-own-pub', author_id: 'publisher-1', status: 'published' },
+      error: null,
+    });
+    const ownPubRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'publication_inline',
+          publicationId: 'pub-own-pub',
+        },
+        'inline.webp'
+      )
+    );
+    expect(ownPubRes.status).toBe(200);
+
+    mockSingle.mockResolvedValueOnce({
+      data: { id: 'pub-other-pub', author_id: 'other-author', status: 'published' },
+      error: null,
+    });
+    const otherPubRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'publication_inline',
+          publicationId: 'pub-other-pub',
+        },
+        'inline.webp'
+      )
+    );
+    expect(otherPubRes.status).toBe(403);
+  });
+
+  it('handles overlapping guest+member and founder+admin multi-role permissions', async () => {
+    const webpBuf = await createWebpBuffer(200, 200);
+
+    vi.mocked(getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'gm-1' } as never,
+      profile: { id: 'gm-1', role: 'member' } as never,
+      roles: [USER_ROLES.GUEST, USER_ROLES.MEMBER],
+      permissions: resolvePermissionsForRoles([USER_ROLES.GUEST, USER_ROLES.MEMBER]),
+      role: 'member',
+    });
+
+    mockSingle.mockResolvedValueOnce({
+      data: { id: 'pub-gm-draft', author_id: 'gm-1', status: 'draft' },
+      error: null,
+    });
+    const gmDraftRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'publication_cover',
+          publicationId: 'pub-gm-draft',
+        },
+        'cover.webp'
+      )
+    );
+    expect(gmDraftRes.status).toBe(200);
+
+    mockSingle.mockResolvedValueOnce({
+      data: { id: 'pub-gm-pub', author_id: 'gm-1', status: 'published' },
+      error: null,
+    });
+    const gmPubRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'publication_cover',
+          publicationId: 'pub-gm-pub',
+        },
+        'cover.webp'
+      )
+    );
+    expect(gmPubRes.status).toBe(403);
+
+    vi.mocked(getAuthenticatedUser).mockResolvedValue({
+      user: { id: 'fa-1' } as never,
+      profile: { id: 'fa-1', role: 'admin' } as never,
+      roles: [USER_ROLES.FOUNDER, USER_ROLES.ADMIN],
+      permissions: resolvePermissionsForRoles([USER_ROLES.FOUNDER, USER_ROLES.ADMIN]),
+      role: 'admin',
+    });
+
+    mockSingle.mockResolvedValueOnce({
+      data: { id: 'pub-other', author_id: 'other-author', status: 'published' },
+      error: null,
+    });
+    const faRes = await POST(
+      makeUploadRequest(
+        {
+          file: new Blob([new Uint8Array(webpBuf)], { type: 'image/webp' }),
+          category: 'publication_cover',
+          publicationId: 'pub-other',
+        },
+        'cover.webp'
+      )
+    );
+    expect(faRes.status).toBe(200);
   });
 });
