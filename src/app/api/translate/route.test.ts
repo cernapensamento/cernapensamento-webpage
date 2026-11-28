@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import * as auth from '@/lib/auth';
-import { USER_ROLES } from '@/lib/db/schema';
+import { USER_ROLES, resolvePermissionsForRoles } from '@/lib/db/schema';
 import type { User } from '@supabase/supabase-js';
 
 vi.mock('@google/genai', () => {
@@ -26,6 +26,8 @@ describe('POST /api/translate', () => {
     vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
       user: null,
       profile: null,
+      roles: [],
+      permissions: [],
       role: null,
     });
 
@@ -48,6 +50,8 @@ describe('POST /api/translate', () => {
     vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
       user: { id: 'reader-1' } as unknown as User,
       profile: null,
+      roles: [USER_ROLES.READER],
+      permissions: resolvePermissionsForRoles([USER_ROLES.READER]),
       role: USER_ROLES.READER,
     });
 
@@ -70,6 +74,8 @@ describe('POST /api/translate', () => {
     vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
       user: { id: 'writer-1' } as unknown as User,
       profile: null,
+      roles: [USER_ROLES.MEMBER],
+      permissions: resolvePermissionsForRoles([USER_ROLES.MEMBER]),
       role: USER_ROLES.MEMBER,
     });
 
@@ -90,6 +96,8 @@ describe('POST /api/translate', () => {
     vi.spyOn(auth, 'getAuthenticatedUser').mockResolvedValue({
       user: { id: 'writer-1' } as unknown as User,
       profile: null,
+      roles: [USER_ROLES.MEMBER],
+      permissions: resolvePermissionsForRoles([USER_ROLES.MEMBER]),
       role: USER_ROLES.MEMBER,
     });
 

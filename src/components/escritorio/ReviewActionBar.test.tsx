@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ReviewActionBar from './ReviewActionBar';
-import { PUBLICATION_STATUSES } from '@/lib/db/schema';
+import { PUBLICATION_STATUSES, USER_ROLES, resolvePermissionsForRoles } from '@/lib/db/schema';
 import * as authHook from '@/hooks/useAuth';
 import * as articleActions from '@/actions/articles';
 import * as feedbackProvider from '@/components/ui/FeedbackProvider';
@@ -63,7 +63,13 @@ describe('ReviewActionBar Component', () => {
   it('renders nothing when user role is reader or member', () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'reader-1' } as unknown as User,
-      profile: { role: 'reader', avatar_url: null, full_name: null },
+      profile: {
+        role: 'reader',
+        roles: [USER_ROLES.READER],
+        permissions: resolvePermissionsForRoles([USER_ROLES.READER]),
+        avatar_url: null,
+        full_name: null,
+      },
       loading: false,
     });
 
@@ -76,7 +82,13 @@ describe('ReviewActionBar Component', () => {
   it('renders nothing when publication status is not in_review', () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'admin-1' } as unknown as User,
-      profile: { role: 'admin', avatar_url: null, full_name: null },
+      profile: {
+        role: 'admin',
+        roles: [USER_ROLES.ADMIN],
+        permissions: resolvePermissionsForRoles([USER_ROLES.ADMIN]),
+        avatar_url: null,
+        full_name: null,
+      },
       loading: false,
     });
 
@@ -89,7 +101,13 @@ describe('ReviewActionBar Component', () => {
   it('renders when user is admin and publication is in_review', () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'admin-1' } as unknown as User,
-      profile: { role: 'admin', avatar_url: null, full_name: null },
+      profile: {
+        role: 'admin',
+        roles: [USER_ROLES.ADMIN],
+        permissions: resolvePermissionsForRoles([USER_ROLES.ADMIN]),
+        avatar_url: null,
+        full_name: null,
+      },
       loading: false,
     });
 
@@ -103,7 +121,13 @@ describe('ReviewActionBar Component', () => {
   it('renders when user is founder and publication is in_review', () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'founder-1' } as unknown as User,
-      profile: { role: 'founder', avatar_url: null, full_name: null },
+      profile: {
+        role: 'founder',
+        roles: [USER_ROLES.FOUNDER],
+        permissions: resolvePermissionsForRoles([USER_ROLES.FOUNDER]),
+        avatar_url: null,
+        full_name: null,
+      },
       loading: false,
     });
 
@@ -127,7 +151,13 @@ describe('ReviewActionBar Component', () => {
   it('approves article when clicking approve button', async () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'admin-1' } as unknown as User,
-      profile: { role: 'admin', avatar_url: null, full_name: null },
+      profile: {
+        role: 'admin',
+        roles: [USER_ROLES.ADMIN],
+        permissions: resolvePermissionsForRoles([USER_ROLES.ADMIN]),
+        avatar_url: null,
+        full_name: null,
+      },
       loading: false,
     });
     vi.mocked(articleActions.updateArticleState).mockResolvedValueOnce({ success: true });
@@ -146,7 +176,13 @@ describe('ReviewActionBar Component', () => {
   it('rejects article when clicking reject button', async () => {
     vi.mocked(authHook.useAuth).mockReturnValue({
       user: { id: 'admin-1' } as unknown as User,
-      profile: { role: 'admin', avatar_url: null, full_name: null },
+      profile: {
+        role: 'admin',
+        roles: [USER_ROLES.ADMIN],
+        permissions: resolvePermissionsForRoles([USER_ROLES.ADMIN]),
+        avatar_url: null,
+        full_name: null,
+      },
       loading: false,
     });
     vi.mocked(articleActions.updateArticleState).mockResolvedValueOnce({ success: true });
